@@ -353,9 +353,16 @@
 
 .casino-game-page--expansion-started .casino-game-page__poster-rail-shell,
 .casino-game-page--expanded .casino-game-page__poster-rail-shell,
+.casino-game-page--collapse-settling .casino-game-page__poster-rail-shell,
 .casino-game-page--closing .casino-game-page__poster-rail-shell {
   opacity: 0;
   transform: translate3d(0, var(--casino-game-rail-motion-y), 0);
+  pointer-events: none;
+}
+
+.casino-game-page--closing:not(.casino-game-page--expansion-started) .casino-game-page__poster-rail-shell {
+  opacity: 1;
+  transform: translate3d(0, 100dvh, 0);
   pointer-events: none;
 }
 
@@ -363,6 +370,8 @@
 .casino-game-page--expansion-started .casino-game-page__poster-rail *,
 .casino-game-page--expanded .casino-game-page__poster-rail,
 .casino-game-page--expanded .casino-game-page__poster-rail *,
+.casino-game-page--collapse-settling .casino-game-page__poster-rail,
+.casino-game-page--collapse-settling .casino-game-page__poster-rail *,
 .casino-game-page--closing .casino-game-page__poster-rail,
 .casino-game-page--closing .casino-game-page__poster-rail * {
   pointer-events: none;

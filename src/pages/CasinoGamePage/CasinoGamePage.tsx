@@ -19,6 +19,10 @@ interface CasinoGamePageProps {
   sectionTitle: string
 }
 
+interface CasinoGameCloseOptions {
+  force?: boolean
+}
+
 type CasinoGameSwitchDirection = 'next' | 'previous'
 
 interface CasinoGameContentTransition {
@@ -72,6 +76,7 @@ const CASINO_GAME_POSTER_BOTTOM_GAP = 24
 const CASINO_GAME_PREFERRED_COMPACT_HEIGHT = 480
 const CASINO_GAME_MIN_ACTIVE_POSTER_WIDTH = 112
 const CASINO_GAME_TRANSITION_MS = 360
+const CASINO_GAME_COLLAPSE_RAIL_REVEAL_MS = 260
 const CASINO_GAME_POSTER_SELECTION_ANIMATION_MS = 320
 const CASINO_GAME_CONTENT_SWITCH_MS = 380
 const CASINO_GAME_EXPANSION_TOUCH_DISTANCE = 180
@@ -194,7 +199,7 @@ interface CasinoGameContentProps {
   game: CasinoCarouselGame
   isExpanded: boolean
   expansionProgress: number
-  onRequestClose: () => void
+  onRequestClose: (options?: CasinoGameCloseOptions) => void
   onRequestExpand: () => void
   onRequestCollapse: () => void
   onExpansionProgressChange: (progress: number, options?: { deferSettle?: boolean }) => void
@@ -377,9 +382,11 @@ function CasinoGameContent({
     if (!gesture.isDragging) return
 
     if (gesture.pullDistance > 0) {
-      if (gesture.canCloseFromPull) {
+      const didPullPastCloseThreshold = gesture.pullDistance >= CASINO_GAME_CLOSE_PULL_THRESHOLD
+
+      if (gesture.canCloseFromPull || didPullPastCloseThreshold) {
         onCompactPullEnd(gesture.pullDistance)
-        if (gesture.pullDistance >= CASINO_GAME_CLOSE_PULL_THRESHOLD) return
+        if (didPullPastCloseThreshold) return
       } else {
         onCompactPullChange(0)
       }
@@ -599,10 +606,12 @@ function CasinoGameContent({
     }
 
     if (Math.abs(dragDistance) <= 8) {
+      suppressTopCloseClickRef.current = true
+
       if (isExpanded) {
         onRequestCollapse()
       } else {
-        onRequestClose()
+        onRequestClose({ force: true })
       }
       return
     }
@@ -611,7 +620,7 @@ function CasinoGameContent({
       onRequestExpand()
     } else if (dragDistance >= 32) {
       if (isExpanded) onRequestCollapse()
-      else onRequestClose()
+      else onRequestClose({ force: true })
     }
   }
 
@@ -636,7 +645,7 @@ function CasinoGameContent({
       return
     }
 
-    onRequestClose()
+    onRequestClose({ force: true })
   }
 
   const handleDirectLaunchPreferenceChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -671,7 +680,6 @@ function CasinoGameContent({
             >
               <span
                 className="casino-game-page__drag-handle"
-                onClick={(event) => event.stopPropagation()}
                 onPointerDown={handleCloseHandlePointerDown}
                 onPointerMove={handleCloseHandlePointerMove}
                 onPointerUp={handleCloseHandlePointerUp}
@@ -973,6 +981,7 @@ export function CasinoGamePage({
   const [shouldRender, setShouldRender] = useState(false)
   const [expansionProgress, setExpansionProgress] = useState(0)
   const [isExpansionGestureActive, setIsExpansionGestureActive] = useState(false)
+  const [isCollapseSettling, setIsCollapseSettling] = useState(false)
   const [compactPullY, setCompactPullY] = useState(0)
   const [isCompactPulling, setIsCompactPulling] = useState(false)
   const [sheetMetrics, setSheetMetrics] = useState<SheetMetrics>(() => measureSheetMetrics())
@@ -980,6 +989,7 @@ export function CasinoGamePage({
   const closeTimerRef = useRef<number | null>(null)
   const switchTimerRef = useRef<number | null>(null)
   const swipeSnapTimerRef = useRef<number | null>(null)
+  const collapseSettleTimerRef = useRef<number | null>(null)
   const compactCloseGuardTimerRef = useRef<number | null>(null)
   const compactCloseGuardRef = useRef(false)
   const pageRootRef = useRef<HTMLDivElement | null>(null)
@@ -1026,6 +1036,7 @@ export function CasinoGamePage({
     isExpanded ? 'casino-game-page--expanded' : '',
     expansionProgress > 0 ? 'casino-game-page--expansion-started' : '',
     isExpansionGestureActive ? 'casino-game-page--gesture-resizing' : '',
+    isCollapseSettling ? 'casino-game-page--collapse-settling' : '',
     isCompactPulling ? 'casino-game-page--compact-pulling' : '',
     activeContentTransition ? 'casino-game-page--content-switching' : '',
     swipeState ? 'casino-game-page--swiping' : '',
@@ -1055,6 +1066,7 @@ export function CasinoGamePage({
         setContentTransition(null)
         setExpansionProgress(shouldOpenDirectly ? 1 : 0)
         setIsExpansionGestureActive(false)
+        setIsCollapseSettling(false)
         setCompactPullY(0)
         setIsCompactPulling(false)
         setSwipeState(null)
@@ -1064,10 +1076,8 @@ export function CasinoGamePage({
       } else if (shouldRender && !isClosing) {
         setIsClosing(true)
         setContentTransition(null)
-        setExpansionProgress(0)
         setIsExpansionGestureActive(false)
-        setCompactPullY(0)
-        setIsCompactPulling(false)
+        setIsCollapseSettling(false)
         setSwipeState(null)
         pageRootRef.current?.style.setProperty('--casino-game-swipe-x', '0px')
         closeTimerRef.current = window.setTimeout(() => {
@@ -1094,10 +1104,27 @@ export function CasinoGamePage({
       window.clearTimeout(swipeSnapTimerRef.current)
       swipeSnapTimerRef.current = null
     }
+    if (collapseSettleTimerRef.current !== null) {
+      window.clearTimeout(collapseSettleTimerRef.current)
+      collapseSettleTimerRef.current = null
+    }
     if (compactCloseGuardTimerRef.current !== null) {
       window.clearTimeout(compactCloseGuardTimerRef.current)
       compactCloseGuardTimerRef.current = null
     }
+  }, [])
+
+  const holdRailUntilCollapseSettles = useCallback(() => {
+    setIsCollapseSettling(true)
+
+    if (collapseSettleTimerRef.current !== null) {
+      window.clearTimeout(collapseSettleTimerRef.current)
+    }
+
+    collapseSettleTimerRef.current = window.setTimeout(() => {
+      setIsCollapseSettling(false)
+      collapseSettleTimerRef.current = null
+    }, CASINO_GAME_COLLAPSE_RAIL_REVEAL_MS)
   }, [])
 
   const armCompactCloseGuard = useCallback(() => {
@@ -1111,6 +1138,15 @@ export function CasinoGamePage({
       compactCloseGuardRef.current = false
       compactCloseGuardTimerRef.current = null
     }, CASINO_GAME_CLOSE_GUARD_MS)
+  }, [])
+
+  const clearCompactCloseGuard = useCallback(() => {
+    compactCloseGuardRef.current = false
+
+    if (compactCloseGuardTimerRef.current !== null) {
+      window.clearTimeout(compactCloseGuardTimerRef.current)
+      compactCloseGuardTimerRef.current = null
+    }
   }, [])
 
   useEffect(() => {
@@ -1154,10 +1190,13 @@ export function CasinoGamePage({
     }
   }, [shouldRender])
 
-  const requestClose = useCallback(() => {
+  const requestClose = useCallback((options: CasinoGameCloseOptions = {}) => {
     if (isClosing) return
-    if (expansionProgress > 0) {
+    const shouldForceClose = options.force === true
+
+    if (!shouldForceClose && expansionProgress > 0) {
       armCompactCloseGuard()
+      holdRailUntilCollapseSettles()
       setContentTransition(null)
       setExpansionProgress(0)
       setIsExpansionGestureActive(false)
@@ -1167,14 +1206,14 @@ export function CasinoGamePage({
       pageRootRef.current?.style.setProperty('--casino-game-swipe-x', '0px')
       return
     }
-    if (compactCloseGuardRef.current) return
+    if (!shouldForceClose && compactCloseGuardRef.current) return
+
+    if (shouldForceClose) clearCompactCloseGuard()
 
     setIsClosing(true)
     setContentTransition(null)
-    setExpansionProgress(0)
     setIsExpansionGestureActive(false)
-    setCompactPullY(0)
-    setIsCompactPulling(false)
+    setIsCollapseSettling(false)
     setSwipeState(null)
     pageRootRef.current?.style.setProperty('--casino-game-swipe-x', '0px')
 
@@ -1188,9 +1227,14 @@ export function CasinoGamePage({
       closeTimerRef.current = null
       onClose()
     }, CASINO_GAME_TRANSITION_MS)
-  }, [armCompactCloseGuard, expansionProgress, isClosing, onClose])
+  }, [armCompactCloseGuard, clearCompactCloseGuard, expansionProgress, holdRailUntilCollapseSettles, isClosing, onClose])
 
   const requestExpand = useCallback(() => {
+    if (collapseSettleTimerRef.current !== null) {
+      window.clearTimeout(collapseSettleTimerRef.current)
+      collapseSettleTimerRef.current = null
+    }
+    setIsCollapseSettling(false)
     setIsExpansionGestureActive(false)
     setCompactPullY(0)
     setIsCompactPulling(false)
@@ -1201,18 +1245,20 @@ export function CasinoGamePage({
 
   const requestCollapse = useCallback(() => {
     armCompactCloseGuard()
+    holdRailUntilCollapseSettles()
     setIsExpansionGestureActive(false)
     setCompactPullY(0)
     setIsCompactPulling(false)
     setSwipeState(null)
     pageRootRef.current?.style.setProperty('--casino-game-swipe-x', '0px')
     setExpansionProgress(0)
-  }, [armCompactCloseGuard])
+  }, [armCompactCloseGuard, holdRailUntilCollapseSettles])
 
   const handleExpansionProgressChange = useCallback((progress: number) => {
     const nextProgress = clampProgress(progress)
 
     setIsExpansionGestureActive(true)
+    setIsCollapseSettling(false)
     setExpansionProgress(nextProgress)
 
     if (nextProgress > 0) {
@@ -1226,6 +1272,7 @@ export function CasinoGamePage({
     if (nextProgress <= 0) armCompactCloseGuard()
     setExpansionProgress(nextProgress)
     setIsExpansionGestureActive(false)
+    setIsCollapseSettling(false)
     setCompactPullY(0)
     setIsCompactPulling(false)
   }, [armCompactCloseGuard])
@@ -1359,7 +1406,7 @@ export function CasinoGamePage({
 
   const handleCompactPullEnd = useCallback((distance: number) => {
     if (distance >= CASINO_GAME_CLOSE_PULL_THRESHOLD) {
-      requestClose()
+      requestClose({ force: true })
       return
     }
 
@@ -1381,7 +1428,7 @@ export function CasinoGamePage({
     && !activeContentTransition
 
   return createPortal(
-    <div ref={pageRootRef} className={pageClasses} style={rootStyle} onClick={requestClose}>
+    <div ref={pageRootRef} className={pageClasses} style={rootStyle} onClick={() => requestClose()}>
       <div className="casino-game-page__overlay" />
       <MemoCasinoGameRail
         games={games}

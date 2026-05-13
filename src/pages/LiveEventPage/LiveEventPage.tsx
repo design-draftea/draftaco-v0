@@ -86,6 +86,10 @@ export interface LiveEventOpenPayload {
   railEvents?: LiveEventRailItem[]
 }
 
+interface LiveEventCloseOptions {
+  force?: boolean
+}
+
 interface LiveEventContentProps {
   match: LiveEventMatch
   leagueName: string
@@ -93,7 +97,7 @@ interface LiveEventContentProps {
   currentTime: string
   isExpanded: boolean
   expansionProgress: number
-  onRequestClose: () => void
+  onRequestClose: (options?: LiveEventCloseOptions) => void
   onRequestExpand: () => void
   onRequestCollapse: () => void
   onExpansionProgressChange: (progress: number, options?: { deferSettle?: boolean }) => void
@@ -1642,9 +1646,11 @@ function LiveEventContent({
       if (!gesture.isControlling) return
 
       if (gesture.pullDistance > 0) {
-        if (gesture.canCloseFromPull) {
+        const didPullPastCloseThreshold = gesture.pullDistance >= LIVE_EVENT_CLOSE_PULL_THRESHOLD
+
+        if (gesture.canCloseFromPull || didPullPastCloseThreshold) {
           onCompactPullEnd(gesture.pullDistance)
-          if (gesture.pullDistance >= LIVE_EVENT_CLOSE_PULL_THRESHOLD) return
+          if (didPullPastCloseThreshold) return
         } else {
           onCompactPullChange(0)
         }
@@ -1683,7 +1689,11 @@ function LiveEventContent({
     const dragDistance = dragStartY === null ? 0 : event.clientY - dragStartY
 
     if (Math.abs(dragDistance) <= 8) {
-      onRequestClose()
+      if (isExpanded || expansionProgressRef.current > 0) {
+        onRequestClose()
+      } else {
+        onRequestClose({ force: true })
+      }
       return
     }
 
@@ -1691,7 +1701,7 @@ function LiveEventContent({
       if (isExpanded) {
         onRequestCollapse()
       } else {
-        onRequestClose()
+        onRequestClose({ force: true })
       }
     } else if (dragDistance <= -32 && !isExpanded) {
       onRequestExpand()
@@ -1764,7 +1774,12 @@ function LiveEventContent({
   }
 
   const handleTopAreaClick = () => {
-    onRequestClose()
+    if (isExpanded || expansionProgressRef.current > 0) {
+      onRequestClose()
+      return
+    }
+
+    onRequestClose({ force: true })
   }
 
   return (
@@ -2787,6 +2802,15 @@ export function LiveEventPage({
     }, LIVE_EVENT_CLOSE_GUARD_MS)
   }, [])
 
+  const clearCompactCloseGuard = useCallback(() => {
+    compactCloseGuardRef.current = false
+
+    if (compactCloseGuardTimerRef.current !== null) {
+      window.clearTimeout(compactCloseGuardTimerRef.current)
+      compactCloseGuardTimerRef.current = null
+    }
+  }, [])
+
   useLayoutEffect(() => {
     swipeRuntimeRef.current = {
       selectedMatchIndex,
@@ -2925,10 +2949,12 @@ export function LiveEventPage({
     settleExpansionProgress(nextProgress)
   }, [armCompactCloseGuard, settleExpansionProgress])
 
-  const requestClose = useCallback(() => {
+  const requestClose = useCallback((options: LiveEventCloseOptions = {}) => {
     if (isClosing) return
+    const shouldForceClose = options.force === true
+
     clearExpansionSettleTimer()
-    if (expansionProgress > 0) {
+    if (!shouldForceClose && expansionProgress > 0) {
       armCompactCloseGuard()
       setExpansionProgress(0)
       setIsExpansionGestureActive(false)
@@ -2936,7 +2962,9 @@ export function LiveEventPage({
       setIsCompactPulling(false)
       return
     }
-    if (compactCloseGuardRef.current) return
+    if (!shouldForceClose && compactCloseGuardRef.current) return
+
+    if (shouldForceClose) clearCompactCloseGuard()
 
     setIsClosing(true)
     setExpansionProgress(0)
@@ -2952,7 +2980,7 @@ export function LiveEventPage({
       closeTimerRef.current = null
       onClose()
     }, LIVE_EVENT_TRANSITION_MS)
-  }, [armCompactCloseGuard, clearExpansionSettleTimer, expansionProgress, isClosing, onClose])
+  }, [armCompactCloseGuard, clearCompactCloseGuard, clearExpansionSettleTimer, expansionProgress, isClosing, onClose])
 
   const requestExpand = useCallback(() => {
     clearExpansionSettleTimer()
@@ -2985,7 +3013,7 @@ export function LiveEventPage({
 
   const handleCompactPullEnd = useCallback((distance: number) => {
     if (distance >= LIVE_EVENT_CLOSE_PULL_THRESHOLD) {
-      requestClose()
+      requestClose({ force: true })
       return
     }
 
@@ -3170,7 +3198,7 @@ export function LiveEventPage({
 
   return createPortal(
     <div ref={pageRootRef} className={pageClasses} style={rootStyle}>
-      <div className="live-event-page__overlay" onClick={requestClose} />
+      <div className="live-event-page__overlay" onClick={() => requestClose()} />
       <div className="live-event-page__sheet-layer">
         {railItems.length > 0 && (
           <div className="live-event-page__compact-rail-shell">
