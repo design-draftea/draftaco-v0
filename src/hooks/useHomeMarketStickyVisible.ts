@@ -118,16 +118,10 @@ export function useHomeMarketStickyState<TSection extends HTMLElement, TSticky e
       const hasVisibleEventRail = isVisibleElement(
         homeEl?.querySelector<HTMLElement>('.header .sports-match-carousel:not(.sports-match-carousel--collapsed)') ?? null
       )
-      const isInvertedHierarchyHome = homeEl?.classList.contains('home--novo-trilho-02') ?? false
-      const isShortcutRailHome = homeEl?.classList.contains('home--novo-trilho') ?? false
-      const isDefaultHome = !isShortcutRailHome
-      const isCompetitionPage = homeEl?.classList.contains('home--competition-active') ?? false
-      const isHeaderMorphComplete = homeEl?.hasAttribute('data-header-morph-complete') ?? false
-      const canEngageSticky = !isInvertedHierarchyHome || !isCompetitionPage || isHeaderMorphComplete
       const scrollRootTop = homeRect?.top ?? 0
       const stickyViewportTop = scrollRootTop + (homeStyle && isScrollableHome(homeStyle) ? homePaddingTop : 0) + stickyTop
       const hasReachedStickyViewport = stickyRect.top <= stickyViewportTop + STICKY_ENGAGED_TOLERANCE
-      const isStickyEngaged = canEngageSticky && hasReachedStickyViewport
+      const isStickyEngaged = hasReachedStickyViewport
       const releaseLine = stickyViewportTop + stickyRect.height + STICKY_RELEASE_BUFFER + fastScrollBuffer
       const restoreLine = releaseLine + stickyRect.height
       const endBoundary = stickyStateRef.current.isVisible ? releaseLine : restoreLine
@@ -141,20 +135,17 @@ export function useHomeMarketStickyState<TSection extends HTMLElement, TSticky e
         isVisible: !shouldHide,
       }
       const hasRailProtection = hasVisibleEventRail && nextState.isVisible
-      const shouldStackWithEventRail = hasVisibleEventRail && (!isInvertedHierarchyHome || nextState.isStuck)
+      const shouldStackWithEventRail = hasVisibleEventRail
       const layerProtectionBuffer = fastScrollBuffer > 0
         ? fastScrollBuffer
-        : isDefaultHome
-          ? STICKY_FAST_SCROLL_MAX_BUFFER + STICKY_RELEASE_BUFFER
-          : 0
+        : 0
       const shouldKeepLayerLowDuringProtectedScroll = (
         layerProtectionBuffer > 0 &&
         nextSectionTop <= releaseLine + layerProtectionBuffer
       )
-      const shouldLayerSticky = nextState.isVisible && (
-        nextState.isStuck ||
-        (isInvertedHierarchyHome && hasReachedStickyViewport && !wouldHideAtStickyBoundary)
-      ) && !shouldKeepLayerLowDuringProtectedScroll
+      const shouldLayerSticky = nextState.isVisible &&
+        nextState.isStuck &&
+        !shouldKeepLayerLowDuringProtectedScroll
 
       stickyEl.setAttribute('data-market-sticky-stuck', nextState.isStuck ? 'true' : 'false')
       stickyEl.setAttribute('data-market-sticky-visible', nextState.isVisible ? 'true' : 'false')

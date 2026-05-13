@@ -1,1 +1,0 @@
-export { SportFilterBar } from './SportFilterBar'

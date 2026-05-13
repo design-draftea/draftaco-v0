@@ -25,6 +25,11 @@ const competitionLinkTargetsByLeagueId: Record<string, CompetitionLinkTarget> = 
     name: 'LaLiga',
     sport: 'futebol',
   },
+  mls: {
+    id: 'fut-mls',
+    name: 'MLS',
+    sport: 'futebol',
+  },
   nba: {
     id: 'bsq-nba',
     name: 'NBA',
@@ -44,6 +49,26 @@ const competitionLinkTargetsByLeagueId: Record<string, CompetitionLinkTarget> = 
     id: 'bsq-euro-cup',
     name: 'Euro Cup',
     sport: 'basquete',
+  },
+  'ten-roma-masters': {
+    id: 'ten-roma-masters',
+    name: 'Roma Masters',
+    sport: 'tenis',
+  },
+  'ten-roma-f': {
+    id: 'ten-roma-f',
+    name: 'Roma (F)',
+    sport: 'tenis',
+  },
+  'ten-parma-f': {
+    id: 'ten-parma-f',
+    name: 'Parma (F)',
+    sport: 'tenis',
+  },
+  'ten-bordeaux': {
+    id: 'ten-bordeaux',
+    name: 'Bordeaux',
+    sport: 'tenis',
   },
 }
 

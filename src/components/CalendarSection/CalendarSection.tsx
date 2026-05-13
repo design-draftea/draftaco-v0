@@ -17,13 +17,16 @@ import reiAntecipaFutebol from '../../assets/reiAntecipaFutebol.png'
 import reiAntecipaBasquete from '../../assets/reiAntecipaBasquete.png'
 import iconBasquete from '../../assets/iconSports/basketball.png'
 import iconFutebol from '../../assets/iconSports/soccer.png'
+import iconTenis from '../../assets/iconSports/tennis.png'
+import { getCompetitionBadge } from '../../data/competitionBadges'
+import { getTennisPlayerCountryIcon } from '../../data/tennisCountryIcons'
 // Flags
-import flagBrasil from '../../assets/flagBrasil.png'
-import flagMundo from '../../assets/flagMundo.png'
-import flagInglaterra from '../../assets/flagInglaterra.png'
-import flagEspanha from '../../assets/flagEspanha.png'
-import flagAlemanha from '../../assets/flagAlemanha.png'
-import flagUSA from '../../assets/flagUSA.png'
+import flagBrasil from '../../assets/iconPaises/brasil.png'
+import flagMundo from '../../assets/iconPaises/mundo.png'
+import flagInglaterra from '../../assets/iconPaises/inglaterra.png'
+import flagEspanha from '../../assets/iconPaises/espanha.png'
+import flagAlemanha from '../../assets/iconPaises/alemanha.png'
+import flagUSA from '../../assets/iconPaises/estados-unidos.png'
 // Escudos Futebol
 import escudoBotafogo from '../../assets/escudoBotafogo.png'
 import escudoFlamengo from '../../assets/escudoFlamengo.png'
@@ -102,15 +105,22 @@ const basketballMarketChips: MarketChip[] = [
   { id: 'q4-total', label: '4° Quarto - Total de Pontos' },
 ]
 
+const tennisMarketChips: MarketChip[] = [
+  { id: 'vencedor', label: 'Vencedor' },
+  { id: 'handicap-games', label: 'Handicap de Games' },
+  { id: 'total-games', label: 'Total de Games' },
+]
+
 const SHORT_COMPETITION_EVENT_LIMIT = 3
 const liveEventSports = new Set(['futebol', 'basquete'])
 
 const getDefaultMarketId = (sport?: string | null) =>
-  sport === 'basquete' ? 'vencedor' : 'resultado-final'
+  sport === 'basquete' || sport === 'tenis' ? 'vencedor' : 'resultado-final'
 
 function getCalendarSportFallbackIcon(sport: string): string {
   if (sport === 'basquete') return iconBasquete
   if (sport === 'futebol') return iconFutebol
+  if (sport === 'tenis') return iconTenis
   return ''
 }
 
@@ -129,7 +139,10 @@ interface CalendarTeamIconProps {
 
 function CalendarTeamIcon({ teamName, currentIcon, sport, side }: CalendarTeamIconProps) {
   const fallbackIcon = getCalendarSportFallbackIcon(sport)
-  const resolvedIcon = useSportsDbTeamLogo(teamName, currentIcon, sport, fallbackIcon || undefined)
+  const displayIcon = sport === 'tenis'
+    ? getTennisPlayerCountryIcon(teamName, currentIcon)
+    : currentIcon
+  const resolvedIcon = useSportsDbTeamLogo(teamName, displayIcon, sport, fallbackIcon || undefined)
 
   if (!resolvedIcon) return <div className="prematch-section__team-icon--placeholder" />
 
@@ -188,6 +201,11 @@ export interface CompetitionEvent {
     under: string
     over: string
   }
+  totalGamesOdds?: {
+    line: number
+    under: string
+    over: string
+  }
   handicapOdds?: {
     line: number
     home: string
@@ -217,6 +235,24 @@ const oddNumber = (odd: string) => Number(odd.replace('x', ''))
 
 const formatOdd = (odd: number) => `${Math.max(1.05, odd).toFixed(2)}x`
 
+const tennisCompetitionEvent = (
+  id: string,
+  dateTime: string,
+  homeName: string,
+  awayName: string,
+  homeOdd: string,
+  awayOdd: string
+): CompetitionEvent => ({
+  id,
+  dateTime,
+  earlyPayout: false,
+  homeName,
+  homeIcon: getTennisPlayerCountryIcon(homeName, iconTenis),
+  awayName,
+  awayIcon: getTennisPlayerCountryIcon(awayName, iconTenis),
+  odds: { home: homeOdd, away: awayOdd },
+})
+
 const eventSeed = (event: CompetitionEvent) =>
   event.id.split('').reduce((total, char) => total + char.charCodeAt(0), 0)
 
@@ -241,6 +277,11 @@ interface MarketOdds {
     over: string
   }
   totalPoints?: {
+    line: number
+    under: string
+    over: string
+  }
+  totalGames?: {
     line: number
     under: string
     over: string
@@ -303,6 +344,32 @@ const getMarketOdds = (event: CompetitionEvent, sport: string): MarketOdds => {
         line: quarterTotal + 1,
         under: formatOdd(1.80 + variation),
         over: formatOdd(2.02 - variation),
+      },
+    }
+  }
+
+  if (sport === 'tenis') {
+    const favoriteIsHome = homeOdd < awayOdd
+    const handicapLine = Number((1.5 + (seed % 4)).toFixed(1))
+    const eventHandicapLine = event.handicapOdds?.line
+    const totalGamesLine = [19.5, 20.5, 21.5, 22.5][seed % 4]
+
+    return {
+      handicap: event.handicapOdds ? {
+        homeLine: eventHandicapLine ?? 0,
+        awayLine: eventHandicapLine ? -eventHandicapLine : 0,
+        home: event.handicapOdds.home,
+        away: event.handicapOdds.away,
+      } : {
+        homeLine: favoriteIsHome ? -handicapLine : handicapLine,
+        awayLine: favoriteIsHome ? handicapLine : -handicapLine,
+        home: formatOdd(1.84 + variation),
+        away: formatOdd(1.96 - variation),
+      },
+      totalGames: event.totalGamesOdds ?? {
+        line: totalGamesLine,
+        under: formatOdd(1.78 + variation),
+        over: formatOdd(2.04 - variation),
       },
     }
   }
@@ -792,6 +859,186 @@ export const championships: Championship[] = [
       },
     ],
   },
+  // Tênis
+  {
+    id: 'ten-roma-masters',
+    name: 'Roma Masters',
+    flag: getCompetitionBadge('ten-roma-masters', iconTenis),
+    sport: 'tenis',
+    events: [
+      {
+        id: 'ten-rm-1',
+        dateTime: 'Ao vivo',
+        isLive: true,
+        earlyPayout: false,
+        homeName: 'Andrey Rublev',
+        homeIcon: getTennisPlayerCountryIcon('Andrey Rublev', iconTenis),
+        awayName: 'Nikoloz Basilashvili',
+        awayIcon: getTennisPlayerCountryIcon('Nikoloz Basilashvili', iconTenis),
+        odds: { home: '2.42x', away: '1.55x' },
+        handicapOdds: { line: 2.5, home: '1.88x', away: '1.92x' },
+        totalGamesOdds: { line: 22.5, under: '1.86x', over: '1.94x' },
+      },
+      {
+        id: 'ten-rm-2',
+        dateTime: 'Hoje, 13:20',
+        earlyPayout: false,
+        homeName: 'Hamad Medjedovic',
+        homeIcon: getTennisPlayerCountryIcon('Hamad Medjedovic', iconTenis),
+        awayName: 'Martin Landaluce',
+        awayIcon: getTennisPlayerCountryIcon('Martin Landaluce', iconTenis),
+        odds: { home: '1.52x', away: '2.55x' },
+        handicapOdds: { line: -3.5, home: '1.90x', away: '1.90x' },
+        totalGamesOdds: { line: 21.5, under: '1.82x', over: '1.98x' },
+      },
+      {
+        id: 'ten-rm-3',
+        dateTime: 'Hoje, 15:30',
+        earlyPayout: false,
+        homeName: 'Thiago Agustin Tirante',
+        homeIcon: getTennisPlayerCountryIcon('Thiago Agustin Tirante', iconTenis),
+        awayName: 'Daniil Medvedev',
+        awayIcon: getTennisPlayerCountryIcon('Daniil Medvedev', iconTenis),
+        odds: { home: '2.27x', away: '1.65x' },
+        handicapOdds: { line: 2.5, home: '1.86x', away: '1.94x' },
+        totalGamesOdds: { line: 22.5, under: '1.88x', over: '1.92x' },
+      },
+    ],
+  },
+  {
+    id: 'ten-roma-f',
+    name: 'Roma (F)',
+    flag: getCompetitionBadge('ten-roma-f', iconTenis),
+    sport: 'tenis',
+    events: [
+      {
+        id: 'ten-rf-1',
+        dateTime: 'Hoje, 14:00',
+        earlyPayout: false,
+        homeName: 'Coco Gauff',
+        homeIcon: getTennisPlayerCountryIcon('Coco Gauff', iconTenis),
+        awayName: 'Mirra Andreeva',
+        awayIcon: getTennisPlayerCountryIcon('Mirra Andreeva', iconTenis),
+        odds: { home: '1.98x', away: '1.93x' },
+        handicapOdds: { line: -0.5, home: '1.91x', away: '1.89x' },
+        totalGamesOdds: { line: 21.5, under: '1.87x', over: '1.93x' },
+      },
+      {
+        id: 'ten-rf-2',
+        dateTime: 'Amanhã, 08:00',
+        earlyPayout: false,
+        homeName: 'Jessica Pegula',
+        homeIcon: getTennisPlayerCountryIcon('Jessica Pegula', iconTenis),
+        awayName: 'Iga Swiatek',
+        awayIcon: getTennisPlayerCountryIcon('Iga Swiatek', iconTenis),
+        odds: { home: '3.00x', away: '1.39x' },
+        handicapOdds: { line: 4.5, home: '1.88x', away: '1.92x' },
+        totalGamesOdds: { line: 20.5, under: '1.84x', over: '1.96x' },
+      },
+      {
+        id: 'ten-rf-3',
+        dateTime: 'Amanhã, 08:00',
+        earlyPayout: false,
+        homeName: 'Elina Svitolina',
+        homeIcon: getTennisPlayerCountryIcon('Elina Svitolina', iconTenis),
+        awayName: 'Elena Rybakina',
+        awayIcon: getTennisPlayerCountryIcon('Elena Rybakina', iconTenis),
+        odds: { home: '3.15x', away: '1.42x' },
+        handicapOdds: { line: 4.5, home: '1.86x', away: '1.94x' },
+        totalGamesOdds: { line: 21.5, under: '1.90x', over: '1.90x' },
+      },
+    ],
+  },
+  {
+    id: 'ten-parma-f',
+    name: 'Parma (F)',
+    flag: getCompetitionBadge('ten-parma-f', iconTenis),
+    sport: 'tenis',
+    events: [
+      {
+        id: 'ten-pf-1',
+        dateTime: 'Ao vivo',
+        isLive: true,
+        earlyPayout: false,
+        homeName: 'Yue Yuan',
+        homeIcon: getTennisPlayerCountryIcon('Yue Yuan', iconTenis),
+        awayName: 'Mayar Sherif',
+        awayIcon: getTennisPlayerCountryIcon('Mayar Sherif', iconTenis),
+        odds: { home: '2.05x', away: '1.70x' },
+        handicapOdds: { line: 1.5, home: '1.85x', away: '1.95x' },
+        totalGamesOdds: { line: 22.5, under: '1.88x', over: '1.92x' },
+      },
+      {
+        id: 'ten-pf-2',
+        dateTime: 'Amanhã, 06:00',
+        earlyPayout: false,
+        homeName: 'Barbora Krejcikova',
+        homeIcon: getTennisPlayerCountryIcon('Barbora Krejcikova', iconTenis),
+        awayName: 'Anna-Lena Friedsam',
+        awayIcon: getTennisPlayerCountryIcon('Anna-Lena Friedsam', iconTenis),
+        odds: { home: '1.11x', away: '6.20x' },
+        handicapOdds: { line: -5.5, home: '1.92x', away: '1.88x' },
+        totalGamesOdds: { line: 18.5, under: '1.83x', over: '1.97x' },
+      },
+      {
+        id: 'ten-pf-3',
+        dateTime: 'Amanhã, 06:00',
+        earlyPayout: false,
+        homeName: 'Solana Sierra',
+        homeIcon: getTennisPlayerCountryIcon('Solana Sierra', iconTenis),
+        awayName: 'Kaja Juvan',
+        awayIcon: getTennisPlayerCountryIcon('Kaja Juvan', iconTenis),
+        odds: { home: '1.45x', away: '2.67x' },
+        handicapOdds: { line: -3.5, home: '1.87x', away: '1.93x' },
+        totalGamesOdds: { line: 20.5, under: '1.89x', over: '1.91x' },
+      },
+    ],
+  },
+  {
+    id: 'ten-bordeaux',
+    name: 'Bordeaux',
+    flag: getCompetitionBadge('ten-bordeaux', iconTenis),
+    sport: 'tenis',
+    events: [
+      {
+        id: 'ten-bdx-1',
+        dateTime: 'Ao vivo',
+        isLive: true,
+        earlyPayout: false,
+        homeName: 'Moise Kouame',
+        homeIcon: getTennisPlayerCountryIcon('Moise Kouame', iconTenis),
+        awayName: 'Benjamin Bonzi',
+        awayIcon: getTennisPlayerCountryIcon('Benjamin Bonzi', iconTenis),
+        odds: { home: '2.27x', away: '1.57x' },
+        handicapOdds: { line: 2.5, home: '1.86x', away: '1.94x' },
+        totalGamesOdds: { line: 22.5, under: '1.85x', over: '1.95x' },
+      },
+      {
+        id: 'ten-bdx-2',
+        dateTime: 'Hoje, 15:00',
+        earlyPayout: false,
+        homeName: 'Alexander Shevchenko',
+        homeIcon: getTennisPlayerCountryIcon('Alexander Shevchenko', iconTenis),
+        awayName: 'Hugo Gaston',
+        awayIcon: getTennisPlayerCountryIcon('Hugo Gaston', iconTenis),
+        odds: { home: '1.57x', away: '2.37x' },
+        handicapOdds: { line: -3.5, home: '1.91x', away: '1.89x' },
+        totalGamesOdds: { line: 21.5, under: '1.84x', over: '1.96x' },
+      },
+      {
+        id: 'ten-bdx-3',
+        dateTime: 'Amanhã, 07:30',
+        earlyPayout: false,
+        homeName: 'Otto Virtanen',
+        homeIcon: getTennisPlayerCountryIcon('Otto Virtanen', iconTenis),
+        awayName: 'Giovanni Mpetshi Perricard',
+        awayIcon: getTennisPlayerCountryIcon('Giovanni Mpetshi Perricard', iconTenis),
+        odds: { home: '1.98x', away: '1.80x' },
+        handicapOdds: { line: -0.5, home: '1.88x', away: '1.92x' },
+        totalGamesOdds: { line: 23.5, under: '1.90x', over: '1.90x' },
+      },
+    ],
+  },
   // Basquete
   {
     id: 'nba',
@@ -1084,6 +1331,33 @@ export const competitionToChampionship: Record<string, string> = {
   'bsq-nbb': 'brasil-nbb',
   'bsq-br-nbb': 'brasil-nbb',
   'bsq-euro-cup': 'euro-cup',
+  'ten-roma-masters': 'ten-roma-masters',
+  'ten-roma-f': 'ten-roma-f',
+  'ten-parma-f': 'ten-parma-f',
+  'ten-bordeaux': 'ten-bordeaux',
+}
+
+const competitionPageEventOverrides: Record<string, CompetitionEvent[]> = {
+  'ten-roma-masters': [
+    tennisCompetitionEvent('ten-rm-comp-1', 'Amanhã, 10:00', 'Casper Ruud', 'Karen Khachanov', '1.28x', '3.70x'),
+    tennisCompetitionEvent('ten-rm-comp-2', 'Amanhã, 15:30', 'Rafael Jodar', 'Luciano Darderi', '1.44x', '2.80x'),
+  ],
+  'ten-parma-f': [
+    tennisCompetitionEvent('ten-pf-comp-1', 'Amanhã, 07:10', 'Lucia Bronzetti', 'Maria Camila Osorio Serrano', '3.90x', '1.24x'),
+    tennisCompetitionEvent('ten-pf-comp-2', 'Amanhã, 07:10', 'Hanne Vandewinkel', 'Dayana Yastremska', '2.18x', '1.65x'),
+    tennisCompetitionEvent('ten-pf-comp-3', 'Amanhã, 11:10', 'Alycia Parks', 'Susan Bandecchi', '1.35x', '3.05x'),
+  ],
+  'ten-bordeaux': [
+    tennisCompetitionEvent('ten-bdx-comp-1', 'Amanhã, 07:40', 'Raphael Collignon', 'Geoffrey Blancaneaux', '1.10x', '6.50x'),
+    tennisCompetitionEvent('ten-bdx-comp-2', 'Amanhã, 15:00', 'Luca Van Assche', 'Juan Manuel Cerundolo', '1.98x', '1.80x'),
+  ],
+}
+
+const getCompetitionPageLeague = (league: Championship, competitionId: string | null): Championship => {
+  if (!competitionId) return league
+
+  const overrideEvents = competitionPageEventOverrides[competitionId]
+  return overrideEvents ? { ...league, events: overrideEvents } : league
 }
 
 interface CalendarSectionProps {
@@ -1140,14 +1414,17 @@ export function getCalendarDisplayedEventGroups({
 } {
   const { mappedCompetitionId, championships: filtered } = getCalendarChampionships(sportFilter, competitionId)
   const shouldFilterLive = liveOnly || liveFilter
+  const competitionScoped = mappedCompetitionId
+    ? filtered.map((league) => getCompetitionPageLeague(league, mappedCompetitionId))
+    : filtered
   const filteredByLive = shouldFilterLive
-    ? filtered
+    ? competitionScoped
         .map((championship) => ({
           ...championship,
           events: championship.events.filter((event) => event.isLive),
         }))
         .filter((championship) => championship.events.length > 0)
-    : filtered
+    : competitionScoped
   const leaguesToDisplay = filteredByLive.slice(0, mappedCompetitionId ? filteredByLive.length : 5)
 
   const groups = leaguesToDisplay.map((league) => {
@@ -1216,9 +1493,12 @@ export function getCompetitionPageEvents(
   competitionId?: string | null,
   liveOnly = false
 ): DisplayedCompetitionEvent[] {
-  const { championships: filtered } = getCalendarChampionships(sportFilter, competitionId)
+  const { mappedCompetitionId, championships: filtered } = getCalendarChampionships(sportFilter, competitionId)
+  const competitionScoped = mappedCompetitionId
+    ? filtered.map((league) => getCompetitionPageLeague(league, mappedCompetitionId))
+    : filtered
 
-  return filtered.flatMap((league) => {
+  return competitionScoped.flatMap((league) => {
     const eventsToDisplay = liveOnly
       ? league.events.filter((event) => event.isLive)
       : [
@@ -1256,12 +1536,16 @@ export const getCompetitionLiveEventMatch = (
     currentTime: matchTimes[event.id] || event.dateTime,
     homeTeam: {
       name: event.homeName,
-      icon: getTeamLogo(event.homeName, event.homeIcon),
+      icon: league?.sport === 'tenis'
+        ? getTennisPlayerCountryIcon(event.homeName, event.homeIcon)
+        : getTeamLogo(event.homeName, event.homeIcon),
       score: event.homeScore ?? 0,
     },
     awayTeam: {
       name: event.awayName,
-      icon: getTeamLogo(event.awayName, event.awayIcon),
+      icon: league?.sport === 'tenis'
+        ? getTennisPlayerCountryIcon(event.awayName, event.awayIcon)
+        : getTeamLogo(event.awayName, event.awayIcon),
       score: event.awayScore ?? 0,
     },
     odds: event.odds,
@@ -1508,7 +1792,11 @@ export function CalendarSection({
   }
 
   const currentSport = topFive[0]?.sport ?? sportFilter
-  const currentMarketChips = currentSport === 'basquete' ? basketballMarketChips : footballMarketChips
+  const currentMarketChips = currentSport === 'basquete'
+    ? basketballMarketChips
+    : currentSport === 'tenis'
+      ? tennisMarketChips
+      : footballMarketChips
 
   const openCompetitionFromLeague = (leagueId: string) => {
     const target = getCompetitionLinkTarget(leagueId)
@@ -1559,8 +1847,12 @@ export function CalendarSection({
 
   const renderEventCard = (league: Championship, event: CompetitionEvent, selectedMarket = activeMarket) => {
     const marketOdds = getMarketOdds(event, league.sport)
-    const homeIcon = getTeamLogo(event.homeName, event.homeIcon)
-    const awayIcon = getTeamLogo(event.awayName, event.awayIcon)
+    const homeIcon = league.sport === 'tenis'
+      ? getTennisPlayerCountryIcon(event.homeName, event.homeIcon)
+      : getTeamLogo(event.homeName, event.homeIcon)
+    const awayIcon = league.sport === 'tenis'
+      ? getTennisPlayerCountryIcon(event.awayName, event.awayIcon)
+      : getTeamLogo(event.awayName, event.awayIcon)
     const handicapOdds = event.handicapOdds ?? (marketOdds.handicap ? {
       line: marketOdds.handicap.homeLine,
       home: marketOdds.handicap.home,
@@ -1596,6 +1888,7 @@ export function CalendarSection({
             handicapOdds,
             q3TotalOdds: marketOdds.q3Total,
             q4TotalOdds: marketOdds.q4Total,
+            totalGamesOdds: marketOdds.totalGames,
           }}
           onClick={liveEventSports.has(league.sport) ? () => openLiveEvent(league, event.id) : undefined}
         />
@@ -1716,7 +2009,29 @@ export function CalendarSection({
                 <span className="prematch-section__odd-value">{marketOdds.handicap?.away}</span>
               </button>
             </>
-          ) : league.sport === 'basquete' ? (
+          ) : selectedMarket === 'handicap-games' ? (
+            <>
+              <button className="prematch-section__odd-btn">
+                <span className="prematch-section__odd-team">{event.homeName} {marketOdds.handicap && marketOdds.handicap.homeLine > 0 ? '+' : ''}{marketOdds.handicap?.homeLine}</span>
+                <span className="prematch-section__odd-value">{marketOdds.handicap?.home}</span>
+              </button>
+              <button className="prematch-section__odd-btn">
+                <span className="prematch-section__odd-team">{event.awayName} {marketOdds.handicap && marketOdds.handicap.awayLine > 0 ? '+' : ''}{marketOdds.handicap?.awayLine}</span>
+                <span className="prematch-section__odd-value">{marketOdds.handicap?.away}</span>
+              </button>
+            </>
+          ) : selectedMarket === 'total-games' ? (
+            <>
+              <button className="prematch-section__odd-btn">
+                <span className="prematch-section__odd-team">Menos de {marketOdds.totalGames?.line}</span>
+                <span className="prematch-section__odd-value">{marketOdds.totalGames?.under}</span>
+              </button>
+              <button className="prematch-section__odd-btn">
+                <span className="prematch-section__odd-team">Mais de {marketOdds.totalGames?.line}</span>
+                <span className="prematch-section__odd-value">{marketOdds.totalGames?.over}</span>
+              </button>
+            </>
+          ) : league.sport === 'basquete' || league.sport === 'tenis' ? (
             <>
               <button className="prematch-section__odd-btn">
                 <span className="prematch-section__odd-team">{event.homeName}</span>

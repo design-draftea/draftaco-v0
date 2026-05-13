@@ -1,2 +1,1 @@
-export { SportRail } from './SportRail'
-
+export { ProductRail, SportRail } from './SportRail'

@@ -2,8 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { CaretRightIcon } from '@phosphor-icons/react'
 import './TreasureSection.css'
 
-import imgTesouroRei from '../../assets/imgTesouroRei.png'
-
 // Format number to Brazilian currency format (without R$)
 const formatNumber = (num: number): string => {
   return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -30,9 +28,9 @@ function AnimatedDigit({ digit }: { digit: string }) {
 }
 
 export function TreasureSection() {
-  const [displayValue, setDisplayValue] = useState('500,00')
+  const [displayValue, setDisplayValue] = useState('50.459,23')
   const animationRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const valueRef = useRef(500)
+  const valueRef = useRef(50459.23)
 
   // Animate number change with smooth counting
   const animateToValue = (targetValue: number) => {
@@ -84,17 +82,14 @@ export function TreasureSection() {
       {/* Header */}
       <div className="treasure-section__header">
         <div className="treasure-section__title">
-          <span>Tesouro do Rei</span>
+          <span>Tesouro do Pitaco</span>
           <CaretRightIcon aria-hidden="true" className="treasure-section__arrow" weight="bold" />
         </div>
       </div>
 
       {/* Treasure Box */}
       <div className="treasure-section__box-wrapper">
-        <div 
-          className="treasure-section__box"
-          style={{ backgroundImage: `url(${imgTesouroRei})` }}
-        >
+        <div className="treasure-section__box">
           <div className="treasure-section__content">
             <div className="treasure-section__text">
               <span className="treasure-section__label">Tesouro Acumulado</span>

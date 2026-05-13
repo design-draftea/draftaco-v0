@@ -1,34 +1,22 @@
 import './Navbar.css'
 
-import navApostas from '../../assets/navApostas.svg'
-import navBusca from '../../assets/navBusca.svg'
-import navClub from '../../assets/navClub.svg'
-import navHome from '../../assets/navHome.svg'
-import navLive from '../../assets/navLive.svg'
+import { productNavbarConfigs } from '../../data/homeProducts'
+import type { ProductMode } from '../../types/home'
 
-interface NavItem {
-  id: string
-  icon: string
-  label: string
+interface NavbarProps {
+  activeProduct?: ProductMode
 }
 
-const navItems: NavItem[] = [
-  { id: 'home', icon: navHome, label: 'Início' },
-  { id: 'ao-vivo', icon: navLive, label: 'Ao Vivo' },
-  { id: 'pitaco-club', icon: navClub, label: 'Pitaco Club' },
-  { id: 'apostas', icon: navApostas, label: 'Apostas' },
-]
-
-export function Navbar() {
-  const activeItem = 'home'
+export function Navbar({ activeProduct = 'apostas' }: NavbarProps = {}) {
+  const navbarConfig = productNavbarConfigs[activeProduct]
 
   return (
     <nav className="navbar">
       <div className="navbar__shell">
         <div className="navbar__panel navbar__panel--main">
           <div className="navbar__items">
-            {navItems.map((item) => {
-              const isActive = activeItem === item.id
+            {navbarConfig.mainItems.map((item) => {
+              const isActive = navbarConfig.activeItemId === item.id
 
               return (
                 <button
@@ -55,9 +43,9 @@ export function Navbar() {
         <div className="navbar__panel navbar__panel--search">
           <button type="button" className="navbar__item navbar__item--search" aria-label="Buscar">
             <span className="navbar__icon-slot">
-              <img src={navBusca} alt="" className="navbar__icon" />
+              <img src={navbarConfig.searchItem.icon} alt="" className="navbar__icon" />
             </span>
-            <span className="navbar__label">Buscar</span>
+            <span className="navbar__label">{navbarConfig.searchItem.label}</span>
           </button>
         </div>
       </div>

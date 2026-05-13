@@ -111,7 +111,7 @@
 
 .banner-card__title {
   font-family: 'Red Hat Text', sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   color: #ffffff;
   margin: 0;
@@ -123,6 +123,10 @@
 
 .banner-card__title--aumentada {
   font-size: 16px;
+}
+
+.banner-card__title--nowrap {
+  white-space: nowrap;
 }
 
 .banner-card__boost-icon {
@@ -762,4 +766,3 @@
   font-weight: 700;
   color: #ffffff;
 }
-

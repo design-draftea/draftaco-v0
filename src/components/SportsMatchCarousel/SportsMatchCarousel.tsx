@@ -211,6 +211,7 @@ export function SportsMatchCarousel({
         {events.map(({ league, event }) => {
           const currentTime = currentTimes[event.id] ?? event.dateTime
           const leagueName = getShortLeagueName(league.name)
+          const showLiveScore = event.isLive && league.sport !== 'tenis'
           const preMatchHeader = competitionMode
             ? getCompetitionPreMatchHeader(event.dateTime)
             : { primary: getPreMatchLabel(event.dateTime), secondary: leagueName }
@@ -304,7 +305,7 @@ export function SportsMatchCarousel({
                     <span className="sports-match-carousel__team-name">{event.awayName}</span>
                   </div>
                 </div>
-                {event.isLive && (
+                {showLiveScore && (
                   <div className="sports-match-carousel__score-column" aria-label="Placar">
                     <span className="sports-match-carousel__team-score">{event.homeScore ?? 0}</span>
                     <span className="sports-match-carousel__team-score">{event.awayScore ?? 0}</span>

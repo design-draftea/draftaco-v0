@@ -1,0 +1,337 @@
+.casino-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.casino-content--crash {
+  padding-right: 12px;
+  padding-left: 12px;
+}
+
+.home--casino-active .casino-content.casino-content--crash {
+  padding-top: 0;
+}
+
+.casino-crash-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0;
+}
+
+.casino-crash-page__title {
+  margin: 0;
+  color: #ffffff;
+  font-family: 'Red Hat Text', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.casino-crash-page__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.casino-crash-card {
+  display: block;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #ffffff;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.casino-crash-card:active {
+  transform: scale(0.98);
+}
+
+.casino-games-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 0 24px;
+}
+
+.casino-games-section__header {
+  display: flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 12px;
+}
+
+.casino-games-section__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffffff;
+  font-family: 'Red Hat Text', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.casino-games-section__arrow {
+  width: 14px;
+  height: 14px;
+  color: #ffffff;
+}
+
+.casino-games-section__list {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 12px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.casino-games-section__list::-webkit-scrollbar {
+  display: none;
+}
+
+.casino-game-card {
+  display: flex;
+  width: 148px;
+  flex: 0 0 148px;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #ffffff;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.casino-game-card--openable {
+  cursor: pointer;
+}
+
+.casino-game-card:active {
+  transform: scale(0.98);
+}
+
+.casino-game-card__image-wrap {
+  position: relative;
+  display: block;
+  width: 148px;
+  aspect-ratio: 256 / 369;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #1a1a1a;
+}
+
+.casino-crash-card__image-wrap {
+  width: 100%;
+}
+
+.casino-game-card__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.casino-game-card__info {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-family: 'Red Hat Text', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  font-style: normal;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.casino-game-card__tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: #fff333;
+  color: #0f0f0f;
+  font-family: 'Red Hat Text', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.casino-game-card__live-tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: #fecaca;
+  color: #0f0f0f;
+  font-family: 'Red Hat Text', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.casino-game-card__live-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  isolation: isolate;
+}
+
+.casino-game-card__live-icon-wrap::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 0.5px solid #f87171;
+  animation: casino-live-ping 2s linear infinite;
+  background: transparent;
+  content: '';
+  transform: translate(-50%, -50%);
+  z-index: 0;
+}
+
+.casino-game-card__live-icon {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 12px;
+  height: 12px;
+  object-fit: contain;
+  filter: invert(62%) sepia(60%) saturate(600%) hue-rotate(314deg) brightness(100%) contrast(95%);
+}
+
+@keyframes casino-live-ping {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.2);
+  }
+}
+
+.casino-game-card__live-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  padding: 6px 2px 0;
+  color: #ffffff;
+  font-family: 'Red Hat Text', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.casino-game-card__live-meta-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.casino-game-card__winning-meta {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 6px 2px 0;
+  font-family: 'Red Hat Text', sans-serif;
+  line-height: 1;
+}
+
+.casino-game-card__winner-name {
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.casino-game-card__winning-amount {
+  overflow: hidden;
+  background: linear-gradient(90deg, #d2ff72 0%, #56deea 100%);
+  background-clip: text;
+  color: #d2ff72;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.12;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.casino-game-card__content {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 2px;
+}
+
+.casino-game-card__name,
+.casino-game-card__provider {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.casino-game-card__name {
+  color: #ffffff;
+  font-family: 'Red Hat Text', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.casino-game-card__provider {
+  color: rgba(255, 255, 255, 0.56);
+  font-family: 'Red Hat Text', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+}

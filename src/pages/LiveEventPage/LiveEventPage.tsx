@@ -100,6 +100,7 @@ interface LiveEventContentProps {
   onExpansionGestureEnd: (progress: number) => void
   onCompactPullChange: (distance: number) => void
   onCompactPullEnd: (distance: number) => void
+  onBlockNextClose: () => void
   onSwipeStart: () => void
   onSwipeMove: (dx: number) => void
   onSwipeEnd: (dx: number, velocity: number) => void
@@ -1286,6 +1287,7 @@ function LiveEventContent({
   onExpansionGestureEnd,
   onCompactPullChange,
   onCompactPullEnd,
+  onBlockNextClose,
   onSwipeStart,
   onSwipeMove,
   onSwipeEnd,
@@ -1335,6 +1337,7 @@ function LiveEventContent({
     lastX: number
     lastT: number
     startedOnHorizontalScroller: boolean
+    canCloseFromPull: boolean
   } | null>(null)
   const contentSport = match.sport ?? sport
   const isBasketball = contentSport === 'basquete'
@@ -1533,6 +1536,8 @@ function LiveEventContent({
       if (!touch) return
 
       const currentProgress = expansionProgressRef.current
+      if (currentProgress > 0) onBlockNextClose()
+
       const target = event.target as Element | null
       const startedOnHorizontalScroller = !!target?.closest('.live-event-page__player-odds-row')
       const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
@@ -1550,6 +1555,7 @@ function LiveEventContent({
         lastX: touch.clientX,
         lastT: now,
         startedOnHorizontalScroller,
+        canCloseFromPull: currentProgress <= 0 && !isExpanded,
       }
     }
 
@@ -1562,6 +1568,8 @@ function LiveEventContent({
       const dy = touch.clientY - gesture.startY
       const currentProgress = expansionProgressRef.current
       const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
+
+      if (gesture.startProgress > 0) onBlockNextClose()
 
       gesture.lastX = touch.clientX
       gesture.lastT = now
@@ -1634,8 +1642,12 @@ function LiveEventContent({
       if (!gesture.isControlling) return
 
       if (gesture.pullDistance > 0) {
-        onCompactPullEnd(gesture.pullDistance)
-        if (gesture.pullDistance >= LIVE_EVENT_CLOSE_PULL_THRESHOLD) return
+        if (gesture.canCloseFromPull) {
+          onCompactPullEnd(gesture.pullDistance)
+          if (gesture.pullDistance >= LIVE_EVENT_CLOSE_PULL_THRESHOLD) return
+        } else {
+          onCompactPullChange(0)
+        }
       } else {
         onCompactPullChange(0)
       }
@@ -1654,9 +1666,10 @@ function LiveEventContent({
       scrollElement.removeEventListener('touchend', finishGesture)
       scrollElement.removeEventListener('touchcancel', finishGesture)
     }
-  }, [onCompactPullChange, onCompactPullEnd, onExpansionGestureEnd, onExpansionProgressChange, onSwipeStart, onSwipeMove, onSwipeEnd])
+  }, [isExpanded, onBlockNextClose, onCompactPullChange, onCompactPullEnd, onExpansionGestureEnd, onExpansionProgressChange, onSwipeStart, onSwipeMove, onSwipeEnd])
 
   const handleCloseHandlePointerDown = (event: PointerEvent<HTMLSpanElement>) => {
+    if (expansionProgressRef.current > 0) onBlockNextClose()
     dragStartYRef.current = event.clientY
     event.currentTarget.setPointerCapture(event.pointerId)
   }
@@ -1692,6 +1705,7 @@ function LiveEventContent({
   const handleStickyCollapsePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (!isExpanded) return
 
+    onBlockNextClose()
     event.preventDefault()
     event.stopPropagation()
     event.currentTarget.setPointerCapture(event.pointerId)
@@ -1709,6 +1723,7 @@ function LiveEventContent({
 
     event.preventDefault()
     event.stopPropagation()
+    onBlockNextClose()
 
     const dy = Math.max(0, event.clientY - gesture.startY)
     if (dy < LIVE_EVENT_PULL_START_THRESHOLD && !gesture.isDragging) return
@@ -2514,6 +2529,7 @@ const LIVE_EVENT_COMPACT_SIDE_MARGIN = 24
 const LIVE_EVENT_COMPACT_TOP = 106
 const LIVE_EVENT_TRANSITION_MS = 360
 const LIVE_EVENT_CONTENT_SWITCH_MS = 380
+const LIVE_EVENT_CLOSE_GUARD_MS = 900
 const LIVE_EVENT_PULL_TOP_THRESHOLD = 1
 const LIVE_EVENT_PULL_START_THRESHOLD = 6
 const LIVE_EVENT_PULL_RESISTANCE = 0.56
@@ -2689,6 +2705,8 @@ export function LiveEventPage({
   const [sheetMetrics, setSheetMetrics] = useState<SheetMetrics>(() => measureSheetMetrics())
   const [swipeState, setSwipeState] = useState<SwipeState | null>(null)
   const closeTimerRef = useRef<number | null>(null)
+  const compactCloseGuardTimerRef = useRef<number | null>(null)
+  const compactCloseGuardRef = useRef(false)
   const switchTimerRef = useRef<number | null>(null)
   const expansionSettleTimerRef = useRef<number | null>(null)
   const swipeSnapTimerRef = useRef<number | null>(null)
@@ -2738,6 +2756,10 @@ export function LiveEventPage({
       window.clearTimeout(closeTimerRef.current)
       closeTimerRef.current = null
     }
+    if (compactCloseGuardTimerRef.current !== null) {
+      window.clearTimeout(compactCloseGuardTimerRef.current)
+      compactCloseGuardTimerRef.current = null
+    }
     if (switchTimerRef.current !== null) {
       window.clearTimeout(switchTimerRef.current)
       switchTimerRef.current = null
@@ -2750,6 +2772,19 @@ export function LiveEventPage({
       window.clearTimeout(swipeSnapTimerRef.current)
       swipeSnapTimerRef.current = null
     }
+  }, [])
+
+  const armCompactCloseGuard = useCallback(() => {
+    compactCloseGuardRef.current = true
+
+    if (compactCloseGuardTimerRef.current !== null) {
+      window.clearTimeout(compactCloseGuardTimerRef.current)
+    }
+
+    compactCloseGuardTimerRef.current = window.setTimeout(() => {
+      compactCloseGuardRef.current = false
+      compactCloseGuardTimerRef.current = null
+    }, LIVE_EVENT_CLOSE_GUARD_MS)
   }, [])
 
   useLayoutEffect(() => {
@@ -2885,12 +2920,24 @@ export function LiveEventPage({
   }, [clearExpansionSettleTimer, settleExpansionProgress])
 
   const handleExpansionGestureEnd = useCallback((progress: number) => {
-    settleExpansionProgress(progress)
-  }, [settleExpansionProgress])
+    const nextProgress = clampLiveEventExpansionProgress(progress)
+    if (nextProgress <= 0) armCompactCloseGuard()
+    settleExpansionProgress(nextProgress)
+  }, [armCompactCloseGuard, settleExpansionProgress])
 
   const requestClose = useCallback(() => {
     if (isClosing) return
     clearExpansionSettleTimer()
+    if (expansionProgress > 0) {
+      armCompactCloseGuard()
+      setExpansionProgress(0)
+      setIsExpansionGestureActive(false)
+      setCompactPullY(0)
+      setIsCompactPulling(false)
+      return
+    }
+    if (compactCloseGuardRef.current) return
+
     setIsClosing(true)
     setExpansionProgress(0)
     setIsExpansionGestureActive(false)
@@ -2905,7 +2952,7 @@ export function LiveEventPage({
       closeTimerRef.current = null
       onClose()
     }, LIVE_EVENT_TRANSITION_MS)
-  }, [clearExpansionSettleTimer, isClosing, onClose])
+  }, [armCompactCloseGuard, clearExpansionSettleTimer, expansionProgress, isClosing, onClose])
 
   const requestExpand = useCallback(() => {
     clearExpansionSettleTimer()
@@ -2916,12 +2963,13 @@ export function LiveEventPage({
   }, [clearExpansionSettleTimer])
 
   const requestCollapse = useCallback(() => {
+    armCompactCloseGuard()
     clearExpansionSettleTimer()
     setCompactPullY(0)
     setIsCompactPulling(false)
     setIsExpansionGestureActive(false)
     setExpansionProgress(0)
-  }, [clearExpansionSettleTimer])
+  }, [armCompactCloseGuard, clearExpansionSettleTimer])
 
   const handleCompactPullChange = useCallback((distance: number) => {
     if (isClosing) return
@@ -2930,11 +2978,10 @@ export function LiveEventPage({
       setCompactPullY(0)
       return
     }
-    if (expansionProgress > 0) return
 
     setIsCompactPulling(true)
     setCompactPullY(distance)
-  }, [expansionProgress, isClosing])
+  }, [isClosing])
 
   const handleCompactPullEnd = useCallback((distance: number) => {
     if (distance >= LIVE_EVENT_CLOSE_PULL_THRESHOLD) {
@@ -3165,6 +3212,7 @@ export function LiveEventPage({
                       onExpansionGestureEnd={handleExpansionGestureEnd}
                       onCompactPullChange={handleCompactPullChange}
                       onCompactPullEnd={handleCompactPullEnd}
+                      onBlockNextClose={armCompactCloseGuard}
                       onSwipeStart={handleSwipeStart}
                       onSwipeMove={handleSwipeMove}
                       onSwipeEnd={handleSwipeEnd}
@@ -3193,6 +3241,7 @@ export function LiveEventPage({
                     onExpansionGestureEnd={handleExpansionGestureEnd}
                     onCompactPullChange={handleCompactPullChange}
                     onCompactPullEnd={handleCompactPullEnd}
+                    onBlockNextClose={armCompactCloseGuard}
                     onSwipeStart={handleSwipeStart}
                     onSwipeMove={handleSwipeMove}
                     onSwipeEnd={handleSwipeEnd}
@@ -3222,6 +3271,7 @@ export function LiveEventPage({
                       onExpansionGestureEnd={handleExpansionGestureEnd}
                       onCompactPullChange={handleCompactPullChange}
                       onCompactPullEnd={handleCompactPullEnd}
+                      onBlockNextClose={armCompactCloseGuard}
                       onSwipeStart={handleSwipeStart}
                       onSwipeMove={handleSwipeMove}
                       onSwipeEnd={handleSwipeEnd}

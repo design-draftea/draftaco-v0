@@ -1,0 +1,28 @@
+.bottom-sheet__body.more-casino-bs__body {
+  padding-top: 20px;
+}
+
+.more-casino-bs__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.more-casino-bs__section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.more-casino-bs__section-title {
+  margin: 0;
+  color: #ffffff;
+  font-family: 'Red Hat Display', 'Red Hat Text', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.more-casino-bs .more-sports-bs__label {
+  white-space: normal;
+}

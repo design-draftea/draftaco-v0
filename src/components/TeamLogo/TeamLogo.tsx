@@ -1,12 +1,14 @@
 import { getTeamLogo } from '../../data/teamLogos'
 import { useSportsDbTeamLogo } from '../../hooks/useSportsDbTeamLogo'
-import { isSportsDbTeamLogoUrl } from '../../services/theSportsDbTeamLogos'
 import iconBasquete from '../../assets/iconSports/basketball.png'
 import iconFutebol from '../../assets/iconSports/soccer.png'
+import iconTenis from '../../assets/iconSports/tennis.png'
+import { getTennisPlayerCountryIcon } from '../../data/tennisCountryIcons'
 
 function getSportFallbackLogo(sport: string) {
   if (sport === 'basquete') return iconBasquete
   if (sport === 'futebol') return iconFutebol
+  if (sport === 'tenis') return iconTenis
   return ''
 }
 
@@ -30,9 +32,11 @@ export function TeamLogo({
   alt = '',
 }: TeamLogoProps) {
   const mappedLogo = getTeamLogo(teamName)
-  const sportsDbLogo = mappedLogo || (isSportsDbTeamLogoUrl(currentLogo) ? currentLogo : undefined)
+  const currentTeamLogo = mappedLogo || currentLogo
   const fallbackLogo = getSportFallbackLogo(sport)
-  const resolvedLogo = useSportsDbTeamLogo(teamName, sportsDbLogo, sport, fallbackLogo || undefined)
+  const sportsDbResolvedLogo = useSportsDbTeamLogo(teamName, currentTeamLogo, sport, fallbackLogo || undefined)
+  const tennisCountryIcon = sport === 'tenis' ? getTennisPlayerCountryIcon(teamName) : ''
+  const resolvedLogo = tennisCountryIcon || sportsDbResolvedLogo
 
   if (!resolvedLogo) {
     return placeholderClassName ? <span className={placeholderClassName} /> : null

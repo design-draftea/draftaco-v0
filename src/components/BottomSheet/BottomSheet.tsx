@@ -11,6 +11,7 @@ interface BottomSheetProps {
   children: ReactNode
   footerContent?: ReactNode
   blurBackdrop?: boolean
+  sheetClassName?: string
   bodyClassName?: string
   hideScrollIndicator?: boolean
 }
@@ -23,6 +24,7 @@ export function BottomSheet({
   children,
   footerContent,
   blurBackdrop = false,
+  sheetClassName = '',
   bodyClassName = '',
   hideScrollIndicator = false,
 }: BottomSheetProps) {
@@ -124,7 +126,7 @@ export function BottomSheet({
 
       {/* Bottom Sheet */}
       <div
-        className={`bottom-sheet ${isClosing ? 'bottom-sheet--closing' : ''}`}
+        className={`bottom-sheet ${sheetClassName} ${isClosing ? 'bottom-sheet--closing' : ''}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header - Fixed */}

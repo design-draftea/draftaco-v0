@@ -1,122 +1,98 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react'
+import { flushSync } from 'react-dom'
 import { ListIcon } from '@phosphor-icons/react'
 import './Header.css'
-import { SportRail } from '../SportRail'
-import type { SportRailVariant } from '../SportRail/SportRail'
 import logoReidoPitaco from '../../assets/logoReidoPitaco.svg'
-import iconBasquete from '../../assets/iconSports/basketball.png'
-import iconFutebol from '../../assets/iconSports/soccer.png'
-import { competicaoConfigBySport } from '../SportFilterBar/competicaoData'
-import { getCompetitionBadge } from '../../data/competitionBadges'
-import type { CompetitionLinkTarget } from '../../utils/competitionNavigation'
+import type { ProductMode } from '../../types/home'
+import { productLabels } from '../../data/homeProducts'
 
 interface HeaderProps {
-  railVariant?: SportRailVariant
+  visualVariant?: HeaderVisualVariant
+  activeProduct?: ProductMode
   activeSport?: string | null
-  selectedCompetitionId?: string | null
-  onSportChange?: (sportId: string) => void
-  onOpenCompetition?: (target: CompetitionLinkTarget) => void
+  rail?: ReactNode
+  onProductChange?: (product: ProductMode) => void
   children?: ReactNode
 }
 
-type HeaderToggleOption = 'apostas' | 'cassino'
+export type HeaderVisualVariant = 'default' | 'liquid-glass'
 
 const balanceDisplayOptions = ['R$ 3.400,00', 'R$ 3.400', 'R$ 3.4k']
 const headerLogoExpandedWidth = 103
 const headerLogoCompactWidth = 96
 const headerMinimumControlGap = 20
 
-const highlightCompetitionChips = [
-  competicaoConfigBySport.futebol.featuredCompetitions[0],
-  competicaoConfigBySport.basquete.featuredCompetitions[0],
-  ...competicaoConfigBySport.futebol.featuredCompetitions.slice(1),
-].filter(Boolean)
-
-const setHighlightChipIndicator = (
-  containerEl: HTMLDivElement | null,
-  activeChip: HTMLButtonElement | null | undefined
-) => {
-  if (!containerEl || !activeChip) {
-    containerEl?.classList.remove('header__highlight-chips--indicator-ready')
-    return
-  }
-
-  const containerRect = containerEl.getBoundingClientRect()
-  const chipRect = activeChip.getBoundingClientRect()
-
-  containerEl.style.setProperty('--highlight-chip-active-x', `${chipRect.left - containerRect.left}px`)
-  containerEl.style.setProperty('--highlight-chip-active-y', `${chipRect.top - containerRect.top}px`)
-  containerEl.style.setProperty('--highlight-chip-active-width', `${chipRect.width}px`)
-  containerEl.style.setProperty('--highlight-chip-active-height', `${chipRect.height}px`)
-  containerEl.classList.add('header__highlight-chips--indicator-ready')
-}
-
 export function Header({
-  railVariant = 'default',
+  visualVariant = 'default',
+  activeProduct = 'apostas',
   activeSport,
-  selectedCompetitionId,
-  onSportChange,
-  onOpenCompetition,
+  rail,
+  onProductChange,
   children,
 }: HeaderProps = {}) {
   const isSportPage = !!activeSport && activeSport !== 'destaques'
-  const usesCompetitionRail = railVariant === 'competitions'
-  const usesInvertedHierarchy = railVariant === 'inverted-hierarchy'
-  const hidesHighlightCompetitionChips = usesCompetitionRail || usesInvertedHierarchy
-  const [activeToggle, setActiveToggle] = useState<HeaderToggleOption>('apostas')
-  const [activeHighlightCompetition, setActiveHighlightCompetition] = useState('')
   const [balanceDisplayValue, setBalanceDisplayValue] = useState(balanceDisplayOptions[0])
   const [accountActionsWidth, setAccountActionsWidth] = useState(124)
   const [isLogoCompact, setIsLogoCompact] = useState(false)
+  const [displayProduct, setDisplayProduct] = useState<ProductMode>(activeProduct)
   const headerTopRef = useRef<HTMLDivElement>(null)
   const toggleRef = useRef<HTMLButtonElement>(null)
   const accountActionsRef = useRef<HTMLDivElement>(null)
-  const highlightChipsRef = useRef<HTMLDivElement>(null)
-  const highlightChipRefs = useRef<(HTMLButtonElement | null)[]>([])
   const balanceRef = useRef<HTMLDivElement>(null)
   const balanceLabelRef = useRef<HTMLSpanElement>(null)
   const balanceValueRef = useRef<HTMLSpanElement>(null)
   const balanceMeasureRefs = useRef<(HTMLSpanElement | null)[]>([])
+  const pointerProductChangeRef = useRef<ProductMode | null>(null)
+  const pointerProductChangeResetTimerRef = useRef<number | null>(null)
 
-  const handleHighlightCompetitionSelect = (competitionId: string, index: number) => {
-    setActiveHighlightCompetition(competitionId)
+  const clearPointerProductChangeResetTimer = () => {
+    if (pointerProductChangeResetTimerRef.current === null) return
 
-    const chipEl = highlightChipRefs.current[index]
-    const containerEl = highlightChipsRef.current
-    if (!chipEl || !containerEl) return
-
-    const chipLeft = chipEl.offsetLeft
-    const chipWidth = chipEl.offsetWidth
-    const containerWidth = containerEl.offsetWidth
-    const containerScroll = containerEl.scrollLeft
-    const padding = 12
-
-    if (chipLeft + chipWidth > containerScroll + containerWidth - padding) {
-      containerEl.scrollTo({ left: chipLeft - padding, behavior: 'smooth' })
-    } else if (chipLeft < containerScroll + padding) {
-      containerEl.scrollTo({ left: chipLeft - padding, behavior: 'smooth' })
-    }
+    window.clearTimeout(pointerProductChangeResetTimerRef.current)
+    pointerProductChangeResetTimerRef.current = null
   }
 
-  const getHighlightCompetitionSport = (competitionId: string) =>
-    competitionId.startsWith('bsq-') ? 'basquete' : 'futebol'
+  const scheduleProductChange = (nextProduct: ProductMode) => {
+    flushSync(() => {
+      if (displayProduct !== nextProduct) {
+        setDisplayProduct(nextProduct)
+      }
+      onProductChange?.(nextProduct)
+    })
+  }
 
-  const getHighlightCompetitionFallbackIcon = (competitionId: string) =>
-    getHighlightCompetitionSport(competitionId) === 'basquete' ? iconBasquete : iconFutebol
+  const handleTogglePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return
 
-  const handleSportRailChange = (sportId: string) => {
-    if (sportId === 'destaques') setActiveHighlightCompetition('')
-    onSportChange?.(sportId)
+    const nextProduct = displayProduct === 'apostas' ? 'cassino' : 'apostas'
+
+    pointerProductChangeRef.current = nextProduct
+    clearPointerProductChangeResetTimer()
+    pointerProductChangeResetTimerRef.current = window.setTimeout(() => {
+      pointerProductChangeRef.current = null
+      pointerProductChangeResetTimerRef.current = null
+    }, 800)
+
+    scheduleProductChange(nextProduct)
   }
 
   const handleToggleClick = () => {
-    setActiveToggle((current) => current === 'apostas' ? 'cassino' : 'apostas')
+    if (pointerProductChangeRef.current !== null) {
+      pointerProductChangeRef.current = null
+      clearPointerProductChangeResetTimer()
+      return
+    }
+
+    scheduleProductChange(displayProduct === 'apostas' ? 'cassino' : 'apostas')
   }
 
   useLayoutEffect(() => {
-    const activeIndex = highlightCompetitionChips.findIndex((chip) => chip.id === activeHighlightCompetition)
-    setHighlightChipIndicator(highlightChipsRef.current, highlightChipRefs.current[activeIndex])
-  }, [activeHighlightCompetition])
+    setDisplayProduct(activeProduct)
+  }, [activeProduct])
+
+  useLayoutEffect(() => () => {
+    clearPointerProductChangeResetTimer()
+  }, [])
 
   useLayoutEffect(() => {
     let isDisposed = false
@@ -213,36 +189,12 @@ export function Header({
     }
   }, [])
 
-  useEffect(() => {
-    const containerEl = highlightChipsRef.current
-    if (!containerEl) return
-
-    const activeIndex = highlightCompetitionChips.findIndex((chip) => chip.id === activeHighlightCompetition)
-    const activeChip = highlightChipRefs.current[activeIndex]
-    const updateHighlightIndicator = () => {
-      setHighlightChipIndicator(containerEl, highlightChipRefs.current[activeIndex])
-    }
-    const resizeObserver = typeof ResizeObserver !== 'undefined'
-      ? new ResizeObserver(updateHighlightIndicator)
-      : null
-
-    resizeObserver?.observe(containerEl)
-    if (activeChip) resizeObserver?.observe(activeChip)
-    window.addEventListener('resize', updateHighlightIndicator)
-
-    return () => {
-      resizeObserver?.disconnect()
-      window.removeEventListener('resize', updateHighlightIndicator)
-    }
-  }, [activeHighlightCompetition])
-
   return (
     <header
       className={[
         'header',
-        isSportPage ? 'header--sport-active' : 'header--highlight-chips',
-        usesCompetitionRail ? 'header--competition-rail' : '',
-        usesInvertedHierarchy ? 'header--inverted-hierarchy' : '',
+        isSportPage ? 'header--sport-active' : 'header--competition-rail',
+        visualVariant === 'liquid-glass' ? 'header--liquid-glass' : '',
         isLogoCompact ? 'header--compact-logo' : '',
       ]
         .filter(Boolean)
@@ -259,20 +211,21 @@ export function Header({
         <button
           ref={toggleRef}
           type="button"
-          className={`header__toggle header__toggle--${activeToggle}`}
-          aria-label={`Alternar para ${activeToggle === 'apostas' ? 'cassino' : 'apostas'}`}
-          aria-pressed={activeToggle === 'cassino'}
+          className={`header__toggle header__toggle--${displayProduct}`}
+          aria-label={`Alternar para ${productLabels[displayProduct === 'apostas' ? 'cassino' : 'apostas'].toLowerCase()}`}
+          aria-pressed={displayProduct === 'cassino'}
+          onPointerDown={handleTogglePointerDown}
           onClick={handleToggleClick}
         >
           <span
-            className={`header__toggle-btn${activeToggle === 'apostas' ? ' header__toggle-btn--active' : ''}`}
+            className={`header__toggle-btn${displayProduct === 'apostas' ? ' header__toggle-btn--active' : ''}`}
           >
-            APOSTAS
+            {productLabels.apostas}
           </span>
           <span
-            className={`header__toggle-btn${activeToggle === 'cassino' ? ' header__toggle-btn--active' : ''}`}
+            className={`header__toggle-btn${displayProduct === 'cassino' ? ' header__toggle-btn--active' : ''}`}
           >
-            CASSINO
+            {productLabels.cassino}
           </span>
         </button>
 
@@ -302,44 +255,7 @@ export function Header({
         </div>
       </div>
 
-      <SportRail
-        variant={railVariant}
-        activeSport={activeSport}
-        selectedCompetitionId={selectedCompetitionId}
-        onSportChange={handleSportRailChange}
-        onOpenCompetition={onOpenCompetition}
-      />
-      {!isSportPage && !hidesHighlightCompetitionChips && (
-        <div
-          className="header__highlight-chips"
-          ref={highlightChipsRef}
-        >
-          <span className="header__highlight-chip-indicator" aria-hidden="true" />
-          {highlightCompetitionChips.map((chip, index) => (
-            <button
-              key={chip.id}
-              ref={(el) => { highlightChipRefs.current[index] = el }}
-              type="button"
-              className={`header__highlight-chip${activeHighlightCompetition === chip.id ? ' header__highlight-chip--active' : ''}`}
-              onClick={() => {
-                handleHighlightCompetitionSelect(chip.id, index)
-                onOpenCompetition?.({
-                  id: chip.id,
-                  name: chip.name,
-                  sport: getHighlightCompetitionSport(chip.id),
-                })
-              }}
-            >
-              <img
-                src={getCompetitionBadge(chip.id, getHighlightCompetitionFallbackIcon(chip.id))}
-                alt=""
-                className="header__highlight-chip-icon"
-              />
-              <span>{chip.name}</span>
-            </button>
-          ))}
-        </div>
-      )}
+      {rail}
       {children}
     </header>
   )

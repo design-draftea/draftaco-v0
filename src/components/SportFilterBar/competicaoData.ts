@@ -4,17 +4,20 @@ import iconFutebol from '../../assets/iconSports/soccer.png'
 import iconTenis from '../../assets/iconSports/tennis.png'
 import iconVolei from '../../assets/iconSports/volleyball.png'
 
-import flagBrasil from '../../assets/flagBrasil.png'
-import flagAlemanha from '../../assets/flagAlemanha.png'
-import flagArgentina from '../../assets/flagArgentina.png'
-import flagEspanha from '../../assets/flagEspanha.png'
-import flagInglaterra from '../../assets/flagInglaterra.png'
-import flagItalia from '../../assets/flagItalia.png'
-import flagUSA from '../../assets/flagUSA.png'
-import flagMundo from '../../assets/flagMundo.png'
-import flagGrecia from '../../assets/flagGrecia.png'
-import flagBulgaria from '../../assets/flagBulgaria.png'
-import flagRussia from '../../assets/flagRussia.png'
+import flagAfricaDoSul from '../../assets/iconPaises/africa-do-sul.png'
+import flagAlemanha from '../../assets/iconPaises/alemanha.png'
+import flagArgentina from '../../assets/iconPaises/argentina.png'
+import flagAustralia from '../../assets/iconPaises/australia.png'
+import flagBrasil from '../../assets/iconPaises/brasil.png'
+import flagBulgaria from '../../assets/iconPaises/bulgaria.png'
+import flagEspanha from '../../assets/iconPaises/espanha.png'
+import flagEstadosUnidos from '../../assets/iconPaises/estados-unidos.png'
+import flagFranca from '../../assets/iconPaises/franca.png'
+import flagGrecia from '../../assets/iconPaises/grecia.png'
+import flagInglaterra from '../../assets/iconPaises/inglaterra.png'
+import flagItalia from '../../assets/iconPaises/italia.png'
+import flagMundo from '../../assets/iconPaises/mundo.png'
+import flagRussia from '../../assets/iconPaises/russia.png'
 
 import type { Competition, CompetitionCountry } from '../BottomSheet/CompeticaoBottomSheet'
 
@@ -48,7 +51,7 @@ const futebolConfig: CompeticaoConfig = {
     {
       id: 'fut-africa-do-sul',
       name: 'África do Sul',
-      flag: flagMundo,
+      flag: flagAfricaDoSul,
       competitions: [
         { id: 'fut-africa-premier', name: 'Premier Soccer League' },
       ],
@@ -66,7 +69,7 @@ const futebolConfig: CompeticaoConfig = {
     {
       id: 'fut-estados-unidos',
       name: 'Estados Unidos',
-      flag: flagUSA,
+      flag: flagEstadosUnidos,
       competitions: [
         { id: 'fut-mls', name: 'MLS' },
       ],
@@ -89,7 +92,7 @@ const futebolConfig: CompeticaoConfig = {
     {
       id: 'fut-australia',
       name: 'Austrália',
-      flag: flagMundo,
+      flag: flagAustralia,
       competitions: [{ id: 'fut-aus-a-league', name: 'A-League' }],
     },
     {
@@ -169,7 +172,7 @@ const basqueteConfig: CompeticaoConfig = {
     {
       id: 'bsq-eua',
       name: 'Estados Unidos',
-      flag: flagUSA,
+      flag: flagEstadosUnidos,
       competitions: [
         { id: 'bsq-nba-2', name: 'NBA' },
         { id: 'bsq-ncaab', name: 'NCAAB' },
@@ -195,16 +198,35 @@ const tenisConfig: CompeticaoConfig = {
   sportLabel: 'Tênis',
   sportIcon: iconTenis,
   featuredCompetitions: [
-    { id: 'ten-atp-finals', name: 'ATP Finals' },
-    { id: 'ten-wimbledon', name: 'Wimbledon' },
-    { id: 'ten-roland-garros', name: 'Roland Garros' },
+    { id: 'ten-roma-masters', name: 'Roma Masters' },
+    { id: 'ten-roma-f', name: 'Roma (F)' },
+    { id: 'ten-parma-f', name: 'Parma (F)' },
+    { id: 'ten-bordeaux', name: 'Bordeaux' },
   ],
   topCompetitions: [
-    { id: 'ten-atp-finals', name: 'ATP Finals' },
-    { id: 'ten-wimbledon', name: 'Wimbledon' },
-    { id: 'ten-roland-garros', name: 'Roland Garros' },
+    { id: 'ten-roma-masters', name: 'Roma Masters' },
+    { id: 'ten-roma-f', name: 'Roma (F)' },
+    { id: 'ten-parma-f', name: 'Parma (F)' },
+    { id: 'ten-bordeaux', name: 'Bordeaux' },
   ],
-  countries: [],
+  countries: [
+    {
+      id: 'ten-italia',
+      name: 'Itália',
+      flag: flagItalia,
+      competitions: [
+        { id: 'ten-roma-masters', name: 'Roma Masters' },
+        { id: 'ten-roma-f', name: 'Roma (F)' },
+        { id: 'ten-parma-f', name: 'Parma (F)' },
+      ],
+    },
+    {
+      id: 'ten-franca',
+      name: 'França',
+      flag: flagFranca,
+      competitions: [{ id: 'ten-bordeaux', name: 'Bordeaux' }],
+    },
+  ],
 }
 
 const voleiConfig: CompeticaoConfig = {
@@ -259,6 +281,10 @@ const enabledCompetitionIds = new Set([
   'bsq-nbb',
   'bsq-br-nbb',
   'bsq-euro-cup',
+  'ten-roma-masters',
+  'ten-roma-f',
+  'ten-parma-f',
+  'ten-bordeaux',
 ])
 
 export function isCompetitionEnabled(id: string): boolean {

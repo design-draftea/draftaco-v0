@@ -13,7 +13,7 @@ const tabs: Tab[] = [
   { id: 'aovivo', label: 'Ao Vivo', sectionId: 'section-aovivo' },
   { id: 'escadinha', label: 'Escadinha', sectionId: 'section-escadinha' },
   { id: 'breve', label: 'Começa em Breve', sectionId: 'section-breve' },
-  { id: 'tesouro', label: 'Tesouro do Rei', sectionId: 'section-tesouro' },
+  { id: 'tesouro', label: 'Tesouro do Pitaco', sectionId: 'section-tesouro' },
   { id: 'ganhando', label: 'Ganhando Agora', sectionId: 'section-ganhando' },
 ]
 

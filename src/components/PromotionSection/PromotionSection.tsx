@@ -1,68 +1,18 @@
 import { useState, useRef } from 'react'
 import { CaretRightIcon } from '@phosphor-icons/react'
 import './PromotionSection.css'
+import { sportsPromotions } from '../../data/homeProducts'
+import type { Promotion } from '../../types/home'
 
-// Images for cards
-import imgMissaoVerdao from '../../assets/imgMissaoVerdao.png'
-import imgPagamentoAntecipado from '../../assets/img-promo-pagamento-antecipado-futebol.png'
-import imgFlamengo from '../../assets/bgFlamengo.png'
-import imgTesouroRei from '../../assets/img-promo-tesouro-do-rei.png'
-
-interface Promotion {
-  id: string
-  type: 'missao' | 'vantagem'
-  timeLabel: string
-  hasTimer: boolean
-  label: string[]
-  title: string
-  description: string
-  image: string
+interface PromotionSectionProps {
+  promotions?: Promotion[]
+  title?: string
 }
 
-const promotions: Promotion[] = [
-  {
-    id: '1',
-    type: 'missao',
-    timeLabel: 'Termina em 3 dias',
-    hasTimer: true,
-    label: ['Missão'],
-    title: 'Aposte no Verdão e ganhe R$50!',
-    description: 'Aposte R$50 no jogo do Palmeiras na Liberta e ganhe R$10 em créditos.',
-    image: imgMissaoVerdao,
-  },
-  {
-    id: '2',
-    type: 'vantagem',
-    timeLabel: 'Só no Rei',
-    hasTimer: false,
-    label: ['Pagamento', 'Antecipado'],
-    title: 'Fature até 200% na múltipla.',
-    description: 'Se o time abrir dois gols, seu pagamento já cai na conta.',
-    image: imgPagamentoAntecipado,
-  },
-  {
-    id: '3',
-    type: 'missao',
-    timeLabel: 'Termina em 3 dias',
-    hasTimer: true,
-    label: ['Missão'],
-    title: 'Ganhe R$5 no brasileirão.',
-    description: 'Aposte R$50 no jogo do Flamengo e ganhe mais 20 coroas.',
-    image: imgFlamengo,
-  },
-  {
-    id: '5',
-    type: 'vantagem',
-    timeLabel: 'Só no Rei',
-    hasTimer: false,
-    label: ['Tesouro', 'do Rei'],
-    title: 'Tesouro do Rei',
-    description: 'Quanto mais você jogar mais chaves irá conseguir.',
-    image: imgTesouroRei,
-  },
-]
-
-export function PromotionSection() {
+export function PromotionSection({
+  promotions = sportsPromotions,
+  title = 'Promoções',
+}: PromotionSectionProps = {}) {
   const [isDragging, setIsDragging] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const startX = useRef(0)
@@ -97,7 +47,7 @@ export function PromotionSection() {
     <section id="section-promocoes" className="promotion-section">
       <div className="promotion-section__header">
         <div className="promotion-section__title">
-          <span>Promoções</span>
+          <span>{title}</span>
           <CaretRightIcon aria-hidden="true" className="promotion-section__arrow" weight="bold" />
         </div>
       </div>

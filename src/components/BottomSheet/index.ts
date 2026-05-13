@@ -7,3 +7,5 @@ export {
 } from './BottomSheet'
 export { CompeticaoBottomSheet } from './CompeticaoBottomSheet'
 export type { Competition, CompetitionCountry } from './CompeticaoBottomSheet'
+export { MoreSportsBottomSheet } from './MoreSportsBottomSheet'
+export { MoreCasinoBottomSheet } from './MoreCasinoBottomSheet'

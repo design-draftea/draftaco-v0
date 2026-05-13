@@ -16,13 +16,13 @@ import iconEsoccer from '../../assets/iconSports/e-soccer.png'
 import iconFutebol from '../../assets/iconSports/soccer.png'
 import iconTenis from '../../assets/iconSports/tennis.png'
 import iconVolei from '../../assets/iconSports/volleyball.png'
-import flagBrasil from '../../assets/flagBrasil.png'
-import flagMundo from '../../assets/flagMundo.png'
-import flagInglaterra from '../../assets/flagInglaterra.png'
-import flagEspanha from '../../assets/flagEspanha.png'
-import flagAlemanha from '../../assets/flagAlemanha.png'
-import flagUSA from '../../assets/flagUSA.png'
-import flagArgentina from '../../assets/flagArgentina.png'
+import flagAlemanha from '../../assets/iconPaises/alemanha.png'
+import flagArgentina from '../../assets/iconPaises/argentina.png'
+import flagBrasil from '../../assets/iconPaises/brasil.png'
+import flagEspanha from '../../assets/iconPaises/espanha.png'
+import flagEstadosUnidos from '../../assets/iconPaises/estados-unidos.png'
+import flagInglaterra from '../../assets/iconPaises/inglaterra.png'
+import flagMundo from '../../assets/iconPaises/mundo.png'
 // NBA Teams
 import escudoBulls from '../../assets/escudoBullsGde.png'
 import escudoPistons from '../../assets/escudoPistonsGde.png'
@@ -443,7 +443,7 @@ const leagues: League[] = [
   {
     id: 'nba',
     name: 'NBA',
-    flag: flagUSA,
+    flag: flagEstadosUnidos,
     isOpen: true,
     sport: 'basquete',
     matches: [
@@ -487,7 +487,7 @@ const leagues: League[] = [
   {
     id: 'ncaab',
     name: 'NCAAB',
-    flag: flagUSA,
+    flag: flagEstadosUnidos,
     isOpen: true,
     sport: 'basquete',
     matches: [

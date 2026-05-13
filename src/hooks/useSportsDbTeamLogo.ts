@@ -18,7 +18,7 @@ export function useSportsDbTeamLogo(
   useEffect(() => {
     let cancelled = false
 
-    if (!teamName || isSportsDbTeamLogoUrl(currentLogo)) return
+    if (!teamName || sport === 'tenis' || isSportsDbTeamLogoUrl(currentLogo)) return
 
     getSportsDbTeamLogo(teamName, sport).then((logoUrl) => {
       if (!cancelled && logoUrl) setResolvedLogo({ teamName, sport, logoUrl })
@@ -32,5 +32,5 @@ export function useSportsDbTeamLogo(
   if (isSportsDbTeamLogoUrl(currentLogo)) return currentLogo
   if (resolvedLogo?.teamName === teamName && resolvedLogo.sport === sport) return resolvedLogo.logoUrl
 
-  return fallbackLogo ?? currentLogo
+  return currentLogo || fallbackLogo
 }

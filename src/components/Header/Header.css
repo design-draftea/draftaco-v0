@@ -21,13 +21,13 @@
   transition: height var(--sport-header-transition, 160ms cubic-bezier(0.2, 0, 0, 1));
 }
 
-/* Esporte ativo: estende o fundo escuro até cobrir o SportFilterBar */
+/* Esporte ativo: estende o fundo escuro até cobrir a navegação e a lista de eventos */
 .header--sport-active .header__bg-dark {
   height: var(--sport-header-bg-height, 362px);
 }
 
-.header--highlight-chips .header__bg-dark {
-  height: var(--highlight-header-bg-height, 266px);
+.header--competition-rail .header__bg-dark {
+  height: var(--highlight-header-bg-height, 222px);
 }
 
 /* Layer 2: glow roxo pré-renderizado para evitar blur pesado em runtime */
@@ -43,6 +43,24 @@
   background-size: 100% 180px;
   z-index: 0;
   pointer-events: none;
+}
+
+@media (max-width: 499px) {
+  .header,
+  .header__bg-dark,
+  .header__bg-gradient {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .header__bg-dark {
+    will-change: height, transform;
+  }
+
+  .header__bg-gradient {
+    will-change: transform;
+  }
 }
 
 /* Barra principal */
@@ -101,7 +119,8 @@
   background: #ffffff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
   transform: translateX(0);
-  transition: transform 0.22s ease;
+  transition: transform 150ms cubic-bezier(0.2, 0, 0, 1);
+  will-change: transform;
 }
 
 .header__toggle--cassino::before {
@@ -134,133 +153,12 @@
   color: #ffffff;
   white-space: nowrap;
   pointer-events: none;
-  transition: color 0.18s ease, transform 0.18s ease;
+  transition: color 120ms ease, transform 120ms ease;
 }
 
 .header__toggle-btn--active {
   color: #000000;
   transform: scale(1.02);
-}
-
-.header__highlight-chips {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  gap: 8px;
-  width: 100%;
-  padding: 0 12px 20px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  box-sizing: border-box;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-x;
-  isolation: isolate;
-}
-
-.header__highlight-chips::-webkit-scrollbar {
-  display: none;
-}
-
-.header__highlight-chip-indicator {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 0;
-  width: var(--highlight-chip-active-width, 0px);
-  height: var(--highlight-chip-active-height, 28px);
-  border-radius: 160px;
-  background: linear-gradient(45deg, rgba(82, 40, 255, 0.56) 0.62%, rgba(174, 24, 255, 0.56) 100%), #131313;
-  box-shadow: 0 6px 16px rgba(82, 40, 255, 0.16);
-  opacity: 0;
-  pointer-events: none;
-  transform: translate3d(var(--highlight-chip-active-x, 0), var(--highlight-chip-active-y, 0), 0) scale(0.98);
-  transform-origin: center;
-  transition:
-    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
-    width 220ms cubic-bezier(0.22, 1, 0.36, 1),
-    height 220ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 120ms ease;
-  will-change: transform, width, height, opacity;
-}
-
-.header__highlight-chip-indicator::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(45deg, rgba(82, 40, 255, 0.64) 0.62%, rgba(174, 24, 255, 0.64) 100%);
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-.header__highlight-chips--indicator-ready .header__highlight-chip-indicator {
-  opacity: 1;
-  transform: translate3d(var(--highlight-chip-active-x, 0), var(--highlight-chip-active-y, 0), 0) scale(1);
-  transition:
-    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
-    width 220ms cubic-bezier(0.22, 1, 0.36, 1),
-    height 220ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 120ms ease;
-}
-
-.header__highlight-chip {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 28px;
-  padding: 0 16px;
-  border: none;
-  border-radius: 160px;
-  background-color: #1a1a1a;
-  color: #a8a8a8;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition:
-    color 180ms ease,
-    transform 120ms ease;
-}
-
-.header__highlight-chip:active {
-  transform: scale(0.96);
-}
-
-.header__highlight-chip span {
-  font-family: 'Red Hat Text', sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  color: currentColor;
-  white-space: nowrap;
-}
-
-.header__highlight-chip--active {
-  position: relative;
-  background: transparent;
-  color: #ffffff;
-}
-
-.header__highlight-chip--active::before {
-  display: none;
-}
-
-.header__highlight-chip-icon {
-  width: 16px;
-  height: 16px;
-  object-fit: contain;
-  flex-shrink: 0;
-  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.header__highlight-chip--active .header__highlight-chip-icon {
-  transform: scale(1.08);
 }
 
 /* Saldo + menu */
@@ -365,6 +263,90 @@
   height: 18px;
 }
 
+.header--liquid-glass .header__toggle,
+.header--liquid-glass .header__menu-btn {
+  isolation: isolate;
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  box-shadow:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.2),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.035),
+    0 10px 22px rgba(0, 0, 0, 0.16);
+  transform: translateZ(0);
+  -webkit-backdrop-filter: blur(30px) saturate(100%) contrast(100%) brightness(100%);
+  backdrop-filter: blur(30px) saturate(100%) contrast(100%) brightness(100%);
+}
+
+.header--liquid-glass .header__toggle::before {
+  z-index: 1;
+  background:
+    radial-gradient(100% 120% at 50% 0%, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.12) 40%, rgba(255, 255, 255, 0.045) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.045) 100%),
+    rgba(255, 255, 255, 0.07);
+  box-shadow:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -7px 12px rgba(0, 0, 0, 0.16);
+}
+
+.header--liquid-glass .header__toggle::after,
+.header--liquid-glass .header__menu-btn::before,
+.header--liquid-glass .header__menu-btn::after {
+  content: '';
+  position: absolute;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.header--liquid-glass .header__toggle::after,
+.header--liquid-glass .header__menu-btn::after {
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(90% 100% at 0% 0%, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 34%),
+    radial-gradient(58% 62% at 100% 100%, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 38%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0) 14%, rgba(255, 255, 255, 0) 88%, rgba(255, 255, 255, 0.035));
+  mix-blend-mode: screen;
+  opacity: 0.64;
+}
+
+.header--liquid-glass .header__menu-btn::before {
+  inset: 1px 9px auto;
+  z-index: 1;
+  height: 38%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04) 44%, rgba(255, 255, 255, 0));
+  opacity: 0.38;
+}
+
+.header--liquid-glass .header__toggle-btn,
+.header--liquid-glass .header__menu-icon {
+  position: relative;
+  z-index: 2;
+}
+
+.header--liquid-glass .header__toggle-btn {
+  color: rgba(255, 255, 255, 0.78);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.header--liquid-glass .header__toggle-btn--active {
+  color: #ffffff;
+  text-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.55),
+    0 0 10px rgba(255, 255, 255, 0.12);
+}
+
+.header--liquid-glass .header__menu-btn:hover,
+.header--liquid-glass .header__menu-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .header--liquid-glass .header__toggle,
+  .header--liquid-glass .header__menu-btn {
+    background: transparent;
+  }
+}
+
 @media (max-width: 380px) {
   .header__top {
     gap: 4px;
@@ -402,10 +384,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .header__highlight-chip-indicator,
-  .header__highlight-chips--indicator-ready .header__highlight-chip-indicator,
-  .header__highlight-chip,
-  .header__highlight-chip-icon,
   .header__menu-btn {
     transition: none;
   }

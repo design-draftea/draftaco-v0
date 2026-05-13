@@ -3,6 +3,7 @@ import { CaretDownIcon, ChartBarIcon } from '@phosphor-icons/react'
 import './OffersSection.css'
 import { TeamLogo } from '../TeamLogo'
 import { useSlidingActiveIndicator } from '../../hooks/useSlidingActiveIndicator'
+import { getTennisPlayerCountryIcon } from '../../data/tennisCountryIcons'
 
 import iconCombinada from '../../assets/iconCombinada.png'
 import iconSuperCombinada from '../../assets/iconSuperCombinada.png'
@@ -33,6 +34,7 @@ import escudoLakers from '../../assets/escudoLakers.png'
 import escudoCavaliers from '../../assets/escudoMagic.png' // Using Magic as placeholder for Cavaliers
 import iconBasquete from '../../assets/iconSports/basketball.png'
 import iconFutebol from '../../assets/iconSports/soccer.png'
+import iconTenis from '../../assets/iconSports/tennis.png'
 import playerJimmyButler from '../../assets/playerJimmyButler.png'
 import playerLeBronJames from '../../assets/playerLeBronJames.png'
 import playerLukaDoncic from '../../assets/playerLukaDoncic.png'
@@ -223,6 +225,82 @@ const updateLiveOfferTime = (time: string): string => {
 
 const allOffers: OfferCard[] = [
   // === AS MELHORES (default) ===
+  {
+    id: 'ten-melh-roma-masters',
+    type: 'super_combinada',
+    category: 'melhores',
+    sport: 'tenis',
+    sportOnly: true,
+    title: 'Roma no saque!',
+    tagLabel: 'Super Combinada',
+    tagColor: '#9730FF',
+    tagIcon: iconSuperCombinada,
+    subtitle: 'Roma Masters',
+    date: 'Hoje',
+    oldOdd: '6.10x',
+    newOdd: '8.25x',
+    playerEvents: [
+      { icon: getTennisPlayerCountryIcon('Basilashvili', iconTenis), name: 'Rublev x Basilashvili', value: 'Basilashvili', market: 'Vencedor' },
+      { icon: getTennisPlayerCountryIcon('Medjedovic', iconTenis), name: 'Medjedovic x Landaluce', value: 'Medjedovic', market: 'Vencedor' },
+      { icon: getTennisPlayerCountryIcon('Medvedev', iconTenis), name: 'Tirante x Medvedev', value: 'Medvedev', market: 'Vencedor' },
+    ],
+  },
+  {
+    id: 'ten-melh-roma-f',
+    type: 'combinada',
+    category: 'melhores',
+    sport: 'tenis',
+    sportOnly: true,
+    title: 'Elas em Roma!',
+    tagLabel: 'Combinadas',
+    tagColor: '#DC2626',
+    tagIcon: iconCombinada,
+    subtitle: 'Roma (F)',
+    oldOdd: '5.75x',
+    newOdd: '7.10x',
+    playerEvents: [
+      { icon: getTennisPlayerCountryIcon('Gauff', iconTenis), name: 'Gauff x Andreeva', value: 'Mais de 21.5', market: 'Games' },
+      { icon: getTennisPlayerCountryIcon('Swiatek', iconTenis), name: 'Pegula x Swiatek', value: 'Swiatek', market: 'Vencedor' },
+      { icon: getTennisPlayerCountryIcon('Rybakina', iconTenis), name: 'Svitolina x Rybakina', value: 'Rybakina', market: 'Vencedor' },
+    ],
+  },
+  {
+    id: 'ten-melh-parma-f',
+    type: 'aumentada',
+    category: 'melhores',
+    sport: 'tenis',
+    sportOnly: true,
+    title: 'Parma acelerada!',
+    tagLabel: 'Aumentada',
+    tagColor: '#EAB308',
+    tagIcon: iconAumentada,
+    subtitle: 'Parma (F)',
+    oldOdd: '4.40x',
+    newOdd: '5.60x',
+    playerEvents: [
+      { icon: getTennisPlayerCountryIcon('Sherif', iconTenis), name: 'Yue Yuan x Sherif', value: 'Sherif', market: 'Vencedor' },
+      { icon: getTennisPlayerCountryIcon('Krejcikova', iconTenis), name: 'Krejcikova x Friedsam', value: 'Krejcikova', market: 'Vencedor' },
+      { icon: getTennisPlayerCountryIcon('Sierra', iconTenis), name: 'Sierra x Juvan', value: 'Sierra', market: 'Vencedor' },
+    ],
+  },
+  {
+    id: 'ten-melh-bordeaux',
+    type: 'pechincha',
+    category: 'melhores',
+    sport: 'tenis',
+    sportOnly: true,
+    title: 'Bordeaux quente!',
+    tagLabel: 'Pechincha',
+    tagColor: '#9730FF',
+    tagIcon: iconPechincha,
+    subtitle: 'Bordeaux',
+    newOdd: '3.95x',
+    playerEvents: [
+      { icon: getTennisPlayerCountryIcon('Bonzi', iconTenis), name: 'Kouame x Bonzi', value: 'Bonzi', market: 'Vencedor' },
+      { icon: getTennisPlayerCountryIcon('Shevchenko', iconTenis), name: 'Shevchenko x Gaston', value: 'Shevchenko', market: 'Vencedor' },
+      { icon: getTennisPlayerCountryIcon('Virtanen', iconTenis), name: 'Virtanen x Perricard', value: 'Mais de 23.5', market: 'Games' },
+    ],
+  },
   {
     id: '1',
     type: 'super_combinada',

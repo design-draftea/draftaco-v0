@@ -1,4 +1,4 @@
-import flagMundo from '../../assets/flagMundo.png'
+import flagMundo from '../../assets/iconPaises/mundo.png'
 import flacoLopezProps from '../../assets/flacoLopezProps.png'
 import arrascaetaProps from '../../assets/arrascaetaProps.png'
 import depayProps from '../../assets/depayProps.png'

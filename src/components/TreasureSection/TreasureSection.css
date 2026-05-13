@@ -37,47 +37,69 @@
 }
 
 .treasure-section__box {
+  position: relative;
   display: flex;
-  align-items: center;
-  height: 112px;
-  padding: 16px;
+  align-items: flex-end;
+  min-height: 278px;
+  padding: 164px 24px 24px;
   border-radius: 12px;
-  background-color: #1e1e1e;
-  background-size: auto 100%;
-  background-position: right center;
+  background-color: #1a1a1a;
+  overflow: visible;
+}
+
+.treasure-section__box::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  z-index: 0;
+  width: 335px;
+  height: 220px;
+  background-image: url('../../assets/tesouro-do-pitaco.png');
   background-repeat: no-repeat;
-  overflow: hidden;
+  background-position: center;
+  background-size: 335px 220px;
+  pointer-events: none;
+  transform: translateX(-50%);
 }
 
 .treasure-section__content {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  
+  align-items: center;
+  gap: 8px;
   flex: 1;
-  height: 100%;
+  width: 100%;
 }
 
 .treasure-section__text {
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 
 .treasure-section__label {
   font-family: 'Red Hat Text', sans-serif;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 400;
   color: #ffffff;
-  line-height: 1;
+  line-height: 1.2;
 }
 
 .treasure-section__value {
   font-family: 'Red Hat Text', sans-serif;
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
-  color: #32a866;
   line-height: 1.2;
   display: flex;
   align-items: baseline;
+  background: linear-gradient(90deg, var(--Tokens-layer-layer-gradient-05, #d2ff72) 0%, var(--Tokens-layer-layer-gradient-06, #56deea) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 
 .treasure-value__prefix {
@@ -105,15 +127,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 32px;
+  height: 40px;
   padding: 0 16px;
-  background-color: #32a866;
+  background: linear-gradient(45deg, var(--Layer-layer-gradient-02, #5228ff) 0.62%, var(--Layer-layer-gradient-01, #ae18ff) 100%);
   border: none;
-  border-radius: 1000px;
+  border-radius: var(--Spacing-160, 160px);
   cursor: pointer;
-  width: fit-content;
+  width: 100%;
   font-family: 'Red Hat Text', sans-serif;
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 700;
   color: #ffffff;
   line-height: 1;

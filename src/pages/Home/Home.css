@@ -4,7 +4,7 @@
   --sport-header-bg-height: 362px;
   --highlight-header-bg-height: 266px;
   --header-top-padding-y: 20px;
-  --sport-rail-padding-bottom: 20px;
+  --sport-rail-padding-bottom: 24px;
   --sport-rail-item-gap: 4px;
   --sport-rail-label-max-height: 14px;
   --sport-rail-label-opacity: 1;
@@ -42,10 +42,6 @@
   --highlight-header-bg-height: 222px;
   --header-top-padding-y: 12px;
   --sport-rail-padding-bottom: 10px;
-  --sport-rail-item-gap: 0px;
-  --sport-rail-label-max-height: 0px;
-  --sport-rail-label-opacity: 0;
-  --sport-rail-label-translate-y: -4px;
   padding-top: 156px;
 }
 
@@ -89,7 +85,7 @@
 }
 
 .home--novo-trilho.home--header-compact {
-  --highlight-header-bg-height: 182px;
+  --highlight-header-bg-height: 215px;
   --sport-header-bg-height: 182px;
   padding-top: var(--home-header-content-padding-top, 159px);
 }
@@ -119,27 +115,11 @@
   padding-top: 0;
 }
 
-.home--novo-trilho-02,
-.home--header-morph-active.home--novo-trilho-02,
-.home--novo-trilho-02.home--header-compact {
-  padding-top: var(--home-header-content-padding-top, 159px);
-}
-
-.home--novo-trilho-02.home--sport-active,
-.home--header-morph-active.home--novo-trilho-02.home--sport-active,
-.home--header-morph-active.home--novo-trilho-02.home--sport-active.home--header-compact {
-  padding-top: var(--home-header-content-padding-top, 253px);
-}
-
-.home--novo-trilho-02.home--sport-active.home--header-compact {
-  padding-top: var(--home-header-content-padding-top, 205px);
-}
-
 .home__content-event-rail {
   position: relative;
   z-index: 0;
   --sports-carousel-collapse-max-height: 112px;
-  --sports-carousel-collapse-padding-bottom: 20px;
+  --sports-carousel-collapse-padding-bottom: 24px;
   --sports-carousel-collapse-opacity: 1;
   --sports-carousel-collapse-translate-y: 0px;
 }
@@ -149,9 +129,6 @@
 .home--header-morph-active .sport-rail,
 .home--header-morph-active .sport-rail__item,
 .home--header-morph-active .sport-rail__label,
-.home--header-morph-active .sport-rail__sport-chips,
-.home--header-morph-active .sport-rail__sport-chip,
-.home--header-morph-active .sport-filter-bar,
 .home--header-morph-active .sports-match-carousel,
 .home--header-morph-active .sports-match-carousel__track,
 .home--header-morph-active .sports-match-carousel__card-header,
@@ -163,12 +140,12 @@
   transition: none;
 }
 
-.home[data-market-sticky-engaged="true"] .header--highlight-chips .header__bg-dark {
+.home[data-market-sticky-engaged="true"] .header--competition-rail .header__bg-dark {
   height: max(var(--highlight-header-bg-height, 266px), var(--home-market-sticky-bg-height, 266px));
   transition: none;
 }
 
-.home[data-market-sticky-rail-protection="true"] .header--highlight-chips .header__bg-dark {
+.home[data-market-sticky-rail-protection="true"] .header--competition-rail .header__bg-dark {
   height: max(var(--highlight-header-bg-height, 266px), var(--home-market-sticky-bg-height, 266px));
   transition: none;
 }
@@ -189,16 +166,30 @@
   transition: none;
 }
 
-/* Padrão e v2 - Sem dividers */
+/* Home sem dividers */
 .home--no-dividers .promotion-section,
 .home--no-dividers .offers-section,
 .home--no-dividers .live-section,
 .home--no-dividers .escadinha-section,
 .home--no-dividers .prematch-section,
 .home--no-dividers .treasure-section,
-.home--no-dividers .winning-now-section {
+.home--no-dividers .winning-now-section,
+.home--no-dividers .casino-games-section {
   border-bottom: none;
   padding: 0 0 24px 0;
+}
+
+.home--casino-active.home--no-dividers .promotion-section {
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.home--casino-active .casino-content {
+  padding-top: 24px;
+}
+
+.home--casino-active .casino-content > .treasure-section:last-child {
+  padding-bottom: 0;
 }
 
 @media (max-width: 499px) {
@@ -225,6 +216,8 @@
       .prematch-section,
       .treasure-section,
       .winning-now-section,
+      .casino-content,
+      .casino-games-section,
       .competition-players,
       .competition-longterm
     ):last-of-type {

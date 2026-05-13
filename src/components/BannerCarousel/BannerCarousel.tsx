@@ -10,14 +10,9 @@ import {
   MissionFaqItem,
   MissionTimer 
 } from '../BottomSheet'
+import { sportsBanners } from '../../data/homeProducts'
+import type { Banner } from '../../types/home'
 
-// Backgrounds
-import bg1x2 from '../../assets/bg1x2.png'
-import bgAumentada from '../../assets/bgAumentada.png'
-import bgVirtuais from '../../assets/bgVirtuais.png'
-import bgAoVivoBasquete from '../../assets/aoVivoBasquete.png'
-import bgAoVivoTenis from '../../assets/bgAoVivoTenis.png'
-import bgCombinada from '../../assets/combinada.png'
 import iconSuperCombinada from '../../assets/iconSuperCombinada.png'
 import iconAoVivo from '../../assets/iconAoVivo.png'
 import iconTenis from '../../assets/iconSports/tennis.png'
@@ -27,186 +22,15 @@ import iconAumentada from '../../assets/iconAumentada.png'
 import iconAtivo from '../../assets/iconAtivo.svg'
 import imgMissaoRodadaGratis from '../../assets/imgMissaoRodadaGratis.png'
 
-// Escudos para Ao Vivo
-import escudoKnicksGde from '../../assets/escudoKnicksGde.png'
-import escudoMagicGde from '../../assets/escudoMagicGde.png'
-
-// Escudos para 1x2
-import escudoBarcelonaGde from '../../assets/escudoBarcelonaGde.png'
-import escudoRealGde from '../../assets/escudoRealGde.png'
-
-// Bandeiras
-import flagRussia from '../../assets/flagRussia.png'
-import flagUSA from '../../assets/flagUSA.png'
-
 // Mission progress type
 interface MissionProgress {
   current: number
   target: number
 }
 
-interface LiveTeam {
-  name: string
-  shortName: string
-  badge: string
-  score: number
+interface BannerCarouselProps {
+  banners?: Banner[]
 }
-
-interface LiveMatch {
-  homeTeam: LiveTeam
-  awayTeam: LiveTeam
-  matchTime: string
-  odds: { home: string; draw: string; away: string }
-}
-
-interface TennisPlayer {
-  name: string
-  sets: number
-  games: number
-  points: string
-  isServing: boolean
-  flag?: string
-}
-
-interface TennisMatch {
-  player1: TennisPlayer
-  player2: TennisPlayer
-  currentSet: string
-  setScore: string
-  odds: { player1: string; player2: string }
-}
-
-interface ComboStat {
-  value: string
-  label: string
-}
-
-interface Banner {
-  id: number
-  type: 'missao' | '1x2' | 'torneio' | 'aumentada' | 'virtuais' | 'aoVivo' | 'aoVivoTenis' | 'longoPrazo' | 'combinada'
-  headerLeft: string
-  headerRight: string
-  showTimer?: boolean
-  background: string
-  title: string
-  description: string
-  buttonText?: string
-  showInfoBtn?: boolean
-  odds?: { team: string; value: string; badge?: string }[]
-  oddBoosted?: { old: string; new: string }
-  liveMatch?: LiveMatch
-  tennisMatch?: TennisMatch
-  comboStats?: ComboStat[]
-}
-
-const banners: Banner[] = [
-  {
-    id: 7,
-    type: 'aoVivoTenis',
-    headerLeft: 'Ao Vivo',
-    headerRight: 'Aberto de Madrid',
-    showTimer: true,
-    background: bgAoVivoTenis,
-    title: '',
-    description: '',
-    tennisMatch: {
-      player1: {
-        name: 'A. Sabalenka',
-        sets: 5,
-        games: 5,
-        points: '40',
-        isServing: true,
-        flag: flagRussia,
-      },
-      player2: {
-        name: 'P. Stearns',
-        sets: 2,
-        games: 2,
-        points: '15',
-        isServing: false,
-        flag: flagUSA,
-      },
-      currentSet: '1º set',
-      setScore: '1 x 0',
-      odds: { player1: '1.22x', player2: '4.75x' },
-    },
-  },
-  {
-    id: 9,
-    type: 'combinada',
-    headerLeft: 'Hoje, 17:00',
-    headerRight: 'Chelsea x Arsenal',
-    background: bgCombinada,
-    title: 'Super Combo',
-    description: '',
-    comboStats: [
-      { value: 'CHE', label: 'Resultado Final' },
-      { value: 'CHE +2', label: 'Total de Gols' },
-      { value: 'ARS +4', label: 'Total de Escanteios' },
-    ],
-    oddBoosted: { old: '7.50x', new: '10.50x' },
-  },
-  {
-    id: 6,
-    type: 'aoVivo',
-    headerLeft: 'Ao Vivo',
-    headerRight: 'NBA',
-    showTimer: true,
-    background: bgAoVivoBasquete,
-    title: '',
-    description: '',
-    liveMatch: {
-      homeTeam: {
-        name: 'Knicks',
-        shortName: 'NYK',
-        badge: escudoKnicksGde,
-        score: 42,
-      },
-      awayTeam: {
-        name: 'Magic',
-        shortName: 'ORL',
-        badge: escudoMagicGde,
-        score: 38,
-      },
-      matchTime: "Q2 05:00",
-      odds: { home: '1.72x', draw: '', away: '2.15x' },
-    },
-  },
-  {
-    id: 2,
-    type: '1x2',
-    headerLeft: 'Hoje, 17:00',
-    headerRight: 'Champions League',
-    background: bg1x2,
-    title: '',
-    description: '',
-    odds: [
-      { team: 'Real Madrid', value: '1.78x', badge: escudoRealGde },
-      { team: 'Empate', value: '3.50x' },
-      { team: 'Barcelona', value: '2.10x', badge: escudoBarcelonaGde },
-    ],
-  },
-  {
-    id: 4,
-    type: 'aumentada',
-    headerLeft: '11/09, 16:00',
-    headerRight: 'Flamengo vs Racing',
-    background: bgAumentada,
-    title: 'Aumentada',
-    description: 'Pedro\nMais de 3.5\nFinalizações ao gol',
-    oddBoosted: { old: '3.87x', new: '4.50x' },
-  },
-  {
-    id: 5,
-    type: 'virtuais',
-    headerLeft: 'Novidade no Rei',
-    headerRight: 'Virtuais',
-    background: bgVirtuais,
-    title: 'Chegou Virtuais!',
-    description: 'Jogos a todo minuto para você não parar de se divertir.',
-    buttonText: 'Jogue Agora',
-  },
-]
 
 const AUTO_PLAY_INTERVAL = 10000 // 10 segundos
 
@@ -281,7 +105,7 @@ function updateMatchTime(timeStr: string): string {
   }
 }
 
-export function BannerCarousel() {
+export function BannerCarousel({ banners = sportsBanners }: BannerCarouselProps = {}) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const [activatedMissions, setActivatedMissions] = useState<Record<number, MissionProgress>>({})
@@ -685,7 +509,7 @@ export function BannerCarousel() {
               )}
 
               {/* Regular Content */}
-              {banner.type !== 'aoVivo' && banner.type !== 'aoVivoTenis' && banner.type !== 'combinada' && (
+              {!banner.hideContent && banner.type !== 'aoVivo' && banner.type !== 'aoVivoTenis' && banner.type !== 'combinada' && (
               <div className={`banner-card__info ${banner.odds ? 'banner-card__info--full' : ''}`}>
 
                 {/* Times com escudo (1x2) */}
@@ -707,7 +531,15 @@ export function BannerCarousel() {
                   </div>
                 ) : (
                 <div className="banner-card__text">
-                  <h3 className={`banner-card__title${['aumentada', 'missao', 'virtuais'].includes(banner.type) ? ' banner-card__title--aumentada' : ''}`}>
+                  <h3
+                    className={[
+                      'banner-card__title',
+                      ['aumentada', 'virtuais'].includes(banner.type) ? 'banner-card__title--aumentada' : '',
+                      banner.noWrapTitle ? 'banner-card__title--nowrap' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                  >
                     {banner.type === 'aumentada' && (
                       <img src={iconAumentada} alt="" className="banner-card__boost-icon" />
                     )}

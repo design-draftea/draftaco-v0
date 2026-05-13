@@ -3,6 +3,8 @@ import iconAoVivo from '../../assets/iconAoVivo.png'
 import escudoDefaultBasquete from '../../assets/escudoDefaultBasquete.png'
 import iconBasquete from '../../assets/iconSports/basketball.png'
 import iconFutebol from '../../assets/iconSports/soccer.png'
+import iconTenis from '../../assets/iconSports/tennis.png'
+import { getTennisPlayerCountryIcon } from '../../data/tennisCountryIcons'
 import { useSportsDbTeamLogo } from '../../hooks/useSportsDbTeamLogo'
 import '../LiveSection/LiveSection.css'
 
@@ -40,6 +42,11 @@ export interface LiveMatchCardMatch {
     under: string
     over: string
   }
+  totalGamesOdds?: {
+    line: number
+    under: string
+    over: string
+  }
   handicapOdds?: {
     line: number
     home: string
@@ -67,12 +74,19 @@ interface LiveMatchCardProps {
 
 export function LiveMatchCard({ match, sport, activeMarket, currentTime, onClick }: LiveMatchCardProps) {
   const isBasketball = sport === 'basquete'
-  const sportFallbackIcon = isBasketball ? iconBasquete : iconFutebol
-  const homeTeamIcon = useSportsDbTeamLogo(match.homeTeam.name, match.homeTeam.icon, sport, sportFallbackIcon)
-  const awayTeamIcon = useSportsDbTeamLogo(match.awayTeam.name, match.awayTeam.icon, sport, sportFallbackIcon)
+  const isTennis = sport === 'tenis'
+  const sportFallbackIcon = isBasketball ? iconBasquete : isTennis ? iconTenis : iconFutebol
+  const homeCurrentIcon = isTennis
+    ? getTennisPlayerCountryIcon(match.homeTeam.name, match.homeTeam.icon)
+    : match.homeTeam.icon
+  const awayCurrentIcon = isTennis
+    ? getTennisPlayerCountryIcon(match.awayTeam.name, match.awayTeam.icon)
+    : match.awayTeam.icon
+  const homeTeamIcon = useSportsDbTeamLogo(match.homeTeam.name, homeCurrentIcon, sport, sportFallbackIcon)
+  const awayTeamIcon = useSportsDbTeamLogo(match.awayTeam.name, awayCurrentIcon, sport, sportFallbackIcon)
 
   const renderTeamIcon = (icon: string | undefined, side: 'home' | 'away') => {
-    if (sport === 'futebol' && icon === iconFutebol) {
+    if ((sport === 'futebol' && icon === iconFutebol) || (isTennis && icon === iconTenis)) {
       return (
         <img
           src={icon}
@@ -127,18 +141,22 @@ export function LiveMatchCard({ match, sport, activeMarket, currentTime, onClick
             {renderTeamIcon(homeTeamIcon, 'home')}
             <span className="live-section__team-name">{match.homeTeam.name}</span>
           </div>
-          <div className="live-section__team-score">
-            <span>{match.homeTeam.score}</span>
-          </div>
+          {!isTennis && (
+            <div className="live-section__team-score">
+              <span>{match.homeTeam.score}</span>
+            </div>
+          )}
         </div>
         <div className="live-section__team">
           <div className="live-section__team-info">
             {renderTeamIcon(awayTeamIcon, 'away')}
             <span className="live-section__team-name">{match.awayTeam.name}</span>
           </div>
-          <div className="live-section__team-score">
-            <span>{match.awayTeam.score}</span>
-          </div>
+          {!isTennis && (
+            <div className="live-section__team-score">
+              <span>{match.awayTeam.score}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -217,6 +235,32 @@ export function LiveMatchCard({ match, sport, activeMarket, currentTime, onClick
               <span className="live-section__odd-value">{match.handicapOdds.away}</span>
             </button>
           </>
+        ) : activeMarket === 'handicap-games' && match.handicapOdds ? (
+          <>
+            <button className="live-section__odd-btn">
+              <span className="live-section__odd-team">
+                {match.homeTeam.name} {match.handicapOdds.line > 0 ? '+' : ''}{match.handicapOdds.line}
+              </span>
+              <span className="live-section__odd-value">{match.handicapOdds.home}</span>
+            </button>
+            <button className="live-section__odd-btn">
+              <span className="live-section__odd-team">
+                {match.awayTeam.name} {match.handicapOdds.line > 0 ? '' : '+'}{-match.handicapOdds.line}
+              </span>
+              <span className="live-section__odd-value">{match.handicapOdds.away}</span>
+            </button>
+          </>
+        ) : activeMarket === 'total-games' && match.totalGamesOdds ? (
+          <>
+            <button className="live-section__odd-btn">
+              <span className="live-section__odd-team">Menos de {match.totalGamesOdds.line}</span>
+              <span className="live-section__odd-value">{match.totalGamesOdds.under}</span>
+            </button>
+            <button className="live-section__odd-btn">
+              <span className="live-section__odd-team">Mais de {match.totalGamesOdds.line}</span>
+              <span className="live-section__odd-value">{match.totalGamesOdds.over}</span>
+            </button>
+          </>
         ) : activeMarket === 'q3-total' && match.q3TotalOdds ? (
           <>
             <button className="live-section__odd-btn">
@@ -239,7 +283,7 @@ export function LiveMatchCard({ match, sport, activeMarket, currentTime, onClick
               <span className="live-section__odd-value">{match.q4TotalOdds.over}</span>
             </button>
           </>
-        ) : isBasketball ? (
+        ) : isBasketball || isTennis ? (
           <>
             <button className="live-section__odd-btn">
               <span className="live-section__odd-team">{match.homeTeam.name}</span>
