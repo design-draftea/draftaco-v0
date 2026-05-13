@@ -792,6 +792,7 @@ function CasinoGameRail({
 }: CasinoGameRailProps) {
   const railRef = useRef<HTMLDivElement>(null)
   const railItemRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const previousActiveIndexRef = useRef(activeIndex)
   const skipNextCenterEffectRef = useRef<number | null>(null)
   const scrollAnimationFrameRef = useRef<number | null>(null)
 
@@ -802,28 +803,31 @@ function CasinoGameRail({
     }
   }, [])
 
-  const getCenteredRailItemScrollLeft = useCallback((index: number, options?: { compensateActivation?: boolean }) => {
+  const getCenteredRailItemScrollLeft = useCallback((index: number) => {
     const railEl = railRef.current
     const itemEl = railItemRefs.current[index]
     if (!railEl || !itemEl) return null
 
-    const maxScrollLeft = Math.max(0, railEl.scrollWidth - railEl.clientWidth)
-    const railRect = railEl.getBoundingClientRect()
     const itemRect = itemEl.getBoundingClientRect()
-    const railCenter = railRect.left + railEl.clientWidth / 2
-    const itemCenter = itemRect.left + itemRect.width / 2
     const railStyle = window.getComputedStyle(railEl)
     const inactivePosterWidth = parseFloat(railStyle.getPropertyValue('--casino-game-poster-width')) || itemRect.width
     const activePosterWidth = parseFloat(railStyle.getPropertyValue('--casino-game-poster-active-width')) || itemRect.width
-    const posterWidthDiff = Math.max(0, activePosterWidth - inactivePosterWidth)
-    const activationShift = options?.compensateActivation && index !== activeIndex
-      ? index > activeIndex
-        ? -posterWidthDiff / 2
-        : posterWidthDiff / 2
-      : 0
-    const targetLeft = railEl.scrollLeft + itemCenter + activationShift - railCenter
+    const posterGap = parseFloat(railStyle.getPropertyValue('--casino-game-poster-gap')) || CASINO_GAME_POSTER_GAP
+    const trackPaddingX = (
+      parseFloat(railStyle.getPropertyValue('--casino-game-poster-track-padding-x'))
+      || CASINO_GAME_POSTER_TRACK_PADDING_X
+    )
+    const finalScrollWidth = (
+      trackPaddingX * 2
+      + activePosterWidth
+      + Math.max(0, games.length - 1) * inactivePosterWidth
+      + Math.max(0, games.length - 1) * posterGap
+    )
+    const maxScrollLeft = Math.max(0, finalScrollWidth - railEl.clientWidth)
+    const itemCenter = trackPaddingX + index * (inactivePosterWidth + posterGap) + activePosterWidth / 2
+    const targetLeft = itemCenter - railEl.clientWidth / 2
     return Math.min(maxScrollLeft, Math.max(0, targetLeft))
-  }, [activeIndex])
+  }, [games.length])
 
   const animateRailScrollLeft = useCallback((targetScrollLeft: number) => {
     const railEl = railRef.current
@@ -862,9 +866,9 @@ function CasinoGameRail({
     scrollAnimationFrameRef.current = window.requestAnimationFrame(tick)
   }, [])
 
-  const centerRailItem = useCallback((index: number, options?: { compensateActivation?: boolean }) => {
+  const centerRailItem = useCallback((index: number) => {
     const railEl = railRef.current
-    const nextScrollLeft = getCenteredRailItemScrollLeft(index, options)
+    const nextScrollLeft = getCenteredRailItemScrollLeft(index)
     if (!railEl || nextScrollLeft === null) return false
 
     railEl.scrollTo({
@@ -877,18 +881,31 @@ function CasinoGameRail({
   }, [getCenteredRailItemScrollLeft])
 
   useLayoutEffect(() => {
+    const previousActiveIndex = previousActiveIndexRef.current
+
     if (skipNextCenterEffectRef.current === activeIndex) {
       skipNextCenterEffectRef.current = null
+      previousActiveIndexRef.current = activeIndex
       return
     }
 
-    centerRailItem(activeIndex)
-  }, [activeIndex, centerRailItem, games.length])
+    if (previousActiveIndex !== activeIndex) {
+      const nextScrollLeft = getCenteredRailItemScrollLeft(activeIndex)
+
+      if (nextScrollLeft !== null) {
+        animateRailScrollLeft(nextScrollLeft)
+      }
+    } else {
+      centerRailItem(activeIndex)
+    }
+
+    previousActiveIndexRef.current = activeIndex
+  }, [activeIndex, animateRailScrollLeft, centerRailItem, games.length, getCenteredRailItemScrollLeft])
 
   const handlePosterClick = (index: number) => {
     if (index === activeIndex) return
 
-    const nextScrollLeft = getCenteredRailItemScrollLeft(index, { compensateActivation: true })
+    const nextScrollLeft = getCenteredRailItemScrollLeft(index)
 
     if (nextScrollLeft !== null) {
       animateRailScrollLeft(nextScrollLeft)
