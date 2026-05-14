@@ -437,7 +437,9 @@ export function ProductRail<TItem extends ProductRailBaseItem>({
   useEffect(() => {
     if (previousActiveItemIdRef.current !== activeItemId) {
       previousActiveItemIdRef.current = activeItemId
-      restartLiquidIndicatorMotion()
+      const timer = window.setTimeout(restartLiquidIndicatorMotion, 0)
+
+      return () => window.clearTimeout(timer)
     }
   }, [activeItemId, restartLiquidIndicatorMotion])
 

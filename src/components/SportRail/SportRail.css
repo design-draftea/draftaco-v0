@@ -166,6 +166,7 @@
   height: var(--sport-rail-active-height, 40px);
   border-radius: 50%;
   background: transparent;
+  overflow: hidden;
   opacity: 0;
   pointer-events: none;
   transform: translate3d(var(--sport-rail-active-x, 0), var(--sport-rail-active-y, 0), 0);
@@ -184,9 +185,7 @@
   inset: 0;
   border-radius: inherit;
   background: linear-gradient(45deg, rgba(82, 40, 255, 0.56) 0.62%, rgba(174, 24, 255, 0.56) 100%), #131313;
-  box-shadow:
-    inset 0 0 0 1px rgba(82, 40, 255, 0.48),
-    0 6px 16px rgba(82, 40, 255, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(82, 40, 255, 0.48);
   pointer-events: none;
   transform: scale3d(0.96, 0.96, 1);
   transform-origin: center;
@@ -209,7 +208,7 @@
 
 .sport-rail--liquid-glass-new .sport-rail__active-indicator {
   transform-origin: center;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .sport-rail--liquid-glass-new .sport-rail__active-indicator::before {
@@ -220,9 +219,7 @@
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.28),
     inset 0 -5px 10px rgba(0, 0, 0, 0.08),
-    inset 0 0 0 0.5px rgba(255, 255, 255, 0.08),
-    0 0 16px rgba(174, 24, 255, 0.2),
-    0 7px 18px rgba(82, 40, 255, 0.16);
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.08);
   z-index: 1;
 }
 
@@ -252,16 +249,18 @@
     filter 220ms ease;
 }
 
+.sport-rail--liquid-glass-new .sport-rail__list--liquid-switching .sport-rail__active-indicator {
+  overflow: visible;
+}
+
 .sport-rail__list--liquid-switching .sport-rail__active-indicator::before {
   animation:
-    sport-rail-liquid-toggle-squish 560ms cubic-bezier(0.2, 1, 0.28, 1),
+    sport-rail-liquid-toggle-squish 560ms cubic-bezier(0.16, 1, 0.24, 1),
     sport-rail-liquid-toggle-bubble 560ms ease;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.34),
     inset 0 -4px 9px rgba(0, 0, 0, 0.055),
-    inset 0 0 0 0.5px rgba(255, 255, 255, 0.12),
-    0 0 18px rgba(174, 24, 255, 0.22),
-    0 7px 18px rgba(82, 40, 255, 0.14);
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.12);
 }
 
 .sport-rail__list--liquid-switching .sport-rail__active-indicator::after {
@@ -274,19 +273,24 @@
     transform: scale3d(1, 1, 1);
   }
 
-  24% {
-    filter: brightness(1.2) saturate(1.08);
-    transform: scale3d(1.14, 0.9, 1);
+  16% {
+    filter: brightness(1.22) saturate(1.1);
+    transform: scale3d(1.18, 0.88, 1);
   }
 
-  52% {
-    filter: brightness(1.12) saturate(1.05);
-    transform: scale3d(0.94, 1.06, 1);
+  38% {
+    filter: brightness(1.13) saturate(1.06);
+    transform: scale3d(0.91, 1.11, 1);
   }
 
-  76% {
-    filter: brightness(1.04);
-    transform: scale3d(1.025, 0.988, 1);
+  62% {
+    filter: brightness(1.06);
+    transform: scale3d(1.055, 0.972, 1);
+  }
+
+  82% {
+    filter: brightness(1.02);
+    transform: scale3d(0.992, 1.006, 1);
   }
 
   100% {
@@ -323,9 +327,7 @@
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.28),
       inset 0 -5px 10px rgba(0, 0, 0, 0.08),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.08),
-      0 0 16px rgba(174, 24, 255, 0.2),
-      0 7px 18px rgba(82, 40, 255, 0.16);
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.08);
   }
 
   34%,
@@ -334,9 +336,7 @@
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.42),
       inset 0 -4px 9px rgba(0, 0, 0, 0.045),
-      inset 0 0 0 0.6px rgba(255, 255, 255, 0.18),
-      0 0 20px rgba(174, 24, 255, 0.24),
-      0 7px 18px rgba(82, 40, 255, 0.13);
+      inset 0 0 0 0.6px rgba(255, 255, 255, 0.18);
   }
 
   72% {
@@ -344,9 +344,7 @@
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.36),
       inset 0 -4px 9px rgba(0, 0, 0, 0.06),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.12),
-      0 0 14px rgba(174, 24, 255, 0.18),
-      0 7px 18px rgba(82, 40, 255, 0.14);
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.12);
   }
 
   100% {
@@ -354,9 +352,7 @@
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.28),
       inset 0 -5px 10px rgba(0, 0, 0, 0.08),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.08),
-      0 0 16px rgba(174, 24, 255, 0.2),
-      0 7px 18px rgba(82, 40, 255, 0.16);
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.08);
   }
 }
 
@@ -430,7 +426,7 @@
 
 .sport-rail__icon--active {
   background: transparent;
-  filter: drop-shadow(0 4px 8px rgba(174, 24, 255, 0.16));
+  filter: none;
   position: relative;
   transform: none;
 }

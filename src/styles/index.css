@@ -135,6 +135,10 @@ img {
   will-change: transform, width, height, opacity;
 }
 
+.sliding-chip-group--indicator-clipped:not(.sliding-chip-group--indicator-switching) .sliding-chip-indicator {
+  overflow: hidden;
+}
+
 .sliding-chip-indicator::before {
   content: '';
   position: absolute;
@@ -183,6 +187,11 @@ img {
 .sliding-chip-group--indicator-ready .sliding-chip-indicator {
   opacity: var(--sliding-chip-indicator-opacity, 1);
   transform: translate3d(var(--sliding-chip-active-x, 0), var(--sliding-chip-active-y, 0), 0);
+  transition:
+    transform 520ms cubic-bezier(0.2, 1, 0.28, 1),
+    width 520ms cubic-bezier(0.2, 1, 0.28, 1),
+    height 520ms cubic-bezier(0.2, 1, 0.28, 1),
+    opacity 120ms ease;
 }
 
 .sliding-chip-group--indicator-ready .sliding-chip-indicator::before {

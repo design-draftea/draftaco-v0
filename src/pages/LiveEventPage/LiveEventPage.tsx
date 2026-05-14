@@ -931,7 +931,9 @@ interface LiveEventRailTeamIconProps {
 }
 
 function LiveEventRailTeamIcon({ team, sport, side }: LiveEventRailTeamIconProps) {
-  const resolvedIcon = useSportsDbTeamLogo(team.name, team.icon, sport, getLiveEventSportFallbackIcon(sport))
+  const resolvedIcon = useSportsDbTeamLogo(team.name, team.icon, sport, getLiveEventSportFallbackIcon(sport), {
+    useCurrentLogoFallback: false,
+  })
   const teamIcon = getLiveEventTeamIconView(resolvedIcon, sport)
 
   if (!teamIcon.src) {
@@ -1367,8 +1369,12 @@ function LiveEventContent({
   const tertiaryRows = isBasketball ? getQuarterTotalRows(match.q3TotalOdds) : getTotalCardsRows()
   const finalRows = isBasketball ? getQuarterTotalRows(match.q4TotalOdds) : []
   const doubleChanceRows = isBasketball ? [] : getDoubleChanceRows(match)
-  const resolvedHomeTeamIcon = useSportsDbTeamLogo(match.homeTeam.name, match.homeTeam.icon, contentSport, getLiveEventSportFallbackIcon(contentSport))
-  const resolvedAwayTeamIcon = useSportsDbTeamLogo(match.awayTeam.name, match.awayTeam.icon, contentSport, getLiveEventSportFallbackIcon(contentSport))
+  const resolvedHomeTeamIcon = useSportsDbTeamLogo(match.homeTeam.name, match.homeTeam.icon, contentSport, getLiveEventSportFallbackIcon(contentSport), {
+    useCurrentLogoFallback: false,
+  })
+  const resolvedAwayTeamIcon = useSportsDbTeamLogo(match.awayTeam.name, match.awayTeam.icon, contentSport, getLiveEventSportFallbackIcon(contentSport), {
+    useCurrentLogoFallback: false,
+  })
   const homeTeamIcon = getLiveEventTeamIconView(resolvedHomeTeamIcon, contentSport)
   const awayTeamIcon = getLiveEventTeamIconView(resolvedAwayTeamIcon, contentSport)
   const homeLogoGlowColor = useLogoGlowColor(

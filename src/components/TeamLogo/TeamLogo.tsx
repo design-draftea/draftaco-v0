@@ -20,6 +20,7 @@ interface TeamLogoProps {
   fallbackClassName?: string
   placeholderClassName?: string
   alt?: string
+  useCurrentLogoFallback?: boolean
 }
 
 export function TeamLogo({
@@ -30,11 +31,14 @@ export function TeamLogo({
   fallbackClassName = '',
   placeholderClassName = '',
   alt = '',
+  useCurrentLogoFallback = true,
 }: TeamLogoProps) {
   const mappedLogo = getTeamLogo(teamName)
   const currentTeamLogo = mappedLogo || currentLogo
   const fallbackLogo = getSportFallbackLogo(sport)
-  const sportsDbResolvedLogo = useSportsDbTeamLogo(teamName, currentTeamLogo, sport, fallbackLogo || undefined)
+  const sportsDbResolvedLogo = useSportsDbTeamLogo(teamName, currentTeamLogo, sport, fallbackLogo || undefined, {
+    useCurrentLogoFallback,
+  })
   const tennisCountryIcon = sport === 'tenis' ? getTennisPlayerCountryIcon(teamName) : ''
   const resolvedLogo = tennisCountryIcon || sportsDbResolvedLogo
 

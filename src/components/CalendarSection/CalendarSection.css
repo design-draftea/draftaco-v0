@@ -32,7 +32,7 @@
 }
 
 @media (max-width: 499px) {
-  .prematch-section.calendar-section.calendar-section--competition-days.calendar-section--short-competition-list {
+  .prematch-section.calendar-section.calendar-section--competition-days.calendar-section--short-competition-list:last-of-type {
     margin-bottom: calc(0px - var(--navbar-page-bottom-padding, 92px));
     padding-bottom: calc(var(--navbar-height, 64px) + var(--navbar-bottom-offset, 4px) + 28px);
   }

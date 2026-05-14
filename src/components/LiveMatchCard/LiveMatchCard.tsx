@@ -82,8 +82,12 @@ export function LiveMatchCard({ match, sport, activeMarket, currentTime, onClick
   const awayCurrentIcon = isTennis
     ? getTennisPlayerCountryIcon(match.awayTeam.name, match.awayTeam.icon)
     : match.awayTeam.icon
-  const homeTeamIcon = useSportsDbTeamLogo(match.homeTeam.name, homeCurrentIcon, sport, sportFallbackIcon)
-  const awayTeamIcon = useSportsDbTeamLogo(match.awayTeam.name, awayCurrentIcon, sport, sportFallbackIcon)
+  const homeTeamIcon = useSportsDbTeamLogo(match.homeTeam.name, homeCurrentIcon, sport, sportFallbackIcon, {
+    useCurrentLogoFallback: isTennis,
+  })
+  const awayTeamIcon = useSportsDbTeamLogo(match.awayTeam.name, awayCurrentIcon, sport, sportFallbackIcon, {
+    useCurrentLogoFallback: isTennis,
+  })
 
   const renderTeamIcon = (icon: string | undefined, side: 'home' | 'away') => {
     if ((sport === 'futebol' && icon === iconFutebol) || (isTennis && icon === iconTenis)) {

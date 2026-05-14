@@ -140,31 +140,10 @@
   object-fit: cover;
 }
 
-.casino-game-card__info {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #ffffff;
-  color: #1a1a1a;
-  font-family: 'Red Hat Text', sans-serif;
-  font-size: 12px;
-  font-weight: 800;
-  font-style: normal;
-  line-height: 1;
-  pointer-events: none;
-}
-
 .casino-game-card__tag {
   position: absolute;
   top: 12px;
-  right: 12px;
+  left: 12px;
   z-index: 1;
   display: inline-flex;
   align-items: center;
@@ -184,7 +163,7 @@
 .casino-game-card__live-tag {
   position: absolute;
   top: 12px;
-  right: 12px;
+  left: 12px;
   z-index: 1;
   display: inline-flex;
   align-items: center;

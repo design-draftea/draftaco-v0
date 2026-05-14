@@ -48,11 +48,11 @@ import iconTable from '../assets/iconSports/table.png'
 
 import navApostas from '../assets/navApostas.svg'
 import navBusca from '../assets/navBusca.svg'
-import navClub from '../assets/navClub.svg'
 import navHistorico from '../assets/navHistorico.svg'
 import navHome from '../assets/navHome.svg'
 import navLive from '../assets/navLive.svg'
 import navMeusJogos from '../assets/navMeusJogos.svg'
+import navPromo from '../assets/navPromo.svg'
 
 export const productLabels: Record<ProductMode, string> = {
   apostas: 'APOSTAS',
@@ -65,7 +65,7 @@ export const productNavbarConfigs: Record<ProductMode, NavbarConfig> = {
     mainItems: [
       { id: 'home', icon: navHome, label: 'Início' },
       { id: 'ao-vivo', icon: navLive, label: 'Ao Vivo' },
-      { id: 'pitaco-club', icon: navClub, label: 'Pitaco Club' },
+      { id: 'promocoes', icon: navPromo, label: 'Promoções' },
       { id: 'apostas', icon: navApostas, label: 'Entradas' },
     ],
     searchItem: { id: 'buscar', icon: navBusca, label: 'Buscar' },
@@ -74,8 +74,8 @@ export const productNavbarConfigs: Record<ProductMode, NavbarConfig> = {
     activeItemId: 'home',
     mainItems: [
       { id: 'home', icon: navHome, label: 'Início' },
-      { id: 'meus-jogos', icon: navMeusJogos, label: 'Meus Jogos' },
-      { id: 'pitaco-club', icon: navClub, label: 'Pitaco Club' },
+      { id: 'meus-jogos', icon: navMeusJogos, label: 'Frequentes' },
+      { id: 'promocoes', icon: navPromo, label: 'Promoções' },
       { id: 'historico', icon: navHistorico, label: 'Histórico' },
     ],
     searchItem: { id: 'buscar', icon: navBusca, label: 'Buscar' },
@@ -201,6 +201,7 @@ export const casinoBanners: Banner[] = [
     title: '',
     description: '',
     hideContent: true,
+    casinoGameId: 'fortune-tiger',
   },
   {
     id: 102,
@@ -211,6 +212,7 @@ export const casinoBanners: Banner[] = [
     title: '',
     description: '',
     hideContent: true,
+    casinoGameId: 'lucky-monkey',
   },
   {
     id: 103,

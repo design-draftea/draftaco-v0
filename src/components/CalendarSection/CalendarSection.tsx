@@ -74,13 +74,6 @@ import escudoBulls from '../../assets/escudoBullsGde.png'
 import escudoMiami from '../../assets/escudoMiami.png'
 import escudoJazz from '../../assets/escudoJazz.png'
 import escudoThunder from '../../assets/escudoThunder.png'
-import escudoKennesaw from '../../assets/escudoKennesaw.png'
-import escudoWesleyan from '../../assets/escudoWesleyan.png'
-import escudoLafayette from '../../assets/escudoLafayette.png'
-import escudoPennsylvania from '../../assets/escudoPennsylvania.png'
-import escudoSouthCarolina from '../../assets/escudoSouthCarolina.png'
-import escudoSouthern from '../../assets/escudoSouthern.png'
-import escudoTexas from '../../assets/escudoTexas.png'
 import escudoCaxias from '../../assets/escudoCaxias.png'
 import escudoDefaultBasquete from '../../assets/escudoDefaultBasquete.png'
 
@@ -142,7 +135,9 @@ function CalendarTeamIcon({ teamName, currentIcon, sport, side }: CalendarTeamIc
   const displayIcon = sport === 'tenis'
     ? getTennisPlayerCountryIcon(teamName, currentIcon)
     : currentIcon
-  const resolvedIcon = useSportsDbTeamLogo(teamName, displayIcon, sport, fallbackIcon || undefined)
+  const resolvedIcon = useSportsDbTeamLogo(teamName, displayIcon, sport, fallbackIcon || undefined, {
+    useCurrentLogoFallback: sport === 'tenis',
+  })
 
   if (!resolvedIcon) return <div className="prematch-section__team-icon--placeholder" />
 
@@ -1137,9 +1132,9 @@ export const championships: Championship[] = [
         homeScore: 22,
         awayScore: 65,
         homeName: 'Southern Wesleyan',
-        homeIcon: escudoWesleyan,
+        homeIcon: '',
         awayName: 'Kennesaw State',
-        awayIcon: escudoKennesaw,
+        awayIcon: '',
         odds: { home: '8.50x', away: '1.05x' },
         totalPointsOdds: { line: 145.5, under: '1.85x', over: '1.95x' },
         handicapOdds: { line: 42.5, home: '1.90x', away: '1.90x' },
@@ -1150,16 +1145,16 @@ export const championships: Championship[] = [
         id: 'cal-b-4',
         dateTime: 'Hoje, 20:00',
         homeName: 'Lafayette',
-        homeIcon: escudoLafayette,
+        homeIcon: '',
         awayName: 'Pennsylvania',
-        awayIcon: escudoPennsylvania,
+        awayIcon: '',
         odds: { home: '2.85x', away: '1.42x' },
       },
       {
         id: 'cal-b-5',
         dateTime: 'Hoje, 21:00',
         homeName: 'South Carolina St.',
-        homeIcon: escudoSouthCarolina,
+        homeIcon: '',
         awayName: 'Charleston',
         awayIcon: '',
         odds: { home: '1.95x', away: '1.85x' },
@@ -1168,9 +1163,9 @@ export const championships: Championship[] = [
         id: 'cal-b-6',
         dateTime: 'Hoje, 22:00',
         homeName: 'Southern',
-        homeIcon: escudoSouthern,
+        homeIcon: '',
         awayName: 'Texas',
-        awayIcon: escudoTexas,
+        awayIcon: '',
         odds: { home: '5.50x', away: '1.15x' },
       },
     ],
@@ -1538,14 +1533,14 @@ export const getCompetitionLiveEventMatch = (
       name: event.homeName,
       icon: league?.sport === 'tenis'
         ? getTennisPlayerCountryIcon(event.homeName, event.homeIcon)
-        : getTeamLogo(event.homeName, event.homeIcon),
+        : getTeamLogo(event.homeName),
       score: event.homeScore ?? 0,
     },
     awayTeam: {
       name: event.awayName,
       icon: league?.sport === 'tenis'
         ? getTennisPlayerCountryIcon(event.awayName, event.awayIcon)
-        : getTeamLogo(event.awayName, event.awayIcon),
+        : getTeamLogo(event.awayName),
       score: event.awayScore ?? 0,
     },
     odds: event.odds,
@@ -1849,10 +1844,10 @@ export function CalendarSection({
     const marketOdds = getMarketOdds(event, league.sport)
     const homeIcon = league.sport === 'tenis'
       ? getTennisPlayerCountryIcon(event.homeName, event.homeIcon)
-      : getTeamLogo(event.homeName, event.homeIcon)
+      : getTeamLogo(event.homeName)
     const awayIcon = league.sport === 'tenis'
       ? getTennisPlayerCountryIcon(event.awayName, event.awayIcon)
-      : getTeamLogo(event.awayName, event.awayIcon)
+      : getTeamLogo(event.awayName)
     const handicapOdds = event.handicapOdds ?? (marketOdds.handicap ? {
       line: marketOdds.handicap.homeLine,
       home: marketOdds.handicap.home,

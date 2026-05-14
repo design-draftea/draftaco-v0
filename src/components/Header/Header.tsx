@@ -121,7 +121,11 @@ export function Header({
   }
 
   useLayoutEffect(() => {
-    setDisplayProduct(activeProduct)
+    const timer = window.setTimeout(() => {
+      setDisplayProduct(activeProduct)
+    }, 0)
+
+    return () => window.clearTimeout(timer)
   }, [activeProduct])
 
   useLayoutEffect(() => () => {

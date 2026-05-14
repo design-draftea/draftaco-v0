@@ -40,6 +40,10 @@
   scroll-snap-align: center;
 }
 
+.banner-card--clickable {
+  cursor: pointer;
+}
+
 .banner-card__header {
   display: flex;
   align-items: center;

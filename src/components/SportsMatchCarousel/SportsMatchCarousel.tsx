@@ -88,12 +88,12 @@ const getLiveEventRailItem = (
     headerSecondary: event.isLive ? undefined : preMatchHeader.secondary,
     homeTeam: {
       name: event.homeName,
-      icon: getTeamLogo(event.homeName, event.homeIcon),
+      icon: getTeamLogo(event.homeName),
       score: event.homeScore,
     },
     awayTeam: {
       name: event.awayName,
-      icon: getTeamLogo(event.awayName, event.awayIcon),
+      icon: getTeamLogo(event.awayName),
       score: event.awayScore,
     },
     odds: event.odds,
@@ -118,6 +118,7 @@ function SportsMatchTeamLogo({ teamName, currentLogo, sport, side }: SportsMatch
       className="sports-match-carousel__team-icon"
       fallbackClassName={`sports-match-carousel__team-icon--${fallbackModifier}-${side}`}
       placeholderClassName="sports-match-carousel__team-icon sports-match-carousel__team-icon--placeholder"
+      useCurrentLogoFallback={false}
     />
   )
 }

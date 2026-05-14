@@ -27,7 +27,7 @@
 }
 
 .header--competition-rail .header__bg-dark {
-  height: var(--highlight-header-bg-height, 222px);
+  height: var(--highlight-header-bg-height, 210px);
 }
 
 /* Layer 2: glow roxo pré-renderizado para evitar blur pesado em runtime */

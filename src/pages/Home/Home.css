@@ -79,19 +79,19 @@
 
 .home--novo-trilho,
 .home--header-morph-active.home--novo-trilho {
-  --highlight-header-bg-height: 222px;
-  --sport-header-bg-height: 222px;
+  --highlight-header-bg-height: 210px;
+  --sport-header-bg-height: 210px;
   padding-top: var(--home-header-content-padding-top, 159px);
 }
 
 .home--novo-trilho.home--header-compact {
-  --highlight-header-bg-height: 215px;
-  --sport-header-bg-height: 182px;
+  --highlight-header-bg-height: 210px;
+  --sport-header-bg-height: 210px;
   padding-top: var(--home-header-content-padding-top, 159px);
 }
 
 .home--novo-trilho.home--event-rail-active {
-  --sport-header-bg-height: 222px;
+  --sport-header-bg-height: 210px;
 }
 
 .home--novo-trilho.home--sport-active,
@@ -162,7 +162,7 @@
 }
 
 .home--novo-trilho[data-market-sticky-engaged="true"] .header--sport-active .header__bg-dark {
-  height: max(var(--sport-header-bg-height, 222px), var(--home-market-sticky-bg-height, 266px));
+  height: max(var(--sport-header-bg-height, 210px), var(--home-market-sticky-bg-height, 266px));
   transition: none;
 }
 

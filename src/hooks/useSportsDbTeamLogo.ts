@@ -7,12 +7,18 @@ interface ResolvedTeamLogo {
   logoUrl: string
 }
 
+interface UseSportsDbTeamLogoOptions {
+  useCurrentLogoFallback?: boolean
+}
+
 export function useSportsDbTeamLogo(
   teamName: string,
   currentLogo: string | undefined,
   sport: string,
-  fallbackLogo?: string
+  fallbackLogo?: string,
+  options: UseSportsDbTeamLogoOptions = {}
 ) {
+  const { useCurrentLogoFallback = true } = options
   const [resolvedLogo, setResolvedLogo] = useState<ResolvedTeamLogo | null>(null)
 
   useEffect(() => {
@@ -32,5 +38,5 @@ export function useSportsDbTeamLogo(
   if (isSportsDbTeamLogoUrl(currentLogo)) return currentLogo
   if (resolvedLogo?.teamName === teamName && resolvedLogo.sport === sport) return resolvedLogo.logoUrl
 
-  return currentLogo || fallbackLogo
+  return (useCurrentLogoFallback ? currentLogo : undefined) || fallbackLogo
 }

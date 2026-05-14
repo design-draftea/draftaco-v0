@@ -9,10 +9,15 @@ const defaultProduct: ProductMode = 'apostas'
 const productRoutes: ProductMode[] = ['apostas', 'cassino']
 const liquidGlassRouteSegment = 'header-liquid-glass'
 const liquidGlassNewRouteSegment = 'liquid-glass-new'
+const deployedBasePath = '/pitaquinho'
 
 const getBasePath = () => {
   const baseUrl = import.meta.env.BASE_URL || '/'
-  return baseUrl === '/' ? '' : baseUrl.replace(/\/+$/, '')
+  if (baseUrl !== '/') return baseUrl.replace(/\/+$/, '')
+
+  return window.location.pathname === deployedBasePath || window.location.pathname.startsWith(`${deployedBasePath}/`)
+    ? deployedBasePath
+    : ''
 }
 
 const stripBasePath = (pathname: string) => {
@@ -74,7 +79,11 @@ function App() {
 
     const nextPath = buildProductPath(productRoute.product, productRoute.headerVariant)
     window.history.replaceState({}, '', nextPath)
-    setPathname(window.location.pathname)
+    const timer = window.setTimeout(() => {
+      setPathname(window.location.pathname)
+    }, 0)
+
+    return () => window.clearTimeout(timer)
   }, [productRoute])
 
   useEffect(() => {

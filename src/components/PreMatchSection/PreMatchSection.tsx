@@ -187,7 +187,9 @@ interface PreMatchTeamIconProps {
 
 function PreMatchTeamIcon({ teamName, currentIcon, sport, side }: PreMatchTeamIconProps) {
   const fallbackIcon = getPreMatchSportFallbackIcon(sport)
-  const resolvedIcon = useSportsDbTeamLogo(teamName, currentIcon, sport, fallbackIcon || undefined)
+  const resolvedIcon = useSportsDbTeamLogo(teamName, currentIcon, sport, fallbackIcon || undefined, {
+    useCurrentLogoFallback: false,
+  })
 
   if (!resolvedIcon) return <div className="prematch-section__team-icon--placeholder" />
 

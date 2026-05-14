@@ -7,6 +7,7 @@ interface UseSlidingActiveIndicatorOptions {
   readyClassName?: string
   switchingClassName?: string | null
   switchingDurationMs?: number
+  clippedClassName?: string | null
   variablePrefix?: string
 }
 
@@ -44,6 +45,7 @@ export function useSlidingActiveIndicator({
   readyClassName = 'sliding-chip-group--indicator-ready',
   switchingClassName,
   switchingDurationMs = 520,
+  clippedClassName,
   variablePrefix = 'sliding-chip',
 }: UseSlidingActiveIndicatorOptions) {
   const getActiveElementRef = useRef(getActiveElement)
@@ -54,6 +56,9 @@ export function useSlidingActiveIndicator({
   const resolvedSwitchingClassName = switchingClassName === undefined && variablePrefix === 'sliding-chip'
     ? 'sliding-chip-group--indicator-switching'
     : switchingClassName
+  const resolvedClippedClassName = clippedClassName === undefined && variablePrefix === 'sliding-chip'
+    ? 'sliding-chip-group--indicator-clipped'
+    : clippedClassName
 
   const clearSwitchingMotion = useCallback(() => {
     if (switchingFrameRef.current !== null) {
@@ -81,6 +86,10 @@ export function useSlidingActiveIndicator({
     const containerEl = containerRef.current
     const activeEl = getActiveElementRef.current()
 
+    if (resolvedClippedClassName) {
+      containerEl?.classList.remove(resolvedClippedClassName)
+    }
+
     setSlidingActiveIndicator(
       containerEl,
       activeEl,
@@ -99,6 +108,9 @@ export function useSlidingActiveIndicator({
       previousActiveKey == null ||
       activeKey == null
     ) {
+      if (resolvedClippedClassName && containerEl && activeEl) {
+        containerEl.classList.add(resolvedClippedClassName)
+      }
       return
     }
 
@@ -116,6 +128,9 @@ export function useSlidingActiveIndicator({
 
         switchingResetTimerRef.current = window.setTimeout(() => {
           containerEl.classList.remove(resolvedSwitchingClassName)
+          if (resolvedClippedClassName) {
+            containerEl.classList.add(resolvedClippedClassName)
+          }
           switchingResetTimerRef.current = null
           switchingTargetRef.current = null
         }, switchingDurationMs)
@@ -126,6 +141,7 @@ export function useSlidingActiveIndicator({
     clearSwitchingMotion,
     containerRef,
     readyClassName,
+    resolvedClippedClassName,
     resolvedSwitchingClassName,
     switchingDurationMs,
     variablePrefix,

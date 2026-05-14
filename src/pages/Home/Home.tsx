@@ -11,13 +11,13 @@ import { SportsMatchCarousel } from '../../components/SportsMatchCarousel'
 import { CompetitionPage } from '../../components/CompetitionPage'
 import { SportRail } from '../../components/SportRail'
 import { CasinoRail } from '../../components/CasinoRail'
-import { CasinoContent } from '../../components/CasinoContent'
+import { CasinoContent, casinoCarouselSections } from '../../components/CasinoContent'
 import { LiveEventPage } from '../LiveEventPage'
 import { CasinoGamePage } from '../CasinoGamePage'
 import { casinoBanners, casinoPromotions, sportsPromotions } from '../../data/homeProducts'
 import type { LiveEventOpenPayload } from '../LiveEventPage'
-import type { CasinoGameOpenPayload } from '../../components/CasinoContent/CasinoContent'
-import type { CasinoCategoryId, ProductMode } from '../../types/home'
+import type { CasinoGameOpenPayload } from '../../components/CasinoContent'
+import type { Banner, CasinoCategoryId, ProductMode } from '../../types/home'
 import type { CompetitionLinkTarget } from '../../utils/competitionNavigation'
 import './Home.css'
 
@@ -49,7 +49,7 @@ const MARKET_STICKY_GAP = 12
 const MARKET_STICKY_ROW_HEIGHT = 24
 const MARKET_STICKY_BG_GAP = 16
 const HEADER_BG_TOP_OFFSET = 72
-const HIGHLIGHT_HEADER_SCROLLED_BG_HEIGHT = 215
+const HIGHLIGHT_HEADER_SCROLLED_BG_HEIGHT = 210
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 const smoothStep = (value: number) => value * value * (3 - 2 * value)
@@ -62,8 +62,9 @@ const marketStickySelector = [
   '.prematch-section__chips--sticky:not([data-market-sticky-visible="false"])',
 ].join(', ')
 
-const SPORT_HEADER_EXPANDED_BG_HEIGHT_SHORTCUT = 222
+const SPORT_HEADER_EXPANDED_BG_HEIGHT_SHORTCUT = 210
 const SPORT_HEADER_COMPACT_BG_HEIGHT_SHORTCUT = 182
+const SHOW_TOP_GAMES_RAIL = false
 
 interface HomeProps {
   headerVariant?: HeaderVisualVariant
@@ -104,8 +105,10 @@ export function Home({
   const sportsCarouselResetKey = `${activeSport ?? 'destaques'}:${selectedCompetition?.id ?? 'todas'}`
   const isCompetitionMode = isBetsProduct && !!selectedCompetition
   const hasSportsCarouselEvents = isBetsProduct && !!activeSport && sportsCarouselEvents.length > 0
-  const usesContentEventRail = hasSportsCarouselEvents
-  const usesHeaderEventRail = hasSportsCarouselEvents && !usesContentEventRail
+  const shouldRenderTopGamesRail = SHOW_TOP_GAMES_RAIL && hasSportsCarouselEvents
+  const usesContentEventRail = shouldRenderTopGamesRail
+  const usesHeaderEventRail = shouldRenderTopGamesRail && !usesContentEventRail
+  const shouldHideBetsBanner = isBetsProduct && !!displayActiveSport
 
   const handleLiveMatchClick = (payload: LiveEventOpenPayload) => {
     setSelectedLiveMatch(payload)
@@ -114,6 +117,37 @@ export function Home({
   const handleCasinoGameOpen = (payload: CasinoGameOpenPayload) => {
     setSelectedCasinoGame(payload)
   }
+
+  const handleCasinoBannerClick = (banner: Banner) => {
+    if (!banner.casinoGameId) return
+
+    const popularSection = casinoCarouselSections.find((section) => section.id === '10-mais-populares')
+    const selectedIndex = popularSection?.games.findIndex((game) => game.id === banner.casinoGameId) ?? -1
+
+    if (!popularSection || selectedIndex < 0) return
+
+    handleCasinoGameOpen({ section: popularSection, selectedIndex })
+  }
+
+  const syncCurrentHeaderContentPaddingTop = useCallback(() => {
+    const homeEl = homeRef.current
+    const headerEl = homeEl?.querySelector<HTMLElement>('.header')
+    const headerContentEndEl =
+      headerEl?.querySelector<HTMLElement>('.sport-rail__list') ??
+      headerEl?.querySelector<HTMLElement>('.sport-rail') ??
+      headerEl?.querySelector<HTMLElement>('.header__top')
+
+    if (!homeEl || !headerContentEndEl) return
+
+    const contentOffset = headerContentEndEl.getBoundingClientRect().bottom -
+      homeEl.getBoundingClientRect().top +
+      HEADER_CONTENT_GAP
+
+    homeEl.style.setProperty(
+      '--home-header-content-padding-top',
+      `${roundCssNumber(Math.max(contentOffset, 0))}px`
+    )
+  }, [])
 
   const resetEventRailCollapse = useCallback(() => {
     const homeEl = homeRef.current
@@ -127,12 +161,12 @@ export function Home({
     homeEl.style.removeProperty('--header-top-padding-y')
     homeEl.style.removeProperty('--sport-header-bg-height')
     homeEl.style.removeProperty('--sport-rail-padding-bottom')
-    homeEl.style.removeProperty('--home-header-content-padding-top')
     homeEl.removeAttribute('data-header-morph-complete')
     homeEl.style.removeProperty('--sports-carousel-teams-gap')
     homeEl.style.removeProperty('--sports-carousel-teams-min-height')
     homeEl.style.removeProperty('--sports-carousel-team-row-height')
-  }, [])
+    syncCurrentHeaderContentPaddingTop()
+  }, [syncCurrentHeaderContentPaddingTop])
 
   const scrollToTop = useCallback(() => {
     setIsSportHeaderCompact(false)
@@ -142,19 +176,24 @@ export function Home({
     window.requestAnimationFrame(() => {
       homeRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+      syncCurrentHeaderContentPaddingTop()
     })
-  }, [resetEventRailCollapse])
+  }, [resetEventRailCollapse, syncCurrentHeaderContentPaddingTop])
 
   useLayoutEffect(() => {
     if (previousProductRef.current === activeProduct) return
 
     previousProductRef.current = activeProduct
-    setActiveSport(null)
-    setSelectedCompetition(null)
-    setSelectedLiveMatch(null)
-    setSelectedCasinoGame(null)
-    setActiveCasinoCategory('destaques')
-    scrollToTop()
+    const timer = window.setTimeout(() => {
+      setActiveSport(null)
+      setSelectedCompetition(null)
+      setSelectedLiveMatch(null)
+      setSelectedCasinoGame(null)
+      setActiveCasinoCategory('destaques')
+      scrollToTop()
+    }, 0)
+
+    return () => window.clearTimeout(timer)
   }, [activeProduct, scrollToTop])
 
   useLayoutEffect(() => {
@@ -187,7 +226,7 @@ export function Home({
       headerSnapSettleTimer = null
     }
 
-    const hasEventRailHeader = () => !!activeSport && sportsCarouselEvents.length > 0 && !usesContentEventRail
+    const hasEventRailHeader = () => !!activeSport && shouldRenderTopGamesRail && !usesContentEventRail
     const canSnapHeaderMorph = () => {
       if (!activeSport) return false
       if (usesContentEventRail) return true
@@ -433,12 +472,17 @@ export function Home({
         morphProgress
       )
       const sportRailHeaderBgHeight = getSportRailHeaderBgHeight()
-      const highlightHeaderBgHeight = scrollTop > HEADER_EXPAND_SCROLL_TOP
-        ? HIGHLIGHT_HEADER_SCROLLED_BG_HEIGHT
-        : sportRailHeaderBgHeight
+      const highlightHeaderBgHeight = hasHeaderEventRail || usesContentEventRail
+        ? scrollTop > HEADER_EXPAND_SCROLL_TOP
+          ? HIGHLIGHT_HEADER_SCROLLED_BG_HEIGHT
+          : sportRailHeaderBgHeight
+        : HIGHLIGHT_HEADER_SCROLLED_BG_HEIGHT
+      const hasMarketStickyEngaged = homeEl.getAttribute('data-market-sticky-engaged') === 'true'
       const sportHeaderBgHeight = hasHeaderEventRail || usesContentEventRail
         ? sportRailHeaderBgHeight
-        : interpolate(sportHeaderExpandedBgHeight, sportHeaderCompactBgHeight, morphProgress)
+        : hasMarketStickyEngaged
+          ? interpolate(sportHeaderExpandedBgHeight, sportHeaderCompactBgHeight, morphProgress)
+          : sportHeaderExpandedBgHeight
       const eventRailVisualStart = HEADER_EVENT_RAIL_MORPH_SCROLL_START
       const eventRailVisualProgress = hasHeaderEventRail
         ? smoothStep(
@@ -574,6 +618,7 @@ export function Home({
     resetEventRailCollapse,
     sportHeaderCompactBgHeight,
     sportHeaderExpandedBgHeight,
+    shouldRenderTopGamesRail,
     sportsCarouselEvents.length,
     usesContentEventRail,
   ])
@@ -663,7 +708,7 @@ export function Home({
         onProductChange={onProductChange}
         rail={headerRail}
       >
-        {displayActiveSport && (
+        {displayActiveSport && shouldRenderTopGamesRail && (
           <>
             {!usesContentEventRail && (
               <SportsMatchCarousel
@@ -677,7 +722,7 @@ export function Home({
           </>
         )}
       </Header>
-      {usesContentEventRail && (
+      {shouldRenderTopGamesRail && usesContentEventRail && (
         <div className="home__content-event-rail">
           <SportsMatchCarousel
             events={sportsCarouselEvents}
@@ -689,8 +734,9 @@ export function Home({
         </div>
       )}
       <TrilhoEBanner
-        hideBanner={(isBetsProduct && !!displayActiveSport) || isCasinoCrashPage}
+        hideBanner={shouldHideBetsBanner || isCasinoCrashPage}
         banners={isBetsProduct ? undefined : casinoBanners}
+        onBannerClick={isBetsProduct ? undefined : handleCasinoBannerClick}
       />
       {!isBetsProduct ? (
         <Fragment key={`casino-${activeCasinoCategory}-${contentResetKey}`}>

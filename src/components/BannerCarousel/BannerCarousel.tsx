@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, type KeyboardEvent } from 'react'
 import { CaretUpIcon } from '@phosphor-icons/react'
 import './BannerCarousel.css'
 import { Toast } from '../Toast'
@@ -30,9 +30,37 @@ interface MissionProgress {
 
 interface BannerCarouselProps {
   banners?: Banner[]
+  onBannerClick?: (banner: Banner) => void
 }
 
 const AUTO_PLAY_INTERVAL = 10000 // 10 segundos
+
+interface BannerAutoPlayRefs {
+  autoPlayRef: { current: ReturnType<typeof setInterval> | null }
+  bannerCountRef: { current: number }
+  scrollRef: { current: HTMLDivElement | null }
+}
+
+function startBannerAutoPlay({ autoPlayRef, bannerCountRef, scrollRef }: BannerAutoPlayRefs) {
+  if (autoPlayRef.current) {
+    clearInterval(autoPlayRef.current)
+  }
+
+  autoPlayRef.current = setInterval(() => {
+    const bannerCount = bannerCountRef.current
+    if (!scrollRef.current || bannerCount <= 0) return
+
+    const cardWidth = scrollRef.current.offsetWidth - 24 + 20
+    const currentScroll = scrollRef.current.scrollLeft
+    const currentIndex = Math.round(currentScroll / cardWidth)
+    const nextIndex = (currentIndex + 1) % bannerCount
+
+    scrollRef.current.scrollTo({
+      left: nextIndex * cardWidth,
+      behavior: 'smooth',
+    })
+  }, AUTO_PLAY_INTERVAL)
+}
 
 // Helper function to parse match time string
 function parseMatchTime(timeStr: string): { period: number; minutes: number; seconds: number; isQuarter: boolean } {
@@ -105,7 +133,7 @@ function updateMatchTime(timeStr: string): string {
   }
 }
 
-export function BannerCarousel({ banners = sportsBanners }: BannerCarouselProps = {}) {
+export function BannerCarousel({ banners = sportsBanners, onBannerClick }: BannerCarouselProps = {}) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const [activatedMissions, setActivatedMissions] = useState<Record<number, MissionProgress>>({})
@@ -117,6 +145,8 @@ export function BannerCarousel({ banners = sportsBanners }: BannerCarouselProps 
   const startX = useRef(0)
   const scrollLeft = useRef(0)
   const dragDistance = useRef(0)
+  const touchStartScrollLeft = useRef(0)
+  const bannerCountRef = useRef(banners.length)
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const handleActivateMission = (bannerId: number, target: number) => {
@@ -176,37 +206,17 @@ export function BannerCarousel({ banners = sportsBanners }: BannerCarouselProps 
     }
   }
 
-  // Função para iniciar o auto-play
-  const startAutoPlay = () => {
-    if (autoPlayRef.current) {
-      clearInterval(autoPlayRef.current)
-    }
-    
-    autoPlayRef.current = setInterval(() => {
-      if (scrollRef.current) {
-        const cardWidth = scrollRef.current.offsetWidth - 24 + 20
-        const currentScroll = scrollRef.current.scrollLeft
-        const currentIndex = Math.round(currentScroll / cardWidth)
-        const nextIndex = (currentIndex + 1) % banners.length
-        
-        scrollRef.current.scrollTo({
-          left: nextIndex * cardWidth,
-          behavior: 'smooth'
-        })
-      }
-    }, AUTO_PLAY_INTERVAL)
-  }
-
   // Auto-play: inicia quando o componente monta
   useEffect(() => {
-    startAutoPlay()
+    bannerCountRef.current = banners.length
+    startBannerAutoPlay({ autoPlayRef, bannerCountRef, scrollRef })
 
     return () => {
       if (autoPlayRef.current) {
         clearInterval(autoPlayRef.current)
       }
     }
-  }, [])
+  }, [banners.length])
 
   // Atualiza o tempo do jogo ao vivo a cada segundo
   useEffect(() => {
@@ -233,7 +243,7 @@ export function BannerCarousel({ banners = sportsBanners }: BannerCarouselProps 
       autoPlayRef.current = null
     }
     // Inicia um novo ciclo de autoplay
-    startAutoPlay()
+    startBannerAutoPlay({ autoPlayRef, bannerCountRef, scrollRef })
   }
 
   const handleScroll = () => {
@@ -313,13 +323,30 @@ export function BannerCarousel({ banners = sportsBanners }: BannerCarouselProps 
   // Touch events para mobile
   const handleTouchStart = () => {
     pauseAutoPlay()
+    dragDistance.current = 0
+    touchStartScrollLeft.current = scrollRef.current?.scrollLeft ?? 0
   }
 
   const handleTouchEnd = () => {
+    dragDistance.current = (scrollRef.current?.scrollLeft ?? 0) - touchStartScrollLeft.current
     // Aguarda o scroll terminar antes de reiniciar o autoplay
     setTimeout(() => {
     resetAutoPlay()
     }, 300)
+  }
+
+  const handleBannerClick = (banner: Banner) => {
+    if (!banner.casinoGameId || Math.abs(dragDistance.current) > 8) return
+
+    onBannerClick?.(banner)
+  }
+
+  const handleBannerKeyDown = (event: KeyboardEvent<HTMLDivElement>, banner: Banner) => {
+    if (!banner.casinoGameId || !onBannerClick) return
+    if (event.key !== 'Enter' && event.key !== ' ') return
+
+    event.preventDefault()
+    onBannerClick(banner)
   }
 
   return (
@@ -335,8 +362,18 @@ export function BannerCarousel({ banners = sportsBanners }: BannerCarouselProps 
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {banners.map((banner) => (
-          <div key={banner.id} className="banner-card">
+        {banners.map((banner) => {
+          const isClickableBanner = !!banner.casinoGameId && !!onBannerClick
+
+          return (
+          <div
+            key={banner.id}
+            className={`banner-card${isClickableBanner ? ' banner-card--clickable' : ''}`}
+            role={isClickableBanner ? 'button' : undefined}
+            tabIndex={isClickableBanner ? 0 : undefined}
+            onClick={() => handleBannerClick(banner)}
+            onKeyDown={(event) => handleBannerKeyDown(event, banner)}
+          >
             {/* Header */}
             <div className="banner-card__header">
               {banner.type === 'aoVivo' || banner.type === 'aoVivoTenis' ? (
@@ -631,7 +668,8 @@ export function BannerCarousel({ banners = sportsBanners }: BannerCarouselProps 
               )}
             </div>
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Bullets */}

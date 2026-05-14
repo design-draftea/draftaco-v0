@@ -72,6 +72,7 @@ export interface Banner {
   title: string
   description: string
   hideContent?: boolean
+  casinoGameId?: string
   noWrapTitle?: boolean
   buttonText?: string
   showInfoBtn?: boolean
