@@ -232,7 +232,6 @@
 .promotions-page__content {
   display: flex;
   flex-direction: column;
-  min-height: calc(var(--app-viewport-height) + 180px);
   background: #131313;
 }
 
@@ -240,13 +239,17 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 16px 0 24px;
-  border-bottom: 2px solid #242424;
+  padding: 0 0 24px;
+  border-bottom: 0;
 }
 
 .promotions-page__content > .promotions-missions-section:first-child {
   padding-top: 0;
   border-bottom: 0;
+}
+
+.promotions-page__content > .promotions-missions-section:last-child {
+  padding-bottom: 0;
 }
 
 .promotions-missions-section__header {
@@ -360,7 +363,7 @@
   overflow: hidden;
   color: #ffffff;
   font-family: 'Red Hat Display', 'Red Hat Text', sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: 0;
@@ -456,7 +459,7 @@
 }
 
 .promotions-mission-card__button {
-  width: 60px;
+  min-width: 60px;
   padding: 0 16px;
   background: linear-gradient(28deg, #5228ff 0.62%, #ae18ff 100%);
   color: #ffffff;

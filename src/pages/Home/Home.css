@@ -27,7 +27,13 @@
   background-color: #131313;
   padding-top: 194px;
   padding-bottom: 60px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   transition: padding-top var(--sport-header-transition);
+}
+
+.home::-webkit-scrollbar {
+  display: none;
 }
 
 .home--sport-active {

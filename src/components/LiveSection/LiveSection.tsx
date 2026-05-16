@@ -152,7 +152,9 @@ const sportChips: SportChip[] = [
 
 const footballMarketChips: MarketChip[] = [
   { id: 'resultado-final', label: 'Resultado Final' },
+  { id: 'finalizacao-gol', label: 'Finalizações ao Gol' },
   { id: 'dupla-chance', label: 'Dupla Chance' },
+  { id: 'assistencias', label: 'Assistências' },
   { id: 'ambos-marcam', label: 'Ambos Marcam' },
   { id: 'total-gols', label: 'Total de Gols' },
   { id: 'escanteios', label: 'Total de Escanteios' },

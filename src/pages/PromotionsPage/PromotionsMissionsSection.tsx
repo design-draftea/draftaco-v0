@@ -1,26 +1,44 @@
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
+import imgPromoAumentada from '../../assets/img-promo-aumentada.png'
+import imgPromoCashback from '../../assets/img-promo-cashback.png'
+import imgPromoMultiplaTurbinada from '../../assets/img-promo-multipla-turbinada.png'
+import imgPromoPagamentoAntecipadoFutebol from '../../assets/img-promo-pagamento-antecipado-futebol.png'
+import imgPromoPechincha from '../../assets/img-promo-pechincha.png'
+import imgPromoPitacoClub from '../../assets/img-promo-pitaco-club.png'
 import imgPromoPiggy from '../../assets/img-promo-piggy.png'
 import imgPromoRabbit from '../../assets/img-promo-rabbit.png'
+import imgPromoSuperAumentada from '../../assets/img-promo-super-aumentada.png'
+import imgPromoSubstituicaoProtegida from '../../assets/img-promo-substituicao-protegida.png'
+import imgPromoTesouroDoRei from '../../assets/img-promo-tesouro-do-rei.png'
 import imgMissaoVerdao from '../../assets/imgMissaoVerdao.png'
 import type { ProductMode } from '../../types/home'
 
 type PromotionsFilterId = 'todos' | ProductMode
 
-interface MissionPromotionCard {
+interface PromotionSectionCard {
   id: string
-  expiresLabel: string
+  expiresLabel?: string
   mediaImage?: string
   mediaTitleLines: string[]
   products: ProductMode[]
   title: string
   description: string
+  primaryActionLabel?: string
 }
 
 interface PromotionsMissionsSectionProps {
   activeFilter: PromotionsFilterId
 }
 
-const missionCards: MissionPromotionCard[] = [
+interface PromotionCarouselSectionProps {
+  id: string
+  title: string
+  ariaLabel: string
+  cards: PromotionSectionCard[]
+  activeFilter: PromotionsFilterId
+}
+
+const missionCards: PromotionSectionCard[] = [
   {
     id: 'palmeiras-libertadores',
     expiresLabel: 'Termina em 3 dias',
@@ -29,6 +47,7 @@ const missionCards: MissionPromotionCard[] = [
     products: ['apostas'],
     title: 'Aposte no Palmeiras na Liberta e ganhe 10 Créditos.',
     description: 'Aposte R$50 no jogo do Palmeiras na Libertadores e ganhe R$10 em créditos para usar no Pitaco.',
+    primaryActionLabel: 'Ativar Missão',
   },
   {
     id: 'fortune-rabbit-coroas',
@@ -38,6 +57,7 @@ const missionCards: MissionPromotionCard[] = [
     products: ['cassino'],
     title: 'Aposte no Fortune Rabbit e ganhe 50 coroas.',
     description: 'Aposte R$100 no jogo Fortune Rabbit e ganhe 50 coroas para continuar jogando no Rei.',
+    primaryActionLabel: 'Ativar Missão',
   },
   {
     id: 'lucky-piggy-rodadas',
@@ -47,6 +67,91 @@ const missionCards: MissionPromotionCard[] = [
     products: ['cassino'],
     title: 'Aposte no Lucky Piggy e ganhe 5 rodadas.',
     description: 'Aposte R$20 no Lucky Piggy e ganhe 5 rodadas grátis para tentar a sorte no Pitaco.',
+    primaryActionLabel: 'Ativar Missão',
+  },
+]
+
+const advantageCards: PromotionSectionCard[] = [
+  {
+    id: 'pagamento-antecipado-futebol',
+    mediaImage: imgPromoPagamentoAntecipadoFutebol,
+    mediaTitleLines: ['Pagamento', 'Antecipado', 'Futebol'],
+    products: ['apostas'],
+    title: 'Se o time abrir dois gols, seu pagamento cai na conta já.',
+    description: 'Receba o pagamento da sua aposta automaticamente assim que o time em que você apostou abrir uma vantagem de 2 gols.',
+  },
+  {
+    id: 'multipla-turbinada',
+    mediaImage: imgPromoMultiplaTurbinada,
+    mediaTitleLines: ['Múltipla', 'Turbinada'],
+    products: ['apostas'],
+    title: 'Aposte em múltiplas e o Rei turbina o seu prêmio em até 200%.',
+    description: 'Ganhe até 200% a mais sobre o lucro da sua aposta montando uma múltipla com mercados participantes.',
+  },
+  {
+    id: 'substituicao-protegida',
+    mediaImage: imgPromoSubstituicaoProtegida,
+    mediaTitleLines: ['Substituição', 'Protegida'],
+    products: ['apostas'],
+    title: 'Sua aposta continua valendo mesmo se seu jogador for substituído.',
+    description: 'Caso o jogador que você apostou for substituído, sua aposta passará a contar com o jogador que entrou no lugar dele.',
+  },
+]
+
+const programCards: PromotionSectionCard[] = [
+  {
+    id: 'tesouro-do-rei',
+    mediaImage: imgPromoTesouroDoRei,
+    mediaTitleLines: ['Tesouro do Pitaco'],
+    products: ['apostas', 'cassino'],
+    title: 'Jogue, conquiste chaves e descubra se o Tesouro é seu.',
+    description: 'A cada R$50 apostados em Betting ou Cassino, você ganha uma chave para tentar abrir o Tesouro do Pitaco que está acumulado.',
+    primaryActionLabel: 'Abrir Baú Grátis',
+  },
+  {
+    id: 'pitaco-club',
+    mediaImage: imgPromoPitacoClub,
+    mediaTitleLines: ['Pitaco Club'],
+    products: ['apostas', 'cassino'],
+    title: 'Acumule pontos e conquiste prêmios exclusivos!',
+    description: 'Receba o pagamento da sua aposta automaticamente assim que o time em que você apostou abrir uma vantagem de 2 gols.',
+    primaryActionLabel: 'Acessar Club',
+  },
+  {
+    id: 'cashback',
+    mediaImage: imgPromoCashback,
+    mediaTitleLines: ['Cashback'],
+    products: ['cassino'],
+    title: 'Se o time abrir 20 pontos, seu pagamento cai na conta já.',
+    description: 'Receba o pagamento automaticamente assim que o time em que você apostou abrir uma vantagem de 20 pontos.',
+    primaryActionLabel: 'Acessar Jogos',
+  },
+]
+
+const mustSeeCards: PromotionSectionCard[] = [
+  {
+    id: 'pechincha',
+    mediaImage: imgPromoPechincha,
+    mediaTitleLines: ['Pechincha'],
+    products: ['apostas'],
+    title: 'Pechinchas exclusivas para suas chances aumentarem.',
+    description: 'Reduzimos os valores das linhas para você ter mais chances de vencer! Aproveite e multiplique suas conquistas!',
+  },
+  {
+    id: 'aumentada',
+    mediaImage: imgPromoAumentada,
+    mediaTitleLines: ['Aumentada'],
+    products: ['apostas'],
+    title: 'Odds maiores para que você possa ganhar ainda mais.',
+    description: 'Um boost exclusivo que aumenta o valor de algumas ofertas selecionadas, garantindo um ganho extra em cada aposta realizada.',
+  },
+  {
+    id: 'super-aumentada',
+    mediaImage: imgPromoSuperAumentada,
+    mediaTitleLines: ['Super Aumentada'],
+    products: ['apostas'],
+    title: 'Odds ainda maiores para você alcançar vitórias gigantes.',
+    description: 'Quando a Aumentada não é o suficiente, entra a Super Aumentada, com odds turbinadas para quem busca os maiores ganhos.',
   },
 ]
 
@@ -56,12 +161,53 @@ const productLabels: Record<ProductMode, string> = {
 }
 
 export function PromotionsMissionsSection({ activeFilter }: PromotionsMissionsSectionProps) {
+  return (
+    <>
+      <PromotionCarouselSection
+        id="section-promocoes-missoes"
+        title="Missões"
+        ariaLabel="Cards de missões promocionais"
+        cards={missionCards}
+        activeFilter={activeFilter}
+      />
+      <PromotionCarouselSection
+        id="section-promocoes-vantagens"
+        title="Vantagens"
+        ariaLabel="Cards de vantagens promocionais"
+        cards={advantageCards}
+        activeFilter={activeFilter}
+      />
+      <PromotionCarouselSection
+        id="section-promocoes-programa"
+        title="Programa"
+        ariaLabel="Cards de programas promocionais"
+        cards={programCards}
+        activeFilter={activeFilter}
+      />
+      <PromotionCarouselSection
+        id="section-promocoes-imperdiveis"
+        title="Imperdíveis"
+        ariaLabel="Cards de promoções imperdíveis"
+        cards={mustSeeCards}
+        activeFilter={activeFilter}
+      />
+    </>
+  )
+}
+
+function PromotionCarouselSection({
+  id,
+  title,
+  ariaLabel,
+  cards,
+  activeFilter,
+}: PromotionCarouselSectionProps) {
   const [isDragging, setIsDragging] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const startX = useRef(0)
   const scrollLeft = useRef(0)
 
-  const visibleCards = missionCards.filter((card) =>
+  const visibleCards = cards.filter((card) =>
     activeFilter === 'todos' || card.products.includes(activeFilter)
   )
 
@@ -129,9 +275,9 @@ export function PromotionsMissionsSection({ activeFilter }: PromotionsMissionsSe
   }
 
   return (
-    <section id="section-promocoes-missoes" className="promotions-missions-section">
+    <section id={id} className="promotions-missions-section">
       <div className="promotions-missions-section__header">
-        <h2 className="promotions-missions-section__title">Missões</h2>
+        <h2 className="promotions-missions-section__title">{title}</h2>
       </div>
 
       <div
@@ -146,7 +292,7 @@ export function PromotionsMissionsSection({ activeFilter }: PromotionsMissionsSe
         onMouseUp={handleMouseUp}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        aria-label="Cards de missões promocionais"
+        aria-label={ariaLabel}
       >
         {visibleCards.map((card) => (
           <article key={card.id} className="promotions-mission-card">
@@ -160,10 +306,12 @@ export function PromotionsMissionsSection({ activeFilter }: PromotionsMissionsSe
                   : undefined
               }
             >
-              <div className="promotions-mission-card__expires">
-                <span className="promotions-mission-card__expires-dot" aria-hidden="true" />
-                <span className="promotions-mission-card__expires-text">{card.expiresLabel}</span>
-              </div>
+              {card.expiresLabel ? (
+                <div className="promotions-mission-card__expires">
+                  <span className="promotions-mission-card__expires-dot" aria-hidden="true" />
+                  <span className="promotions-mission-card__expires-text">{card.expiresLabel}</span>
+                </div>
+              ) : null}
 
               <div className="promotions-mission-card__media-title">
                 {card.mediaTitleLines.map((line) => (
@@ -187,9 +335,11 @@ export function PromotionsMissionsSection({ activeFilter }: PromotionsMissionsSe
               <p className="promotions-mission-card__description">{card.description}</p>
 
               <div className="promotions-mission-card__actions">
-                <button type="button" className="promotions-mission-card__button">
-                  Label
-                </button>
+                {card.primaryActionLabel ? (
+                  <button type="button" className="promotions-mission-card__button">
+                    {card.primaryActionLabel}
+                  </button>
+                ) : null}
                 <button type="button" className="promotions-mission-card__link-button">
                   Saiba Mais
                 </button>

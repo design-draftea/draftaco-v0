@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useCallback, useState, useEffect, useLayoutEffect, useRef, type PointerEvent, type WheelEvent } from 'react'
 import { CaretRightIcon, CaretUpIcon } from '@phosphor-icons/react'
 import './PreMatchSection.css'
 import { getTeamLogo } from '../../data/teamLogos'
@@ -72,6 +72,9 @@ import escudoHamburger from '../../assets/escudoHamburger.png'
 // Rei Antecipa badges
 import reiAntecipaFutebol from '../../assets/reiAntecipaFutebol.png'
 import reiAntecipaBasquete from '../../assets/reiAntecipaBasquete.png'
+import playerAvatarFutebol from '../../assets/playerAvatarFutebol.svg'
+import playerAvatarBasquete from '../../assets/playerAvatarBasquete.svg'
+import iconStats from '../../assets/icon-stats.svg'
 // Bottom Sheet
 import { ReiAntecipaBottomSheet } from '../BottomSheet/ReiAntecipaBottomSheet'
 
@@ -85,6 +88,35 @@ interface SportChip {
 interface MarketChip {
   id: string
   label: string
+}
+
+export interface PlayerPropOption {
+  label: string
+  odd: string
+  active?: boolean
+}
+
+export interface TeamPlayerProfile {
+  name: string
+  position: string
+}
+
+export interface MatchPlayerProp {
+  id: string
+  playerName: string
+  teamName: string
+  teamIcon?: string
+  teamSide: 'home' | 'away'
+  sport: string
+  position: string
+  image: string
+  options: PlayerPropOption[]
+}
+
+export interface PlayerPropsMatch {
+  id: string
+  homeTeam: { name: string; icon?: string }
+  awayTeam: { name: string; icon?: string }
 }
 
 interface Team {
@@ -159,6 +191,11 @@ interface PreMatchSectionProps {
   onMatchClick?: (payload: LiveEventOpenPayload) => void
 }
 
+interface MarketScrollAnchor {
+  matchKey: string
+  top: number
+}
+
 const sportChips: SportChip[] = [
   { id: 'futebol', icon: iconFutebol, label: 'Futebol' },
   { id: 'basquete', icon: iconBasquete, label: 'Basquete' },
@@ -210,7 +247,9 @@ function PreMatchTeamIcon({ teamName, currentIcon, sport, side }: PreMatchTeamIc
 
 const footballMarketChips: MarketChip[] = [
   { id: 'resultado-final', label: 'Resultado Final' },
+  { id: 'finalizacao-gol', label: 'Finalização ao Gol' },
   { id: 'dupla-chance', label: 'Dupla Chance' },
+  { id: 'assistencias', label: 'Assistências' },
   { id: 'ambos-marcam', label: 'Ambos Marcam' },
   { id: 'total-gols', label: 'Total de Gols' },
   { id: 'escanteios', label: 'Total de Escanteios' },
@@ -218,11 +257,1186 @@ const footballMarketChips: MarketChip[] = [
 
 const basketballMarketChips: MarketChip[] = [
   { id: 'vencedor', label: 'Vencedor' },
+  { id: 'pontos-jogador', label: 'Pontos do Jogador' },
   { id: 'total-pontos', label: 'Total de Pontos' },
   { id: 'handicap', label: 'Handicap' },
   { id: 'q3-total', label: '3° Quarto - Total de Pontos' },
   { id: 'q4-total', label: '4° Quarto - Total de Pontos' },
 ]
+
+const PLAYER_PROPS_PER_MATCH = 3
+const FOOTBALL_PLAYER_PROPS_MARKET_ID = 'finalizacao-gol'
+const FOOTBALL_ASSISTS_MARKET_ID = 'assistencias'
+const BASKETBALL_PLAYER_PROPS_MARKET_ID = 'pontos-jogador'
+const PLAYER_PROP_OPTION_MOUSE_SENSITIVITY = 1
+const PLAYER_PROP_OPTION_TOUCH_SENSITIVITY = 0.92
+const PLAYER_PROP_OPTION_SWIPE_THRESHOLD = 12
+const PLAYER_PROP_OPTION_PROGRAMMATIC_MS = 220
+
+const playerPropOptions = (values: Array<[string, string]>): PlayerPropOption[] =>
+  values.map(([label, odd], index) => ({ label, odd, active: index === 1 }))
+
+const footballPlayerPropOptionSets = [
+  playerPropOptions([['3.0+', '1.78x'], ['4.0+', '1.78x'], ['5.0+', '1.78x']]),
+  playerPropOptions([['2.0+', '1.55x'], ['3.0+', '1.92x'], ['4.0+', '2.70x']]),
+  playerPropOptions([['1.0+', '1.48x'], ['2.0+', '2.05x'], ['3.0+', '3.60x']]),
+]
+
+const footballAssistPropOptionSets = [
+  playerPropOptions([['1.0+', '1.68x'], ['2.0+', '2.35x'], ['3.0+', '4.20x']]),
+  playerPropOptions([['1.0+', '1.74x'], ['2.0+', '2.50x'], ['3.0+', '4.60x']]),
+  playerPropOptions([['1.0+', '1.82x'], ['2.0+', '2.70x'], ['3.0+', '5.10x']]),
+]
+
+const basketballPlayerPropOptionSets = [
+  playerPropOptions([['15.5+', '1.62x'], ['20.5+', '1.95x'], ['25.5+', '3.05x']]),
+  playerPropOptions([['12.5+', '1.58x'], ['17.5+', '1.88x'], ['22.5+', '2.80x']]),
+  playerPropOptions([['8.5+', '1.54x'], ['13.5+', '1.82x'], ['18.5+', '2.60x']]),
+]
+
+const footballPlayersByTeam: Record<string, TeamPlayerProfile[]> = {
+  Palmeiras: [
+    { name: 'Flaco Lopez', position: 'ATA' },
+    { name: 'Vitor Roque', position: 'ATA' },
+    { name: 'Raphael Veiga', position: 'MEI' },
+  ],
+  Fluminense: [
+    { name: 'Cano', position: 'ATA' },
+    { name: 'Arias', position: 'MEI' },
+    { name: 'Keno', position: 'ATA' },
+  ],
+  Botafogo: [
+    { name: 'Igor Jesus', position: 'ATA' },
+    { name: 'Savarino', position: 'MEI' },
+    { name: 'Tiquinho Soares', position: 'ATA' },
+  ],
+  Bahia: [
+    { name: 'Everaldo', position: 'ATA' },
+    { name: 'Cauly', position: 'MEI' },
+    { name: 'Biel', position: 'ATA' },
+  ],
+  'Atl. Mineiro': [
+    { name: 'Hulk', position: 'ATA' },
+    { name: 'Paulinho', position: 'ATA' },
+    { name: 'Gustavo Scarpa', position: 'MEI' },
+  ],
+  Santos: [
+    { name: 'Neymar Jr', position: 'ATA' },
+    { name: 'Guilherme', position: 'ATA' },
+    { name: 'Soteldo', position: 'MEI' },
+  ],
+  'Real Madrid': [
+    { name: 'Vini Jr', position: 'ATA' },
+    { name: 'Mbappé', position: 'ATA' },
+    { name: 'Bellingham', position: 'MEI' },
+  ],
+  Barcelona: [
+    { name: 'Lewandowski', position: 'ATA' },
+    { name: 'Yamal', position: 'ATA' },
+    { name: 'Raphinha', position: 'ATA' },
+  ],
+  Liverpool: [
+    { name: 'Salah', position: 'ATA' },
+    { name: 'Núñez', position: 'ATA' },
+    { name: 'Diaz', position: 'ATA' },
+  ],
+  'Man. City': [
+    { name: 'Haaland', position: 'ATA' },
+    { name: 'Foden', position: 'MEI' },
+    { name: 'De Bruyne', position: 'MEI' },
+  ],
+  Benfica: [
+    { name: 'Di María', position: 'ATA' },
+    { name: 'Pavlidis', position: 'ATA' },
+    { name: 'Schjelderup', position: 'ATA' },
+  ],
+  Ajax: [
+    { name: 'Brobbey', position: 'ATA' },
+    { name: 'Berghuis', position: 'MEI' },
+    { name: 'Henderson', position: 'MEI' },
+  ],
+  Arsenal: [
+    { name: 'Saka', position: 'ATA' },
+    { name: 'Havertz', position: 'MEI' },
+    { name: 'Martinelli', position: 'ATA' },
+  ],
+  Chelsea: [
+    { name: 'Palmer', position: 'MEI' },
+    { name: 'Jackson', position: 'ATA' },
+    { name: 'Nkunku', position: 'ATA' },
+  ],
+  Brighton: [
+    { name: 'Welbeck', position: 'ATA' },
+    { name: 'João Pedro', position: 'ATA' },
+    { name: 'Mitoma', position: 'ATA' },
+  ],
+  'West Ham': [
+    { name: 'Bowen', position: 'ATA' },
+    { name: 'Paquetá', position: 'MEI' },
+    { name: 'Kudus', position: 'ATA' },
+  ],
+  Leeds: [
+    { name: 'Piroe', position: 'ATA' },
+    { name: 'Rutter', position: 'ATA' },
+    { name: 'James', position: 'ATA' },
+  ],
+  Burnley: [
+    { name: 'Foster', position: 'ATA' },
+    { name: 'Rodríguez', position: 'ATA' },
+    { name: 'Brownhill', position: 'MEI' },
+  ],
+  Getafe: [
+    { name: 'Mayoral', position: 'ATA' },
+    { name: 'Greenwood', position: 'ATA' },
+    { name: 'Latasa', position: 'ATA' },
+  ],
+  Elche: [
+    { name: 'Boyé', position: 'ATA' },
+    { name: 'Pere Milla', position: 'ATA' },
+    { name: 'Mojica', position: 'LAT' },
+  ],
+  Alavés: [
+    { name: 'Samu Omorodion', position: 'ATA' },
+    { name: 'Carlos Vicente', position: 'ATA' },
+    { name: 'Rioja', position: 'ATA' },
+  ],
+  Espanyol: [
+    { name: 'Puado', position: 'ATA' },
+    { name: 'Joselu', position: 'ATA' },
+    { name: 'Bare', position: 'MEI' },
+  ],
+  Mallorca: [
+    { name: 'Muriqi', position: 'ATA' },
+    { name: 'Larin', position: 'ATA' },
+    { name: 'Darder', position: 'MEI' },
+  ],
+  Levante: [
+    { name: 'Bouldini', position: 'ATA' },
+    { name: 'Brugué', position: 'ATA' },
+    { name: 'Iborra', position: 'MEI' },
+  ],
+  'B. Leverkusen': [
+    { name: 'Wirtz', position: 'MEI' },
+    { name: 'Boniface', position: 'ATA' },
+    { name: 'Grimaldo', position: 'LAT' },
+  ],
+  Bayern: [
+    { name: 'Harry Kane', position: 'ATA' },
+    { name: 'Musiala', position: 'MEI' },
+    { name: 'Sané', position: 'ATA' },
+  ],
+  Wolfsburg: [
+    { name: 'Wind', position: 'ATA' },
+    { name: 'Wimmer', position: 'ATA' },
+    { name: 'Majer', position: 'MEI' },
+  ],
+  Eintracht: [
+    { name: 'Ekitiké', position: 'ATA' },
+    { name: 'Marmoush', position: 'ATA' },
+    { name: 'Knauff', position: 'ALA' },
+  ],
+  Augsburg: [
+    { name: 'Demirović', position: 'ATA' },
+    { name: 'Tietz', position: 'ATA' },
+    { name: 'Vargas', position: 'ATA' },
+  ],
+  Hamburger: [
+    { name: 'Glatzel', position: 'ATA' },
+    { name: 'Selke', position: 'ATA' },
+    { name: 'Königsdörffer', position: 'ATA' },
+  ],
+  'São Paulo': [
+    { name: 'Calleri', position: 'ATA' },
+    { name: 'Luciano', position: 'ATA' },
+    { name: 'Lucas Moura', position: 'MEI' },
+  ],
+}
+
+const footballAssistPlayersByTeam: Record<string, TeamPlayerProfile[]> = {
+  Palmeiras: [
+    { name: 'Raphael Veiga', position: 'MEI' },
+    { name: 'Mauricio', position: 'MEI' },
+    { name: 'Richard Rios', position: 'MEI' },
+  ],
+  Fluminense: [
+    { name: 'Arias', position: 'MEI' },
+    { name: 'Ganso', position: 'MEI' },
+    { name: 'Lima', position: 'MEI' },
+  ],
+  Botafogo: [
+    { name: 'Savarino', position: 'MEI' },
+    { name: 'Almada', position: 'MEI' },
+    { name: 'Marlon Freitas', position: 'MEI' },
+  ],
+  Bahia: [
+    { name: 'Cauly', position: 'MEI' },
+    { name: 'Everton Ribeiro', position: 'MEI' },
+    { name: 'Jean Lucas', position: 'MEI' },
+  ],
+  'Atl. Mineiro': [
+    { name: 'Gustavo Scarpa', position: 'MEI' },
+    { name: 'Zaracho', position: 'MEI' },
+    { name: 'Bernard', position: 'MEI' },
+  ],
+  Santos: [
+    { name: 'Lucas Lima', position: 'MEI' },
+    { name: 'Soteldo', position: 'MEI' },
+    { name: 'Pituca', position: 'MEI' },
+  ],
+  'Real Madrid': [
+    { name: 'Bellingham', position: 'MEI' },
+    { name: 'Modric', position: 'MEI' },
+    { name: 'Valverde', position: 'MEI' },
+  ],
+  Barcelona: [
+    { name: 'Pedri', position: 'MEI' },
+    { name: 'Gavi', position: 'MEI' },
+    { name: 'De Jong', position: 'MEI' },
+  ],
+  Liverpool: [
+    { name: 'Szoboszlai', position: 'MEI' },
+    { name: 'Mac Allister', position: 'MEI' },
+    { name: 'Curtis Jones', position: 'MEI' },
+  ],
+  'Man. City': [
+    { name: 'De Bruyne', position: 'MEI' },
+    { name: 'Foden', position: 'MEI' },
+    { name: 'Bernardo Silva', position: 'MEI' },
+  ],
+  Benfica: [
+    { name: 'Kokcu', position: 'MEI' },
+    { name: 'Aursnes', position: 'MEI' },
+    { name: 'Florentino', position: 'MEI' },
+  ],
+  Ajax: [
+    { name: 'Berghuis', position: 'MEI' },
+    { name: 'Henderson', position: 'MEI' },
+    { name: 'Taylor', position: 'MEI' },
+  ],
+  Arsenal: [
+    { name: 'Odegaard', position: 'MEI' },
+    { name: 'Rice', position: 'MEI' },
+    { name: 'Havertz', position: 'MEI' },
+  ],
+  Chelsea: [
+    { name: 'Palmer', position: 'MEI' },
+    { name: 'Enzo Fernandez', position: 'MEI' },
+    { name: 'Caicedo', position: 'MEI' },
+  ],
+  Brighton: [
+    { name: 'Joao Pedro', position: 'MEI' },
+    { name: 'Mitoma', position: 'MEI' },
+    { name: 'Gross', position: 'MEI' },
+  ],
+  'West Ham': [
+    { name: 'Paqueta', position: 'MEI' },
+    { name: 'Kudus', position: 'MEI' },
+    { name: 'Ward-Prowse', position: 'MEI' },
+  ],
+  Leeds: [
+    { name: 'Rutter', position: 'MEI' },
+    { name: 'Gnonto', position: 'MEI' },
+    { name: 'Ampadu', position: 'MEI' },
+  ],
+  Burnley: [
+    { name: 'Brownhill', position: 'MEI' },
+    { name: 'Gudmundsson', position: 'MEI' },
+    { name: 'Koleosho', position: 'MEI' },
+  ],
+  Getafe: [
+    { name: 'Maksimovic', position: 'MEI' },
+    { name: 'Aleña', position: 'MEI' },
+    { name: 'Milla', position: 'MEI' },
+  ],
+  Elche: [
+    { name: 'Fidel', position: 'MEI' },
+    { name: 'Febas', position: 'MEI' },
+    { name: 'Josan', position: 'MEI' },
+  ],
+  Alavés: [
+    { name: 'Guridi', position: 'MEI' },
+    { name: 'Blanco', position: 'MEI' },
+    { name: 'Carlos Vicente', position: 'MEI' },
+  ],
+  Espanyol: [
+    { name: 'Darder', position: 'MEI' },
+    { name: 'Bare', position: 'MEI' },
+    { name: 'Melamed', position: 'MEI' },
+  ],
+  Mallorca: [
+    { name: 'Darder', position: 'MEI' },
+    { name: 'Dani Rodriguez', position: 'MEI' },
+    { name: 'Antonio Sanchez', position: 'MEI' },
+  ],
+  Levante: [
+    { name: 'Iborra', position: 'MEI' },
+    { name: 'Pablo Martinez', position: 'MEI' },
+    { name: 'Brugue', position: 'MEI' },
+  ],
+  'B. Leverkusen': [
+    { name: 'Wirtz', position: 'MEI' },
+    { name: 'Xhaka', position: 'MEI' },
+    { name: 'Palacios', position: 'MEI' },
+  ],
+  Bayern: [
+    { name: 'Musiala', position: 'MEI' },
+    { name: 'Kimmich', position: 'MEI' },
+    { name: 'Muller', position: 'MEI' },
+  ],
+  Wolfsburg: [
+    { name: 'Majer', position: 'MEI' },
+    { name: 'Arnold', position: 'MEI' },
+    { name: 'Wimmer', position: 'MEI' },
+  ],
+  Eintracht: [
+    { name: 'Gotze', position: 'MEI' },
+    { name: 'Skhiri', position: 'MEI' },
+    { name: 'Knauff', position: 'MEI' },
+  ],
+  Augsburg: [
+    { name: 'Vargas', position: 'MEI' },
+    { name: 'Rexhbecaj', position: 'MEI' },
+    { name: 'Maier', position: 'MEI' },
+  ],
+  Hamburger: [
+    { name: 'Kittel', position: 'MEI' },
+    { name: 'Reis', position: 'MEI' },
+    { name: 'Königsdörffer', position: 'MEI' },
+  ],
+  'São Paulo': [
+    { name: 'Lucas Moura', position: 'MEI' },
+    { name: 'Luciano', position: 'MEI' },
+    { name: 'Alisson', position: 'MEI' },
+  ],
+  Flamengo: [
+    { name: 'Arrascaeta', position: 'MEI' },
+    { name: 'Gerson', position: 'MEI' },
+    { name: 'De la Cruz', position: 'MEI' },
+  ],
+  Cruzeiro: [
+    { name: 'Matheus Pereira', position: 'MEI' },
+    { name: 'Lucas Silva', position: 'MEI' },
+    { name: 'Ramiro', position: 'MEI' },
+  ],
+  Internacional: [
+    { name: 'Alan Patrick', position: 'MEI' },
+    { name: 'Bruno Henrique', position: 'MEI' },
+    { name: 'Wanderson', position: 'MEI' },
+  ],
+  Bragantino: [
+    { name: 'Lincoln', position: 'MEI' },
+    { name: 'Jadsom', position: 'MEI' },
+    { name: 'Eric Ramires', position: 'MEI' },
+  ],
+  Mirassol: [
+    { name: 'Chico Kim', position: 'MEI' },
+    { name: 'Gabriel', position: 'MEI' },
+    { name: 'Danielzinho', position: 'MEI' },
+  ],
+  'Atlético Madrid': [
+    { name: 'Griezmann', position: 'MEI' },
+    { name: 'De Paul', position: 'MEI' },
+    { name: 'Koke', position: 'MEI' },
+  ],
+  Inter: [
+    { name: 'Barella', position: 'MEI' },
+    { name: 'Calhanoglu', position: 'MEI' },
+    { name: 'Mkhitaryan', position: 'MEI' },
+  ],
+  PSG: [
+    { name: 'Vitinha', position: 'MEI' },
+    { name: 'Zaïre-Emery', position: 'MEI' },
+    { name: 'Fabian Ruiz', position: 'MEI' },
+  ],
+  Lyon: [
+    { name: 'Cherki', position: 'MEI' },
+    { name: 'Tolisso', position: 'MEI' },
+    { name: 'Caqueret', position: 'MEI' },
+  ],
+  Newcastle: [
+    { name: 'Bruno Guimaraes', position: 'MEI' },
+    { name: 'Tonali', position: 'MEI' },
+    { name: 'Joelinton', position: 'MEI' },
+  ],
+  Napoli: [
+    { name: 'Anguissa', position: 'MEI' },
+    { name: 'Lobotka', position: 'MEI' },
+    { name: 'Zielinski', position: 'MEI' },
+  ],
+  'Boca Juniors': [
+    { name: 'Zenon', position: 'MEI' },
+    { name: 'Pol Fernandez', position: 'MEI' },
+    { name: 'Medina', position: 'MEI' },
+  ],
+  'Argentinos Jrs': [
+    { name: 'Alan Lescano', position: 'MEI' },
+    { name: 'Francis Mac Allister', position: 'MEI' },
+    { name: 'Heredia', position: 'MEI' },
+  ],
+  Racing: [
+    { name: 'Juanfer Quintero', position: 'MEI' },
+    { name: 'Almendra', position: 'MEI' },
+    { name: 'Nardoni', position: 'MEI' },
+  ],
+  'River Plate': [
+    { name: 'Nacho Fernandez', position: 'MEI' },
+    { name: 'Echeverri', position: 'MEI' },
+    { name: 'Aliendro', position: 'MEI' },
+  ],
+  'San Lorenzo': [
+    { name: 'Barrios', position: 'MEI' },
+    { name: 'Leguizamon', position: 'MEI' },
+    { name: 'Remedi', position: 'MEI' },
+  ],
+  Córdoba: [
+    { name: 'Lodico', position: 'MEI' },
+    { name: 'Puebla', position: 'MEI' },
+    { name: 'Acevedo', position: 'MEI' },
+  ],
+  'Inter Miami': [
+    { name: 'Messi', position: 'MEI' },
+    { name: 'Busquets', position: 'MEI' },
+    { name: 'Gomez', position: 'MEI' },
+  ],
+  Whitecaps: [
+    { name: 'Ryan Gauld', position: 'MEI' },
+    { name: 'Vite', position: 'MEI' },
+    { name: 'Cubas', position: 'MEI' },
+  ],
+  Cincinnati: [
+    { name: 'Acosta', position: 'MEI' },
+    { name: 'Nwobodo', position: 'MEI' },
+    { name: 'Kubo', position: 'MEI' },
+  ],
+  'Chicago Fire': [
+    { name: 'Shaqiri', position: 'MEI' },
+    { name: 'Gimenez', position: 'MEI' },
+    { name: 'Gutierrez', position: 'MEI' },
+  ],
+  Nashville: [
+    { name: 'Mukhtar', position: 'MEI' },
+    { name: 'Godoy', position: 'MEI' },
+    { name: 'Davis', position: 'MEI' },
+  ],
+  'New York City': [
+    { name: 'Moralez', position: 'MEI' },
+    { name: 'Parks', position: 'MEI' },
+    { name: 'Sands', position: 'MEI' },
+  ],
+  Dinamo: [
+    { name: 'Baturina', position: 'MEI' },
+    { name: 'Misic', position: 'MEI' },
+    { name: 'Ademi', position: 'MEI' },
+  ],
+  'Aston Villa': [
+    { name: 'McGinn', position: 'MEI' },
+    { name: 'Tielemans', position: 'MEI' },
+    { name: 'Douglas Luiz', position: 'MEI' },
+  ],
+  Fenerbahçe: [
+    { name: 'Tadic', position: 'MEI' },
+    { name: 'Szymanski', position: 'MEI' },
+    { name: 'Fred', position: 'MEI' },
+  ],
+  Porto: [
+    { name: 'Pepê', position: 'MEI' },
+    { name: 'Nico Gonzalez', position: 'MEI' },
+    { name: 'Alan Varela', position: 'MEI' },
+  ],
+  Panathinaikos: [
+    { name: 'Bernard', position: 'MEI' },
+    { name: 'Bakasetas', position: 'MEI' },
+    { name: 'Zeca', position: 'MEI' },
+  ],
+  Nottingham: [
+    { name: 'Gibbs-White', position: 'MEI' },
+    { name: 'Danilo', position: 'MEI' },
+    { name: 'Yates', position: 'MEI' },
+  ],
+}
+
+const footballFinishingPlayersByTeam: Record<string, TeamPlayerProfile[]> = {
+  ...footballPlayersByTeam,
+  Flamengo: [
+    { name: 'Pedro', position: 'ATA' },
+    { name: 'Bruno Henrique', position: 'ATA' },
+    { name: 'Everton Cebolinha', position: 'ATA' },
+  ],
+  Cruzeiro: [
+    { name: 'Kaio Jorge', position: 'ATA' },
+    { name: 'Gabigol', position: 'ATA' },
+    { name: 'Lautaro Diaz', position: 'ATA' },
+  ],
+  Internacional: [
+    { name: 'Rafael Borre', position: 'ATA' },
+    { name: 'Enner Valencia', position: 'ATA' },
+    { name: 'Wesley', position: 'ATA' },
+  ],
+  Bragantino: [
+    { name: 'Eduardo Sasha', position: 'ATA' },
+    { name: 'Helinho', position: 'ATA' },
+    { name: 'Thiago Borbas', position: 'ATA' },
+  ],
+  Mirassol: [
+    { name: 'Dellatorre', position: 'ATA' },
+    { name: 'Negueba', position: 'ATA' },
+    { name: 'Fernandinho', position: 'ATA' },
+  ],
+  'Atlético Madrid': [
+    { name: 'Julian Alvarez', position: 'ATA' },
+    { name: 'Sorloth', position: 'ATA' },
+    { name: 'Griezmann', position: 'ATA' },
+  ],
+  Inter: [
+    { name: 'Lautaro Martinez', position: 'ATA' },
+    { name: 'Thuram', position: 'ATA' },
+    { name: 'Taremi', position: 'ATA' },
+  ],
+  PSG: [
+    { name: 'Dembele', position: 'ATA' },
+    { name: 'Kvaratskhelia', position: 'ATA' },
+    { name: 'Goncalo Ramos', position: 'ATA' },
+  ],
+  Lyon: [
+    { name: 'Lacazette', position: 'ATA' },
+    { name: 'Mikautadze', position: 'ATA' },
+    { name: 'Nuamah', position: 'ATA' },
+  ],
+  Newcastle: [
+    { name: 'Isak', position: 'ATA' },
+    { name: 'Gordon', position: 'ATA' },
+    { name: 'Barnes', position: 'ATA' },
+  ],
+  Napoli: [
+    { name: 'Osimhen', position: 'ATA' },
+    { name: 'Politano', position: 'ATA' },
+    { name: 'Raspadori', position: 'ATA' },
+  ],
+  'Boca Juniors': [
+    { name: 'Cavani', position: 'ATA' },
+    { name: 'Merentiel', position: 'ATA' },
+    { name: 'Zenon', position: 'ATA' },
+  ],
+  'Argentinos Jrs': [
+    { name: 'Gondou', position: 'ATA' },
+    { name: 'Veron', position: 'ATA' },
+    { name: 'Heredia', position: 'ATA' },
+  ],
+  Racing: [
+    { name: 'Maravilla Martinez', position: 'ATA' },
+    { name: 'Carbonero', position: 'ATA' },
+    { name: 'Solari', position: 'ATA' },
+  ],
+  'River Plate': [
+    { name: 'Borja', position: 'ATA' },
+    { name: 'Colidio', position: 'ATA' },
+    { name: 'Solari', position: 'ATA' },
+  ],
+  'San Lorenzo': [
+    { name: 'Bareiro', position: 'ATA' },
+    { name: 'Leguizamon', position: 'ATA' },
+    { name: 'Cerutti', position: 'ATA' },
+  ],
+  Córdoba: [
+    { name: 'Suarez', position: 'ATA' },
+    { name: 'Puebla', position: 'ATA' },
+    { name: 'Acevedo', position: 'ATA' },
+  ],
+  'Inter Miami': [
+    { name: 'Messi', position: 'ATA' },
+    { name: 'Suarez', position: 'ATA' },
+    { name: 'Campana', position: 'ATA' },
+  ],
+  Whitecaps: [
+    { name: 'Brian White', position: 'ATA' },
+    { name: 'Ryan Gauld', position: 'ATA' },
+    { name: 'Ali Ahmed', position: 'ATA' },
+  ],
+  Cincinnati: [
+    { name: 'Acosta', position: 'ATA' },
+    { name: 'Kubo', position: 'ATA' },
+    { name: 'Baird', position: 'ATA' },
+  ],
+  'Chicago Fire': [
+    { name: 'Cuypers', position: 'ATA' },
+    { name: 'Gutierrez', position: 'ATA' },
+    { name: 'Mueller', position: 'ATA' },
+  ],
+  Nashville: [
+    { name: 'Surridge', position: 'ATA' },
+    { name: 'Mukhtar', position: 'ATA' },
+    { name: 'Shaffelburg', position: 'ATA' },
+  ],
+  'New York City': [
+    { name: 'Martinez', position: 'ATA' },
+    { name: 'Rodriguez', position: 'ATA' },
+    { name: 'Wolf', position: 'ATA' },
+  ],
+  Dinamo: [
+    { name: 'Petkovic', position: 'ATA' },
+    { name: 'Kulenovic', position: 'ATA' },
+    { name: 'Hoxha', position: 'ATA' },
+  ],
+  'Aston Villa': [
+    { name: 'Watkins', position: 'ATA' },
+    { name: 'Bailey', position: 'ATA' },
+    { name: 'Diaby', position: 'ATA' },
+  ],
+  Fenerbahçe: [
+    { name: 'Dzeko', position: 'ATA' },
+    { name: 'En-Nesyri', position: 'ATA' },
+    { name: 'Tadic', position: 'ATA' },
+  ],
+  Porto: [
+    { name: 'Evanilson', position: 'ATA' },
+    { name: 'Galeno', position: 'ATA' },
+    { name: 'Pepe', position: 'ATA' },
+  ],
+  Panathinaikos: [
+    { name: 'Ioannidis', position: 'ATA' },
+    { name: 'Sporar', position: 'ATA' },
+    { name: 'Mancini', position: 'ATA' },
+  ],
+  Nottingham: [
+    { name: 'Wood', position: 'ATA' },
+    { name: 'Elanga', position: 'ATA' },
+    { name: 'Gibbs-White', position: 'ATA' },
+  ],
+}
+
+const basketballPlayersByTeam: Record<string, TeamPlayerProfile[]> = {
+  Bulls: [
+    { name: 'Coby White', position: 'ARM' },
+    { name: 'Josh Giddey', position: 'ARM' },
+    { name: 'Nikola Vucevic', position: 'PIV' },
+  ],
+  Heat: [
+    { name: 'Tyler Herro', position: 'ARM' },
+    { name: 'Bam Adebayo', position: 'PIV' },
+    { name: 'Jaime Jaquez Jr.', position: 'ALA' },
+  ],
+  Warriors: [
+    { name: 'Stephen Curry', position: 'ARM' },
+    { name: 'Draymond Green', position: 'ALA' },
+    { name: 'Jonathan Kuminga', position: 'ALA' },
+  ],
+  Lakers: [
+    { name: 'LeBron James', position: 'ALA' },
+    { name: 'Luka Doncic', position: 'ARM' },
+    { name: 'Austin Reaves', position: 'ARM' },
+  ],
+  Pistons: [
+    { name: 'Cade Cunningham', position: 'ARM' },
+    { name: 'Jaden Ivey', position: 'ARM' },
+    { name: 'Jalen Duren', position: 'PIV' },
+  ],
+  Cavaliers: [
+    { name: 'Donovan Mitchell', position: 'ARM' },
+    { name: 'Darius Garland', position: 'ARM' },
+    { name: 'Evan Mobley', position: 'ALA' },
+  ],
+  Lafayette: [
+    { name: 'Devin Hines', position: 'ARM' },
+    { name: 'Kyle Jenkins', position: 'ALA' },
+    { name: 'Ryan Pettit', position: 'PIV' },
+  ],
+  Pennsylvania: [
+    { name: 'Clark Slajchert', position: 'ARM' },
+    { name: 'Nick Spinoso', position: 'PIV' },
+    { name: 'Sam Brown', position: 'ALA' },
+  ],
+  'South Carolina State': [
+    { name: 'Mitchel Taylor', position: 'ARM' },
+    { name: 'Davion Everett', position: 'PIV' },
+    { name: 'Michael Teal', position: 'ALA' },
+  ],
+  'Charleston Southern': [
+    { name: 'RJ Johnson', position: 'ARM' },
+    { name: 'Taje Kelly', position: 'ALA' },
+    { name: "A'lahn Sumler", position: 'ARM' },
+  ],
+  Southern: [
+    { name: 'Brandon Davis', position: 'ARM' },
+    { name: 'Michael Jacobs', position: 'ALA' },
+    { name: 'Tyrone Lyons', position: 'ALA' },
+  ],
+  Texas: [
+    { name: 'Max Abmas', position: 'ARM' },
+    { name: 'Dylan Disu', position: 'ALA' },
+    { name: 'Tyrese Hunter', position: 'ARM' },
+  ],
+  Besiktas: [
+    { name: 'Derek Needham', position: 'ARM' },
+    { name: 'Matt Mitchell', position: 'ALA' },
+    { name: 'Jonah Mathews', position: 'ARM' },
+  ],
+  Lietkabelis: [
+    { name: 'Gediminas Orelik', position: 'ALA' },
+    { name: 'Vytenis Lipkevicius', position: 'ALA' },
+    { name: 'Kristupas Zemaitis', position: 'ARM' },
+  ],
+  'Chemnitz 99': [
+    { name: 'Aher Uguak', position: 'ALA' },
+    { name: 'Kaza Kajami-Keane', position: 'ARM' },
+    { name: 'Wes van Beck', position: 'ALA' },
+  ],
+  Panionios: [
+    { name: 'Kendrick Ray', position: 'ARM' },
+    { name: 'Giorgos Tsalmpouris', position: 'PIV' },
+    { name: 'Nikos Gikas', position: 'ARM' },
+  ],
+  'Hapoel Jerusalem': [
+    { name: 'Levi Randolph', position: 'ALA' },
+    { name: 'Khadeen Carrington', position: 'ARM' },
+    { name: 'Austin Wiley', position: 'PIV' },
+  ],
+  'Hamburg Towers': [
+    { name: 'Brae Ivey', position: 'ARM' },
+    { name: 'Jordan Barnett', position: 'ALA' },
+    { name: 'Nico Brauner', position: 'ARM' },
+  ],
+  'Independiente Santiago del Estero': [
+    { name: 'Juan Brussino', position: 'ARM' },
+    { name: 'Andrés Lugli', position: 'ALA' },
+    { name: 'Eduardo Vasirani', position: 'PIV' },
+  ],
+  'Sportivo Suardi': [
+    { name: 'Santiago Calderón', position: 'ARM' },
+    { name: 'Pablo Martínez', position: 'ALA' },
+    { name: 'Horacio Rigada', position: 'PIV' },
+  ],
+  'Santa Paula de Galvez': [
+    { name: 'Agustín Chiana', position: 'ARM' },
+    { name: 'Alejandro Madera', position: 'ALA' },
+    { name: 'Matías Galligani', position: 'PIV' },
+  ],
+  'San Isidro': [
+    { name: 'Santiago Ludueña', position: 'ARM' },
+    { name: 'Bruno Barovero', position: 'ARM' },
+    { name: 'Federico Zezular', position: 'ALA' },
+  ],
+  Ciclista: [
+    { name: 'Manuel Lambrisca', position: 'ARM' },
+    { name: 'Alejo Crotti', position: 'ALA' },
+    { name: 'Maximiliano Tamburini', position: 'ALA' },
+  ],
+  'Racing Avellaneda': [
+    { name: 'Matías Núñez', position: 'ARM' },
+    { name: 'Erbel De Pietro', position: 'ALA' },
+    { name: 'Sebastián Chaine', position: 'PIV' },
+  ],
+  Botafogo: [
+    { name: 'Coelho', position: 'ARM' },
+    { name: 'Pastor', position: 'ALA' },
+    { name: 'Machado', position: 'ALA' },
+  ],
+  'Caxias do Sul': [
+    { name: 'Alexey', position: 'ARM' },
+    { name: 'Enzo', position: 'ALA' },
+    { name: 'Pedro', position: 'PIV' },
+  ],
+}
+
+const isPlayerPropsMarket = (marketId: string) =>
+  marketId === FOOTBALL_PLAYER_PROPS_MARKET_ID ||
+  marketId === FOOTBALL_ASSISTS_MARKET_ID ||
+  marketId === BASKETBALL_PLAYER_PROPS_MARKET_ID
+
+const getPlayerPropAvatar = (sport: string) =>
+  sport === 'basquete' ? playerAvatarBasquete : playerAvatarFutebol
+
+const getPlayerPropOptionSets = (sport: string, marketId: string) => {
+  if (marketId === FOOTBALL_ASSISTS_MARKET_ID) return footballAssistPropOptionSets
+  return sport === 'basquete' ? basketballPlayerPropOptionSets : footballPlayerPropOptionSets
+}
+
+const getTeamPlayerProfiles = (teamName: string, sport: string, marketId: string) => {
+  if (marketId === FOOTBALL_ASSISTS_MARKET_ID) return footballAssistPlayersByTeam[teamName] ?? []
+  return sport === 'basquete' ? basketballPlayersByTeam[teamName] ?? [] : footballFinishingPlayersByTeam[teamName] ?? []
+}
+
+const getMatchPlayerProps = (
+  match: PlayerPropsMatch,
+  sport: string,
+  marketId = sport === 'basquete' ? BASKETBALL_PLAYER_PROPS_MARKET_ID : FOOTBALL_PLAYER_PROPS_MARKET_ID
+): MatchPlayerProp[] => {
+  const optionSets = getPlayerPropOptionSets(sport, marketId)
+  const image = getPlayerPropAvatar(sport)
+  const homePlayers = getTeamPlayerProfiles(match.homeTeam.name, sport, marketId)
+  const awayPlayers = getTeamPlayerProfiles(match.awayTeam.name, sport, marketId)
+  const orderedPlayers = [
+    ...homePlayers.slice(0, 1).map((player) => ({ ...player, teamName: match.homeTeam.name, teamIcon: match.homeTeam.icon, teamSide: 'home' as const })),
+    ...awayPlayers.slice(0, 1).map((player) => ({ ...player, teamName: match.awayTeam.name, teamIcon: match.awayTeam.icon, teamSide: 'away' as const })),
+    ...homePlayers.slice(1, 2).map((player) => ({ ...player, teamName: match.homeTeam.name, teamIcon: match.homeTeam.icon, teamSide: 'home' as const })),
+    ...awayPlayers.slice(1, 2).map((player) => ({ ...player, teamName: match.awayTeam.name, teamIcon: match.awayTeam.icon, teamSide: 'away' as const })),
+    ...homePlayers.slice(2).map((player) => ({ ...player, teamName: match.homeTeam.name, teamIcon: match.homeTeam.icon, teamSide: 'home' as const })),
+    ...awayPlayers.slice(2).map((player) => ({ ...player, teamName: match.awayTeam.name, teamIcon: match.awayTeam.icon, teamSide: 'away' as const })),
+  ]
+  const uniquePlayerNames = new Set<string>()
+
+  return orderedPlayers.reduce<MatchPlayerProp[]>((players, player) => {
+    if (players.length >= PLAYER_PROPS_PER_MATCH || uniquePlayerNames.has(player.name)) return players
+
+    uniquePlayerNames.add(player.name)
+    players.push({
+      id: `${match.id}-${player.teamName}-${player.name}`,
+      playerName: player.name,
+      teamName: player.teamName,
+      teamIcon: player.teamIcon,
+      teamSide: player.teamSide,
+      sport,
+      position: player.position,
+      image,
+      options: optionSets[players.length % optionSets.length],
+    })
+    return players
+  }, [])
+}
+
+const getInitialPlayerPropOptionIndex = (options: PlayerPropOption[]) => {
+  const activeIndex = options.findIndex((option) => option.active)
+  return activeIndex >= 0 ? activeIndex : Math.floor(options.length / 2)
+}
+
+export function PreMatchPlayerPropCard({ player }: { player: MatchPlayerProp }) {
+  const fallbackTeamIcon = getPreMatchSportFallbackIcon(player.sport)
+  const resolvedTeamIcon = useSportsDbTeamLogo(player.teamName, player.teamIcon, player.sport, fallbackTeamIcon || undefined, {
+    useCurrentLogoFallback: false,
+  })
+  const isFallbackTeamIcon = isPreMatchSportFallbackIcon(resolvedTeamIcon, player.sport)
+  const fallbackTeamIconModifier = player.sport === 'basquete' ? 'basketball' : 'sport'
+  const [activeOptionIndex, setActiveOptionIndex] = useState(() =>
+    getInitialPlayerPropOptionIndex(player.options)
+  )
+  const [isDraggingOptions, setIsDraggingOptions] = useState(false)
+  const activeOptionIndexRef = useRef(activeOptionIndex)
+  const optionsScrollRef = useRef<HTMLDivElement | null>(null)
+  const optionDrag = useRef<{
+    startX: number
+    startY?: number
+    scrollLeft: number
+    startIndex: number
+    moved: boolean
+    pointerId?: number
+    sensitivity: number
+  } | null>(null)
+  const suppressOptionClick = useRef(false)
+  const wheelLock = useRef(0)
+  const playerPropsScrollLockTimeout = useRef<number | null>(null)
+  const programmaticOptionTarget = useRef<number | null>(null)
+  const programmaticOptionTimeout = useRef<number | null>(null)
+
+  const clearProgrammaticOptionTarget = useCallback(() => {
+    if (programmaticOptionTimeout.current) {
+      window.clearTimeout(programmaticOptionTimeout.current)
+      programmaticOptionTimeout.current = null
+    }
+
+    programmaticOptionTarget.current = null
+  }, [])
+
+  const setPlayerPropsScrollLocked = useCallback((locked: boolean) => {
+    if (playerPropsScrollLockTimeout.current) {
+      window.clearTimeout(playerPropsScrollLockTimeout.current)
+      playerPropsScrollLockTimeout.current = null
+    }
+
+    optionsScrollRef.current
+      ?.closest('.prematch-section__player-props')
+      ?.classList.toggle('prematch-section__player-props--odds-active', locked)
+  }, [])
+
+  const releasePlayerPropsScrollLock = useCallback((delay = 0) => {
+    if (playerPropsScrollLockTimeout.current) {
+      window.clearTimeout(playerPropsScrollLockTimeout.current)
+    }
+
+    playerPropsScrollLockTimeout.current = window.setTimeout(() => {
+      optionsScrollRef.current
+        ?.closest('.prematch-section__player-props')
+        ?.classList.remove('prematch-section__player-props--odds-active')
+      playerPropsScrollLockTimeout.current = null
+    }, delay)
+  }, [])
+
+  const scrollOptionIntoCenter = useCallback((index: number, behavior: ScrollBehavior = 'smooth') => {
+    const containerEl = optionsScrollRef.current
+    const optionEl = containerEl?.children.item(index) as HTMLElement | null
+    if (!containerEl || !optionEl) return
+
+    const optionCenter = optionEl.offsetLeft + optionEl.offsetWidth / 2
+    const targetScroll = optionCenter - containerEl.clientWidth / 2
+    const nextScrollLeft = Math.max(0, targetScroll)
+
+    if (behavior === 'auto') {
+      containerEl.scrollLeft = nextScrollLeft
+      return
+    }
+
+    containerEl.scrollTo({ left: nextScrollLeft, behavior })
+  }, [])
+
+  const getCenteredOptionIndex = useCallback(() => {
+    const containerEl = optionsScrollRef.current
+    if (!containerEl || containerEl.children.length === 0) return -1
+
+    const containerCenter = containerEl.scrollLeft + containerEl.clientWidth / 2
+    let nearestIndex = 0
+    let nearestDistance = Number.POSITIVE_INFINITY
+
+    Array.from(containerEl.children).forEach((child, index) => {
+      const optionEl = child as HTMLElement
+      const optionCenter = optionEl.offsetLeft + optionEl.offsetWidth / 2
+      const distance = Math.abs(optionCenter - containerCenter)
+
+      if (distance < nearestDistance) {
+        nearestIndex = index
+        nearestDistance = distance
+      }
+    })
+
+    return nearestIndex
+  }, [])
+
+  const clampOptionScroll = useCallback(() => {
+    const containerEl = optionsScrollRef.current
+    if (!containerEl) return
+
+    const maxScroll = Math.max(0, containerEl.scrollWidth - containerEl.clientWidth)
+    const nextScroll = Math.min(maxScroll, Math.max(0, containerEl.scrollLeft))
+
+    if (Math.abs(containerEl.scrollLeft - nextScroll) > 0.5) {
+      containerEl.scrollLeft = nextScroll
+    }
+  }, [])
+
+  const setActiveOption = (index: number) => {
+    if (activeOptionIndexRef.current === index) return
+
+    activeOptionIndexRef.current = index
+    setActiveOptionIndex(index)
+  }
+
+  const centerOption = (index: number, behavior: ScrollBehavior = 'smooth') => {
+    clearProgrammaticOptionTarget()
+    programmaticOptionTarget.current = index
+    setActiveOption(index)
+    window.requestAnimationFrame(() => scrollOptionIntoCenter(index, behavior))
+
+    if (behavior === 'auto') {
+      programmaticOptionTarget.current = null
+      return
+    }
+
+    programmaticOptionTimeout.current = window.setTimeout(() => {
+      programmaticOptionTarget.current = null
+      programmaticOptionTimeout.current = null
+    }, PLAYER_PROP_OPTION_PROGRAMMATIC_MS)
+  }
+
+  const stepOption = (direction: number) => {
+    const currentIndex = activeOptionIndexRef.current ?? Math.max(0, getCenteredOptionIndex())
+    const nextIndex = Math.min(player.options.length - 1, Math.max(0, currentIndex + direction))
+
+    if (currentIndex !== nextIndex) {
+      centerOption(nextIndex)
+    }
+  }
+
+  const updateCenteredOption = () => {
+    clampOptionScroll()
+
+    if (programmaticOptionTarget.current !== null) return
+
+    const centeredIndex = getCenteredOptionIndex()
+    if (centeredIndex < 0) return
+    setActiveOption(centeredIndex)
+  }
+
+  const snapToNearestOption = (dragDelta = 0, startIndex?: number) => {
+    const containerEl = optionsScrollRef.current
+    if (!containerEl) return
+
+    const nearestIndex = getCenteredOptionIndex()
+    const lastIndex = containerEl.children.length - 1
+    const initialIndex = startIndex ?? activeOptionIndexRef.current ?? nearestIndex
+    let targetIndex = nearestIndex
+
+    if (Math.abs(dragDelta) > PLAYER_PROP_OPTION_SWIPE_THRESHOLD && nearestIndex === initialIndex) {
+      targetIndex = initialIndex + (dragDelta > 0 ? 1 : -1)
+    }
+
+    targetIndex = Math.max(0, Math.min(lastIndex, targetIndex))
+    centerOption(targetIndex)
+  }
+
+  const handleOptionPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+
+    const containerEl = optionsScrollRef.current
+    if (!containerEl) return
+
+    event.stopPropagation()
+    containerEl.setPointerCapture?.(event.pointerId)
+    clearProgrammaticOptionTarget()
+    setPlayerPropsScrollLocked(true)
+    setIsDraggingOptions(true)
+    optionDrag.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      scrollLeft: containerEl.scrollLeft,
+      startIndex: activeOptionIndexRef.current ?? getCenteredOptionIndex(),
+      moved: false,
+      pointerId: event.pointerId,
+      sensitivity: event.pointerType === 'touch'
+        ? PLAYER_PROP_OPTION_TOUCH_SENSITIVITY
+        : PLAYER_PROP_OPTION_MOUSE_SENSITIVITY,
+    }
+  }
+
+  const handleOptionPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = optionDrag.current
+    const containerEl = optionsScrollRef.current
+    if (!drag || !containerEl) return
+
+    event.stopPropagation()
+    if (event.cancelable) {
+      event.preventDefault()
+    }
+
+    const walk = (event.clientX - drag.startX) * drag.sensitivity
+    drag.moved = drag.moved || Math.abs(walk) > 4
+    containerEl.scrollLeft = drag.scrollLeft - walk
+    clampOptionScroll()
+  }
+
+  const finishOptionDrag = (releaseDelay = 0) => {
+    const drag = optionDrag.current
+    const containerEl = optionsScrollRef.current
+    if (!drag) return
+
+    const dragDelta = containerEl ? containerEl.scrollLeft - drag.scrollLeft : 0
+
+    if (containerEl && drag.pointerId !== undefined && containerEl.hasPointerCapture?.(drag.pointerId)) {
+      containerEl.releasePointerCapture(drag.pointerId)
+    }
+
+    optionDrag.current = null
+    setIsDraggingOptions(false)
+    releasePlayerPropsScrollLock(releaseDelay)
+
+    if (drag.moved) {
+      suppressOptionClick.current = true
+      window.setTimeout(() => {
+        suppressOptionClick.current = false
+      }, 0)
+    }
+
+    snapToNearestOption(dragDelta, drag.startIndex)
+  }
+
+  const handleOptionPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    event.stopPropagation()
+    finishOptionDrag(140)
+  }
+
+  const handleOptionPointerCancel = (event: PointerEvent<HTMLDivElement>) => {
+    event.stopPropagation()
+    finishOptionDrag(140)
+  }
+
+  const handleOptionWheel = (event: WheelEvent<HTMLDivElement>) => {
+    event.stopPropagation()
+    const movement = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY
+    if (Math.abs(movement) < 12) return
+    event.preventDefault()
+    setPlayerPropsScrollLocked(true)
+    releasePlayerPropsScrollLock(260)
+
+    const now = event.timeStamp
+    if (now - wheelLock.current < 220) return
+    wheelLock.current = now
+
+    stepOption(movement > 0 ? 1 : -1)
+  }
+
+  useEffect(() => {
+    activeOptionIndexRef.current = activeOptionIndex
+  }, [activeOptionIndex])
+
+  useLayoutEffect(() => {
+    const initialIndex = getInitialPlayerPropOptionIndex(player.options)
+    activeOptionIndexRef.current = initialIndex
+    scrollOptionIntoCenter(initialIndex, 'auto')
+  }, [player.options, scrollOptionIntoCenter])
+
+  useEffect(() => () => {
+    if (playerPropsScrollLockTimeout.current) {
+      window.clearTimeout(playerPropsScrollLockTimeout.current)
+    }
+    if (programmaticOptionTimeout.current) {
+      window.clearTimeout(programmaticOptionTimeout.current)
+    }
+
+    optionsScrollRef.current
+      ?.closest('.prematch-section__player-props')
+      ?.classList.remove('prematch-section__player-props--odds-active')
+  }, [])
+
+  return (
+    <article className="prematch-section__player-prop-card">
+      <img src={iconStats} alt="" className="prematch-section__player-prop-stat-icon" />
+      {resolvedTeamIcon ? (
+        <img
+          src={resolvedTeamIcon}
+          alt=""
+          className={`prematch-section__player-prop-team-icon${isFallbackTeamIcon ? ` prematch-section__player-prop-team-icon--${fallbackTeamIconModifier}-${player.teamSide}` : ''}`}
+        />
+      ) : null}
+      <img
+        src={player.image}
+        alt=""
+        className="prematch-section__player-prop-avatar"
+      />
+      <div className="prematch-section__player-prop-name">
+        <strong>{player.playerName}</strong>
+        <span>{player.position}</span>
+      </div>
+      <div className="prematch-section__player-prop-options" aria-label={`Odds de ${player.playerName}`} onWheel={handleOptionWheel}>
+        <div
+          ref={optionsScrollRef}
+          className={`prematch-section__player-prop-options-scroll${isDraggingOptions ? ' prematch-section__player-prop-options-scroll--dragging' : ''}`}
+          onScroll={updateCenteredOption}
+          onPointerDown={handleOptionPointerDown}
+          onPointerMove={handleOptionPointerMove}
+          onPointerUp={handleOptionPointerUp}
+          onPointerCancel={handleOptionPointerCancel}
+          onLostPointerCapture={() => finishOptionDrag()}
+        >
+          {player.options.map((option, index) => (
+            <button
+              key={`${player.id}-${option.label}`}
+              type="button"
+              className={`prematch-section__player-prop-option${activeOptionIndex === index ? ' prematch-section__player-prop-option--active' : ''}`}
+              onClick={(event) => {
+                event.stopPropagation()
+                if (suppressOptionClick.current) {
+                  suppressOptionClick.current = false
+                  event.preventDefault()
+                  return
+                }
+                centerOption(index)
+              }}
+            >
+              <span>{option.label}</span>
+              <strong>{option.odd}</strong>
+            </button>
+          ))}
+        </div>
+      </div>
+    </article>
+  )
+}
 
 const leagues: League[] = [
   {
@@ -653,6 +1867,7 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
   const marketChipsRef = useRef<HTMLDivElement>(null)
   const sportChipRefs = useRef<(HTMLButtonElement | null)[]>([])
   const marketChipRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const marketScrollAnchorRef = useRef<MarketScrollAnchor | null>(null)
   const marketStickyState = useHomeMarketStickyState(sectionRef, marketChipsRef)
 
   // Reset market chips scroll position when sport changes
@@ -666,6 +1881,79 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
     setBottomSheetSport(sport)
     setShowBottomSheet(true)
   }
+
+  const getHomeScrollContainer = useCallback(
+    () => sectionRef.current?.closest<HTMLElement>('.home') ?? null,
+    []
+  )
+
+  const getMarketScrollAnchor = (): MarketScrollAnchor | null => {
+    const sectionEl = sectionRef.current
+    if (!sectionEl) return null
+
+    const scrollContainerEl = getHomeScrollContainer()
+    const scrollFrameRect = scrollContainerEl?.getBoundingClientRect() ?? {
+      top: 0,
+      bottom: window.innerHeight,
+    }
+    const marketChipsBottom = marketChipsRef.current?.getBoundingClientRect().bottom ?? scrollFrameRect.top
+    const anchorLine = Math.max(scrollFrameRect.top, marketChipsBottom) + 8
+    const matchEls = Array.from(sectionEl.querySelectorAll<HTMLElement>('[data-prematch-match-key]'))
+    const visibleMatches = matchEls
+      .map((matchEl) => ({
+        matchEl,
+        rect: matchEl.getBoundingClientRect(),
+      }))
+      .filter(({ rect }) => rect.bottom > anchorLine && rect.top < scrollFrameRect.bottom)
+
+    if (visibleMatches.length === 0) return null
+
+    const anchorMatch = visibleMatches.reduce((bestMatch, currentMatch) => {
+      const getScore = ({ rect }: { rect: DOMRect }) => (
+        rect.top <= anchorLine && rect.bottom >= anchorLine
+          ? 0
+          : Math.abs(rect.top - anchorLine)
+      )
+
+      return getScore(currentMatch) < getScore(bestMatch) ? currentMatch : bestMatch
+    }, visibleMatches[0])
+    const matchKey = anchorMatch.matchEl.dataset.prematchMatchKey
+
+    if (!matchKey) return null
+
+    return {
+      matchKey,
+      top: anchorMatch.rect.top,
+    }
+  }
+
+  const restoreMarketScrollAnchor = useCallback(() => {
+    const anchor = marketScrollAnchorRef.current
+    const sectionEl = sectionRef.current
+    if (!anchor || !sectionEl) return
+
+    marketScrollAnchorRef.current = null
+
+    const matchEl = Array.from(sectionEl.querySelectorAll<HTMLElement>('[data-prematch-match-key]'))
+      .find((currentMatchEl) => currentMatchEl.dataset.prematchMatchKey === anchor.matchKey)
+
+    if (!matchEl) return
+
+    const delta = matchEl.getBoundingClientRect().top - anchor.top
+    if (Math.abs(delta) < 0.5) return
+
+    const scrollContainerEl = getHomeScrollContainer()
+    if (scrollContainerEl) {
+      scrollContainerEl.scrollTop += delta
+      return
+    }
+
+    window.scrollBy({ top: delta, behavior: 'auto' })
+  }, [getHomeScrollContainer])
+
+  useLayoutEffect(() => {
+    restoreMarketScrollAnchor()
+  }, [activeMarket, restoreMarketScrollAnchor])
 
   // Get current market chips and filtered leagues based on sport
   const currentMarketChips = activeSport === 'basquete' ? basketballMarketChips : footballMarketChips
@@ -811,6 +2099,9 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
             ref={(el) => { marketChipRefs.current[index] = el }}
             className={`prematch-section__chip prematch-section__chip--market sliding-chip ${activeMarket === chip.id ? 'prematch-section__chip--active' : ''}`}
             onClick={() => {
+              if (chip.id !== activeMarket) {
+                marketScrollAnchorRef.current = getMarketScrollAnchor()
+              }
               setActiveMarket(chip.id)
               // Scroll to make chip visible
               const chipEl = marketChipRefs.current[index]
@@ -859,10 +2150,16 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
               <div className={`prematch-section__matches-wrapper ${openLeagues.includes(league.id) ? 'prematch-section__matches-wrapper--open' : ''}`}>
                 <div className="prematch-section__matches-inner">
                   <div className="prematch-section__matches">
-                    {league.matches.map((match, matchIndex) => (
+                    {league.matches.map((match, matchIndex) => {
+                      const matchPlayerProps = isPlayerPropsMarket(activeMarket)
+                        ? getMatchPlayerProps(match, league.sport, activeMarket)
+                        : []
+
+                      return (
                       <div
                         key={match.id}
-                        className={`prematch-section__match${onMatchClick ? ' prematch-section__match--clickable' : ''}`}
+                        data-prematch-match-key={`${league.id}:${match.id}`}
+                        className={`prematch-section__match${onMatchClick ? ' prematch-section__match--clickable' : ''}${isPlayerPropsMarket(activeMarket) ? ' prematch-section__match--player-props' : ''}`}
                         onClick={onMatchClick ? () => openPreMatchEvent(league, matchIndex) : undefined}
                       >
                         {/* Match Header */}
@@ -888,7 +2185,7 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
                             </div>
                           </div>
                           <div className="prematch-section__match-info">
-                            {match.extraBets && (activeMarket === 'resultado-final' || activeMarket === 'vencedor') ? (
+                            {match.extraBets && (activeMarket === 'resultado-final' || activeMarket === 'vencedor' || isPlayerPropsMarket(activeMarket)) ? (
                               <button 
                                 type="button"
                                 className="prematch-section__match-info-content prematch-section__match-info-content--clickable"
@@ -914,7 +2211,19 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
                         </div>
 
                         {/* Odds */}
-                        <div className="prematch-section__odds">
+                        {isPlayerPropsMarket(activeMarket) ? (
+                          <div
+                            key={`${match.id}-${activeMarket}-player-props`}
+                            className="prematch-section__player-props"
+                            aria-label={`Jogadores de ${match.homeTeam.name} x ${match.awayTeam.name}`}
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            {matchPlayerProps.map((player) => (
+                              <PreMatchPlayerPropCard key={player.id} player={player} />
+                            ))}
+                          </div>
+                        ) : (
+                        <div key={`${match.id}-${activeMarket}-odds`} className="prematch-section__odds">
                           {/* Football Markets */}
                           {activeMarket === 'dupla-chance' && match.doubleChanceOdds ? (
                             <>
@@ -1042,8 +2351,10 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
                             </>
                           )}
                         </div>
+                        )}
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
                   <button
                     type="button"

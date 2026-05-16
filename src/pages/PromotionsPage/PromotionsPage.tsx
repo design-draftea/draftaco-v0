@@ -68,6 +68,17 @@ export function PromotionsPage({
   const [activeFilter, setActiveFilter] = useState<PromotionsFilterId>('todos')
   const [isHeaderCompact, setIsHeaderCompact] = useState(false)
 
+  const scrollPageToTop = () => {
+    pageRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    setIsHeaderCompact(false)
+  }
+
+  const handleFilterClick = (filterId: PromotionsFilterId) => {
+    setActiveFilter(filterId)
+    scrollPageToTop()
+  }
+
   useSlidingActiveIndicator({
     activeKey: activeFilter,
     refreshKey: isHeaderCompact,
@@ -277,7 +288,7 @@ export function PromotionsPage({
                 ]
                   .filter(Boolean)
                   .join(' ')}
-                onClick={() => setActiveFilter(filter.id)}
+                onClick={() => handleFilterClick(filter.id)}
                 aria-pressed={isActive}
               >
                 {filter.label}

@@ -281,6 +281,10 @@
   border-radius: 12px;
 }
 
+.live-section__match--player-props {
+  overflow: hidden;
+}
+
 .live-section__match-header {
   display: flex;
   align-items: center;
