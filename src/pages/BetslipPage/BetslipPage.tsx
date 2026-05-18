@@ -164,13 +164,16 @@ const formatOddsProduct = (selections: BetslipSelection[]) => (
 
 const getSelectionGroupOddsValue = (selections: BetslipSelection[]) => {
   const firstSelection = selections[0]
-
-  if (
+  const isCompleteCombo = Boolean(
     firstSelection?.comboId
     && firstSelection.comboTotalOddValue
+    && firstSelection.comboLegCount
+    && selections.length >= firstSelection.comboLegCount
     && selections.every((selection) => selection.comboId === firstSelection.comboId)
-  ) {
-    return firstSelection.comboTotalOddValue
+  )
+
+  if (isCompleteCombo) {
+    return firstSelection.comboTotalOddValue ?? selections.reduce((total, selection) => total * selection.oddValue, 1)
   }
 
   return selections.reduce((total, selection) => total * selection.oddValue, 1)
@@ -178,13 +181,16 @@ const getSelectionGroupOddsValue = (selections: BetslipSelection[]) => {
 
 const getSelectionGroupOddsLabel = (selections: BetslipSelection[]) => {
   const firstSelection = selections[0]
-
-  if (
+  const isCompleteCombo = Boolean(
     firstSelection?.comboId
     && firstSelection.comboTotalOddLabel
+    && firstSelection.comboLegCount
+    && selections.length >= firstSelection.comboLegCount
     && selections.every((selection) => selection.comboId === firstSelection.comboId)
-  ) {
-    return firstSelection.comboTotalOddLabel
+  )
+
+  if (isCompleteCombo) {
+    return firstSelection.comboTotalOddLabel ?? formatOddsProduct(selections)
   }
 
   return formatOddsProduct(selections)

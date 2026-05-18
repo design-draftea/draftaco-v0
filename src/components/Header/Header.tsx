@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom'
 import { ListIcon } from '@phosphor-icons/react'
 import './Header.css'
 import logoReidoPitaco from '../../assets/logoReidoPitaco.svg'
+import { NavigationMenuBottomSheet } from '../NavigationMenuBottomSheet'
 import type { ProductMode } from '../../types/home'
 import { productLabels } from '../../data/homeProducts'
 
@@ -36,6 +37,7 @@ export function Header({
   const [isLogoCompact, setIsLogoCompact] = useState(false)
   const [displayProduct, setDisplayProduct] = useState<ProductMode>(activeProduct)
   const [isToggleSwitching, setIsToggleSwitching] = useState(false)
+  const [isNavigationMenuOpen, setIsNavigationMenuOpen] = useState(false)
   const headerTopRef = useRef<HTMLDivElement>(null)
   const toggleRef = useRef<HTMLButtonElement>(null)
   const accountActionsRef = useRef<HTMLDivElement>(null)
@@ -298,7 +300,13 @@ export function Header({
             </span>
           </div>
           {showMenuButton && (
-            <button type="button" className="header__menu-btn" aria-label="Abrir menu">
+            <button
+              type="button"
+              className="header__menu-btn"
+              aria-label="Abrir menu"
+              aria-expanded={isNavigationMenuOpen}
+              onClick={() => setIsNavigationMenuOpen(true)}
+            >
               <ListIcon aria-hidden="true" className="header__menu-icon" weight="bold" />
             </button>
           )}
@@ -307,6 +315,12 @@ export function Header({
 
       {rail}
       {children}
+      {showMenuButton && (
+        <NavigationMenuBottomSheet
+          isOpen={isNavigationMenuOpen}
+          onClose={() => setIsNavigationMenuOpen(false)}
+        />
+      )}
     </header>
   )
 }

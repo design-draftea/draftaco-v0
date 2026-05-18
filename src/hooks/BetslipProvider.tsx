@@ -175,16 +175,7 @@ export function BetslipProvider({ children }: { children: ReactNode }) {
 
   const removeSelection = useCallback((selectionId: string) => {
     setBetslipState((current) => {
-      const selectionToRemove = current.selectionsById[selectionId]
       const selectionIdsToRemove = new Set([selectionId])
-
-      if (selectionToRemove?.comboId) {
-        Object.values(current.selectionsById).forEach((selection) => {
-          if (selection.comboId === selectionToRemove.comboId) {
-            selectionIdsToRemove.add(selection.id)
-          }
-        })
-      }
 
       const selectedSelectionIdsByGroup = { ...current.selectedSelectionIdsByGroup }
 
@@ -213,14 +204,36 @@ export function BetslipProvider({ children }: { children: ReactNode }) {
   const summary = useMemo<BetslipSummary>(() => {
     if (selections.length === 0) return EMPTY_BETSLIP_SUMMARY
 
-    const countedComboIds = new Set<string>()
-    const totalOdds = selections.reduce((total, selection) => {
-      if (!selection.comboId) return total * selection.oddValue
-      if (countedComboIds.has(selection.comboId)) return total
+    const comboSelectionsById = new Map<string, BetslipSelection[]>()
+    const standaloneSelections: BetslipSelection[] = []
 
-      countedComboIds.add(selection.comboId)
-      return total * (selection.comboTotalOddValue ?? selection.oddValue)
-    }, 1)
+    selections.forEach((selection) => {
+      if (!selection.comboId) {
+        standaloneSelections.push(selection)
+        return
+      }
+
+      comboSelectionsById.set(selection.comboId, [
+        ...(comboSelectionsById.get(selection.comboId) ?? []),
+        selection,
+      ])
+    })
+
+    let totalOdds = standaloneSelections.reduce((total, selection) => total * selection.oddValue, 1)
+
+    comboSelectionsById.forEach((comboSelections) => {
+      const firstSelection = comboSelections[0]
+      const isCompleteCombo = Boolean(
+        firstSelection?.comboTotalOddValue
+        && firstSelection.comboLegCount
+        && comboSelections.length >= firstSelection.comboLegCount
+      )
+
+      totalOdds *= isCompleteCombo
+        ? firstSelection.comboTotalOddValue!
+        : comboSelections.reduce((comboTotal, selection) => comboTotal * selection.oddValue, 1)
+    })
+
     const potentialWin = BETSLIP_STAKE * totalOdds
 
     return {

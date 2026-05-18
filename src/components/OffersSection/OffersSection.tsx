@@ -7,6 +7,7 @@ import {
   createBetslipSelection,
   getBetslipEventId,
   getBetslipMarketGroupId,
+  normalizeBetslipIdPart,
   type BetslipSelection,
 } from '../../hooks/betslipUtils'
 import { useBetslip } from '../../hooks/useBetslip'
@@ -115,6 +116,31 @@ function OfferTeamLogo({ teamName, currentLogo, sport, className }: OfferTeamLog
 const getOfferTeamName = (label: string, logo: string) =>
   offerTeamNameByLogo[logo] ?? label
 
+const offerTeamAliasByKey: Record<string, string> = {
+  'chicago-bulls': 'bulls',
+  'miami-heat': 'heat',
+  'golden-state': 'warriors',
+  'golden-state-warriors': 'warriors',
+  'la-lakers': 'lakers',
+  'los-angeles-lakers': 'lakers',
+  'detroit-pistons': 'pistons',
+  'cleveland-cavaliers': 'cavaliers',
+}
+
+const getOfferTeamKey = (teamName = '') => {
+  const normalizedTeam = normalizeBetslipIdPart(
+    teamName
+      .replace(/\b\d+(?:[,.]\d+)?\+?\b/g, ' ')
+      .replace(/\b(?:mais|menos|de|over|under)\b/gi, ' ')
+  )
+
+  return offerTeamAliasByKey[normalizedTeam] ?? normalizedTeam
+}
+
+const isSameOfferTeam = (firstTeam: string | undefined, secondTeam: string | undefined) => (
+  Boolean(firstTeam && secondTeam && getOfferTeamKey(firstTeam) === getOfferTeamKey(secondTeam))
+)
+
 interface OfferCard {
   id: string
   type: 'combinada' | 'super_combinada' | 'super_aumentada' | 'aumentada' | 'pechincha'
@@ -179,6 +205,111 @@ interface LiveOfferDetails {
   awayScore: number
 }
 
+interface OfferMatchFixture {
+  sport: string
+  homeTeam: string
+  awayTeam: string
+  homeIcon?: string
+  awayIcon?: string
+  dateTime?: string
+}
+
+const offerMatchFixtures: OfferMatchFixture[] = [
+  {
+    sport: 'basquete',
+    homeTeam: 'Bulls',
+    awayTeam: 'Heat',
+    homeIcon: escudoBullsGde,
+    awayIcon: escudoMiami,
+    dateTime: 'Hoje, 22:00',
+  },
+  {
+    sport: 'basquete',
+    homeTeam: 'Warriors',
+    awayTeam: 'Lakers',
+    homeIcon: escudoWarriorsGde,
+    awayIcon: escudoLakers,
+    dateTime: 'Amanhã, 21:30',
+  },
+  {
+    sport: 'basquete',
+    homeTeam: 'Pistons',
+    awayTeam: 'Cavaliers',
+    homeIcon: escudoPistonsGde,
+    awayIcon: escudoCavaliers,
+    dateTime: 'Amanhã, 23:00',
+  },
+]
+
+const findOfferMatchFixture = (teamName: string | undefined, sport: string | undefined, opponentName?: string) => {
+  if (!teamName) return undefined
+
+  return offerMatchFixtures.find((fixture) => {
+    if (sport && fixture.sport !== sport) return false
+
+    const hasTeam = isSameOfferTeam(fixture.homeTeam, teamName) || isSameOfferTeam(fixture.awayTeam, teamName)
+    const hasOpponent = !opponentName
+      || isSameOfferTeam(fixture.homeTeam, opponentName)
+      || isSameOfferTeam(fixture.awayTeam, opponentName)
+
+    return hasTeam && hasOpponent
+  })
+}
+
+const resolveOfferMatch = ({
+  sport,
+  teamName,
+  opponentName,
+  fallbackHomeTeam,
+  fallbackAwayTeam,
+  fallbackHomeIcon,
+  fallbackAwayIcon,
+  fallbackDate,
+}: {
+  sport?: string
+  teamName?: string
+  opponentName?: string
+  fallbackHomeTeam?: string
+  fallbackAwayTeam?: string
+  fallbackHomeIcon?: string
+  fallbackAwayIcon?: string
+  fallbackDate?: string
+}): OfferMatchFixture => {
+  const fixture = findOfferMatchFixture(teamName, sport, opponentName)
+  if (fixture) return fixture
+
+  return {
+    sport: sport ?? 'ofertas',
+    homeTeam: fallbackHomeTeam || teamName || 'Evento',
+    awayTeam: fallbackAwayTeam || opponentName || '',
+    homeIcon: fallbackHomeIcon,
+    awayIcon: fallbackAwayIcon,
+    dateTime: fallbackDate,
+  }
+}
+
+const getLiveOfferDetailsForMatch = (
+  detailsByMatch: Record<string, LiveOfferDetails>,
+  match: OfferMatchFixture,
+  fallbackDetails?: LiveOfferDetails
+) => (
+  detailsByMatch[`${match.homeTeam} vs ${match.awayTeam}`]
+    ?? detailsByMatch[`${match.awayTeam} vs ${match.homeTeam}`]
+    ?? fallbackDetails
+)
+
+const parseOfferOddValue = (oddLabel: string) => {
+  const oddValue = Number.parseFloat(oddLabel.replace(',', '.').replace(/[^0-9.]/g, ''))
+  return Number.isFinite(oddValue) && oddValue > 0 ? oddValue : null
+}
+
+const getOfferComboLegOddLabel = (totalOddLabel: string, legCount: number) => {
+  const totalOddValue = parseOfferOddValue(totalOddLabel)
+  if (!totalOddValue || legCount <= 0) return totalOddLabel
+
+  return `${Math.pow(totalOddValue, 1 / legCount).toFixed(2)}x`
+}
+
 interface OfferBetslipEntry {
   groupId: string
   selection: BetslipSelection
@@ -204,13 +335,13 @@ const getOfferComboLegCount = (offer: OfferCard) => (
 
 const getOfferComboBetslipEntries = (
   offer: OfferCard,
-  liveDetails: LiveOfferDetails | undefined
+  liveDetailsByMatch: Record<string, LiveOfferDetails>
 ): OfferBetslipEntry[] => {
   const legCount = getOfferComboLegCount(offer)
   if (offer.player || offer.teamStat || legCount === 0) return []
 
-  const eventStatus = liveDetails ? 'live' : 'prematch'
-  const eventTimeLabel = liveDetails?.time ?? offer.date
+  const offerLiveDetails = offer.subtitle ? liveDetailsByMatch[offer.subtitle] : undefined
+  const comboLegOddLabel = getOfferComboLegOddLabel(offer.newOdd, legCount)
   const comboId = `offer-${offer.id}`
   const comboProps = {
     comboId,
@@ -222,35 +353,50 @@ const getOfferComboBetslipEntries = (
 
   if (offer.events?.length) {
     return offer.events.map((event, index) => {
-      const homeTeam = getOfferTeamName(event.team1, event.team1Icon) || event.team1
-      const awayTeam = getOfferTeamName('', event.team2Icon)
-      const eventName = awayTeam ? `${homeTeam} x ${awayTeam}` : homeTeam
-      const marketId = `${event.market}-${homeTeam}-${awayTeam || index}`
+      const selectedTeamName = getOfferTeamName(event.team1, event.team1Icon) || event.team1
+      const opponentTeamName = getOfferTeamName('', event.team2Icon)
+      const resolvedMatch = resolveOfferMatch({
+        sport: offer.sport,
+        teamName: selectedTeamName,
+        opponentName: opponentTeamName,
+        fallbackHomeTeam: selectedTeamName,
+        fallbackAwayTeam: opponentTeamName,
+        fallbackHomeIcon: event.team1Icon,
+        fallbackAwayIcon: event.team2Icon,
+        fallbackDate: offer.date,
+      })
+      const liveDetails = getLiveOfferDetailsForMatch(liveDetailsByMatch, resolvedMatch, offerLiveDetails)
+      const eventName = resolvedMatch.awayTeam
+        ? `${resolvedMatch.homeTeam} x ${resolvedMatch.awayTeam}`
+        : resolvedMatch.homeTeam
+      const marketId = `${event.market}-${selectedTeamName}-${resolvedMatch.homeTeam}-${resolvedMatch.awayTeam || index}`
+      const isTeamSelection = normalizeBetslipIdPart(event.team1) === normalizeBetslipIdPart(selectedTeamName)
+        && (isSameOfferTeam(selectedTeamName, resolvedMatch.homeTeam) || isSameOfferTeam(selectedTeamName, resolvedMatch.awayTeam))
       const selection = createBetslipSelection({
         eventId: getBetslipEventId({
           sport: offer.sport ?? 'ofertas',
-          homeTeam,
-          awayTeam,
+          homeTeam: resolvedMatch.homeTeam,
+          awayTeam: resolvedMatch.awayTeam,
           fallbackId: `${offer.id}-event-${index}`,
         }),
         marketId,
         outcomeId: `${offer.id}-${index}-${event.team1}`,
         label: event.team1,
         selectionLabel: event.team1,
-        odd: offer.newOdd,
+        odd: comboLegOddLabel,
         marketLabel: event.market,
-        eventStatus,
-        selectionType: event.team1 === homeTeam ? 'team' : 'market',
+        eventStatus: liveDetails ? 'live' : 'prematch',
+        selectionType: isTeamSelection ? 'team' : 'market',
         sport: offer.sport,
-        homeTeam,
-        awayTeam,
+        homeTeam: resolvedMatch.homeTeam,
+        awayTeam: resolvedMatch.awayTeam,
         eventName,
-        eventTimeLabel,
+        eventTimeLabel: liveDetails?.time ?? resolvedMatch.dateTime ?? offer.date,
         liveClock: liveDetails?.time,
         homeScore: liveDetails?.homeScore,
         awayScore: liveDetails?.awayScore,
-        homeTeamIcon: event.team1Icon,
-        awayTeamIcon: event.team2Icon,
+        homeTeamIcon: resolvedMatch.homeIcon,
+        awayTeamIcon: resolvedMatch.awayIcon,
         selectionIcon: event.team1Icon,
         badgeType: 'boost',
         comboLegIndex: index,
@@ -269,11 +415,19 @@ const getOfferComboBetslipEntries = (
   return (offer.playerEvents ?? []).map((playerEvent, index) => {
     const eventMatchTeams = getOfferMatchTeams(playerEvent.name) ?? offerMatchTeams
     const iconTeamName = getOfferTeamName('', playerEvent.icon)
-    const homeTeam = eventMatchTeams?.homeTeam ?? iconTeamName
-    const awayTeam = eventMatchTeams?.awayTeam
-    const eventName = eventMatchTeams
-      ? `${eventMatchTeams.homeTeam} x ${eventMatchTeams.awayTeam}`
-      : homeTeam || offer.subtitle || offer.title
+    const resolvedMatch = resolveOfferMatch({
+      sport: offer.sport,
+      teamName: iconTeamName || eventMatchTeams?.homeTeam,
+      opponentName: eventMatchTeams?.awayTeam,
+      fallbackHomeTeam: eventMatchTeams?.homeTeam ?? iconTeamName,
+      fallbackAwayTeam: eventMatchTeams?.awayTeam,
+      fallbackHomeIcon: eventMatchTeams ? undefined : playerEvent.icon,
+      fallbackDate: offer.date,
+    })
+    const liveDetails = getLiveOfferDetailsForMatch(liveDetailsByMatch, resolvedMatch, offerLiveDetails)
+    const eventName = resolvedMatch.awayTeam
+      ? `${resolvedMatch.homeTeam} x ${resolvedMatch.awayTeam}`
+      : resolvedMatch.homeTeam || offer.subtitle || offer.title
     const isMatchName = !!getOfferMatchTeams(playerEvent.name)
     const isTeamSelection = !!iconTeamName && playerEvent.name === iconTeamName
     const isPlayerSelection = !!playerEvent.value
@@ -291,29 +445,30 @@ const getOfferComboBetslipEntries = (
     const selection = createBetslipSelection({
       eventId: getBetslipEventId({
         sport: offer.sport ?? 'ofertas',
-        homeTeam,
-        awayTeam,
+        homeTeam: resolvedMatch.homeTeam,
+        awayTeam: resolvedMatch.awayTeam,
         fallbackId: `${offer.id}-event-${index}`,
       }),
       marketId,
       outcomeId: `${offer.id}-${index}-${selectionLabel}`,
       label,
       selectionLabel,
-      odd: offer.newOdd,
+      odd: comboLegOddLabel,
       marketLabel,
-      eventStatus,
+      eventStatus: liveDetails ? 'live' : 'prematch',
       selectionType: isPlayerSelection ? 'player' : isTeamSelection ? 'team' : 'market',
       sport: offer.sport,
-      homeTeam,
-      awayTeam,
+      homeTeam: resolvedMatch.homeTeam,
+      awayTeam: resolvedMatch.awayTeam,
       eventName,
-      eventTimeLabel,
+      eventTimeLabel: liveDetails?.time ?? resolvedMatch.dateTime ?? offer.date,
       liveClock: liveDetails?.time,
       homeScore: liveDetails?.homeScore,
       awayScore: liveDetails?.awayScore,
       playerName: isPlayerSelection ? playerEvent.name : undefined,
       selectionIcon: playerEvent.icon,
-      homeTeamIcon: iconTeamName ? playerEvent.icon : undefined,
+      homeTeamIcon: resolvedMatch.homeIcon,
+      awayTeamIcon: resolvedMatch.awayIcon,
       badgeType: 'boost',
       comboLegIndex: index,
       ...comboProps,
@@ -1288,7 +1443,7 @@ export function OffersSection({ sportFilter, liveOnly = false }: OffersSectionPr
   const getOfferOddButtonProps = (offer: OfferCard) => {
     const liveDetails = getOfferLiveDetails(offer)
     const liveTime = liveDetails?.time
-    const comboEntries = getOfferComboBetslipEntries(offer, liveDetails)
+    const comboEntries = getOfferComboBetslipEntries(offer, liveOfferDetailsByMatch)
 
     if (comboEntries.length > 0) {
       const selectedSelectionIds = new Set(Object.values(selectedSelectionIdsByGroup))
