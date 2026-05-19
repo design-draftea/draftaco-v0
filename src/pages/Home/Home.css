@@ -11,7 +11,8 @@
   --sport-rail-label-translate-y: 0px;
   --sport-filter-padding-bottom: 20px;
   --home-market-sticky-top: 194px;
-  --home-market-sticky-bg-height: 266px;
+  --home-market-sticky-bg-height: 280px;
+  --home-sticky-header-gradient-height: 250px;
   --sports-carousel-padding-bottom: 20px;
   --sports-carousel-card-header-min-height: 34px;
   --sports-carousel-card-header-padding-y: 8px;
@@ -24,7 +25,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #131313;
+  background-color: var(--tokens-background-background);
   padding-top: 194px;
   padding-bottom: 60px;
   scrollbar-width: none;
@@ -170,6 +171,15 @@
 .home--novo-trilho[data-market-sticky-engaged="true"] .header--sport-active .header__bg-dark {
   height: max(var(--sport-header-bg-height, 210px), var(--home-market-sticky-bg-height, 266px));
   transition: none;
+}
+
+:root[data-theme="dark"] .home[data-market-sticky-engaged="true"] .header,
+:root[data-theme="dark"] .home[data-market-sticky-rail-protection="true"] .header,
+:root[data-theme="dark"] .home[data-market-sticky-rail-clipped="true"] .header,
+:root[data-theme="light"] .home[data-market-sticky-engaged="true"] .header,
+:root[data-theme="light"] .home[data-market-sticky-rail-protection="true"] .header,
+:root[data-theme="light"] .home[data-market-sticky-rail-clipped="true"] .header {
+  --header-gradient-height: var(--home-sticky-header-gradient-height, 250px);
 }
 
 /* Home sem dividers */

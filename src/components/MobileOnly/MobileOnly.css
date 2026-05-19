@@ -2,7 +2,7 @@
   display: none;
   position: fixed;
   inset: 0;
-  background-color: #1a1a1a;
+  background-color: var(--tokens-layer-layer-01);
   z-index: 9999;
   align-items: center;
   justify-content: center;
@@ -27,7 +27,7 @@
 .mobile-only__icon {
   width: 64px;
   height: 64px;
-  background: linear-gradient(45.09deg, rgb(75, 32, 255) 0%, rgb(151, 48, 255) 100%);
+  background: var(--tokens-gradient-primary);
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -44,7 +44,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 32px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   margin: 0 0 24px 0;
 }
 

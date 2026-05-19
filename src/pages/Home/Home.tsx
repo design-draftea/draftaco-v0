@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useRef, useState, useLayoutEffect, useMemo, type ComponentType, type ReactNode } from 'react'
-import { Header } from '../../components/Header'
+import { HeaderV2 } from '../../components/HeaderV2'
 import { TrilhoEBanner } from '../../components/TrilhoEBanner'
 import { PromotionSection } from '../../components/PromotionSection'
 import { OffersSection } from '../../components/OffersSection'
@@ -77,7 +77,6 @@ interface HeaderComponentProps {
 interface HomeProps {
   activeProduct?: ProductMode
   HeaderComponent?: ComponentType<HeaderComponentProps>
-  isV2?: boolean
   onProductChange?: (product: ProductMode) => void
   onLiveEventOpenChange?: (isOpen: boolean) => void
   onLiveEventOpenSettled?: () => void
@@ -86,8 +85,7 @@ interface HomeProps {
 
 export function Home({
   activeProduct = 'apostas',
-  HeaderComponent = Header,
-  isV2 = false,
+  HeaderComponent = HeaderV2,
   onProductChange,
   onLiveEventOpenChange,
   onLiveEventOpenSettled,
@@ -721,7 +719,7 @@ export function Home({
     'home--novo-trilho',
     'home--no-dividers',
     'home--liquid-glass-new',
-    isV2 ? 'home--v2' : '',
+    'home--v2',
     activeProduct === 'cassino' ? 'home--casino-active' : '',
     displayActiveSport ? 'home--sport-active' : '',
     usesHeaderEventRail ? 'home--event-rail-active' : '',

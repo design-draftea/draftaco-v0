@@ -3,7 +3,7 @@
   flex-direction: column;
   gap: 12px;
   padding: 0 0 24px 0;
-  border-bottom: 2px solid #242424;
+  border-bottom: 2px solid var(--tokens-border-border-02);
 }
 
 .promotion-section__header {
@@ -20,14 +20,14 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 16px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   line-height: 1.4;
 }
 
 .promotion-section__arrow {
   width: 20px;
   height: 20px;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }
 
 .promotion-section__list {
@@ -64,7 +64,7 @@
   height: 56px;
   overflow: hidden;
   border-radius: 12px 12px 0 0;
-  background-color: #1A1A1A;
+  background-color: var(--tokens-layer-layer-01);
   position: relative;
   flex-shrink: 0;
 }
@@ -89,7 +89,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 11px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-on-color-white);
   line-height: 1.2;
 }
 
@@ -103,7 +103,7 @@
   justify-content: center;
   flex: 1;
   padding: 12px;
-  background-color: #1A1A1A;
+  background-color: var(--tokens-layer-layer-01);
   border-radius: 0 0 12px 12px;
   min-height: 0;
 }
@@ -112,7 +112,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 12px;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   line-height: 1.2;
   margin: 0;
   overflow: hidden;
@@ -130,7 +130,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 14px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   margin: 0 0 16px 0;
 }
 
@@ -144,7 +144,7 @@
   display: flex;
   gap: 12px;
   padding: 16px;
-  background-color: #242424;
+  background-color: var(--tokens-layer-layer-03);
   border-radius: 12px;
 }
 
@@ -159,7 +159,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 12px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-on-color-white);
   flex-shrink: 0;
 }
 
@@ -167,7 +167,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 12px;
   font-weight: 400;
-  color: #b3b3b3;
+  color: var(--tokens-text-text-02);
   line-height: 1.4;
   margin: 0;
 }

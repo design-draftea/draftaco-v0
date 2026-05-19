@@ -76,7 +76,18 @@ import reiAntecipaFutebol from '../../assets/reiAntecipaFutebol.png'
 import reiAntecipaBasquete from '../../assets/reiAntecipaBasquete.png'
 import playerAvatarFutebol from '../../assets/playerAvatarFutebol.svg'
 import playerAvatarBasquete from '../../assets/playerAvatarBasquete.svg'
-import iconStats from '../../assets/icon-stats.svg'
+import arrascaetaProps from '../../assets/arrascaetaProps.png'
+import depayProps from '../../assets/depayProps.png'
+import flacoLopezProps from '../../assets/flacoLopezProps.png'
+import pedroProps from '../../assets/pedroProps.png'
+import yuriProps from '../../assets/yuriProps.png'
+import playerJimmyButler from '../../assets/playerJimmyButler.png'
+import playerLeBronJames from '../../assets/playerLeBronJames.png'
+import playerLukaDoncic from '../../assets/playerLukaDoncic.png'
+import playerLewa from '../../assets/playerLewa.png'
+import playerRaphinha from '../../assets/playerRaphinha.png'
+import playerStephenCurry from '../../assets/playerStephenCurry.png'
+import playerYamal from '../../assets/playerYamal.png'
 // Bottom Sheet
 import { ReiAntecipaBottomSheet } from '../BottomSheet/ReiAntecipaBottomSheet'
 
@@ -1067,6 +1078,41 @@ const isPlayerPropsMarket = (sport: string, marketId: string) =>
 const getPlayerPropAvatar = (sport: string) =>
   sport === 'basquete' ? playerAvatarBasquete : playerAvatarFutebol
 
+const normalizePlayerPropImageKey = (playerName: string) =>
+  playerName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+const playerPropImagesByName: Record<string, string> = {
+  arrascaeta: arrascaetaProps,
+  'giorgian-de-arrascaeta': arrascaetaProps,
+  pedro: pedroProps,
+  'memphis-depay': depayProps,
+  depay: depayProps,
+  'yuri-alberto': yuriProps,
+  'flaco-lopez': flacoLopezProps,
+  lewandowski: playerLewa,
+  'r-lewandowski': playerLewa,
+  'robert-lewandowski': playerLewa,
+  raphinha: playerRaphinha,
+  yamal: playerYamal,
+  'l-yamal': playerYamal,
+  'lamine-yamal': playerYamal,
+  'jimmy-butler': playerJimmyButler,
+  'lebron-james': playerLeBronJames,
+  'luka-doncic': playerLukaDoncic,
+  'stephen-curry': playerStephenCurry,
+}
+
+const getPlayerPropImage = (playerName: string, sport: string) =>
+  playerPropImagesByName[normalizePlayerPropImageKey(playerName)] ?? getPlayerPropAvatar(sport)
+
+const isPlayerPropAvatarPlaceholder = (image: string) =>
+  image === playerAvatarFutebol || image === playerAvatarBasquete
+
 const getPlayerPropOptionSets = (sport: string, marketId: string) => {
   if (sport === 'basquete') {
     return marketId === BASKETBALL_ASSISTS_MARKET_ID
@@ -1090,7 +1136,6 @@ export const getMatchPlayerProps = (
   playerLimit = PLAYER_PROPS_PER_MATCH
 ): MatchPlayerProp[] => {
   const optionSets = getPlayerPropOptionSets(sport, marketId)
-  const image = getPlayerPropAvatar(sport)
   const homePlayers = getTeamPlayerProfiles(match.homeTeam.name, sport, marketId)
   const awayPlayers = getTeamPlayerProfiles(match.awayTeam.name, sport, marketId)
   const orderedPlayers = [
@@ -1115,7 +1160,7 @@ export const getMatchPlayerProps = (
       teamSide: player.teamSide,
       sport,
       position: player.position,
-      image,
+      image: getPlayerPropImage(player.name, sport),
       options: optionSets[players.length % optionSets.length],
     })
     return players
@@ -1142,6 +1187,7 @@ export function PreMatchPlayerPropCard({ player }: { player: MatchPlayerProp }) 
   const [activeOptionIndex, setActiveOptionIndex] = useState(() =>
     getInitialPlayerPropOptionIndex(player.options)
   )
+  const hasPlayerImage = !isPlayerPropAvatarPlaceholder(player.image)
   const [isDraggingOptions, setIsDraggingOptions] = useState(false)
   const activeOptionIndexRef = useRef(activeOptionIndex)
   const optionsScrollRef = useRef<HTMLDivElement | null>(null)
@@ -1518,7 +1564,7 @@ export function PreMatchPlayerPropCard({ player }: { player: MatchPlayerProp }) 
 
   return (
     <article className="prematch-section__player-prop-card">
-      <img src={iconStats} alt="" className="prematch-section__player-prop-stat-icon" />
+      <span className="prematch-section__player-prop-stat-icon" aria-hidden="true" />
       {resolvedTeamIcon ? (
         <img
           src={resolvedTeamIcon}
@@ -1526,11 +1572,18 @@ export function PreMatchPlayerPropCard({ player }: { player: MatchPlayerProp }) 
           className={`prematch-section__player-prop-team-icon${isFallbackTeamIcon ? ` prematch-section__player-prop-team-icon--${fallbackTeamIconModifier}-${player.teamSide}` : ''}`}
         />
       ) : null}
-      <img
-        src={player.image}
-        alt=""
-        className="prematch-section__player-prop-avatar"
-      />
+      {hasPlayerImage ? (
+        <img
+          src={player.image}
+          alt=""
+          className="prematch-section__player-prop-avatar prematch-section__player-prop-avatar--image"
+        />
+      ) : (
+        <span
+          className={`prematch-section__player-prop-avatar prematch-section__player-prop-avatar--${player.sport === 'basquete' ? 'basketball' : 'football'}`}
+          aria-hidden="true"
+        />
+      )}
       <div className="prematch-section__player-prop-name">
         <strong>{player.playerName}</strong>
         <span>{player.position}</span>

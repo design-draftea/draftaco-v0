@@ -10,7 +10,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 16px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   line-height: 1.4;
 }
 
@@ -34,7 +34,7 @@
   justify-content: center;
   height: 24px;
   padding: 0 16px;
-  background-color: #1a1a1a;
+  background-color: var(--tokens-layer-layer-01);
   border: none;
   border-radius: 160px;
   cursor: pointer;
@@ -42,13 +42,13 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 11px;
   font-weight: 700;
-  color: #a8a8a8;
+  color: var(--tokens-text-text-02);
   white-space: nowrap;
 }
 
 .competition-players__chip--active {
   background: transparent;
-  color: #ffffff;
+  color: var(--tokens-text-text-on-color-white);
 }
 
 .competition-players__chip--active::before {
@@ -75,7 +75,7 @@
   width: calc((100% - 40px) / 2.5);
   min-width: 0;
   padding-bottom: 12px;
-  background-color: #1a1a1a;
+  background-color: var(--tokens-layer-layer-01);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -86,7 +86,7 @@
   flex-direction: column;
   align-items: center;
   padding-top: 12px;
-  border-bottom: 1px solid #242424;
+  border-bottom: 1px solid var(--tokens-border-border-02);
   overflow: hidden;
   isolation: isolate;
   contain: paint;
@@ -117,27 +117,27 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 8px;
   font-weight: 500;
-  color: #a8a8a8;
+  color: var(--tokens-text-text-02);
   text-transform: uppercase;
 }
 
 .competition-players__match-label {
-  color: #a8a8a8;
+  color: var(--tokens-text-text-02);
   font-weight: 500;
 }
 
 .competition-players__match-team--active {
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   font-weight: 700;
 }
 
 .competition-players__match-separator {
-  color: #a8a8a8;
+  color: var(--tokens-text-text-02);
   font-weight: 500;
 }
 
 .competition-players__match-time {
-  color: #a8a8a8;
+  color: var(--tokens-text-text-02);
 }
 
 .competition-players__player-image-wrapper {
@@ -167,7 +167,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 12px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   text-align: center;
   line-height: 1.2;
 }
@@ -246,7 +246,7 @@
   height: 40px;
   padding: 0 8px;
   box-sizing: border-box;
-  background-color: #242424;
+  background-color: var(--tokens-button-button-odds-02);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -268,7 +268,7 @@
 .competition-players__option-label {
   font-family: 'Red Hat Text', sans-serif;
   font-size: 11px;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   line-height: 1.2;
 }
 
@@ -276,6 +276,6 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 12px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   line-height: 1.2;
 }

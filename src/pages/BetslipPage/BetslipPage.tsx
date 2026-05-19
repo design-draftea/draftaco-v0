@@ -156,7 +156,10 @@ function formatStakeInput(cents: number) {
   })
 }
 
-const formatOddsLabel = (value: number) => `${value.toFixed(2)}x`
+const formatOddsLabel = (value: number) => `${value.toLocaleString('pt-BR', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})}x`
 
 const formatOddsProduct = (selections: BetslipSelection[]) => (
   formatOddsLabel(selections.reduce((total, selection) => total * selection.oddValue, 1))
@@ -1148,19 +1151,23 @@ function BetslipFooter({
       aria-label="Resumo da aposta"
     >
       <div className="betslip-page__footer-summary" aria-label="Resumo dos valores">
-        {!isSimpleMode ? (
+        <div className="betslip-page__footer-summary-left">
+          {!isSimpleMode ? (
+            <div className="betslip-page__footer-summary-item">
+              <span>Total Odds</span>
+              <AnimatedFooterValue targetValue={totalOdds} formatValue={formatOddsLabel} />
+            </div>
+          ) : null}
           <div className="betslip-page__footer-summary-item">
-            <span>Total Odds</span>
-            <AnimatedFooterValue targetValue={totalOdds} formatValue={formatOddsLabel} />
+            <span>Aposta</span>
+            <AnimatedFooterValue targetValue={stakeCents} />
           </div>
-        ) : null}
-        <div className="betslip-page__footer-summary-item">
-          <span>Valor apostado</span>
-          <AnimatedFooterValue targetValue={stakeCents} />
         </div>
-        <div className="betslip-page__footer-summary-item betslip-page__footer-summary-item--highlight">
-          <span>Para Ganhar</span>
-          <AnimatedFooterValue targetValue={potentialWinCents} />
+        <div className="betslip-page__footer-summary-right">
+          <div className="betslip-page__footer-summary-item betslip-page__footer-summary-item--highlight">
+            <span>Para Ganhar</span>
+            <AnimatedFooterValue targetValue={potentialWinCents} />
+          </div>
         </div>
       </div>
 
@@ -1446,7 +1453,7 @@ export function BetslipPage({ onClose }: BetslipPageProps) {
   const isSplitSimpleMode = activeBetMode === 'simple' && selectionGroups.length >= 2
   const stakeLimitCents = useBetCredit ? BET_CREDIT_CENTS : WALLET_STAKE_LIMIT_CENTS
   const totalOdds = summary.hasSelections ? summary.totalOdds : 0
-  const totalOddsLabel = summary.hasSelections ? summary.totalOddsLabel : '0.00x'
+  const totalOddsLabel = summary.hasSelections ? summary.totalOddsLabel : formatOddsLabel(0)
   const simpleStakeSummary = useMemo(() => (
     selectionGroups.reduce((summaryTotal, group) => {
       const stakeCents = simpleStakeCentsByGroupId[group.eventId] ?? DEFAULT_SIMPLE_STAKE_CENTS

@@ -1644,7 +1644,7 @@ export function OffersSection({ sportFilter, liveOnly = false }: OffersSectionPr
               }
             }}
           >
-            {chip.label}
+            <span>{chip.label}</span>
           </button>
         ))}
       </div>

@@ -17,8 +17,12 @@
   right: 0;
   bottom: 0;
   left: 0;
-  height: 56px;
-  background: linear-gradient(0deg, rgba(19, 19, 19, 0.94) 0%, rgba(19, 19, 19, 0.52) 48%, rgba(19, 19, 19, 0) 100%);
+  height: calc(var(--navbar-shell-height, var(--navbar-height)) + var(--navbar-bottom-offset) + 32px);
+  background: linear-gradient(
+    0deg,
+    var(--tokens-background-background) 16%,
+    rgb(var(--tokens-background-background-rgb) / 0) 100%
+  );
   pointer-events: none;
 }
 
@@ -47,24 +51,17 @@
   align-items: flex-start;
   isolation: isolate;
   overflow: hidden;
-  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--tokens-border-border-03);
   border-radius: 999px;
-  background:
-    radial-gradient(110% 90% at 16% 0%, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 30%, rgba(255, 255, 255, 0) 56%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.035) 50%, rgba(255, 255, 255, 0.018) 100%),
-    rgba(15, 15, 15, 0.12);
-  box-shadow:
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.2),
-    inset 0 0 0 0.5px rgba(255, 255, 255, 0.035),
-    inset 0 -8px 14px rgba(0, 0, 0, 0.12),
-    0 10px 22px rgba(0, 0, 0, 0.24);
+  background: var(--tokens-layer-layer-01);
+  box-shadow: none;
   transform: translateZ(0);
-  -webkit-backdrop-filter: blur(30px) saturate(230%) contrast(108%) brightness(112%);
-  backdrop-filter: blur(30px) saturate(230%) contrast(108%) brightness(112%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 .navbar__panel::before {
-  content: '';
+  content: none;
   position: absolute;
   inset: 1px 9px auto;
   height: 38%;
@@ -75,7 +72,7 @@
 }
 
 .navbar__panel::after {
-  content: '';
+  content: none;
   position: absolute;
   inset: 0;
   border-radius: inherit;
@@ -89,24 +86,27 @@
 }
 
 .navbar--liquid-v2::before {
-  height: 56px;
-  background: linear-gradient(0deg, rgba(19, 19, 19, 0.94) 0%, rgba(19, 19, 19, 0.52) 48%, rgba(19, 19, 19, 0) 100%);
+  content: '';
+  height: calc(var(--navbar-shell-height, var(--navbar-height)) + var(--navbar-bottom-offset) + 32px);
+  background: linear-gradient(
+    0deg,
+    var(--tokens-background-background) 16%,
+    rgb(var(--tokens-background-background-rgb) / 0) 100%
+  );
 }
 
 .navbar--liquid-v2 .navbar__panel {
-  border: 0.5px solid rgba(255, 255, 255, 0.16);
-  background: #1a1a1a;
-  box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--tokens-border-border-03);
+  background: var(--tokens-layer-layer-01);
+  box-shadow: none;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
 
 .navbar--liquid-v2.navbar--liquid-v2-casino .navbar__panel {
-  border-color: rgba(255, 255, 255, 0.16);
-  background: #1a1a1a;
-  box-shadow:
-    0 12px 30px rgba(0, 0, 0, 0.22);
+  border-color: var(--tokens-border-border-03);
+  background: var(--tokens-layer-layer-01);
+  box-shadow: none;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
@@ -128,36 +128,26 @@
 }
 
 .navbar--liquid-v2.navbar--liquid-v2-casino .navbar__icon {
-  filter:
-    drop-shadow(0 1px 1px rgba(0, 0, 0, 0.58))
-    drop-shadow(0 0 4px rgba(0, 0, 0, 0.28));
+  filter: none;
   opacity: 0.84;
 }
 
 .navbar--liquid-v2.navbar--liquid-v2-casino .navbar__label {
-  text-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.68),
-    0 0 5px rgba(0, 0, 0, 0.25);
+  text-shadow: none;
   opacity: 0.84;
 }
 
 .navbar--liquid-v2.navbar--liquid-v2-casino .navbar__item:hover .navbar__icon,
 .navbar--liquid-v2.navbar--liquid-v2-casino .navbar__item:focus-visible .navbar__icon,
 .navbar--liquid-v2.navbar--liquid-v2-casino .navbar__item--active .navbar__icon {
-  filter:
-    drop-shadow(0 1px 1px rgba(0, 0, 0, 0.62))
-    drop-shadow(0 0 5px rgba(0, 0, 0, 0.3))
-    drop-shadow(0 0 8px rgba(255, 255, 255, 0.12));
+  filter: none;
   opacity: 1;
 }
 
 .navbar--liquid-v2.navbar--liquid-v2-casino .navbar__item:hover .navbar__label,
 .navbar--liquid-v2.navbar--liquid-v2-casino .navbar__item:focus-visible .navbar__label,
 .navbar--liquid-v2.navbar--liquid-v2-casino .navbar__item--active .navbar__label {
-  text-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.72),
-    0 0 6px rgba(0, 0, 0, 0.28),
-    0 0 9px rgba(255, 255, 255, 0.12);
+  text-shadow: none;
   opacity: 1;
 }
 
@@ -185,32 +175,20 @@
 }
 
 .navbar--liquid-v2-ios .navbar__panel {
-  background:
-    radial-gradient(120% 150% at 12% -10%, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.07) 34%, rgba(255, 255, 255, 0.018) 68%, rgba(255, 255, 255, 0) 100%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.026) 50%, rgba(0, 0, 0, 0.1) 100%),
-    rgba(18, 18, 18, 0.16);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    inset 0 -8px 14px rgba(0, 0, 0, 0.08),
-    inset 0 0 0 0.5px rgba(255, 255, 255, 0.1),
-    0 12px 30px rgba(0, 0, 0, 0.22);
-  -webkit-backdrop-filter: blur(4px) saturate(205%) contrast(118%) brightness(112%);
-  backdrop-filter: blur(4px) saturate(205%) contrast(118%) brightness(112%);
-  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  border: 1px solid var(--tokens-border-border-03);
+  background: var(--tokens-layer-layer-01);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  -webkit-mask-image: none;
 }
 
 .navbar--liquid-v2-ios .navbar__panel::before {
-  background:
-    radial-gradient(76% 118% at 10% 0%, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.09) 34%, rgba(255, 255, 255, 0) 66%),
-    linear-gradient(105deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.035) 28%, rgba(255, 255, 255, 0) 64%);
-  opacity: 0.72;
+  content: none;
 }
 
 .navbar--liquid-v2-ios .navbar__panel::after {
-  background:
-    linear-gradient(100deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.035) 24%, rgba(0, 0, 0, 0.04) 74%, rgba(255, 255, 255, 0.07) 100%),
-    radial-gradient(110% 105% at 50% 130%, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0) 54%);
-  opacity: 0.6;
+  content: none;
 }
 
 .navbar__panel--main {
@@ -252,7 +230,7 @@
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   -webkit-tap-highlight-color: transparent;
   transition:
     background 180ms ease,
@@ -266,9 +244,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background:
-    radial-gradient(90% 100% at 50% 0%, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 58%),
-    rgba(255, 255, 255, 0.06);
+  background: var(--tokens-layer-layer-03);
   opacity: 0;
   transition: opacity 180ms ease;
 }
@@ -294,24 +270,19 @@
 }
 
 .navbar__item--active {
-  background:
-    radial-gradient(100% 120% at 50% 0%, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.12) 40%, rgba(255, 255, 255, 0.045) 100%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.045) 100%),
-    rgba(255, 255, 255, 0.07);
-  box-shadow:
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.34),
-    inset 0 -7px 12px rgba(0, 0, 0, 0.16);
+  background: var(--tokens-layer-layer-03);
+  box-shadow: none;
 }
 
 .navbar__item--active::after {
-  content: '';
+  content: none;
   position: absolute;
   top: -18px;
   left: 50%;
   width: 52px;
   height: 28px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.3);
+  background: transparent;
   filter: blur(16px);
   opacity: 0.56;
   transform: translateX(-50%);
@@ -332,7 +303,8 @@
   inset: 0;
   z-index: 0;
   border-radius: inherit;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--tokens-layer-layer-03);
+  box-shadow: none;
   pointer-events: none;
   transform: translate3d(0, 0, 0) scale(1, 1);
   transform-origin: top left;
@@ -365,7 +337,7 @@
   width: 24px;
   height: 24px;
   object-fit: contain;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.42));
+  filter: none;
   opacity: 0.76;
   transition:
     filter 180ms ease,
@@ -377,9 +349,15 @@
 .navbar__item:focus-visible .navbar__icon,
 .navbar__item--active .navbar__icon {
   opacity: 1;
-  filter:
-    drop-shadow(0 1px 1px rgba(0, 0, 0, 0.42))
-    drop-shadow(0 0 8px rgba(255, 255, 255, 0.12));
+  filter: none;
+}
+
+:root[data-theme="light"] .navbar .navbar__icon,
+:root[data-theme="light"] .navbar--liquid-v2.navbar--liquid-v2-casino .navbar__icon,
+:root[data-theme="light"] .navbar .navbar__item:hover .navbar__icon,
+:root[data-theme="light"] .navbar .navbar__item:focus-visible .navbar__icon,
+:root[data-theme="light"] .navbar .navbar__item--active .navbar__icon {
+  filter: brightness(0);
 }
 
 .navbar__icon--live {
@@ -398,14 +376,14 @@
   display: block;
   max-width: 100%;
   overflow: hidden;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
   font-size: 10px;
   font-weight: 500;
   line-height: 1.2;
   text-align: center;
   text-overflow: ellipsis;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+  text-shadow: none;
   white-space: nowrap;
   opacity: 0.78;
   transition:
@@ -417,16 +395,12 @@
 .navbar__item:focus-visible .navbar__label,
 .navbar__item--active .navbar__label {
   opacity: 1;
-  text-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.55),
-    0 0 10px rgba(255, 255, 255, 0.12);
+  text-shadow: none;
 }
 
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
   .navbar__panel {
-    background:
-      linear-gradient(180deg, rgba(55, 55, 55, 0.82) 0%, rgba(31, 31, 31, 0.88) 100%),
-      rgba(31, 31, 31, 0.9);
+    background: var(--tokens-layer-layer-01);
   }
 }
 

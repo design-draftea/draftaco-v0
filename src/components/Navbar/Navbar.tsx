@@ -6,7 +6,6 @@ import type { ProductMode } from '../../types/home'
 
 interface NavbarProps {
   activeProduct?: ProductMode
-  isV2?: boolean
   activeItemId?: string
   onItemSelect?: (itemId: string) => void
 }
@@ -15,7 +14,6 @@ const navbarActiveMotionMs = 520
 
 export function Navbar({
   activeProduct = 'apostas',
-  isV2 = false,
   activeItemId: controlledActiveItemId,
   onItemSelect,
 }: NavbarProps = {}) {
@@ -38,12 +36,12 @@ export function Navbar({
     : navbarConfig.activeItemId
   const navClassName = [
     'navbar',
-    isV2 ? 'navbar--liquid-v2' : '',
-    isV2 ? 'navbar--liquid-v2-casino' : '',
+    'navbar--liquid-v2',
+    'navbar--liquid-v2-casino',
   ]
     .filter(Boolean)
     .join(' ')
-  const panelClassName = ['navbar__panel', isV2 ? 'navbar__panel--liquid-v2' : '']
+  const panelClassName = ['navbar__panel', 'navbar__panel--liquid-v2']
     .filter(Boolean)
     .join(' ')
 
@@ -55,7 +53,7 @@ export function Navbar({
   }, [])
 
   const selectNavbarItem = useCallback((itemId: string) => {
-    if (isV2 && itemId !== activeItemId) {
+    if (itemId !== activeItemId) {
       previousActiveRectRef.current = itemRefs.current[activeItemId]?.getBoundingClientRect() ?? null
     }
 
@@ -63,7 +61,7 @@ export function Navbar({
       setSelectedItemId(itemId)
     }
     onItemSelect?.(itemId)
-  }, [activeItemId, isControlledActiveItem, isV2, onItemSelect])
+  }, [activeItemId, isControlledActiveItem, onItemSelect])
 
   useEffect(() => {
     setSelectedItemId(configuredActiveItemId)
@@ -93,8 +91,6 @@ export function Navbar({
   }
 
   useLayoutEffect(() => {
-    if (!isV2) return
-
     const activeBackgroundEl = activeBackgroundRef.current
     const previousActiveRect = previousActiveRectRef.current
     previousActiveRectRef.current = null
@@ -122,7 +118,7 @@ export function Navbar({
     activeBackgroundAnimationRef.current.addEventListener('finish', () => {
       activeBackgroundAnimationRef.current = null
     }, { once: true })
-  }, [activeItemId, isV2])
+  }, [activeItemId])
 
   useEffect(() => () => {
     clearPointerItemSelectionResetTimer()
@@ -155,7 +151,7 @@ export function Navbar({
                   aria-label={item.label}
                   data-navbar-item-id={item.id}
                 >
-                  {isV2 && isActive ? (
+                  {isActive ? (
                     <span
                       className="navbar__item-active-bg"
                       ref={activeBackgroundRef}
@@ -195,7 +191,7 @@ export function Navbar({
             aria-label="Buscar"
             data-navbar-item-id={navbarConfig.searchItem.id}
           >
-            {isV2 && activeItemId === navbarConfig.searchItem.id ? (
+            {activeItemId === navbarConfig.searchItem.id ? (
               <span
                 className="navbar__item-active-bg"
                 ref={activeBackgroundRef}

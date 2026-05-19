@@ -25,6 +25,13 @@ import {
   type Icon,
 } from '@phosphor-icons/react'
 import iconBronze2 from '../../assets/pitacoClub/iconBronze2.png'
+import {
+  appThemePreferenceChangeEvent,
+  applyAppThemePreference,
+  getCurrentAppThemePreference,
+  setAppThemePreference,
+  type AppThemePreference,
+} from '../../theme'
 import './NavigationMenuBottomSheet.css'
 
 interface NavigationMenuBottomSheetProps {
@@ -43,7 +50,7 @@ interface MenuSection {
 }
 
 type SheetMotionState = 'entering' | 'open' | 'closing'
-type ThemePreference = 'light' | 'dark' | 'system'
+type ThemePreference = AppThemePreference
 
 const menuSections: MenuSection[] = [
   {
@@ -134,16 +141,6 @@ const themePreferenceOptions: { label: string; value: ThemePreference; Icon: Ico
   { label: 'Sistema', value: 'system', Icon: CircleHalfIcon },
 ]
 
-const getStoredThemePreference = (): ThemePreference => {
-  const storedPreference = window.localStorage.getItem('pitaco-theme-preference')
-
-  if (storedPreference === 'light' || storedPreference === 'dark' || storedPreference === 'system') {
-    return storedPreference
-  }
-
-  return 'dark'
-}
-
 export function NavigationMenuBottomSheet({ isOpen, onClose }: NavigationMenuBottomSheetProps) {
   const [shouldRender, setShouldRender] = useState(false)
   const [motionState, setMotionState] = useState<SheetMotionState>('entering')
@@ -153,15 +150,24 @@ export function NavigationMenuBottomSheet({ isOpen, onClose }: NavigationMenuBot
     Cassino: true,
   })
   const [areValuesVisible, setAreValuesVisible] = useState(true)
-  const [themePreference, setThemePreference] = useState<ThemePreference>(() => getStoredThemePreference())
+  const [themePreference, setThemePreference] = useState<ThemePreference>(() => getCurrentAppThemePreference())
   const closeTimerRef = useRef<number | null>(null)
+  const openTimerRef = useRef<number | null>(null)
   const openFrameRef = useRef<number | null>(null)
+  const shouldRenderRef = useRef(shouldRender)
 
   const clearCloseTimer = useCallback(() => {
     if (closeTimerRef.current === null) return
 
     window.clearTimeout(closeTimerRef.current)
     closeTimerRef.current = null
+  }, [])
+
+  const clearOpenTimer = useCallback(() => {
+    if (openTimerRef.current === null) return
+
+    window.clearTimeout(openTimerRef.current)
+    openTimerRef.current = null
   }, [])
 
   const clearOpenFrame = useCallback(() => {
@@ -188,22 +194,36 @@ export function NavigationMenuBottomSheet({ isOpen, onClose }: NavigationMenuBot
   }, [])
 
   useEffect(() => {
+    shouldRenderRef.current = shouldRender
+  }, [shouldRender])
+
+  useEffect(() => {
     clearCloseTimer()
+    clearOpenTimer()
     clearOpenFrame()
 
-    const renderTimer = window.setTimeout(() => {
-      if (isOpen) {
+    if (isOpen) {
+      openTimerRef.current = window.setTimeout(() => {
+        openTimerRef.current = null
         setShouldRender(true)
         setMotionState('entering')
         openFrameRef.current = window.requestAnimationFrame(() => {
-          openFrameRef.current = null
-          setMotionState('open')
+          openFrameRef.current = window.requestAnimationFrame(() => {
+            openFrameRef.current = null
+            setMotionState('open')
+          })
         })
-        return
+      }, 0)
+      return () => {
+        clearOpenTimer()
+        clearOpenFrame()
       }
+    }
 
-      if (!shouldRender) return
+    if (!shouldRenderRef.current) return
 
+    closeTimerRef.current = window.setTimeout(() => {
+      closeTimerRef.current = null
       setMotionState('closing')
       closeTimerRef.current = window.setTimeout(() => {
         setShouldRender(false)
@@ -213,16 +233,17 @@ export function NavigationMenuBottomSheet({ isOpen, onClose }: NavigationMenuBot
     }, 0)
 
     return () => {
-      window.clearTimeout(renderTimer)
       clearCloseTimer()
+      clearOpenTimer()
       clearOpenFrame()
     }
-  }, [clearCloseTimer, clearOpenFrame, isOpen, shouldRender])
+  }, [clearCloseTimer, clearOpenFrame, clearOpenTimer, isOpen])
 
   useEffect(() => () => {
     clearCloseTimer()
+    clearOpenTimer()
     clearOpenFrame()
-  }, [clearCloseTimer, clearOpenFrame])
+  }, [clearCloseTimer, clearOpenFrame, clearOpenTimer])
 
   useEffect(() => {
     if (!shouldRender) return undefined
@@ -249,9 +270,51 @@ export function NavigationMenuBottomSheet({ isOpen, onClose }: NavigationMenuBot
   }, [requestClose, shouldRender])
 
   useEffect(() => {
-    window.localStorage.setItem('pitaco-theme-preference', themePreference)
-    document.documentElement.dataset.themePreference = themePreference
+    setAppThemePreference(themePreference)
+
+    if (themePreference !== 'system') return undefined
+
+    const systemThemeQuery = window.matchMedia?.('(prefers-color-scheme: light)')
+    if (!systemThemeQuery) return undefined
+
+    const handleSystemThemeChange = () => {
+      applyAppThemePreference('system')
+    }
+
+    if (typeof systemThemeQuery.addEventListener === 'function') {
+      systemThemeQuery.addEventListener('change', handleSystemThemeChange)
+
+      return () => {
+        systemThemeQuery.removeEventListener('change', handleSystemThemeChange)
+      }
+    }
+
+    systemThemeQuery.addListener(handleSystemThemeChange)
+
+    return () => {
+      systemThemeQuery.removeListener(handleSystemThemeChange)
+    }
   }, [themePreference])
+
+  useEffect(() => {
+    const syncThemePreference = () => {
+      const nextThemePreference = getCurrentAppThemePreference()
+
+      setThemePreference((currentThemePreference) =>
+        currentThemePreference === nextThemePreference
+          ? currentThemePreference
+          : nextThemePreference
+      )
+    }
+
+    window.addEventListener(appThemePreferenceChangeEvent, syncThemePreference)
+    window.addEventListener('storage', syncThemePreference)
+
+    return () => {
+      window.removeEventListener(appThemePreferenceChangeEvent, syncThemePreference)
+      window.removeEventListener('storage', syncThemePreference)
+    }
+  }, [])
 
   if (!shouldRender) return null
 

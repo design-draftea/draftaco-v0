@@ -3,7 +3,7 @@
   flex-direction: column;
   gap: 12px;
   padding: 0 0 24px 0;
-  border-bottom: 2px solid #242424;
+  border-bottom: 2px solid var(--tokens-border-border-02);
 }
 
 /* Header */
@@ -22,14 +22,14 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 16px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   line-height: 1.4;
 }
 
 .escadinha-section__help {
   width: 16px;
   height: 16px;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }
 
 /* Cards List - slider horizontal */
@@ -66,7 +66,7 @@
   flex-shrink: 0;
   width: 304px;
   scroll-snap-align: start;
-  background-color: #1A1A1A;
+  background-color: var(--tokens-layer-layer-01);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -76,7 +76,7 @@
   padding: 12px;
   background-size: cover;
   background-position: top;
-  border-bottom: 1px solid #202020;
+  border-bottom: 1px solid var(--tokens-border-border-02);
 }
 
 .escadinha-card__info {
@@ -118,7 +118,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 11px;
   font-weight: 400;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   line-height: 1;
 }
 
@@ -135,7 +135,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 14px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   line-height: 1.4;
 }
 
@@ -149,7 +149,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 11px;
   font-weight: 400;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   line-height: 1;
 }
 
@@ -198,11 +198,11 @@
   padding: 0 16px;
   border-radius: 160px;
   border: none;
-  background-color: #1A1A1A;
+  background-color: var(--tokens-layer-layer-01);
   font-family: 'Red Hat Text', sans-serif;
   font-size: 11px;
   font-weight: 700;
-  color: #a8a8a8;
+  color: var(--tokens-text-text-02);
   white-space: nowrap;
   cursor: pointer;
   text-align: center;
@@ -210,8 +210,8 @@
 }
 
 .escadinha-card__stat--active {
-  background: linear-gradient(45deg, rgba(82, 40, 255, 0.56) 0.62%, rgba(174, 24, 255, 0.56) 100%), #131313;
-  color: #ffffff;
+  background: linear-gradient(45deg, rgba(82, 40, 255, 0.56) 0.62%, rgba(174, 24, 255, 0.56) 100%), var(--tokens-background-background);
+  color: var(--tokens-text-text-on-color-white);
   position: relative;
 }
 
@@ -252,7 +252,7 @@
   right: 0;
   top: 50%;
   height: 10px;
-  background-color: #202020;
+  background-color: var(--tokens-layer-layer-02);
   transform: translateY(-50%);
   border-radius: 5px;
 }
@@ -261,7 +261,7 @@
   position: absolute;
   top: 50%;
   height: 10px;
-  background: linear-gradient(90deg, #D2FF72 0%, #56DEEA 100%);
+  background: linear-gradient(90deg, var(--tokens-button-button-odds-selected-01) 0%, var(--tokens-button-button-odds-selected-02) 100%);
   transform: translateY(-50%);
   border-radius: 5px;
   z-index: 1;
@@ -273,7 +273,7 @@
   top: 50%;
   width: 20px;
   height: 20px;
-  border: 2.5px solid #1A1A1A;
+  border: 2.5px solid var(--tokens-text-text-on-color-black);
   border-radius: 50%;
   transform: translate(-50%, -50%);
   z-index: 4;
@@ -281,11 +281,11 @@
 }
 
 .escadinha-card__handle--start {
-  background-color: #D2FF72;
+  background-color: var(--tokens-button-button-odds-selected-01);
 }
 
 .escadinha-card__handle--end {
-  background-color: #56DEEA;
+  background-color: var(--tokens-button-button-odds-selected-02);
 }
 
 /* Tick marks */
@@ -312,12 +312,12 @@
   content: '';
   width: 6px;
   height: 6px;
-  background-color: #333333;
+  background-color: var(--tokens-layer-layer-03);
   border-radius: 50%;
 }
 
 .escadinha-card__tick--active::after {
-  background-color: #000000;
+  background-color: var(--tokens-text-text-on-color-black);
 }
 
 /* Values */
@@ -339,20 +339,20 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 10px;
   font-weight: 700;
-  color: #a8a8a8;
+  color: var(--tokens-text-text-02);
   line-height: 1;
   text-align: center;
 }
 
 .escadinha-card__value--active .escadinha-card__value-number {
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }
 
 .escadinha-card__value-odd {
   font-family: 'Red Hat Text', sans-serif;
   font-size: 8px;
   font-weight: 700;
-  color: #D2FF72;
+  color: var(--tokens-text-text-03);
   line-height: 1;
   text-align: center;
 }
@@ -364,7 +364,7 @@
   justify-content: space-between;
   height: 40px;
   padding: 0 12px;
-  background-color: #242424;
+  background-color: var(--tokens-button-button-odds-02);
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -374,12 +374,12 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 11px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }
 
 .escadinha-card__button-odd {
   font-family: 'Red Hat Text', sans-serif;
   font-size: 11px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }

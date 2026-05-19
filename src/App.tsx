@@ -10,12 +10,8 @@ import { BetslipProvider } from './hooks/BetslipProvider'
 import { useBetslip } from './hooks/useBetslip'
 import type { ProductMode } from './types/home'
 
-type AppRouteVersion = 'v1' | 'v2'
-
 const defaultProduct: ProductMode = 'apostas'
-const defaultVersion: AppRouteVersion = 'v1'
 const productRoutes: ProductMode[] = ['apostas', 'cassino']
-const versionRouteSegments: AppRouteVersion[] = ['v1', 'v2']
 const promotionsRouteSegment = 'promocoes'
 const deployedBasePath = '/pitaquinho'
 
@@ -40,44 +36,42 @@ const stripBasePath = (pathname: string) => {
 
 const getNormalizedAppPath = (pathname: string) => stripBasePath(pathname).replace(/\/+$/, '') || '/'
 
-const getRouteVersion = (routeSegments: string[]): AppRouteVersion => {
-  const routeVersion = versionRouteSegments.find((version) => version === routeSegments[1])
-  return routeVersion ?? defaultVersion
-}
+const getRouteSegments = (pathname: string) => getNormalizedAppPath(pathname).split('/').filter(Boolean)
 
 const isPromotionsPath = (pathname: string) => {
-  const routeSegments = getNormalizedAppPath(pathname).split('/').filter(Boolean)
+  const routeSegments = getRouteSegments(pathname)
 
   return (
     routeSegments[0] === promotionsRouteSegment &&
-    versionRouteSegments.some((version) => version === routeSegments[1]) &&
-    routeSegments.length === 2
+    routeSegments.length <= 2
   )
 }
 
+const isCanonicalPromotionsPath = (pathname: string) => {
+  const routeSegments = getRouteSegments(pathname)
+  return routeSegments.length === 1 && routeSegments[0] === promotionsRouteSegment
+}
+
 const resolveProductFromPath = (pathname: string) => {
-  const appPath = getNormalizedAppPath(pathname)
-  const routeSegments = appPath.split('/').filter(Boolean)
+  const routeSegments = getRouteSegments(pathname)
   const routeProduct = productRoutes.find((route) => route === routeSegments[0])
-  const version = getRouteVersion(routeSegments)
   const product = routeProduct ?? defaultProduct
-  const expectedSegments = [product, version]
+  const isCanonicalProductRoute = routeSegments.length === 1 && routeSegments[0] === product
 
   return {
     product,
-    version,
-    isCanonicalProductRoute: routeSegments.join('/') === expectedSegments.join('/'),
+    isCanonicalProductRoute,
   }
 }
 
-const buildProductPath = (product: ProductMode, version: AppRouteVersion) => {
+const buildProductPath = (product: ProductMode) => {
   const basePath = getBasePath()
-  return `${basePath}/${product}/${version}`
+  return `${basePath}/${product}`
 }
 
-const buildPromotionsPath = (version: AppRouteVersion) => {
+const buildPromotionsPath = () => {
   const basePath = getBasePath()
-  return `${basePath}/${promotionsRouteSegment}/${version}`
+  return `${basePath}/${promotionsRouteSegment}`
 }
 
 function AppContent() {
@@ -98,7 +92,7 @@ function AppContent() {
     if (isPromotionsPage) return
     if (productRoute.isCanonicalProductRoute) return
 
-    const nextPath = buildProductPath(productRoute.product, productRoute.version)
+    const nextPath = buildProductPath(productRoute.product)
     window.history.replaceState({}, '', nextPath)
     const timer = window.setTimeout(() => {
       setPathname(window.location.pathname)
@@ -106,6 +100,19 @@ function AppContent() {
 
     return () => window.clearTimeout(timer)
   }, [isPromotionsPage, productRoute])
+
+  useEffect(() => {
+    if (!isPromotionsPage) return
+    if (isCanonicalPromotionsPath(pathname)) return
+
+    const nextPath = buildPromotionsPath()
+    window.history.replaceState({}, '', nextPath)
+    const timer = window.setTimeout(() => {
+      setPathname(window.location.pathname)
+    }, 0)
+
+    return () => window.clearTimeout(timer)
+  }, [isPromotionsPage, pathname])
 
   useEffect(() => {
     const handlePopState = () => {
@@ -119,7 +126,7 @@ function AppContent() {
   const handleProductChange = useCallback((product: ProductMode) => {
     if (isPromotionsPage) {
       setPromotionsProduct(product)
-      const nextPath = buildProductPath(product, productRoute.version)
+      const nextPath = buildProductPath(product)
 
       if (window.location.pathname !== nextPath) {
         window.history.pushState({}, '', nextPath)
@@ -129,18 +136,18 @@ function AppContent() {
       return
     }
 
-    const nextPath = buildProductPath(product, productRoute.version)
+    const nextPath = buildProductPath(product)
 
     if (window.location.pathname !== nextPath) {
       window.history.pushState({}, '', nextPath)
     }
 
     setPathname(window.location.pathname)
-  }, [isPromotionsPage, productRoute.version])
+  }, [isPromotionsPage])
 
   const handleNavbarItemSelect = useCallback((itemId: string) => {
     if (itemId === promotionsRouteSegment) {
-      const nextPath = buildPromotionsPath(productRoute.version)
+      const nextPath = buildPromotionsPath()
       setPromotionsProduct(activeProduct)
 
       if (window.location.pathname !== nextPath) {
@@ -152,7 +159,7 @@ function AppContent() {
     }
 
     if (isPromotionsPage && itemId === 'home') {
-      const nextPath = buildProductPath(activeProduct, productRoute.version)
+      const nextPath = buildProductPath(activeProduct)
 
       if (window.location.pathname !== nextPath) {
         window.history.pushState({}, '', nextPath)
@@ -160,7 +167,7 @@ function AppContent() {
 
       setPathname(window.location.pathname)
     }
-  }, [activeProduct, isPromotionsPage, productRoute.version])
+  }, [activeProduct, isPromotionsPage])
 
   const handleBetslipClose = useCallback(() => {
     setIsFullBetslipOpen(false)
@@ -213,8 +220,6 @@ function AppContent() {
     })
   }, [])
 
-  const isV2 = productRoute.version === 'v2'
-  const headerComponent = isV2 ? HeaderV2 : undefined
   const showCompactBetslip = activeProduct === 'apostas' && !isPromotionsPage && betslipSummary.hasSelections
   const shouldShowEventBetslip = showCompactBetslip && liveEventUi.isOpen && liveEventUi.isEventBetslipVisible
 
@@ -224,15 +229,13 @@ function AppContent() {
       {isPromotionsPage ? (
         <PromotionsPage
           activeProduct={activeProduct}
-          HeaderComponent={headerComponent}
-          isV2={isV2}
+          HeaderComponent={HeaderV2}
           onProductChange={handleProductChange}
         />
       ) : (
         <Home
           activeProduct={activeProduct}
-          HeaderComponent={headerComponent}
-          isV2={isV2}
+          HeaderComponent={HeaderV2}
           onProductChange={handleProductChange}
           onLiveEventOpenChange={handleLiveEventOpenChange}
           onLiveEventOpenSettled={handleLiveEventOpenSettled}
@@ -257,7 +260,6 @@ function AppContent() {
       />
       <Navbar
         activeProduct={activeProduct}
-        isV2={isV2}
         activeItemId={isPromotionsPage ? promotionsRouteSegment : undefined}
         onItemSelect={handleNavbarItemSelect}
       />

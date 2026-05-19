@@ -19,22 +19,46 @@
   width: 100%;
   height: 100%;
   border-radius: 12px 12px 0 0;
+  border: 0;
   background:
-    radial-gradient(120% 90% at 50% 0%, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 54%),
-    linear-gradient(180deg, #202020 0%, #171717 44%, #171717 100%);
+    radial-gradient(
+      120% 90% at 50% 0%,
+      rgb(var(--tokens-text-text-01-rgb) / 0.08) 0%,
+      rgb(var(--tokens-text-text-01-rgb) / 0) 54%
+    ),
+    linear-gradient(
+      180deg,
+      var(--tokens-layer-layer-02) 0%,
+      var(--tokens-background-background) 100%
+    );
+  box-shadow: none;
   transform: translate3d(0, 100%, 0);
   will-change: transform;
 }
 
+:root[data-theme="light"] .betslip__surface {
+  background:
+    radial-gradient(
+      120% 90% at 50% 0%,
+      rgb(var(--tokens-text-text-01-rgb) / 0.15) 0%,
+      rgb(var(--tokens-text-text-01-rgb) / 0) 54%
+    ),
+    linear-gradient(
+      180deg,
+      var(--tokens-layer-layer-03) 0%,
+      var(--tokens-background-background) 100%
+    );
+}
+
 .betslip__compact {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   width: 100%;
   height: var(--betslip-compact-height);
-  padding: 12px;
+  padding: 12px 20px 11px;
   border: 0;
   background: transparent;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
 }
@@ -97,8 +121,8 @@
   width: 26px;
   height: 26px;
   border-radius: 100px;
-  background: #171717;
-  color: #ffffff;
+  background: var(--tokens-background-background);
+  color: var(--tokens-text-text-01);
   font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
   font-size: 10px;
   font-weight: 700;
@@ -137,11 +161,16 @@
   width: 34px;
   height: 34px;
   background:
-    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.86) 0%, rgba(255, 255, 255, 0.28) 18%, rgba(255, 255, 255, 0) 38%),
-    linear-gradient(135deg, #d2ff72 0%, #56deea 100%);
+    radial-gradient(
+      circle at 34% 28%,
+      rgb(var(--tokens-layer-layer-04-rgb) / 0.92) 0%,
+      rgb(var(--tokens-layer-layer-04-rgb) / 0.42) 24%,
+      rgb(var(--tokens-layer-layer-04-rgb) / 0) 52%
+    ),
+    var(--tokens-layer-layer-04);
   box-shadow:
-    0 0 18px rgba(86, 222, 234, 0.26),
-    0 0 0 1px rgba(255, 255, 255, 0.2);
+    0 0 18px rgb(var(--tokens-layer-layer-04-rgb) / 0.26),
+    0 0 0 1px rgb(var(--tokens-layer-layer-04-rgb) / 0.34);
 }
 
 .betslip__count-orb--add {
@@ -161,20 +190,52 @@
   flex: 1 1 auto;
   align-items: center;
   min-width: 0;
-  height: 30px;
+  height: 31px;
+  gap: 24px;
+}
+
+.betslip__table-left {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-width: 0;
+  gap: clamp(12px, 5.333vw, 20px);
+}
+
+.betslip__table-right {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
   gap: 8px;
 }
 
 .betslip__cell {
   display: flex;
-  flex: 1 1 0;
+  flex: 0 0 auto;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: center;
   min-width: 0;
-  color: #ffffff;
-  text-align: right;
+  color: var(--tokens-text-text-01);
+  text-align: left;
   white-space: nowrap;
+}
+
+.betslip__cell--bets {
+  min-width: 21px;
+}
+
+.betslip__cell--stake {
+  flex: 1 1 0;
+}
+
+.betslip__cell--potential {
+  align-items: flex-end;
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: right;
 }
 
 .betslip__label,
@@ -199,13 +260,45 @@
   font-variant-numeric: tabular-nums;
 }
 
+.betslip__count-value {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 21px;
+  min-height: 18px;
+  overflow: visible;
+  isolation: isolate;
+}
+
+.betslip__count-anchor {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  overflow: visible;
+  isolation: isolate;
+}
+
 .betslip__value--rolling {
   min-width: 52px;
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.08);
 }
 
 .betslip__value--potential-win {
-  color: #d2ff72;
+  min-width: 0;
+  background: linear-gradient(
+    90deg,
+    var(--tokens-layer-layer-gradient-03) 0%,
+    var(--tokens-layer-layer-gradient-04) 100%
+  );
+  background-clip: text;
+  color: transparent;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-shadow: none;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .betslip__icon {
@@ -213,8 +306,8 @@
   flex: 0 0 16px;
   width: 16px;
   height: 16px;
-  margin-left: 16px;
-  color: #ffffff;
+  margin-left: 0;
+  color: var(--tokens-text-text-01);
 }
 
 @keyframes betslipCountOrbAddScale {
@@ -263,24 +356,32 @@
 
 @keyframes betslipCountNumberPop {
   0% {
+    color: var(--tokens-layer-layer-04);
     opacity: 0.84;
+    text-shadow: 0 0 12px rgb(var(--tokens-layer-layer-04-rgb) / 0.56);
     transform: scale(0.86);
   }
 
   100% {
+    color: var(--tokens-text-text-01);
     opacity: 1;
+    text-shadow: none;
     transform: scale(1);
   }
 }
 
 @keyframes betslipCountNumberRemove {
   0% {
+    color: var(--tokens-layer-layer-04);
     opacity: 0.82;
+    text-shadow: 0 0 12px rgb(var(--tokens-layer-layer-04-rgb) / 0.56);
     transform: scale(0.9);
   }
 
   100% {
+    color: var(--tokens-text-text-01);
     opacity: 1;
+    text-shadow: none;
     transform: scale(1);
   }
 }

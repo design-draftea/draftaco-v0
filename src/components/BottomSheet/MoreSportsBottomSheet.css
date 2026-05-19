@@ -1,12 +1,12 @@
 .bottom-sheet.more-sports-bs {
   border-radius: 12px 12px 0 0;
-  background-color: #1a1a1a;
+  background-color: var(--tokens-layer-layer-01);
 }
 
 .bottom-sheet.more-sports-bs .bottom-sheet__header {
   min-height: 64px;
   padding: 16px 12px 16px 20px;
-  border-bottom: 1px solid #202020;
+  border-bottom: 1px solid var(--tokens-border-border-02);
   box-sizing: border-box;
 }
 
@@ -15,7 +15,7 @@
   font-size: 16px;
   font-weight: 700;
   line-height: 1.5;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }
 
 .bottom-sheet.more-sports-bs .bottom-sheet__footer {
@@ -24,7 +24,7 @@
 
 .bottom-sheet.more-sports-bs .bottom-sheet__scroll-indicator {
   height: 88px;
-  background: linear-gradient(to top, #1a1a1a 0%, rgba(26, 26, 26, 0) 100%);
+  background: linear-gradient(to top, var(--tokens-layer-layer-01) 0%, rgba(26, 26, 26, 0) 100%);
 }
 
 .bottom-sheet__body.more-sports-bs__body {
@@ -47,10 +47,10 @@
   justify-content: center;
   gap: 8px;
   padding: 20px 12px;
-  border: 1px solid #202020;
+  border: 1px solid var(--tokens-border-border-02);
   border-radius: 12px;
   background-color: transparent;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
@@ -60,8 +60,8 @@
 }
 
 .more-sports-bs__card--active {
-  border-color: #202020;
-  background: linear-gradient(130deg, #202020 0%, rgba(32, 32, 32, 0) 99.83%);
+  border-color: var(--tokens-border-border-02);
+  background: linear-gradient(130deg, var(--tokens-layer-layer-02) 0%, rgba(32, 32, 32, 0) 99.83%);
 }
 
 .more-sports-bs__icon {
@@ -75,7 +75,7 @@
   display: block;
   max-width: 100%;
   overflow: hidden;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   font-family: 'Red Hat Display', 'Red Hat Text', sans-serif;
   font-size: 14px;
   font-weight: 700;
@@ -89,10 +89,10 @@
   width: 100%;
   height: 40px;
   padding: 0 20px;
-  border: 1px solid #f3f3f3;
+  border: 1px solid var(--tokens-background-background-inverse);
   border-radius: 100px;
   background: transparent;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   font-family: 'Red Hat Text', sans-serif;
   font-size: 12px;
   font-weight: 700;

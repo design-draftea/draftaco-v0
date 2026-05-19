@@ -184,36 +184,45 @@ export function Betslip({
           aria-label={`Bilhete com ${renderedSummary.selectionCount} seleções. Odds totais ${renderedSummary.totalOddsLabel}. Aposta ${renderedSummary.stakeLabel}. Para ganhar ${renderedSummary.potentialWinLabel}.`}
           onClick={onOpen}
         >
-          <span className="betslip__count">
-            {shouldRenderCountBurst ? (
-              <span
-                key={`orb-${selectionMotion.motionKey}-${selectionMotion.direction}`}
-                className={`betslip__count-orb betslip__count-orb--${selectionMotion.direction}`}
-                aria-hidden="true"
-              />
-            ) : null}
-            <span
-              key={`count-${selectionMotion.motionKey}-${renderedSummary.selectionCount}`}
-              className={countNumberClassName}
-            >
-              {renderedSummary.selectionCount}
-            </span>
-          </span>
           <span className="betslip__table" aria-hidden="true">
-            <span className="betslip__cell">
-              <span className="betslip__label">Total Odds</span>
-              <strong className="betslip__value betslip__value--rolling">{animatedTotalOddsLabel}</strong>
+            <span className="betslip__table-left">
+              <span className="betslip__cell betslip__cell--bets">
+                <span className="betslip__label">Bets</span>
+                <strong className="betslip__value betslip__count-value">
+                  <span className="betslip__count-anchor">
+                    {shouldRenderCountBurst ? (
+                      <span
+                        key={`orb-${selectionMotion.motionKey}-${selectionMotion.direction}`}
+                        className={`betslip__count-orb betslip__count-orb--${selectionMotion.direction}`}
+                        aria-hidden="true"
+                      />
+                    ) : null}
+                    <span
+                      key={`count-${selectionMotion.motionKey}-${renderedSummary.selectionCount}`}
+                      className={countNumberClassName}
+                    >
+                      {renderedSummary.selectionCount}
+                    </span>
+                  </span>
+                </strong>
+              </span>
+              <span className="betslip__cell">
+                <span className="betslip__label">Total Odds</span>
+                <strong className="betslip__value betslip__value--rolling">{animatedTotalOddsLabel}</strong>
+              </span>
+              <span className="betslip__cell betslip__cell--stake">
+                <span className="betslip__label">Aposta</span>
+                <strong className="betslip__value">{renderedSummary.stakeLabel}</strong>
+              </span>
             </span>
-            <span className="betslip__cell">
-              <span className="betslip__label">Aposta</span>
-              <strong className="betslip__value">{renderedSummary.stakeLabel}</strong>
-            </span>
-            <span className="betslip__cell">
-              <span className="betslip__label">Para Ganhar</span>
-              <strong className="betslip__value betslip__value--rolling betslip__value--potential-win">{animatedPotentialWinLabel}</strong>
+            <span className="betslip__table-right">
+              <span className="betslip__cell betslip__cell--potential">
+                <span className="betslip__label">Para Ganhar</span>
+                <strong className="betslip__value betslip__value--rolling betslip__value--potential-win">{animatedPotentialWinLabel}</strong>
+              </span>
+              <CaretUpIcon aria-hidden="true" className="betslip__icon" weight="bold" />
             </span>
           </span>
-          <CaretUpIcon aria-hidden="true" className="betslip__icon" weight="bold" />
         </button>
       </div>
     </div>

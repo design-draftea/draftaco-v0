@@ -24,7 +24,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 10px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }
 
 .competition-calendar__score {
@@ -32,7 +32,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 14px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }
 
 .competition-calendar__live-arrow {

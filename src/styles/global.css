@@ -2,10 +2,10 @@
 
 :root {
   /* Cores */
-  --color-primary: #646cff;
-  --color-primary-hover: #535bf2;
-  --color-background: #242424;
-  --color-text: rgba(255, 255, 255, 0.87);
+  --color-primary: var(--tokens-button-button-secondary);
+  --color-primary-hover: var(--primitives-green-green-400);
+  --color-background: var(--tokens-background-background);
+  --color-text: var(--tokens-text-text-01);
   
   /* Tipografia */
   --font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -27,8 +27,7 @@
 
 @media (prefers-color-scheme: light) {
   :root {
-    --color-background: #ffffff;
-    --color-text: #213547;
+    --color-background: var(--tokens-background-background);
+    --color-text: var(--tokens-text-text-01);
   }
 }
-

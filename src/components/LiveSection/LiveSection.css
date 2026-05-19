@@ -3,7 +3,7 @@
   flex-direction: column;
   gap: 12px;
   padding: 0 0 24px 0;
-  border-bottom: 2px solid #242424;
+  border-bottom: 2px solid var(--tokens-border-border-02);
 }
 
 /* Header */
@@ -25,14 +25,14 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 16px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   line-height: 1.4;
 }
 
 .live-section__arrow {
   width: 20px;
   height: 20px;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }
 
 /* Chips */
@@ -119,7 +119,7 @@
   padding: 0 16px;
   border-radius: 160px;
   border: none;
-  background-color: #1A1A1A;
+  background-color: var(--tokens-layer-layer-01);
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -128,7 +128,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 11px;
   font-weight: 700;
-  color: #a8a8a8;
+  color: var(--tokens-text-text-02);
   white-space: nowrap;
 }
 
@@ -142,11 +142,11 @@
 }
 
 .live-section__chip--active span {
-  color: #ffffff;
+  color: var(--tokens-text-text-on-color-white);
 }
 
 .live-section__chip--disabled {
-  background-color: #1A1A1A;
+  background-color: var(--tokens-layer-layer-01);
   opacity: 0.4;
   cursor: not-allowed;
 }
@@ -192,7 +192,7 @@
   left: 12px;
   right: 12px;
   height: 1px;
-  background-color: #1e1e1e;
+  background-color: var(--tokens-background-background-border);
 }
 
 .live-section__league--open::after {
@@ -220,7 +220,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 12px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   white-space: nowrap;
 }
 
@@ -233,14 +233,14 @@
 .live-section__league-flag--placeholder {
   width: 16px;
   height: 16px;
-  background-color: #3a3a3a;
+  background-color: var(--tokens-layer-layer-03);
   border-radius: 2px;
 }
 
 .live-section__accordion-icon {
   width: 16px;
   height: 16px;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   transition: transform 0.2s ease;
   transform: rotate(180deg);
 }
@@ -277,7 +277,7 @@
   flex-direction: column;
   gap: 12px;
   padding: 12px;
-  background-color: #1a1a1a;
+  background-color: var(--tokens-layer-layer-01);
   border-radius: 12px;
 }
 
@@ -301,7 +301,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 10px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }
 
 /* Tag Ao Vivo */
@@ -311,7 +311,7 @@
   justify-content: center;
   gap: 4px;
   padding: 0 4px;
-  background-color: #242424;
+  background-color: var(--tokens-layer-layer-02);
   border-radius: 4px;
   height: 16px;
   line-height: 1;
@@ -321,7 +321,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 8px;
   font-weight: 700;
-  color: #F87171;
+  color: var(--tokens-feedback-feedback-error-icon);
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -345,7 +345,7 @@
   width: 6px;
   height: 6px;
   background-color: transparent;
-  border: 0.5px solid #F87171;
+  border: 0.5px solid var(--tokens-feedback-feedback-error-icon);
   border-radius: 50%;
   animation: ping-live 2s linear infinite;
   z-index: 0;
@@ -380,7 +380,7 @@
   width: 6px;
   height: 6px;
   background-color: transparent;
-  border: 0.5px solid #F87171;
+  border: 0.5px solid var(--tokens-feedback-feedback-error-icon);
   border-radius: 50%;
   animation: ping-live 2s linear infinite;
   z-index: 0;
@@ -417,16 +417,16 @@
 .live-section__stream-icon {
   width: 16px;
   height: 16px;
-  color: #f87171;
+  color: var(--primitives-red-red-300);
   padding-right: 12px;
-  border-right: 1px solid #202020;
+  border-right: 1px solid var(--tokens-border-border-02);
   box-sizing: content-box;
 }
 
 .live-section__match-arrow {
   width: 20px;
   height: 20px;
-  color: #a8a8a8;
+  color: var(--tokens-text-text-02);
   padding-left: 8px;
   box-sizing: content-box;
 }
@@ -441,7 +441,7 @@
 .live-section__match-divider {
   width: 1px;
   height: 16px;
-  background-color: #242424;
+  background-color: var(--tokens-layer-layer-03);
 }
 
 .live-section__rei-antecipa {
@@ -479,7 +479,7 @@
 .live-section__team-icon--placeholder {
   width: 16px;
   height: 16px;
-  background-color: #3a3a3a;
+  background-color: var(--tokens-layer-layer-03);
   border-radius: 2px;
 }
 
@@ -516,7 +516,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 12px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -528,7 +528,7 @@
   justify-content: center;
   width: 32px;
   height: 16px;
-  border: 1px solid #242424;
+  border: 1px solid var(--tokens-border-border-02);
   border-radius: 4px;
 }
 
@@ -536,7 +536,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 12px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }
 
 /* Odds */
@@ -556,7 +556,7 @@
   gap: 0px;
   height: 40px;
   padding: 0 8px;
-  background-color: #242424;
+  background-color: var(--tokens-button-button-odds-02);
   border: 1px solid transparent;
   border-radius: 8px;
   box-sizing: border-box;
@@ -573,7 +573,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 11px;
   font-weight: 400;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -584,7 +584,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 12px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }
 
 /* League More Button (flat) */
@@ -603,13 +603,13 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 10px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }
 
 .live-section__league-more-icon {
   width: 16px;
   height: 16px;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }
 
 /* More Button */
@@ -625,7 +625,7 @@
   height: 32px;
   padding: 14px 16px;
   background: transparent;
-  border: 1px solid #ffffff;
+  border: 1px solid var(--tokens-background-background-inverse);
   border-radius: 1000px;
   cursor: pointer;
 }
@@ -634,12 +634,12 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 10px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   white-space: nowrap;
 }
 
 .live-section__more-icon {
   width: 20px;
   height: 20px;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }

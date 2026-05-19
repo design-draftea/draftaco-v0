@@ -3,7 +3,7 @@
   flex-direction: column;
   gap: 12px;
   padding: 0 0 24px 0;
-  background-color: #171717;
+  background-color: var(--tokens-background-background);
 }
 
 /* Header */
@@ -25,14 +25,14 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 16px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   line-height: 1.4;
 }
 
 .winning-now-section__arrow {
   width: 20px;
   height: 20px;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }
 
 /* Cards */
@@ -71,7 +71,7 @@
   height: 72px;
   padding: 8px;
   padding-right: 12px;
-  background-color: #1e1e1e;
+  background-color: var(--tokens-layer-layer-01);
   border-radius: 12px;
   flex-shrink: 0;
   scroll-snap-align: start;
@@ -98,7 +98,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 14px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   line-height: 1.4;
   white-space: nowrap;
   overflow: hidden;
@@ -116,7 +116,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 10px;
   font-weight: 400;
-  color: #e3e3e3;
+  color: var(--tokens-text-text-02);
   line-height: 1;
   white-space: nowrap;
 }

@@ -22,7 +22,7 @@
 
 .casino-crash-page__title {
   margin: 0;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   font-family: 'Red Hat Text', sans-serif;
   font-size: 16px;
   font-weight: 700;
@@ -42,7 +42,7 @@
   border: 0;
   border-radius: 12px;
   background: transparent;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -68,7 +68,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   font-family: 'Red Hat Text', sans-serif;
   font-size: 16px;
   font-weight: 700;
@@ -78,7 +78,7 @@
 .casino-games-section__arrow {
   width: 14px;
   height: 14px;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }
 
 .casino-games-section__list {
@@ -106,7 +106,7 @@
   border: 0;
   border-radius: 12px;
   background: transparent;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   text-align: left;
   -webkit-tap-highlight-color: transparent;
 }
@@ -126,7 +126,7 @@
   aspect-ratio: 256 / 369;
   overflow: hidden;
   border-radius: 12px;
-  background: #1a1a1a;
+  background: var(--tokens-layer-layer-01);
 }
 
 .casino-crash-card__image-wrap {
@@ -152,7 +152,7 @@
   padding: 0 6px;
   border-radius: 8px;
   background: #fff333;
-  color: #0f0f0f;
+  color: var(--tokens-text-text-on-color-black);
   font-family: 'Red Hat Text', sans-serif;
   font-size: 10px;
   font-weight: 500;
@@ -173,7 +173,7 @@
   padding: 0 6px;
   border-radius: 8px;
   background: #fecaca;
-  color: #0f0f0f;
+  color: var(--tokens-text-text-on-color-black);
   font-family: 'Red Hat Text', sans-serif;
   font-size: 10px;
   font-weight: 500;
@@ -199,7 +199,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  border: 0.5px solid #f87171;
+  border: 0.5px solid var(--tokens-feedback-feedback-error-icon);
   animation: casino-live-ping 2s linear infinite;
   background: transparent;
   content: '';
@@ -236,7 +236,7 @@
   justify-content: flex-start;
   width: 100%;
   padding: 6px 2px 0;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   font-family: 'Red Hat Text', sans-serif;
   font-size: 11px;
   font-weight: 700;
@@ -263,7 +263,7 @@
 
 .casino-game-card__winner-name {
   overflow: hidden;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   font-size: 11px;
   font-weight: 600;
   text-overflow: ellipsis;
@@ -272,9 +272,9 @@
 
 .casino-game-card__winning-amount {
   overflow: hidden;
-  background: linear-gradient(90deg, #d2ff72 0%, #56deea 100%);
+  background: linear-gradient(90deg, var(--tokens-button-button-odds-selected-01) 0%, var(--tokens-button-button-odds-selected-02) 100%);
   background-clip: text;
-  color: #d2ff72;
+  color: var(--tokens-text-text-03);
   font-size: 13px;
   font-weight: 800;
   line-height: 1.12;
@@ -300,7 +300,7 @@
 }
 
 .casino-game-card__name {
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   font-family: 'Red Hat Text', sans-serif;
   font-size: 13px;
   font-weight: 700;

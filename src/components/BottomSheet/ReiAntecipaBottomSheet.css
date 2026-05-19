@@ -24,7 +24,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 16px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   line-height: 1.4;
   margin: 0;
 }
@@ -33,7 +33,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 12px;
   font-weight: 400;
-  color: #e3e3e3;
+  color: var(--tokens-text-text-02);
   line-height: 1.4;
   margin: 0;
 }

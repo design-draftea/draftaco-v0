@@ -1,12 +1,6 @@
+@import './tokens.css';
+
 :root {
-  /* Cores principais */
-  --color-primary: #164c2e;
-  --color-primary-light: #1a5c38;
-  --color-background: #171717;
-  --color-surface: #1a1a1a;
-  --color-white: #ffffff;
-  --color-text: rgba(255, 255, 255, 0.87);
-  --color-text-muted: rgba(255, 255, 255, 0.6);
   --app-viewport-height: 100vh;
   --navbar-height: 64px;
   --navbar-shell-height: 64px;
@@ -20,7 +14,7 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: dark;
+  color-scheme: var(--theme-color-scheme);
   color: var(--color-text);
   /* background-color removido daqui para ser específico no html/body */
 
@@ -116,6 +110,60 @@ button {
   cursor: pointer;
 }
 
+:root {
+  --odd-selected-surface-default: var(--tokens-button-button-odds-02);
+  --odd-selected-surface-banner: var(--tokens-button-button-odds-01);
+  --odd-selected-highlight: linear-gradient(
+    180deg,
+    rgb(var(--tokens-button-button-odds-selected-01-rgb) / 0.16) 0%,
+    rgb(var(--tokens-button-button-odds-selected-02-rgb) / 0.16) 100%
+  );
+  --odd-selected-border-gradient: var(--tokens-gradient-odds-selected);
+  --odd-selected-shadow-ring: rgb(var(--tokens-button-button-odds-selected-01-rgb) / 0.12);
+  --odd-selected-shadow-glow: rgb(var(--tokens-button-button-odds-selected-02-rgb) / 0.16);
+}
+
+:root[data-theme="light"] {
+  --odd-selected-surface-default: var(--primitives-lightdark-lightdark-700);
+  --odd-selected-surface-banner: var(--primitives-lightdark-lightdark-800);
+}
+
+.live-section__odd-btn.odd-button--selected,
+.prematch-section__odd-btn.odd-button--selected,
+.live-event-page__odd-btn.odd-button--selected,
+.live-event-page__market-odd.odd-button--selected,
+.live-event-page__player-odd.odd-button--selected,
+.offer-card__button.odd-button--selected,
+.prematch-section__player-prop-option.odd-button--selected {
+  --odd-selected-surface: var(--odd-selected-surface-default);
+}
+
+.banner-card__odd-btn.odd-button--selected,
+.banner-card__live-odd-btn.odd-button--selected,
+.banner-card__boosted-btn.odd-button--selected,
+.banner-card__combinada-btn.odd-button--selected {
+  --odd-selected-surface: var(--odd-selected-surface-banner);
+}
+
+:is(
+  .live-section__odd-btn,
+  .prematch-section__odd-btn,
+  .live-event-page__odd-btn,
+  .live-event-page__market-odd,
+  .live-event-page__player-odd,
+  .banner-card__odd-btn,
+  .banner-card__live-odd-btn,
+  .banner-card__boosted-btn,
+  .banner-card__combinada-btn,
+  .offer-card__button,
+  .prematch-section__player-prop-option
+) {
+  transition:
+    opacity 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease !important;
+}
+
 .live-section__odd-btn.odd-button--selected,
 .prematch-section__odd-btn.odd-button--selected,
 .live-event-page__odd-btn.odd-button--selected,
@@ -128,45 +176,107 @@ button {
 .offer-card__button.odd-button--selected,
 .prematch-section__player-prop-option.odd-button--selected {
   background:
-    linear-gradient(180deg, rgba(210, 255, 114, 0.16) 0%, rgba(86, 222, 234, 0.16) 100%) padding-box,
-    linear-gradient(180deg, #131313 0%, #131313 100%) padding-box,
-    linear-gradient(180deg, #d2ff72 0%, #56deea 100%) border-box;
+    var(--odd-selected-highlight) padding-box,
+    linear-gradient(180deg, var(--odd-selected-surface) 0%, var(--odd-selected-surface) 100%) padding-box,
+    var(--odd-selected-border-gradient) border-box;
   border: 1px solid transparent;
   box-shadow:
-    0 0 0 1px rgba(210, 255, 114, 0.12),
-    0 0 18px rgba(86, 222, 234, 0.16);
+    0 0 0 1px var(--odd-selected-shadow-ring),
+    0 0 18px var(--odd-selected-shadow-glow);
   opacity: 1;
-  animation: odd-selected-confirm 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: odd-selected-fade 140ms ease-out;
+}
+
+:is(
+  .live-section__odd-btn,
+  .prematch-section__odd-btn,
+  .live-event-page__odd-btn,
+  .live-event-page__market-odd,
+  .live-event-page__player-odd,
+  .banner-card__odd-btn,
+  .banner-card__live-odd-btn,
+  .banner-card__boosted-btn,
+  .banner-card__combinada-btn,
+  .offer-card__button,
+  .prematch-section__player-prop-option
+).odd-button--selected,
+:is(
+  .live-section__odd-btn,
+  .prematch-section__odd-btn,
+  .live-event-page__odd-btn,
+  .live-event-page__market-odd,
+  .live-event-page__player-odd,
+  .banner-card__odd-btn,
+  .banner-card__live-odd-btn,
+  .banner-card__boosted-btn,
+  .banner-card__combinada-btn,
+  .offer-card__button,
+  .prematch-section__player-prop-option
+).odd-button--selected * {
+  color: var(--tokens-text-text-on-color-white);
+}
+
+:is(
+  .live-section__odd-btn,
+  .prematch-section__odd-btn,
+  .live-event-page__odd-btn,
+  .live-event-page__market-odd,
+  .live-event-page__player-odd,
+  .banner-card__odd-btn,
+  .banner-card__live-odd-btn,
+  .banner-card__boosted-btn,
+  .banner-card__combinada-btn,
+  .offer-card__button,
+  .prematch-section__player-prop-option
+).odd-button--selected svg,
+:is(
+  .live-section__odd-btn,
+  .prematch-section__odd-btn,
+  .live-event-page__odd-btn,
+  .live-event-page__market-odd,
+  .live-event-page__player-odd,
+  .banner-card__odd-btn,
+  .banner-card__live-odd-btn,
+  .banner-card__boosted-btn,
+  .banner-card__combinada-btn,
+  .offer-card__button,
+  .prematch-section__player-prop-option
+).odd-button--selected svg * {
+  color: var(--tokens-text-text-on-color-white);
+  stroke: currentColor;
+}
+
+:is(
+  .live-section__odd-btn,
+  .prematch-section__odd-btn,
+  .live-event-page__odd-btn,
+  .live-event-page__market-odd,
+  .live-event-page__player-odd,
+  .banner-card__odd-btn,
+  .banner-card__live-odd-btn,
+  .banner-card__boosted-btn,
+  .banner-card__combinada-btn,
+  .offer-card__button,
+  .prematch-section__player-prop-option
+).odd-button--selected svg *:not([fill="none"]) {
+  fill: currentColor;
 }
 
 .prematch-section__player-prop-option.prematch-section__player-prop-option--active:not(.odd-button--selected) {
-  background-color: rgba(36, 36, 36, 0.52);
+  background-color: var(--tokens-button-button-odds-02);
   border-color: transparent;
   box-shadow: none;
   filter: none;
   animation: none;
 }
 
-@keyframes odd-selected-confirm {
+@keyframes odd-selected-fade {
   0% {
-    box-shadow:
-      0 0 0 0 rgba(210, 255, 114, 0),
-      0 0 0 rgba(86, 222, 234, 0);
-    filter: brightness(1);
-  }
-
-  46% {
-    box-shadow:
-      0 0 0 1px rgba(210, 255, 114, 0.22),
-      0 0 24px rgba(86, 222, 234, 0.24);
-    filter: brightness(1.12);
+    opacity: 0.84;
   }
 
   100% {
-    box-shadow:
-      0 0 0 1px rgba(210, 255, 114, 0.12),
-      0 0 18px rgba(86, 222, 234, 0.16);
-    filter: brightness(1);
+    opacity: 1;
   }
 }
 
@@ -209,8 +319,11 @@ img {
   content: '';
   position: absolute;
   inset: 0;
+  z-index: 0;
   border-radius: inherit;
-  background: linear-gradient(45deg, rgba(82, 40, 255, 0.56) 0.62%, rgba(174, 24, 255, 0.56) 100%), #131313;
+  background:
+    linear-gradient(45deg, rgba(82, 40, 255, 0.56) 0.62%, rgba(174, 24, 255, 0.56) 100%),
+    var(--tokens-background-background-on-color-dark);
   box-shadow:
     inset 0 0 0 1px rgba(82, 40, 255, 0.48),
     0 6px 16px rgba(82, 40, 255, 0.16);
@@ -225,7 +338,7 @@ img {
 }
 
 .home--liquid-glass-new .sliding-chip-indicator::before {
-  background-color: rgba(19, 19, 19, 0.1);
+  background-color: var(--tokens-background-background-on-color-dark);
   background-image:
     radial-gradient(120% 130% at 18% 0%, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 38%, rgba(255, 255, 255, 0) 100%),
     linear-gradient(45deg, rgba(82, 40, 255, 0.42) 0.62%, rgba(174, 24, 255, 0.42) 100%);
@@ -250,29 +363,68 @@ img {
     radial-gradient(90% 120% at 12% 0%, rgba(255, 255, 255, 0.16), transparent 62%);
 }
 
+.home--v2 .sliding-chip-indicator {
+  --sliding-chip-v2-active-start: var(--tokens-border-border-gradient-02);
+  --sliding-chip-v2-active-start-rgb: var(--tokens-border-border-gradient-02-rgb);
+  --sliding-chip-v2-active-end: var(--tokens-border-border-gradient-01);
+  --sliding-chip-v2-active-end-rgb: var(--tokens-border-border-gradient-01-rgb);
+  --sliding-chip-v2-active-fill-start-rgb: var(--tokens-border-border-gradient-02-rgb);
+  --sliding-chip-v2-active-fill-end-rgb: var(--tokens-border-border-gradient-01-rgb);
+  --sliding-chip-v2-active-base: var(--tokens-background-background-on-color-dark);
+  --sliding-chip-v2-active-fill-opacity: 0.24;
+  background: linear-gradient(
+    90deg,
+    var(--sliding-chip-v2-active-start) 0%,
+    var(--sliding-chip-v2-active-end) 100%
+  );
+  box-sizing: border-box;
+}
+
+:root[data-theme="light"] .home--v2 .sliding-chip-indicator {
+  --sliding-chip-v2-active-start: var(--primitives-brand-violet-brand-violet-300);
+  --sliding-chip-v2-active-start-rgb: var(--primitives-brand-violet-brand-violet-300-rgb);
+  --sliding-chip-v2-active-end: var(--primitives-brand-purple-brand-purple-300);
+  --sliding-chip-v2-active-end-rgb: var(--primitives-brand-purple-brand-purple-300-rgb);
+  --sliding-chip-v2-active-fill-start-rgb: var(--tokens-border-border-gradient-02-rgb);
+  --sliding-chip-v2-active-fill-end-rgb: var(--tokens-border-border-gradient-01-rgb);
+  --sliding-chip-v2-active-base: transparent;
+  --sliding-chip-v2-active-fill-opacity: 0.74;
+}
+
 .home--v2 .sliding-chip-indicator::before {
-  background: linear-gradient(90deg, rgba(75, 32, 255, 0.24) 0%, rgba(151, 48, 255, 0.24) 100%);
+  inset: 1px;
+  z-index: 0;
+  background:
+    linear-gradient(
+      90deg,
+      rgb(var(--sliding-chip-v2-active-fill-start-rgb) / var(--sliding-chip-v2-active-fill-opacity)) 0%,
+      rgb(var(--sliding-chip-v2-active-fill-end-rgb) / var(--sliding-chip-v2-active-fill-opacity)) 100%
+    ),
+    var(--sliding-chip-v2-active-base);
   box-shadow: none;
 }
 
 .home--v2 .sliding-chip-indicator::after {
-  content: '';
-  position: absolute;
-  inset: 0;
+  content: none;
+}
+
+.home--v2 .sliding-chip > * {
   z-index: 2;
-  box-sizing: border-box;
-  border: 1px solid transparent;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #4b20ff 0%, #9730ff 100%) border-box;
-  pointer-events: none;
-  -webkit-mask:
-    linear-gradient(#000 0 0) padding-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#000 0 0) padding-box,
-    linear-gradient(#000 0 0);
-  mask-composite: exclude;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+.home--v2 :is(
+  .live-section__chip-icon,
+  .live-section__chip span,
+  .prematch-section__chip-icon,
+  .prematch-section__chip span,
+  .offers-section__chip span
+) {
+  position: relative;
+  z-index: 2;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 .sliding-chip-group--indicator-ready .sliding-chip-indicator {
@@ -406,10 +558,18 @@ img {
 
 .sliding-chip {
   position: relative;
-  z-index: 1;
   transition:
     color 180ms ease,
     transform 120ms ease;
+}
+
+.sliding-chip-group .sliding-chip {
+  z-index: 3;
+}
+
+.sliding-chip > * {
+  position: relative;
+  z-index: 1;
 }
 
 .sliding-chip:active {

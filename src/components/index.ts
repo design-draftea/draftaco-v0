@@ -1,5 +1,5 @@
 // Exportação de componentes
-export { Header } from './Header'
+export { HeaderV2 as Header } from './HeaderV2'
 export { MobileOnly } from './MobileOnly'
 export { SportRail } from './SportRail'
 export { CasinoRail } from './CasinoRail'

@@ -1,5 +1,5 @@
 .content-tabs {
-  background-color: #171717;
+  background-color: var(--tokens-background-background);
   width: 100%;
   position: sticky;
   top: 80px;
@@ -26,7 +26,7 @@
   padding: 0 20px;
   background: none;
   border: none;
-  border-bottom: 1px solid #242424;
+  border-bottom: 1px solid var(--tokens-border-border-02);
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -35,7 +35,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 12px;
   font-weight: 700;
-  color: #d9d9d9;
+  color: var(--tokens-text-text-02);
   line-height: 1;
   white-space: nowrap;
   padding-bottom: 13px;
@@ -45,7 +45,7 @@
 
 /* Tab ativa */
 .content-tabs__item--active .content-tabs__label {
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   border-bottom-color: #32a866;
 }
 

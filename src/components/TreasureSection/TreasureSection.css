@@ -3,7 +3,7 @@
   flex-direction: column;
   gap: 12px;
   padding: 0 0 24px 0;
-  border-bottom: 2px solid #242424;
+  border-bottom: 2px solid var(--tokens-border-border-02);
 }
 
 .treasure-section__header {
@@ -21,7 +21,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 16px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   line-height: 1.4;
 }
 
@@ -29,7 +29,7 @@
   width: 20px;
   height: 20px;
   cursor: pointer;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }
 
 .treasure-section__box-wrapper {
@@ -43,7 +43,7 @@
   min-height: 278px;
   padding: 164px 24px 24px;
   border-radius: 12px;
-  background-color: #1a1a1a;
+  background-color: var(--tokens-layer-layer-01);
   overflow: visible;
 }
 
@@ -84,7 +84,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 12px;
   font-weight: 400;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
   line-height: 1.2;
 }
 
@@ -93,13 +93,18 @@
   font-size: 24px;
   font-weight: 700;
   line-height: 1.2;
-  display: flex;
+  display: inline-flex;
   align-items: baseline;
-  background: linear-gradient(90deg, var(--Tokens-layer-layer-gradient-05, #d2ff72) 0%, var(--Tokens-layer-layer-gradient-06, #56deea) 100%);
+  background: linear-gradient(90deg, var(--tokens-layer-layer-gradient-05) 0%, var(--tokens-layer-layer-gradient-06) 100%);
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
+}
+
+.treasure-section__value span {
+  color: inherit;
+  -webkit-text-fill-color: inherit;
 }
 
 .treasure-value__prefix {
@@ -129,7 +134,7 @@
   justify-content: center;
   height: 40px;
   padding: 0 16px;
-  background: linear-gradient(45deg, var(--Layer-layer-gradient-02, #5228ff) 0.62%, var(--Layer-layer-gradient-01, #ae18ff) 100%);
+  background: var(--tokens-gradient-primary);
   border: none;
   border-radius: var(--Spacing-160, 160px);
   cursor: pointer;
@@ -137,7 +142,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 14px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-on-color-white);
   line-height: 1;
   white-space: nowrap;
 }

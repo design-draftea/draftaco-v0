@@ -20,7 +20,7 @@
   font-size: 16px;
   font-weight: 700;
   line-height: 1.4;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }
 
 .calendar-section__competition-chips {
@@ -52,7 +52,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 10px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--tokens-text-text-01);
 }
 
 .calendar-section__tag-aovivo {
@@ -61,7 +61,7 @@
   justify-content: center;
   gap: 4px;
   padding: 0 4px;
-  background-color: #242424;
+  background-color: var(--tokens-layer-layer-02);
   border-radius: 4px;
   height: 16px;
   line-height: 1;
@@ -71,7 +71,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 8px;
   font-weight: 700;
-  color: #f87171;
+  color: var(--tokens-feedback-feedback-error-icon);
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -95,7 +95,7 @@
   width: 6px;
   height: 6px;
   background-color: transparent;
-  border: 0.5px solid #f87171;
+  border: 0.5px solid var(--tokens-feedback-feedback-error-icon);
   border-radius: 50%;
   animation: calendar-ping-live 2s linear infinite;
   z-index: 0;

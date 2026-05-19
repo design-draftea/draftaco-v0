@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type ComponentType, type ReactNode } from 'react'
-import { Header } from '../../components/Header'
-import { useSlidingActiveIndicator } from '../../hooks/useSlidingActiveIndicator'
+import { HeaderV2 } from '../../components/HeaderV2'
+import { setSlidingActiveIndicator, useSlidingActiveIndicator } from '../../hooks/useSlidingActiveIndicator'
 import type { ProductMode } from '../../types/home'
 import { PromotionsMissionsSection } from './PromotionsMissionsSection'
 import './PromotionsPage.css'
@@ -18,7 +18,6 @@ interface HeaderComponentProps {
 interface PromotionsPageProps {
   activeProduct?: ProductMode
   HeaderComponent?: ComponentType<HeaderComponentProps>
-  isV2?: boolean
   onProductChange?: (product: ProductMode) => void
 }
 
@@ -52,8 +51,7 @@ const getTranslateXFromTransform = (transform: string) => {
 
 export function PromotionsPage({
   activeProduct = 'apostas',
-  HeaderComponent = Header,
-  isV2 = false,
+  HeaderComponent = HeaderV2,
   onProductChange,
 }: PromotionsPageProps = {}) {
   const pageRef = useRef<HTMLDivElement>(null)
@@ -90,10 +88,42 @@ export function PromotionsPage({
 
   useSlidingActiveIndicator({
     activeKey: activeFilter,
-    refreshKey: isHeaderCompact,
     containerRef: filtersRef,
     getActiveElement: () => filterRefs.current[activeFilter],
   })
+
+  useLayoutEffect(() => {
+    const containerEl = filtersRef.current
+    if (!containerEl) return
+
+    let frame: number | null = null
+    let removeInstantFrame: number | null = null
+    const stopAt = window.performance.now() + 220
+
+    const syncIndicator = () => {
+      containerEl.classList.add('sliding-chip-group--indicator-instant')
+      setSlidingActiveIndicator(containerEl, filterRefs.current[activeFilter])
+
+      if (window.performance.now() < stopAt) {
+        frame = window.requestAnimationFrame(syncIndicator)
+        return
+      }
+
+      frame = null
+      removeInstantFrame = window.requestAnimationFrame(() => {
+        containerEl.classList.remove('sliding-chip-group--indicator-instant')
+        removeInstantFrame = null
+      })
+    }
+
+    syncIndicator()
+
+    return () => {
+      if (frame !== null) window.cancelAnimationFrame(frame)
+      if (removeInstantFrame !== null) window.cancelAnimationFrame(removeInstantFrame)
+      containerEl.classList.remove('sliding-chip-group--indicator-instant')
+    }
+  }, [activeFilter, isHeaderCompact])
 
   useLayoutEffect(() => {
     const trackEl = tabsTrackRef.current
@@ -228,7 +258,7 @@ export function PromotionsPage({
       className={[
         'promotions-page',
         'promotions-page--liquid-glass-new',
-        isV2 ? 'promotions-page--v2' : '',
+        'promotions-page--v2',
         isHeaderCompact ? 'promotions-page--header-compact' : '',
       ]
         .filter(Boolean)

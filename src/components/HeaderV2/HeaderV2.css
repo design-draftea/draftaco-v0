@@ -1,6 +1,8 @@
 @import '../Header/Header.css';
 
 .header--v2 .header__toggle {
+  --header-toggle-border-start: var(--tokens-border-border-gradient-02);
+  --header-toggle-border-end: var(--tokens-border-border-gradient-01);
   border: none;
   background: transparent;
   box-shadow: none;
@@ -15,7 +17,11 @@
   z-index: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(82deg, #4b20ff 0%, #9730ff 100%);
+  background: linear-gradient(
+    82deg,
+    var(--header-toggle-border-start) 0%,
+    var(--header-toggle-border-end) 100%
+  );
   pointer-events: none;
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -37,7 +43,7 @@
 
 .header--v2 .header__menu-btn {
   box-sizing: border-box;
-  border: 1px solid #ffffff;
+  border: 1px solid var(--tokens-text-text-on-color-white);
   border-radius: 50%;
   background: transparent;
   box-shadow: none;
@@ -64,12 +70,12 @@
 }
 
 .header--v2 .header__menu-icon {
-  color: #ffffff;
+  color: var(--tokens-text-text-on-color-white);
 }
 
 .header--v2 .header__toggle-indicator {
   z-index: 1;
-  background: #ffffff;
+  background: var(--tokens-text-text-on-color-white);
   border-radius: 56px;
   box-shadow: none;
 }
@@ -87,13 +93,18 @@
 }
 
 .header--v2 .header__toggle-btn {
-  color: #ffffff;
+  color: var(--tokens-text-text-on-color-white);
   text-shadow: none;
 }
 
 .header--v2 .header__toggle-btn--active {
-  color: #000000;
+  color: var(--tokens-text-text-on-color-black);
   text-shadow: none;
+}
+
+:root[data-theme="light"] .header--v2 .header__toggle {
+  --header-toggle-border-start: var(--primitives-brand-violet-brand-violet-300);
+  --header-toggle-border-end: var(--primitives-brand-purple-brand-purple-300);
 }
 
 @keyframes header-v2-toggle-bounce {
