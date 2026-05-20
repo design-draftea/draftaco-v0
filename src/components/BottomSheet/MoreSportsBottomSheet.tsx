@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BottomSheet } from './BottomSheet'
 import './MoreSportsBottomSheet.css'
 
@@ -66,6 +67,24 @@ export function MoreSportsBottomSheet({
   activeSport,
   onSelectSport,
 }: MoreSportsBottomSheetProps) {
+  useEffect(() => {
+    if (!isOpen) return
+
+    const scrollTimer = window.setTimeout(() => {
+      const bodyEl = document.querySelector<HTMLDivElement>(
+        '.bottom-sheet.more-sports-bs .bottom-sheet__body.more-sports-bs__body'
+      )
+      if (!bodyEl) return
+
+      bodyEl.scrollTo({
+        top: bodyEl.scrollHeight - bodyEl.clientHeight,
+        behavior: 'smooth',
+      })
+    }, 360)
+
+    return () => window.clearTimeout(scrollTimer)
+  }, [isOpen])
+
   const handleSelectSport = (sportId: string, enabled: boolean) => {
     if (!enabled) return
     onSelectSport?.(sportId)

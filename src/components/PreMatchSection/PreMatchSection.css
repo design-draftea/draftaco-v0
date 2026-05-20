@@ -15,10 +15,18 @@
   height: 20px;
 }
 
+.prematch-section__header--with-action {
+  justify-content: space-between;
+  gap: 12px;
+  height: auto;
+  min-height: 20px;
+}
+
 .prematch-section__title {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .prematch-section__title span {
@@ -32,6 +40,32 @@
 .prematch-section__arrow {
   width: 20px;
   height: 20px;
+  color: var(--tokens-text-text-01);
+}
+
+.prematch-section__header-more {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.prematch-section__header-more span {
+  font-family: 'Red Hat Text', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--tokens-text-text-01);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.prematch-section__header-more-icon {
+  width: 16px;
+  height: 16px;
   color: var(--tokens-text-text-01);
 }
 
@@ -839,10 +873,15 @@
   margin-top: -12px;
 }
 
+.prematch-section__more--competitions {
+  margin-top: 0;
+}
+
 .prematch-section__more-btn {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 12px;
   height: 32px;
   padding: 14px 16px;
   background: transparent;

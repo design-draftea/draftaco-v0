@@ -622,6 +622,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 12px;
   height: 32px;
   padding: 14px 16px;
   background: transparent;

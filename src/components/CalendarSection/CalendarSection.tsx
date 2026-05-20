@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, type ReactNode, type RefObject } from 'rea
 import { CaretRightIcon, CaretUpIcon } from '@phosphor-icons/react'
 import '../PreMatchSection/PreMatchSection.css'
 import './CalendarSection.css'
+import { CompeticaoBottomSheet } from '../BottomSheet'
 import { LiveMatchCard } from '../LiveMatchCard'
 import {
   PreMatchPlayerPropCard,
@@ -30,6 +31,11 @@ import playerAvatarFutebol from '../../assets/playerAvatarFutebol.svg'
 import playerAvatarBasquete from '../../assets/playerAvatarBasquete.svg'
 import { getCompetitionBadge } from '../../data/competitionBadges'
 import { getTennisPlayerCountryIcon } from '../../data/tennisCountryIcons'
+import {
+  competicaoConfigBySport,
+  findCompetition,
+  isCompetitionEnabled,
+} from '../SportFilterBar/competicaoData'
 // Flags
 import flagBrasil from '../../assets/iconPaises/brasil.png'
 import flagMundo from '../../assets/iconPaises/mundo.png'
@@ -2750,6 +2756,7 @@ export function CalendarSection({
   const getOddButtonProps = useOddSelection('prematch-section__odd-btn')
   const marketChipsRef = useRef<HTMLDivElement>(null)
   const marketStickyState = useHomeMarketStickyState(sectionRef, marketChipsRef)
+  const [isCompetitionSheetOpen, setIsCompetitionSheetOpen] = useState(false)
   const [internalMatchTimes, setInternalMatchTimes] = useState<Record<string, string>>(() => {
     const times: Record<string, string> = {}
     championships.forEach((championship) => {
@@ -2798,11 +2805,63 @@ export function CalendarSection({
     : currentSport === 'tenis'
       ? tennisMarketChips
       : footballMarketChips
+  const competitionSheetConfig = currentSport ? competicaoConfigBySport[currentSport] : null
+  const canOpenCompetitionSheet = !!competitionSheetConfig && !!onOpenCompetition
+  const showHeaderCompetitionAction = !isCompetitionPage && canOpenCompetitionSheet
 
   const openCompetitionFromLeague = (leagueId: string) => {
     const target = getCompetitionLinkTarget(leagueId)
     if (!target) return
     onOpenCompetition?.(target)
+  }
+
+  const handleSelectCompetitionFromSheet = (selectedCompetitionId: string) => {
+    if (!competitionSheetConfig || !currentSport) return
+
+    const competition = findCompetition(competitionSheetConfig, selectedCompetitionId)
+    if (!competition) return
+
+    onOpenCompetition?.({
+      id: competition.id,
+      name: competition.name,
+      sport: currentSport,
+    })
+    setIsCompetitionSheetOpen(false)
+  }
+
+  const renderCompetitionSheetAction = () => {
+    if (!canOpenCompetitionSheet) return null
+
+    return (
+      <div className="prematch-section__more prematch-section__more--competitions">
+        <button
+          type="button"
+          className="prematch-section__more-btn"
+          aria-haspopup="dialog"
+          onClick={() => setIsCompetitionSheetOpen(true)}
+        >
+          <span>Ver campeonatos</span>
+          <CaretUpIcon aria-hidden="true" className="prematch-section__more-icon" weight="bold" />
+        </button>
+      </div>
+    )
+  }
+
+  const renderCompetitionSheet = () => {
+    if (!competitionSheetConfig) return null
+
+    return (
+      <CompeticaoBottomSheet
+        isOpen={isCompetitionSheetOpen}
+        onClose={() => setIsCompetitionSheetOpen(false)}
+        sportLabel={competitionSheetConfig.sportLabel}
+        sportIcon={competitionSheetConfig.sportIcon}
+        topCompetitions={competitionSheetConfig.topCompetitions}
+        countries={competitionSheetConfig.countries}
+        onSelectCompetition={handleSelectCompetitionFromSheet}
+        isCompetitionEnabled={isCompetitionEnabled}
+      />
+    )
   }
 
   useEffect(() => {
@@ -3100,82 +3159,101 @@ export function CalendarSection({
 
   if (isCompetitionPage) {
     return (
-      <section className={competitionSectionClasses} ref={sectionRef}>
-        {renderMarketChips({
-          className: getMarketStickyClassName(marketStickyState, 'calendar-section__competition-chips'),
-          withRefs: true,
-        })}
-        {competitionDaySections.map((section) => (
-          <div key={section.id} className="calendar-section__competition-day">
-            <h2 className="calendar-section__competition-day-title">{section.title}</h2>
-            <div className="prematch-section__matches calendar-section__competition-matches">
-              {section.groups.flatMap(({ league, events }) =>
-                events.map((event) => renderEventCard(league, event, activeMarket))
-              )}
+      <>
+        <section className={competitionSectionClasses} ref={sectionRef}>
+          {renderMarketChips({
+            className: getMarketStickyClassName(marketStickyState, 'calendar-section__competition-chips'),
+            withRefs: true,
+          })}
+          {competitionDaySections.map((section) => (
+            <div key={section.id} className="calendar-section__competition-day">
+              <h2 className="calendar-section__competition-day-title">{section.title}</h2>
+              <div className="prematch-section__matches calendar-section__competition-matches">
+                {section.groups.flatMap(({ league, events }) =>
+                  events.map((event) => renderEventCard(league, event, activeMarket))
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-      </section>
+          ))}
+          {renderCompetitionSheetAction()}
+        </section>
+        {renderCompetitionSheet()}
+      </>
     )
   }
 
   return (
-    <section className={`prematch-section calendar-section${isCompetitionPage ? ' calendar-section--competition' : ''}`} ref={sectionRef}>
-      {/* Header */}
-      <div className="prematch-section__header">
-        <div className="prematch-section__title">
-          <span>Melhores Jogos</span>
+    <>
+      <section className={`prematch-section calendar-section${isCompetitionPage ? ' calendar-section--competition' : ''}`} ref={sectionRef}>
+        {/* Header */}
+        <div className="prematch-section__header prematch-section__header--with-action">
+          <div className="prematch-section__title">
+            <span>Jogos em destaque</span>
+          </div>
+          {showHeaderCompetitionAction && (
+            <button
+              type="button"
+              className="prematch-section__header-more"
+              aria-haspopup="dialog"
+              onClick={() => setIsCompetitionSheetOpen(true)}
+            >
+              <span>Ver campeonatos</span>
+              <CaretUpIcon aria-hidden="true" className="prematch-section__header-more-icon" weight="bold" />
+            </button>
+          )}
         </div>
-      </div>
 
-      {/* Category chips */}
-      {renderMarketChips({
-        className: getMarketStickyClassName(marketStickyState),
-        withRefs: true,
-      })}
+        {/* Category chips */}
+        {renderMarketChips({
+          className: getMarketStickyClassName(marketStickyState),
+          withRefs: true,
+        })}
 
-      {/* Leagues — same layout as PreMatchSection */}
-      <div className="prematch-section__leagues">
-        {displayedEventGroups.map(({ league, events: eventsToDisplay }) => {
-          const isOpen = openLeagues.includes(league.id)
-          return (
-            <div key={league.id} className={`prematch-section__league ${isOpen ? 'prematch-section__league--open' : ''}`}>
-              {!isCompetitionPage && (
-                <button className="prematch-section__league-header" onClick={() => toggleLeague(league.id)}>
-                  <div className="prematch-section__league-title">
-                    <img src={league.flag} alt="" className="prematch-section__league-flag" />
-                    <span>{league.name}</span>
+        {/* Leagues — same layout as PreMatchSection */}
+        <div className="prematch-section__leagues">
+          {displayedEventGroups.map(({ league, events: eventsToDisplay }) => {
+            const isOpen = openLeagues.includes(league.id)
+            return (
+              <div key={league.id} className={`prematch-section__league ${isOpen ? 'prematch-section__league--open' : ''}`}>
+                {!isCompetitionPage && (
+                  <button className="prematch-section__league-header" onClick={() => toggleLeague(league.id)}>
+                    <div className="prematch-section__league-title">
+                      <img src={league.flag} alt="" className="prematch-section__league-flag" />
+                      <span>{league.name}</span>
+                    </div>
+                    <CaretUpIcon
+                      aria-hidden="true"
+                      className={`prematch-section__accordion-icon ${isOpen ? 'prematch-section__accordion-icon--open' : ''}`}
+                      weight="bold"
+                    />
+                  </button>
+                )}
+
+                <div className={`prematch-section__matches-wrapper ${isOpen || isCompetitionPage ? 'prematch-section__matches-wrapper--open' : ''}`}>
+                  <div className="prematch-section__matches-inner">
+                    <div className="prematch-section__matches">
+                      {eventsToDisplay.map((event) => renderEventCard(league, event))}
+                    </div>
+
+                    {!isCompetitionPage && (
+                      <button
+                        type="button"
+                        className="prematch-section__league-more"
+                        onClick={() => openCompetitionFromLeague(league.id)}
+                      >
+                        <span>Veja mais {league.name}</span>
+                        <CaretRightIcon aria-hidden="true" className="prematch-section__league-more-icon" weight="bold" />
+                      </button>
+                    )}
                   </div>
-                  <CaretUpIcon
-                    aria-hidden="true"
-                    className={`prematch-section__accordion-icon ${isOpen ? 'prematch-section__accordion-icon--open' : ''}`}
-                    weight="bold"
-                  />
-                </button>
-              )}
-
-              <div className={`prematch-section__matches-wrapper ${isOpen || isCompetitionPage ? 'prematch-section__matches-wrapper--open' : ''}`}>
-                <div className="prematch-section__matches-inner">
-                  <div className="prematch-section__matches">
-                    {eventsToDisplay.map((event) => renderEventCard(league, event))}
-                  </div>
-
-                  {!isCompetitionPage && (
-                    <button
-                      type="button"
-                      className="prematch-section__league-more"
-                      onClick={() => openCompetitionFromLeague(league.id)}
-                    >
-                      <span>Veja mais {league.name}</span>
-                      <CaretRightIcon aria-hidden="true" className="prematch-section__league-more-icon" weight="bold" />
-                    </button>
-                  )}
                 </div>
               </div>
-            </div>
-          )
-        })}
-      </div>
-    </section>
+            )
+          })}
+        </div>
+        {renderCompetitionSheetAction()}
+      </section>
+      {renderCompetitionSheet()}
+    </>
   )
 }

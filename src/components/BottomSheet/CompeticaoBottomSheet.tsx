@@ -75,22 +75,15 @@ export function CompeticaoBottomSheet({
     onSelectCompetition?.(id)
   }
 
-  const footer = (
-    <button type="button" className="competicao-bs__footer-btn" onClick={onClose}>
-      Fechar
-    </button>
-  )
-
   return (
     <BottomSheet
       isOpen={isOpen}
       onClose={onClose}
+      title="Selecione uma competição"
       blurBackdrop
+      sheetClassName="competicao-bs"
       bodyClassName="competicao-bs__body"
-      footerContent={footer}
     >
-      <h2 className="competicao-bs__title">Selecione uma competição</h2>
-
       <div className="competicao-bs__search">
         <div className="competicao-bs__search-icon-box">
           <MagnifyingGlassIcon aria-hidden="true" className="competicao-bs__search-icon" weight="bold" />
@@ -111,6 +104,7 @@ export function CompeticaoBottomSheet({
           <button
             type="button"
             className={`competicao-bs__group-header ${topOpen ? 'competicao-bs__group-header--open' : ''}`}
+            aria-expanded={topOpen}
             onClick={() => setTopOpen((v) => !v)}
           >
             <img src={sportIcon} alt={sportLabel} className="competicao-bs__group-icon" />
@@ -122,26 +116,31 @@ export function CompeticaoBottomSheet({
             />
           </button>
 
-          {topOpen && (
-            <ul className="competicao-bs__list">
-              {filteredTop.map((c) => {
-                const enabled = isCompetitionEnabled(c.id)
-                return (
-                  <li key={c.id}>
-                    <button
-                      type="button"
-                      className={`competicao-bs__row ${enabled ? '' : 'competicao-bs__row--disabled'}`}
-                      onClick={() => handleSelect(c.id)}
-                      disabled={!enabled}
-                    >
-                      <span className="competicao-bs__row-label">{c.name}</span>
-                      {enabled && <CaretRightIcon aria-hidden="true" className="competicao-bs__row-arrow" weight="bold" />}
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
+          <div
+            className={`competicao-bs__collapse ${topOpen ? 'competicao-bs__collapse--open' : ''}`}
+            aria-hidden={!topOpen}
+          >
+            <div className="competicao-bs__collapse-inner">
+              <ul className="competicao-bs__list">
+                {filteredTop.map((c) => {
+                  const enabled = isCompetitionEnabled(c.id)
+                  return (
+                    <li key={c.id}>
+                      <button
+                        type="button"
+                        className={`competicao-bs__row ${enabled ? '' : 'competicao-bs__row--disabled'}`}
+                        onClick={() => handleSelect(c.id)}
+                        disabled={!enabled}
+                      >
+                        <span className="competicao-bs__row-label">{c.name}</span>
+                        {enabled && <CaretRightIcon aria-hidden="true" className="competicao-bs__row-arrow" weight="bold" />}
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          </div>
         </div>
       )}
 
@@ -153,6 +152,7 @@ export function CompeticaoBottomSheet({
               <button
                 type="button"
                 className="competicao-bs__country-header"
+                aria-expanded={isOpenCountry}
                 onClick={() => toggleCountry(country.id)}
               >
                 <img src={country.flag} alt="" className="competicao-bs__country-flag" />
@@ -164,25 +164,32 @@ export function CompeticaoBottomSheet({
                 />
               </button>
 
-              {isOpenCountry && country.competitions.length > 0 && (
-                <ul className="competicao-bs__list competicao-bs__list--nested">
-                  {country.competitions.map((c) => {
-                    const enabled = isCompetitionEnabled(c.id)
-                    return (
-                      <li key={c.id}>
-                        <button
-                          type="button"
-                          className={`competicao-bs__row ${enabled ? '' : 'competicao-bs__row--disabled'}`}
-                          onClick={() => handleSelect(c.id)}
-                          disabled={!enabled}
-                        >
-                          <span className="competicao-bs__row-label">{c.name}</span>
-                          {enabled && <CaretRightIcon aria-hidden="true" className="competicao-bs__row-arrow" weight="bold" />}
-                        </button>
-                      </li>
-                    )
-                  })}
-                </ul>
+              {country.competitions.length > 0 && (
+                <div
+                  className={`competicao-bs__collapse ${isOpenCountry ? 'competicao-bs__collapse--open' : ''}`}
+                  aria-hidden={!isOpenCountry}
+                >
+                  <div className="competicao-bs__collapse-inner">
+                    <ul className="competicao-bs__list competicao-bs__list--nested">
+                      {country.competitions.map((c) => {
+                        const enabled = isCompetitionEnabled(c.id)
+                        return (
+                          <li key={c.id}>
+                            <button
+                              type="button"
+                              className={`competicao-bs__row ${enabled ? '' : 'competicao-bs__row--disabled'}`}
+                              onClick={() => handleSelect(c.id)}
+                              disabled={!enabled}
+                            >
+                              <span className="competicao-bs__row-label">{c.name}</span>
+                              {enabled && <CaretRightIcon aria-hidden="true" className="competicao-bs__row-arrow" weight="bold" />}
+                            </button>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+                </div>
               )}
             </li>
           )

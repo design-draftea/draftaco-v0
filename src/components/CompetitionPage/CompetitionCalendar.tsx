@@ -185,7 +185,7 @@ export function CompetitionCalendar({ sport, matches }: CompetitionCalendarProps
     <section className="prematch-section calendar-section competition-calendar" ref={sectionRef}>
       <div className="prematch-section__header">
         <div className="prematch-section__title">
-          <span>Melhores Jogos</span>
+          <span>Jogos em destaque</span>
         </div>
       </div>
 

@@ -29,6 +29,12 @@
 
 .bottom-sheet__body.more-sports-bs__body {
   padding: 28px 20px 28px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.bottom-sheet__body.more-sports-bs__body::-webkit-scrollbar {
+  display: none;
 }
 
 .more-sports-bs__grid {

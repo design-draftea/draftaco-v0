@@ -783,6 +783,7 @@ export function Home({
               sport={displayActiveSport}
               competitionId={selectedCompetition.id}
               onLiveMatchClick={handleLiveMatchClick}
+              onOpenCompetition={handleOpenCompetition}
             />
           ) : (
             <>
