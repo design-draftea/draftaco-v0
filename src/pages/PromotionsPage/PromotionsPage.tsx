@@ -78,15 +78,8 @@ export function PromotionsPage({
   const [activeFilter, setActiveFilter] = useState<PromotionsFilterId>('todos')
   const [isHeaderCompact, setIsHeaderCompact] = useState(false)
 
-  const scrollPageToTop = () => {
-    pageRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
-    setIsHeaderCompact(false)
-  }
-
   const handleFilterClick = (filterId: PromotionsFilterId) => {
     setActiveFilter(filterId)
-    scrollPageToTop()
   }
 
   useSlidingActiveIndicator({
