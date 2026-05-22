@@ -961,7 +961,7 @@
   width: 79px;
   flex-direction: column;
   align-items: center;
-  color: var(--tokens-text-text-on-color-white);
+  color: var(--tokens-text-text-01);
   font-family: 'Red Hat Text', sans-serif;
 }
 
@@ -1006,7 +1006,7 @@
   width: 24px;
   flex-direction: column;
   justify-content: center;
-  color: var(--tokens-text-text-on-color-white);
+  color: var(--tokens-text-text-01);
   font-size: 20px;
   font-weight: 700;
   line-height: 1.5;
@@ -1017,7 +1017,7 @@
 .live-event-page__sticky-score-time {
   max-width: 100%;
   overflow: hidden;
-  color: var(--tokens-text-text-on-color-white);
+  color: var(--tokens-text-text-01);
   font-size: 11px;
   font-weight: 400;
   line-height: 1.2;
