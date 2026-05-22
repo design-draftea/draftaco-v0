@@ -398,6 +398,16 @@
   text-shadow: none;
 }
 
+.navbar--liquid-v2 .navbar__item:not(.navbar__item--active) .navbar__icon,
+.navbar--liquid-v2 .navbar__item:not(.navbar__item--active) .navbar__label {
+  opacity: 0.56;
+}
+
+.navbar--liquid-v2 .navbar__item--active .navbar__icon,
+.navbar--liquid-v2 .navbar__item--active .navbar__label {
+  opacity: 1;
+}
+
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
   .navbar__panel {
     background: var(--tokens-layer-layer-01);

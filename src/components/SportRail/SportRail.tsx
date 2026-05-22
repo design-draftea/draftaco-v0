@@ -5,6 +5,8 @@ import './SportRail.css'
 import iconAoVivo from '../../assets/iconAoVivo.png'
 import iconDestaque from '../../assets/iconSports/fire.png'
 import iconBasquete from '../../assets/iconSports/basketball.png'
+import iconBrasileiraoRailLight from '../../assets/iconSports/brasileirao-rail-text-333.png'
+import iconBundesligaRailLight from '../../assets/iconSports/bundesliga-rail-text-333.png'
 import iconCsgo from '../../assets/iconSports/csgo.png'
 import iconEsoccer from '../../assets/iconSports/e-soccer.png'
 import iconFutebol from '../../assets/iconSports/soccer.png'
@@ -91,6 +93,7 @@ const competitionRailSections: ProductRailSection<SportRailItem>[] = [
         competitionId: 'fut-brasileiro',
         competitionName: 'Brasileirão Série A',
         icon: getCompetitionRailBadge('fut-brasileiro', iconFutebol),
+        lightIcon: iconBrasileiraoRailLight,
         label: 'Brasileirão',
         clickable: true,
       },
@@ -131,6 +134,7 @@ const competitionRailSections: ProductRailSection<SportRailItem>[] = [
         competitionId: 'fut-bundesliga',
         competitionName: 'Bundesliga',
         icon: getCompetitionRailBadge('fut-bundesliga', iconFutebol),
+        lightIcon: iconBundesligaRailLight,
         label: 'Bundesliga',
         clickable: true,
       },
@@ -555,7 +559,20 @@ export function ProductRail<TItem extends ProductRailBaseItem>({
 
   const renderIcon = (item: TItem, isActive: boolean) => (
     <div className={`sport-rail__icon${isActive ? ' sport-rail__icon--active' : ''}`}>
-      {item.icon && <img src={item.icon} alt={item.label} />}
+      {item.icon && (
+        <img
+          src={item.icon}
+          alt={item.label}
+          className={item.lightIcon ? 'sport-rail__theme-icon sport-rail__theme-icon--default' : undefined}
+        />
+      )}
+      {item.lightIcon && (
+        <img
+          src={item.lightIcon}
+          alt={item.label}
+          className="sport-rail__theme-icon sport-rail__theme-icon--light"
+        />
+      )}
       {hasLiveIndicator?.(item) && (
         <span className="sport-rail__live-indicator" aria-label="Ao vivo">
           <img src={iconAoVivo} alt="" className="sport-rail__live-icon" />
@@ -583,6 +600,7 @@ export function ProductRail<TItem extends ProductRailBaseItem>({
           key={item.id}
           ref={(el) => { itemRefs.current[itemIndex] = el }}
           className={className}
+          data-sport-rail-item-id={item.id}
           aria-disabled="true"
         >
           {renderIcon(item, isActive)}
@@ -597,6 +615,7 @@ export function ProductRail<TItem extends ProductRailBaseItem>({
         ref={(el) => { itemRefs.current[itemIndex] = el }}
         type="button"
         className={className}
+        data-sport-rail-item-id={item.id}
         aria-pressed={item.isMore ? undefined : isActive}
         aria-haspopup={item.isMore ? 'dialog' : undefined}
         aria-current={isActive ? 'page' : undefined}

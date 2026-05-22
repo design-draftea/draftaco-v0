@@ -13,7 +13,7 @@
 }
 
 :root[data-theme="light"] .live-event-page {
-  --live-event-header-gradient-opacity: 1;
+  --live-event-header-gradient-opacity: 0.32;
   --live-event-header-gradient-height: 210px;
   --live-event-header-gradient-blur: 28px;
 }
@@ -702,7 +702,7 @@
   width: 40px;
   height: 4px;
   border-radius: 160px;
-  background: var(--tokens-background-background);
+  background: var(--tokens-text-text-01);
   display: block;
 }
 
@@ -908,7 +908,7 @@
   width: 40px;
   height: 4px;
   border-radius: 160px;
-  background-color: var(--tokens-background-background);
+  background-color: var(--tokens-text-text-01);
 }
 
 .live-event-page__sticky-score-inner {

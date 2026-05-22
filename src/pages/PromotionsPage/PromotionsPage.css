@@ -81,7 +81,7 @@
   left: 0;
   z-index: 0;
   height: 1px;
-  background: rgb(var(--tokens-text-text-on-color-white-rgb) / 0.16);
+  background: rgb(var(--tokens-text-text-01-rgb) / 0.16);
   pointer-events: none;
 }
 
@@ -113,7 +113,7 @@
   padding: 0 12px;
   border: 0;
   background: transparent;
-  color: var(--tokens-text-text-on-color-white);
+  color: var(--tokens-text-text-01);
   opacity: 0.56;
   -webkit-tap-highlight-color: transparent;
   transition:
@@ -146,7 +146,7 @@
 }
 
 .promotions-page__tab--active {
-  color: var(--tokens-text-text-on-color-white);
+  color: var(--tokens-text-text-01);
   opacity: 1;
 }
 

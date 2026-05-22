@@ -19,7 +19,7 @@
 }
 
 :root[data-theme="light"] .casino-game-page {
-  --casino-game-header-gradient-opacity: 1;
+  --casino-game-header-gradient-opacity: 0.32;
   --casino-game-header-gradient-height: 210px;
   --casino-game-header-gradient-blur: 48px;
 }
@@ -304,15 +304,11 @@
   width: 40px;
   height: 4px;
   border-radius: 160px;
-  background: var(--tokens-background-background);
+  background: var(--tokens-text-text-01);
   transform: scale(var(--casino-game-drag-handle-scale, 1));
   transform-origin: center center;
   transition: transform 360ms ease-in-out;
   will-change: transform;
-}
-
-:root[data-theme="light"] .casino-game-page__drag-handle span {
-  background: var(--tokens-text-text-on-color-white);
 }
 
 .casino-game-page--gesture-resizing .casino-game-page__drag-handle span {

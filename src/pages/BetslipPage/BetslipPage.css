@@ -1031,8 +1031,8 @@
   min-width: 0;
   background: linear-gradient(
     90deg,
-    var(--tokens-layer-layer-gradient-03) 0%,
-    var(--tokens-layer-layer-gradient-04) 100%
+    var(--tokens-layer-layer-gradient-05) 0%,
+    var(--tokens-layer-layer-gradient-06) 100%
   );
   background-clip: text;
   color: transparent;
@@ -1241,7 +1241,7 @@
   padding: 4px;
   border-radius: 999px;
   overflow: hidden;
-  background: var(--tokens-layer-layer-02);
+  background: var(--tokens-layer-layer-03);
   color: var(--tokens-text-text-01);
   font-family: inherit;
   font-size: 12px;

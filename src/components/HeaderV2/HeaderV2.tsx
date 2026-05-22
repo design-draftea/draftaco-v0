@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom'
 import { ListIcon } from '@phosphor-icons/react'
 import './HeaderV2.css'
 import logoReidoPitaco from '../../assets/logoReidoPitaco.svg'
+import logoReidoPitacoLight from '../../assets/logoReidoPitacoLight.svg'
 import { NavigationMenuBottomSheet } from '../NavigationMenuBottomSheet'
 import type { ProductMode } from '../../types/home'
 import { productLabels } from '../../data/homeProducts'
@@ -253,7 +254,8 @@ export function HeaderV2({
 
       <div className="header__top" ref={headerTopRef}>
         <div className="header__logo">
-          <img src={logoReidoPitaco} alt="Rei do Pitaco" />
+          <img src={logoReidoPitaco} alt="Rei do Pitaco" className="header__logo-img header__logo-img--dark" />
+          <img src={logoReidoPitacoLight} alt="Rei do Pitaco" className="header__logo-img header__logo-img--light" />
         </div>
 
         <button

@@ -1,8 +1,8 @@
 @import '../Header/Header.css';
 
 .header--v2 .header__toggle {
-  --header-toggle-border-start: rgb(var(--tokens-text-text-on-color-white-rgb) / 0.16);
-  --header-toggle-border-end: rgb(var(--tokens-text-text-on-color-white-rgb) / 0.16);
+  --header-toggle-border-start: rgb(var(--tokens-text-text-01-rgb) / 0.16);
+  --header-toggle-border-end: rgb(var(--tokens-text-text-01-rgb) / 0.16);
   border: none;
   background: transparent;
   box-shadow: none;
@@ -73,9 +73,22 @@
   color: var(--tokens-text-text-on-color-white);
 }
 
+:root[data-theme="light"] .header--v2 .header__account-actions {
+  color: var(--tokens-text-text-01);
+}
+
+:root[data-theme="light"] .header--v2 .header__menu-btn {
+  border-color: var(--tokens-text-text-01);
+  color: var(--tokens-text-text-01);
+}
+
+:root[data-theme="light"] .header--v2 .header__menu-icon {
+  color: var(--tokens-text-text-01);
+}
+
 .header--v2 .header__toggle-indicator {
   z-index: 1;
-  background: var(--tokens-text-text-on-color-white);
+  background: var(--tokens-text-text-01);
   border-radius: 56px;
   box-shadow: none;
 }
@@ -93,12 +106,12 @@
 }
 
 .header--v2 .header__toggle-btn {
-  color: var(--tokens-text-text-on-color-white);
+  color: var(--tokens-text-text-01);
   text-shadow: none;
 }
 
 .header--v2 .header__toggle-btn--active {
-  color: var(--tokens-text-text-on-color-black);
+  color: var(--tokens-text-text-inverse);
   text-shadow: none;
 }
 

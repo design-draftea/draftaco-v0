@@ -4,6 +4,7 @@ export interface ProductRailBaseItem {
   id: string
   label: string
   icon?: string
+  lightIcon?: string
   clickable?: boolean
   isMore?: boolean
 }

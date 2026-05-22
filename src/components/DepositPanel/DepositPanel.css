@@ -71,7 +71,7 @@
 }
 
 :root[data-theme="light"] .deposit-panel__header {
-  --header-gradient-opacity: 1;
+  --header-gradient-opacity: 0.32;
   --header-gradient-height: 210px;
   --header-gradient-blur: 28px;
 }
@@ -89,7 +89,7 @@
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: var(--tokens-text-text-on-color-white);
+  color: var(--tokens-text-text-01);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -106,7 +106,7 @@
   z-index: 1;
   margin: 0;
   padding: 0 48px;
-  color: var(--tokens-text-text-on-color-white);
+  color: var(--tokens-text-text-01);
   font-size: 14px;
   font-weight: 700;
   line-height: 1.5;

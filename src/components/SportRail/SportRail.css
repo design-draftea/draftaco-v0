@@ -466,6 +466,18 @@
     width 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.sport-rail__theme-icon--light {
+  display: none;
+}
+
+:root[data-theme="light"] .sport-rail__theme-icon--default {
+  display: none;
+}
+
+:root[data-theme="light"] .sport-rail__theme-icon--light {
+  display: block;
+}
+
 .sport-rail__icon--active > img {
   width: 22px;
   height: 22px;
@@ -487,7 +499,7 @@
 }
 
 .sport-rail--competitions .sport-rail__label {
-  font-weight: 400;
+  font-weight: 500;
 }
 
 .sport-rail__live-indicator {
@@ -578,14 +590,17 @@
   --sport-rail-v2-active-end-rgb: 174 24 255;
   --sport-rail-v2-active-fill-start-rgb: 82 40 255;
   --sport-rail-v2-active-fill-end-rgb: 174 24 255;
-  --sport-rail-v2-active-base: var(--tokens-background-background-on-color-dark);
   --sport-rail-v2-active-fill-opacity: 0.56;
+  --sport-rail-active-fill-opacity: var(--sport-rail-v2-active-fill-opacity);
   margin-top: 0;
   padding-top: 0;
   padding-bottom: max(0px, calc(var(--sport-rail-padding-bottom, 24px) - 4px));
 }
 
 .header--v2 .sport-rail--competitions .sport-rail__active-indicator {
+  --sport-rail-active-fill-opacity: var(--sport-rail-v2-active-fill-opacity);
+  --sport-rail-active-base: transparent;
+  background: transparent;
   overflow: visible;
 }
 
@@ -594,8 +609,7 @@
     90deg,
     rgb(var(--sport-rail-v2-active-fill-start-rgb) / var(--sport-rail-v2-active-fill-opacity)) 0%,
     rgb(var(--sport-rail-v2-active-fill-end-rgb) / var(--sport-rail-v2-active-fill-opacity)) 100%
-  ),
-  var(--sport-rail-v2-active-base);
+  );
   border: 0;
   box-shadow: none;
   transform: scale3d(1, 1, 1);
@@ -631,8 +645,7 @@
   --sport-rail-v2-active-end-rgb: 174 24 255;
   --sport-rail-v2-active-fill-start-rgb: 82 40 255;
   --sport-rail-v2-active-fill-end-rgb: 174 24 255;
-  --sport-rail-v2-active-base: var(--tokens-background-background-on-color-dark);
-  --sport-rail-v2-active-fill-opacity: 0.72;
+  --sport-rail-v2-active-fill-opacity: 0.24;
 }
 
 .header--v2 .sport-rail--competitions .sport-rail__icon:not(.sport-rail__icon--active) {
@@ -650,6 +663,11 @@
 .header--v2 .sport-rail--competitions .sport-rail__icon img {
   width: 26.4px;
   height: 26.4px;
+}
+
+:root[data-theme="light"] .header--v2 .sport-rail--competitions [data-sport-rail-item-id="competition:fut-champions"] .sport-rail__icon > img:not(.sport-rail__live-icon),
+:root[data-theme="light"] .header--v2 .sport-rail--competitions [data-sport-rail-item-id="competition:ten-roma-masters"] .sport-rail__icon > img:not(.sport-rail__live-icon) {
+  filter: brightness(0) invert(20%);
 }
 
 .header--v2 .sport-rail--competitions .sport-rail__icon--active > img {
