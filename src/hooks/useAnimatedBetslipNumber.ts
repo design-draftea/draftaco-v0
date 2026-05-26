@@ -3,11 +3,13 @@ import { useEffect, useRef, useState } from 'react'
 const animatedNumberDurationMs = 520
 
 const easeOutCubic = (progress: number) => 1 - (1 - progress) ** 3
+const shouldAnimateAnyNumberChange = () => true
 
 export function useAnimatedBetslipNumber(
   targetValue: number,
   formatter: (value: number) => string,
-  enabled: boolean
+  enabled: boolean,
+  shouldAnimateChange: (startValue: number, targetValue: number) => boolean = shouldAnimateAnyNumberChange
 ) {
   const displayedValueRef = useRef(targetValue)
   const [displayedValue, setDisplayedValue] = useState(targetValue)
@@ -17,7 +19,11 @@ export function useAnimatedBetslipNumber(
     const startValue = displayedValueRef.current
     const difference = targetValue - startValue
 
-    if (!enabled || Math.abs(difference) < 0.005) {
+    if (
+      !enabled
+      || Math.abs(difference) < 0.005
+      || !shouldAnimateChange(startValue, targetValue)
+    ) {
       frameId = window.requestAnimationFrame(() => {
         displayedValueRef.current = targetValue
         setDisplayedValue(targetValue)
@@ -51,7 +57,7 @@ export function useAnimatedBetslipNumber(
     return () => {
       if (frameId !== null) window.cancelAnimationFrame(frameId)
     }
-  }, [enabled, targetValue])
+  }, [enabled, shouldAnimateChange, targetValue])
 
   return formatter(displayedValue)
 }

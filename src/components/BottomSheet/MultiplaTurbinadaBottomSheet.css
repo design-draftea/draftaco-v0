@@ -1,0 +1,145 @@
+.bottom-sheet__container:has(.multipla-turbinada-bs) {
+  z-index: 3200;
+}
+
+.bottom-sheet.multipla-turbinada-bs {
+  background-color: var(--tokens-layer-layer-01);
+}
+
+.bottom-sheet.multipla-turbinada-bs .bottom-sheet__header {
+  border-bottom-color: var(--tokens-border-border-02);
+}
+
+.bottom-sheet.multipla-turbinada-bs .bottom-sheet__title span {
+  font-size: var(--typography-font-size-16);
+  font-weight: var(--typography-font-weight-bold);
+}
+
+.bottom-sheet__body.multipla-turbinada-bs__body {
+  padding: 24px 20px 20px;
+}
+
+.multipla-turbinada-bs__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.multipla-turbinada-bs__icon {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
+.multipla-turbinada-bs__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.multipla-turbinada-bs__headline {
+  margin: 0;
+  color: var(--tokens-text-text-01);
+  font-family: 'Red Hat Text', system-ui, sans-serif;
+  font-size: var(--typography-font-size-16);
+  font-weight: var(--typography-font-weight-bold);
+  line-height: 1.35;
+}
+
+.multipla-turbinada-bs__description {
+  margin: 0;
+  color: var(--tokens-text-text-01);
+  font-family: 'Red Hat Text', system-ui, sans-serif;
+  font-size: var(--typography-font-size-12);
+  font-weight: var(--typography-font-weight-regular);
+  line-height: 1.45;
+}
+
+.multipla-turbinada-bs__restriction {
+  margin: 4px 0 0;
+  color: var(--tokens-text-text-02);
+  font-family: 'Red Hat Text', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: var(--typography-font-weight-medium);
+  line-height: 1.35;
+}
+
+.multipla-turbinada-bs__tiers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.multipla-turbinada-bs__tier {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--tokens-border-border-02);
+  border-radius: 8px;
+  background-color: var(--tokens-layer-layer-02);
+}
+
+.multipla-turbinada-bs__tier--active {
+  border: 1px solid #FFBE8A;
+  border-radius: var(--Spacing-8, 8px);
+  background:
+    linear-gradient(
+      90deg,
+      rgb(var(--tokens-layer-layer-gradient-03-rgb) / 0.2) 0%,
+      rgb(var(--tokens-layer-layer-gradient-04-rgb) / 0.2) 100%
+    ),
+    var(--Tokens-layer-layer-02, #202020);
+}
+
+.multipla-turbinada-bs__tier-selection,
+.multipla-turbinada-bs__tier-current,
+.multipla-turbinada-bs__tier-bonus {
+  font-family: 'Red Hat Text', system-ui, sans-serif;
+}
+
+.multipla-turbinada-bs__tier-selection {
+  min-width: 0;
+  color: var(--tokens-text-text-01);
+  font-size: var(--typography-font-size-12);
+  font-weight: var(--typography-font-weight-bold);
+  line-height: 1;
+}
+
+.multipla-turbinada-bs__tier-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.multipla-turbinada-bs__tier-current {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 16px;
+  padding: 0 8px;
+  border-radius: var(--Spacing-56, 56px);
+  background: linear-gradient(
+    90deg,
+    var(--Tokens-layer-layer-gradient-03, #FFBE8A) 0%,
+    var(--Tokens-layer-layer-gradient-04, #F4BFFD) 100%
+  );
+  color: var(--tokens-text-text-on-color-black);
+  font-size: var(--typography-font-size-12);
+  font-weight: var(--typography-font-weight-bold);
+  line-height: 1;
+}
+
+.multipla-turbinada-bs__tier-bonus {
+  color: var(--tokens-text-text-01);
+  font-size: var(--typography-font-size-14);
+  font-weight: var(--typography-font-weight-extrabold);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}

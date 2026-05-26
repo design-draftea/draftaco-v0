@@ -82,8 +82,10 @@
   border: 0;
   background: transparent;
   color: var(--tokens-text-text-01);
+  cursor: pointer;
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .betslip--visible .betslip__surface {
@@ -166,7 +168,8 @@
   font-family: 'Red Hat Text', system-ui, sans-serif;
   font-size: var(--typography-font-size-12);
   font-weight: var(--typography-font-weight-medium);
-  line-height: 1.2;
+  height: 16px;
+  line-height: 16px;
 }
 
 .betslip__label {
@@ -253,6 +256,61 @@
 
 .betslip__value--rolling {
   text-shadow: none;
+}
+
+.betslip__turbo-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  width: fit-content;
+  min-width: 52px;
+  height: 16px;
+  padding: 0 8px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--tokens-layer-layer-gradient-03) 0%,
+    var(--tokens-layer-layer-gradient-04) 100%
+  );
+  box-shadow: inset 0 0 0 1px rgb(var(--tokens-text-text-on-color-white-rgb) / 0.18);
+  color: var(--tokens-text-text-on-color-black);
+  cursor: pointer;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: var(--typography-font-size-12);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  animation: betslipTurboReveal 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: clip-path, opacity;
+}
+
+.betslip__turbo-tag:focus-visible {
+  outline: 2px solid rgb(var(--tokens-text-text-on-color-white-rgb) / 0.84);
+  outline-offset: 2px;
+}
+
+.betslip__turbo-value {
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+  animation: betslipTurboValueIn 180ms 45ms ease-out both;
+}
+
+.betslip__turbo-icon {
+  display: block;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 12px;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  transform-origin: 50% 50%;
+  animation: betslipTurboIconBounce 280ms 90ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.betslip__turbo-icon--pulse {
+  animation: betslipTurboIconPulse 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .betslip__payout {
@@ -390,6 +448,61 @@
     color: var(--tokens-text-text-01);
     opacity: 1;
     text-shadow: none;
+    transform: scale(1);
+  }
+}
+
+@keyframes betslipTurboReveal {
+  0% {
+    clip-path: inset(0 50% 0 50% round 999px);
+    opacity: 0;
+  }
+
+  100% {
+    clip-path: inset(0 0 0 0 round 999px);
+    opacity: 1;
+  }
+}
+
+@keyframes betslipTurboValueIn {
+  from {
+    opacity: 0;
+    transform: translateY(1px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes betslipTurboIconBounce {
+  0% {
+    opacity: 0;
+    transform: translate3d(-2px, 1px, 0) scale(0.72);
+  }
+
+  62% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1.08);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes betslipTurboIconPulse {
+  0% {
+    transform: scale(1);
+  }
+
+  48% {
+    transform: translateY(-0.5px) scale(1.08);
+  }
+
+  100% {
     transform: scale(1);
   }
 }
