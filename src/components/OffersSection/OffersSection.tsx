@@ -69,6 +69,8 @@ const filterChips: FilterChip[] = [
   { id: 'pechinchas', label: 'Pechinchas' },
 ]
 
+const pechinchaRules = ['Odd mín. 3.50x', 'Min. 3 seleções acima de 1.20x']
+
 const offerTeamNameByLogo: Record<string, string> = {
   [escudoBayerLeverkusen]: 'B. Leverkusen',
   [escudoBayerMunique]: 'Bayern',
@@ -1757,32 +1759,43 @@ export function OffersSection({ sportFilter, liveOnly = false }: OffersSectionPr
 
             {/* Card Content - Player (for player type) */}
             {offer.player && (
-              <div className="offer-card__player">
-                <div className="offer-card__player-avatar">
-                  <img src={offer.player.image} alt={offer.player.name} className="offer-card__player-img" />
-                  <div className="offer-card__player-badge offer-card__player-badge--sport">
-                    <img src={offer.player.sportIcon || iconFutebol} alt="" />
+              <div className={`offer-card__player${offer.type === 'pechincha' ? ' offer-card__player--with-rules' : ''}`}>
+                <div className="offer-card__player-row">
+                  <div className="offer-card__player-avatar">
+                    <img src={offer.player.image} alt={offer.player.name} className="offer-card__player-img" />
+                    <div className="offer-card__player-badge offer-card__player-badge--sport">
+                      <img src={offer.player.sportIcon || iconFutebol} alt="" />
+                    </div>
+                    <div className="offer-card__player-badge offer-card__player-badge--stat">
+                      <span aria-hidden="true" className="offer-card__player-stat-icon" />
+                    </div>
                   </div>
-                  <div className="offer-card__player-badge offer-card__player-badge--stat">
-                    <span aria-hidden="true" className="offer-card__player-stat-icon" />
+                  <div className="offer-card__player-main">
+                    <div className="offer-card__player-info">
+                      <span className="offer-card__player-name">{offer.player.name}</span>
+                      <span className="offer-card__player-team">{offer.player.team}</span>
+                    </div>
+                    <div className="offer-card__player-stat">
+                      <span className="offer-card__player-stat-value">
+                        {offer.player.oldStatValue ? (
+                          <>
+                            {offer.player.statValue.replace(/[\d.]+$/, '')}<span className="offer-card__player-stat-old">{offer.player.oldStatValue}</span> » {offer.player.statValue.match(/[\d.]+$/)?.[0]}
+                          </>
+                        ) : (
+                          offer.player.statValue
+                        )}
+                      </span>
+                      <span className="offer-card__player-stat-label">{offer.player.stat}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="offer-card__player-info">
-                  <span className="offer-card__player-name">{offer.player.name}</span>
-                  <span className="offer-card__player-team">{offer.player.team}</span>
-                </div>
-                <div className="offer-card__player-stat">
-                  <span className="offer-card__player-stat-value">
-                    {offer.player.oldStatValue ? (
-                      <>
-                        {offer.player.statValue.replace(/[\d.]+$/, '')}<span className="offer-card__player-stat-old">{offer.player.oldStatValue}</span> » {offer.player.statValue.match(/[\d.]+$/)?.[0]}
-                      </>
-                    ) : (
-                      offer.player.statValue
-                    )}
-                  </span>
-                  <span className="offer-card__player-stat-label">{offer.player.stat}</span>
-                </div>
+                {offer.type === 'pechincha' ? (
+                  <div className="offer-card__pechincha-rules">
+                    <span>{pechinchaRules[0]}</span>
+                    <span aria-hidden="true">•</span>
+                    <span>{pechinchaRules[1]}</span>
+                  </div>
+                ) : null}
               </div>
             )}
 

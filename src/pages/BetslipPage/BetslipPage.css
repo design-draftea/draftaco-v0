@@ -292,6 +292,30 @@
   outline-offset: 2px;
 }
 
+.betslip-page__turbo-banner--promo-blocked {
+  min-height: 40px;
+  padding: 10px 12px;
+  background: var(--tokens-layer-layer-02, #202020);
+  color: var(--tokens-text-text-02);
+  cursor: default;
+}
+
+.betslip-page__turbo-banner--promo-blocked svg {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  color: inherit;
+}
+
+.betslip-page__turbo-banner--promo-blocked span {
+  display: block;
+  color: inherit;
+  font-family: 'Red Hat Text', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
 .betslip-page__turbo-banner-icon {
   flex: 0 0 33px;
   width: 33px;
@@ -834,6 +858,23 @@
   display: block;
   width: 20px;
   height: 12px;
+  object-fit: contain;
+}
+
+.betslip-page__offer-advantage-badge {
+  display: inline-flex;
+  flex: 0 0 16px;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  overflow: hidden;
+}
+
+.betslip-page__offer-advantage-badge img {
+  display: block;
+  width: 16px;
+  height: 16px;
   object-fit: contain;
 }
 

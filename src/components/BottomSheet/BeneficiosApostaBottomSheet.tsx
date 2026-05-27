@@ -41,7 +41,7 @@ const getBenefitItemKey = (item: BetslipBenefitSheetItem) => {
 const getBenefitItemLabel = (item: BetslipBenefitSheetItem) => {
   if (item.id === 'turbo') return 'Múltipla Turbinada'
   if (item.id === 'early-payout') return 'Pagamento Antecipado'
-  return 'Substituição Garantida'
+  return 'Substituição Protegida'
 }
 
 const dedupeBenefitItems = (items: BetslipBenefitSheetItem[]) => {
@@ -75,7 +75,7 @@ function MultiplaTurbinadaCompactContent() {
   )
 }
 
-function SubstituicaoGarantidaContent() {
+function SubstituicaoProtegidaContent() {
   return (
     <div className="beneficios-aposta-bs__hero">
       <img
@@ -84,10 +84,10 @@ function SubstituicaoGarantidaContent() {
         className="beneficios-aposta-bs__icon"
       />
       <div className="beneficios-aposta-bs__copy">
-        <h3 className="beneficios-aposta-bs__headline">Substituição Garantida</h3>
+        <h3 className="beneficios-aposta-bs__headline">Sua aposta segura</h3>
         <p className="beneficios-aposta-bs__description">
-          Caso o jogador que você apostou seja substituído, sua aposta passa a contar com o
-          jogador que entrou no lugar dele.
+          Nos mercados com substituição protegida, se o jogador em que você apostou for
+          substituído, sua aposta passa automaticamente para o substituto.
         </p>
       </div>
     </div>
@@ -234,12 +234,15 @@ export function BeneficiosApostaBottomSheet({
     '--beneficios-slider-offset': `${safeActiveIndex * -100}%`,
     '--beneficios-slider-drag-x': `${dragDeltaX}px`,
   } as CSSProperties
+  const sheetTitle = visibleItems.length === 1 && visibleItems[0]
+    ? getBenefitItemLabel(visibleItems[0])
+    : 'Vantagens do Pitaco'
 
   return (
     <BottomSheet
       isOpen={isOpen}
       onClose={onClose}
-      title="Vantagens do Pitaco"
+      title={sheetTitle}
       sheetClassName="beneficios-aposta-bs"
       bodyClassName="beneficios-aposta-bs__body"
       hideScrollIndicator
@@ -268,7 +271,7 @@ export function BeneficiosApostaBottomSheet({
               {item.id === 'early-payout' ? (
                 <PagamentoAntecipadoContent sport={item.sport} />
               ) : null}
-              {item.id === 'substitution' ? <SubstituicaoGarantidaContent /> : null}
+              {item.id === 'substitution' ? <SubstituicaoProtegidaContent /> : null}
             </section>
           ))}
         </div>

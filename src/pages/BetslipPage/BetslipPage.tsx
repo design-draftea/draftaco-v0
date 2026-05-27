@@ -19,6 +19,7 @@ import {
   GearSixIcon,
   ShareIcon,
   TrashIcon,
+  WarningCircleIcon,
   XIcon,
 } from '@phosphor-icons/react'
 import confetti from 'canvas-confetti'
@@ -27,6 +28,9 @@ import './BetslipPage.css'
 import iconMultiplaGde from '../../assets/iconMultiplaGde.png'
 import multiplaTurbinadaIcon from '../../assets/multiplaTurbinada.png'
 import pagamentoAntecipado from '../../assets/pagamentoAntecipado.png'
+import iconAumentada from '../../assets/iconAumentada.png'
+import iconPechincha from '../../assets/iconPechincha.png'
+import iconSuperAumentada from '../../assets/iconSuperAumentada.png'
 import {
   BeneficiosApostaBottomSheet,
   MultiplaTurbinadaBottomSheet,
@@ -39,8 +43,9 @@ import substituicaoGarantida from '../../assets/substituicaoGarantida.png'
 import {
   BETSLIP_TURBO_MIN_ODD_VALUE,
   getBetslipTurboBonusCents,
-  getBetslipTurboEligibleSelectionCount,
+  getBetslipTurboEligibleSelectionCountIgnoringPromotions,
   getBetslipTurboBonusPercent,
+  hasBetslipTurboBlockedByPromotionSelection,
   isBetslipTurboSelectionGroupEligible,
 } from '../../hooks/betslipTurboBonus'
 import { getTeamLogo } from '../../data/teamLogos'
@@ -104,6 +109,20 @@ const betslipSuccessVisibleDelayMs = 10000
 const betslipSuccessConfettiZIndex = 3400
 const betslipTurboMinSelectionCount = 3
 const betslipLiveEventSupportedSports = new Set(['futebol', 'basquete'])
+const offerAdvantageByMarketId = {
+  aumentada: {
+    icon: iconAumentada,
+    label: 'Aumentada',
+  },
+  pechincha: {
+    icon: iconPechincha,
+    label: 'Pechincha',
+  },
+  'super-aumentada': {
+    icon: iconSuperAumentada,
+    label: 'Super Aumentada',
+  },
+}
 
 type ConfettiOptions = NonNullable<Parameters<typeof confetti>[0]>
 type BetMode = 'multiple' | 'simple'
@@ -435,6 +454,12 @@ const isEarlyPayoutSelection = (selection: BetslipSelection) => (
   && !isDrawResultSelection(selection)
 )
 
+type OfferAdvantageMarketId = keyof typeof offerAdvantageByMarketId
+
+const getSelectionOfferAdvantage = (selection: BetslipSelection) => (
+  offerAdvantageByMarketId[normalizeBetslipIdPart(selection.marketId) as OfferAdvantageMarketId]
+)
+
 const getSelectionSecondaryBenefitItem = (
   selection: BetslipSelection
 ): BetslipBenefitSheetItem | null => {
@@ -474,6 +499,8 @@ const getSelectionBenefitItems = (
   currentTurboSelectionCount: number,
   includeTurbo = true
 ) => {
+  if (getSelectionOfferAdvantage(selection)) return []
+
   const hasTurboBenefit = includeTurbo && selection.oddValue >= BETSLIP_TURBO_MIN_ODD_VALUE
   const items: BetslipBenefitSheetItem[] = hasTurboBenefit
     ? [{ id: 'turbo', currentSelectionCount: currentTurboSelectionCount }]
@@ -523,9 +550,10 @@ interface BetslipSelectionGroup {
 
 const getSelectionGroupBenefitItems = (
   group: BetslipSelectionGroup,
-  currentTurboSelectionCount: number
+  currentTurboSelectionCount: number,
+  includeTurbo = true
 ) => {
-  const items: BetslipBenefitSheetItem[] = isBetslipTurboSelectionGroupEligible(group.selections)
+  const items: BetslipBenefitSheetItem[] = includeTurbo && isBetslipTurboSelectionGroupEligible(group.selections)
     ? [{ id: 'turbo', currentSelectionCount: currentTurboSelectionCount }]
     : []
 
@@ -823,6 +851,20 @@ function TurboSelectionBadge({ onInfoOpen }: { onInfoOpen?: () => void }) {
   )
 }
 
+function OfferAdvantageBadge({
+  icon,
+  label,
+}: {
+  icon: string
+  label: string
+}) {
+  return (
+    <span className="betslip-page__offer-advantage-badge" aria-label={label}>
+      <img src={icon} alt="" />
+    </span>
+  )
+}
+
 function SelectionBadge({
   benefitItems,
   selection,
@@ -842,6 +884,16 @@ function SelectionBadge({
   onTurboInfoOpen?: () => void
 }) {
   let secondaryBadge: ReactNode = null
+  const offerAdvantage = getSelectionOfferAdvantage(selection)
+
+  if (offerAdvantage) {
+    return (
+      <span className="betslip-page__selection-badges">
+        <OfferAdvantageBadge icon={offerAdvantage.icon} label={offerAdvantage.label} />
+      </span>
+    )
+  }
+
   const secondaryBenefit = getSelectionSecondaryBenefitItem(selection)
   const visibleBenefitItems = benefitItems ?? getSelectionBenefitItems(selection, betslipTurboMinSelectionCount, showTurbo)
   const hasTurboBenefit = visibleBenefitItems.some((item) => item.id === 'turbo')
@@ -891,7 +943,7 @@ function SelectionBadge({
   if (secondaryBenefit?.id === 'substitution') {
     secondaryBadge = (
       <BoostBadge
-        ariaLabel="Ver como funciona a Substituição Garantida"
+        ariaLabel="Ver como funciona a Substituição Protegida"
         icon
         onInfoOpen={handleSecondaryInfoOpen}
       />
@@ -982,6 +1034,7 @@ function AnimatedFooterValue({
 interface BetslipTurboBannerProps {
   bonusCents: number
   bonusPercent: number | null
+  isBlockedByPromotion: boolean
   nextBonusPercent: number | null
   onInfoOpen: () => void
   selectionCount: number
@@ -990,11 +1043,28 @@ interface BetslipTurboBannerProps {
 function BetslipTurboBanner({
   bonusCents,
   bonusPercent,
+  isBlockedByPromotion,
   nextBonusPercent,
   onInfoOpen,
   selectionCount,
 }: BetslipTurboBannerProps) {
   if (selectionCount <= 0) return null
+
+  if (isBlockedByPromotion) {
+    if (selectionCount < betslipTurboMinSelectionCount) return null
+
+    return (
+      <div className="betslip-page__turbo-banner-shell">
+        <div
+          className="betslip-page__turbo-banner betslip-page__turbo-banner--promo-blocked"
+          role="status"
+        >
+          <WarningCircleIcon aria-hidden="true" weight="bold" />
+          <span>Apostas com Pechincha ou Aumentadas não acumulam com Múltipla Turbinada.</span>
+        </div>
+      </div>
+    )
+  }
 
   const isActive = bonusPercent !== null
 
@@ -1891,7 +1961,9 @@ export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPagePr
   const recommendations = useMemo(() => getRelatedRecommendations(selections), [selections])
   const hasLiveSelections = selections.some((selection) => selection.eventStatus === 'live')
   const totalSelectionCount = summary.selectionCount
-  const turboEligibleSelectionCount = getBetslipTurboEligibleSelectionCount(selections)
+  const isTurboBlockedByPromotion = hasBetslipTurboBlockedByPromotionSelection(selections)
+  const turboEligibleSelectionCount = getBetslipTurboEligibleSelectionCountIgnoringPromotions(selections)
+  const effectiveTurboEligibleSelectionCount = isTurboBlockedByPromotion ? 0 : turboEligibleSelectionCount
   const isSingleBetMode = selectionGroups.length < 2
   const isMultipleTabDisabled = selectionGroups.length < 2
   const activeBetMode: BetMode = isSingleBetMode ? 'simple' : selectedBetMode
@@ -1911,8 +1983,8 @@ export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPagePr
     }, { stakeCents: 0, potentialWinCents: 0 })
   ), [selectionGroups, simpleStakeCentsByGroupId])
   const multiplePotentialWinCents = Math.round(multipleStakeCents * totalOdds)
-  const turboBonusPercent = getBetslipTurboBonusPercent(turboEligibleSelectionCount)
-  const nextTurboBonusPercent = getBetslipTurboBonusPercent(turboEligibleSelectionCount + 1)
+  const turboBonusPercent = getBetslipTurboBonusPercent(effectiveTurboEligibleSelectionCount)
+  const nextTurboBonusPercent = getBetslipTurboBonusPercent(effectiveTurboEligibleSelectionCount + 1)
   const turboBonusCents = getBetslipTurboBonusCents({
     bonusPercent: turboBonusPercent,
     potentialWinCents: multiplePotentialWinCents,
@@ -2568,6 +2640,7 @@ export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPagePr
         <BetslipTurboBanner
           bonusCents={turboBonusCents}
           bonusPercent={turboBonusPercent}
+          isBlockedByPromotion={isTurboBlockedByPromotion}
           nextBonusPercent={nextTurboBonusPercent}
           onInfoOpen={handleTurboInfoOpen}
           selectionCount={turboEligibleSelectionCount}
@@ -2617,7 +2690,11 @@ export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPagePr
                 const groupPotentialWinCents = Math.round(
                   groupStakeCents * getSelectionGroupOddsValue(group.selections)
                 )
-                const groupBenefitItems = getSelectionGroupBenefitItems(group, turboEligibleSelectionCount)
+                const groupBenefitItems = getSelectionGroupBenefitItems(
+                  group,
+                  effectiveTurboEligibleSelectionCount,
+                  !isTurboBlockedByPromotion
+                )
                 const hasGroupTurboBenefit = groupBenefitItems.some((item) => item.id === 'turbo')
 
                 return (
@@ -2679,7 +2756,6 @@ export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPagePr
                             <div className="betslip-page-card__builder-name">
                               <strong>{getSelectionTitle(selection)}</strong>
                               <SelectionBadge
-                                benefitItems={groupBenefitItems}
                                 selection={selection}
                                 showTurbo={false}
                                 onBenefitsInfoOpen={handleBenefitsInfoOpen}
@@ -2718,7 +2794,11 @@ export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPagePr
               const isUpdatedSelection = updatedGroupId === group.eventId
               const groupStakeCents = getSimpleStakeCents(group.eventId)
               const groupPotentialWinCents = Math.round(groupStakeCents * getSelectionGroupOddsValue(group.selections))
-              const selectionBenefitItems = getSelectionBenefitItems(selection, turboEligibleSelectionCount)
+              const selectionBenefitItems = getSelectionBenefitItems(
+                selection,
+                effectiveTurboEligibleSelectionCount,
+                !isTurboBlockedByPromotion
+              )
 
               return (
                 <article
@@ -2861,7 +2941,7 @@ export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPagePr
       <MultiplaTurbinadaBottomSheet
         isOpen={isTurboInfoOpen}
         onClose={handleTurboInfoClose}
-        currentSelectionCount={turboEligibleSelectionCount}
+        currentSelectionCount={effectiveTurboEligibleSelectionCount}
       />
       <PagamentoAntecipadoBottomSheet
         isOpen={isEarlyPayoutInfoOpen}

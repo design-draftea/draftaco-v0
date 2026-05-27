@@ -1,4 +1,4 @@
-import type { BetslipSelection } from './betslipUtils'
+import { normalizeBetslipIdPart, type BetslipSelection } from './betslipUtils'
 
 const turboBonusMinSelectionCount = 3
 const turboBonusLinearStartSelectionCount = 6
@@ -6,6 +6,11 @@ const turboBonusMaxSelectionCount = 20
 const turboBonusLinearStartPercent = 20
 const turboBonusMaxPercent = 200
 export const BETSLIP_TURBO_MIN_ODD_VALUE = 1.3
+const turboBlockedPromotionalMarketIds = new Set([
+  'aumentada',
+  'pechincha',
+  'super-aumentada',
+])
 
 const roundToNearestFive = (value: number) => Math.round(value / 5) * 5
 
@@ -30,7 +35,15 @@ export const isBetslipTurboSelectionGroupEligible = (selections: BetslipSelectio
   getBetslipSelectionGroupOddsValue(selections) >= BETSLIP_TURBO_MIN_ODD_VALUE
 )
 
-export const getBetslipTurboEligibleSelectionCount = (selections: BetslipSelection[]) => {
+export const isBetslipTurboBlockedByPromotionSelection = (selection: BetslipSelection) => (
+  turboBlockedPromotionalMarketIds.has(normalizeBetslipIdPart(selection.marketId))
+)
+
+export const hasBetslipTurboBlockedByPromotionSelection = (selections: BetslipSelection[]) => (
+  selections.some(isBetslipTurboBlockedByPromotionSelection)
+)
+
+export const getBetslipTurboEligibleSelectionCountIgnoringPromotions = (selections: BetslipSelection[]) => {
   const selectionGroupsByEventId = new Map<string, BetslipSelection[]>()
 
   selections.forEach((selection) => {
@@ -42,6 +55,12 @@ export const getBetslipTurboEligibleSelectionCount = (selections: BetslipSelecti
 
   return Array.from(selectionGroupsByEventId.values()).filter(isBetslipTurboSelectionGroupEligible).length
 }
+
+export const getBetslipTurboEligibleSelectionCount = (selections: BetslipSelection[]) => (
+  hasBetslipTurboBlockedByPromotionSelection(selections)
+    ? 0
+    : getBetslipTurboEligibleSelectionCountIgnoringPromotions(selections)
+)
 
 export const getBetslipTurboBonusPercent = (selectionCount: number) => {
   const normalizedSelectionCount = Math.floor(selectionCount)
