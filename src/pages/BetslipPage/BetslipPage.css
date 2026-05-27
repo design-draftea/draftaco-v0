@@ -295,7 +295,8 @@
 .betslip-page__turbo-banner--promo-blocked {
   min-height: 40px;
   padding: 10px 12px;
-  background: var(--tokens-layer-layer-02, #202020);
+  border: 1px solid var(--tokens-border-border-03, #333333);
+  background: transparent;
   color: var(--tokens-text-text-02);
   cursor: default;
 }
@@ -311,9 +312,10 @@
   display: block;
   color: inherit;
   font-family: 'Red Hat Text', system-ui, sans-serif;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 500;
   line-height: 1.2;
+  white-space: pre-line;
 }
 
 .betslip-page__turbo-banner-icon {
@@ -1486,7 +1488,7 @@
 }
 
 .betslip-page__confirm-button--disabled {
-  opacity: 0.42;
+  opacity: 0.4;
 }
 
 .betslip-page__confirm-label,

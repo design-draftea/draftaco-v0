@@ -321,10 +321,6 @@
   min-height: 58px;
 }
 
-.offer-card__player--with-rules {
-  justify-content: space-between;
-}
-
 .offer-card__player-row {
   display: flex;
   align-items: flex-start;
@@ -338,26 +334,6 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 0 12px;
-  min-width: 0;
-}
-
-.offer-card__pechincha-rules {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  min-width: 0;
-  margin-top: 2px;
-  color: var(--tokens-text-text-02);
-  font-family: 'Red Hat Text', sans-serif;
-  font-size: 10px;
-  font-weight: 400;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
-.offer-card__pechincha-rules span {
   min-width: 0;
 }
 
@@ -478,22 +454,56 @@
 
 /* Button */
 .offer-card__button {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
   height: 40px;
   background-color: var(--tokens-button-button-odds-02);
   color: var(--tokens-text-text-01);
-  border: 0;
+  border: 1px solid transparent;
   border-radius: 12px;
   padding: 0;
   width: 100%;
+}
+
+.offer-card__button--pechincha {
+  justify-content: space-between;
+  min-height: 40px;
+  height: 40px;
+  padding: 0 12px;
+  gap: 8px;
+}
+
+.offer-card__button-rules {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  color: var(--tokens-text-text-02);
+  font-family: 'Red Hat Text', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.offer-card__button-rules span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .offer-card__odds {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.offer-card__button--pechincha .offer-card__odds {
+  flex: 0 0 auto;
 }
 
 .offer-card__old-odd {

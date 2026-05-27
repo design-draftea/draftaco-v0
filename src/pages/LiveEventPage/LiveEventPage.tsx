@@ -2702,7 +2702,7 @@ const MemoLiveEventContent = memo(LiveEventContent, (previous, next) => (
   && previous.expansionProgress === next.expansionProgress
 ))
 
-const LIVE_EVENT_COMPACT_SIDE_MARGIN = 0
+const LIVE_EVENT_COMPACT_SIDE_MARGIN = 24
 const LIVE_EVENT_COMPACT_TOP = 106
 const LIVE_EVENT_TRANSITION_MS = 360
 const LIVE_EVENT_CONTENT_SWITCH_MS = 380
@@ -2770,7 +2770,7 @@ function measureSheetMetrics(): SheetMetrics {
     return {
       viewportWidth: 390,
       viewportHeight: 844,
-      compactScale: 1,
+      compactScale: 342 / 390,
     }
   }
 

@@ -48,6 +48,10 @@ import {
   hasBetslipTurboBlockedByPromotionSelection,
   isBetslipTurboSelectionGroupEligible,
 } from '../../hooks/betslipTurboBonus'
+import {
+  BETSLIP_PECHINCHA_RULE_MESSAGE,
+  getBetslipPechinchaRuleStatus,
+} from '../../hooks/betslipPechinchaRules'
 import { getTeamLogo } from '../../data/teamLogos'
 import { useBetslip } from '../../hooks/useBetslip'
 import type { LiveEventMatch, LiveEventOpenPayload, LiveEventRailItem } from '../LiveEventPage'
@@ -65,6 +69,7 @@ import { advanceLiveClock } from '../../utils/liveClock'
 interface BetslipPageProps {
   isCoveredByEvent?: boolean
   onClose?: () => void
+  onSelectionsEmptyExitStart?: () => void
 }
 
 interface BetslipSuccessSelectionItem {
@@ -458,6 +463,11 @@ type OfferAdvantageMarketId = keyof typeof offerAdvantageByMarketId
 
 const getSelectionOfferAdvantage = (selection: BetslipSelection) => (
   offerAdvantageByMarketId[normalizeBetslipIdPart(selection.marketId) as OfferAdvantageMarketId]
+  ?? (
+    selection.comboTypeLabel
+      ? offerAdvantageByMarketId[normalizeBetslipIdPart(selection.comboTypeLabel) as OfferAdvantageMarketId]
+      : undefined
+  )
 )
 
 const getSelectionSecondaryBenefitItem = (
@@ -553,7 +563,10 @@ const getSelectionGroupBenefitItems = (
   currentTurboSelectionCount: number,
   includeTurbo = true
 ) => {
-  const items: BetslipBenefitSheetItem[] = includeTurbo && isBetslipTurboSelectionGroupEligible(group.selections)
+  const hasOfferAdvantage = group.selections.some((selection) => Boolean(getSelectionOfferAdvantage(selection)))
+  const items: BetslipBenefitSheetItem[] = includeTurbo
+    && !hasOfferAdvantage
+    && isBetslipTurboSelectionGroupEligible(group.selections)
     ? [{ id: 'turbo', currentSelectionCount: currentTurboSelectionCount }]
     : []
 
@@ -1034,24 +1047,42 @@ function AnimatedFooterValue({
 interface BetslipTurboBannerProps {
   bonusCents: number
   bonusPercent: number | null
+  hasTurboSelectionBadge: boolean
   isBlockedByPromotion: boolean
   nextBonusPercent: number | null
   onInfoOpen: () => void
+  pechinchaRuleMessage?: string
   selectionCount: number
 }
 
 function BetslipTurboBanner({
   bonusCents,
   bonusPercent,
+  hasTurboSelectionBadge,
   isBlockedByPromotion,
   nextBonusPercent,
   onInfoOpen,
+  pechinchaRuleMessage,
   selectionCount,
 }: BetslipTurboBannerProps) {
+  if (pechinchaRuleMessage) {
+    return (
+      <div className="betslip-page__turbo-banner-shell">
+        <div
+          className="betslip-page__turbo-banner betslip-page__turbo-banner--promo-blocked"
+          role="status"
+        >
+          <WarningCircleIcon aria-hidden="true" weight="bold" />
+          <span>{pechinchaRuleMessage}</span>
+        </div>
+      </div>
+    )
+  }
+
   if (selectionCount <= 0) return null
 
   if (isBlockedByPromotion) {
-    if (selectionCount < betslipTurboMinSelectionCount) return null
+    if (selectionCount < betslipTurboMinSelectionCount || !hasTurboSelectionBadge) return null
 
     return (
       <div className="betslip-page__turbo-banner-shell">
@@ -1263,6 +1294,7 @@ function BetslipCardStakeControls({
 interface BetslipFooterProps {
   activeStakeCents: number
   betMode: BetMode
+  isPechinchaRuleBlocked: boolean
   isStakeKeyboardOpen: boolean
   isSubmitting: boolean
   potentialWinCents: number
@@ -1278,7 +1310,6 @@ interface BetslipFooterProps {
 
 interface DragConfirmButtonProps {
   isDisabled: boolean
-  isStakeEmpty: boolean
   isSubmitting: boolean
   potentialWinCents: number
   stakeCents: number
@@ -1308,7 +1339,6 @@ const getConfirmFillRatio = (trackWidth: number, progress: number) => (
 
 function DragConfirmButton({
   isDisabled,
-  isStakeEmpty,
   isSubmitting,
   potentialWinCents,
   stakeCents,
@@ -1505,7 +1535,7 @@ function DragConfirmButton({
         isDraggingConfirm ? 'betslip-page__confirm-button--dragging' : '',
         isLoadingVisible || isSubmitting ? 'betslip-page__confirm-button--loading' : '',
         hasCompletedDrag || isCompletingDrag || isSubmitting ? 'betslip-page__confirm-button--complete' : '',
-        isStakeEmpty ? 'betslip-page__confirm-button--disabled' : '',
+        isDisabled && !isSubmitting ? 'betslip-page__confirm-button--disabled' : '',
       ].filter(Boolean).join(' ')}
       style={confirmButtonStyle}
       aria-busy={isLoadingVisible || isSubmitting}
@@ -1531,6 +1561,7 @@ function DragConfirmButton({
 function BetslipFooter({
   activeStakeCents,
   betMode,
+  isPechinchaRuleBlocked,
   isStakeKeyboardOpen,
   isSubmitting,
   potentialWinCents,
@@ -1545,7 +1576,7 @@ function BetslipFooter({
 }: BetslipFooterProps) {
   const stakeInputValue = formatStakeInput(activeStakeCents)
   const isStakeEmpty = stakeCents <= 0
-  const isConfirmDisabled = isSubmitting || isStakeEmpty
+  const isConfirmDisabled = isSubmitting || isStakeEmpty || isPechinchaRuleBlocked
   const isSimpleMode = betMode === 'simple'
 
   const openStakeKeyboard = () => {
@@ -1755,7 +1786,6 @@ function BetslipFooter({
 
       <DragConfirmButton
         isDisabled={isConfirmDisabled}
-        isStakeEmpty={isStakeEmpty}
         isSubmitting={isSubmitting}
         potentialWinCents={potentialWinCents}
         stakeCents={stakeCents}
@@ -1886,7 +1916,11 @@ function BetslipSuccessSheet({
   )
 }
 
-export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPageProps) {
+export function BetslipPage({
+  isCoveredByEvent = false,
+  onClose,
+  onSelectionsEmptyExitStart,
+}: BetslipPageProps) {
   const {
     selections,
     summary,
@@ -1964,6 +1998,18 @@ export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPagePr
   const isTurboBlockedByPromotion = hasBetslipTurboBlockedByPromotionSelection(selections)
   const turboEligibleSelectionCount = getBetslipTurboEligibleSelectionCountIgnoringPromotions(selections)
   const effectiveTurboEligibleSelectionCount = isTurboBlockedByPromotion ? 0 : turboEligibleSelectionCount
+  const hasTurboSelectionBadge = selectionGroups.some((group) => {
+    if (group.selections.length > 1) {
+      return getSelectionGroupBenefitItems(group, turboEligibleSelectionCount, true)
+        .some((item) => item.id === 'turbo')
+    }
+
+    const selection = group.selections[0]
+    if (!selection) return false
+
+    return getSelectionBenefitItems(selection, turboEligibleSelectionCount, true)
+      .some((item) => item.id === 'turbo')
+  })
   const isSingleBetMode = selectionGroups.length < 2
   const isMultipleTabDisabled = selectionGroups.length < 2
   const activeBetMode: BetMode = isSingleBetMode ? 'simple' : selectedBetMode
@@ -1971,6 +2017,11 @@ export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPagePr
   const stakeLimitCents = useBetCredit ? BET_CREDIT_CENTS : WALLET_STAKE_LIMIT_CENTS
   const totalOdds = summary.hasSelections ? summary.totalOdds : 0
   const totalOddsLabel = summary.hasSelections ? summary.totalOddsLabel : formatOddsLabel(0)
+  const pechinchaRuleStatus = useMemo(
+    () => getBetslipPechinchaRuleStatus(selections, totalOdds),
+    [selections, totalOdds]
+  )
+  const isPechinchaRuleBlocked = pechinchaRuleStatus.hasPechincha && !pechinchaRuleStatus.isEligible
   const simpleStakeSummary = useMemo(() => (
     selectionGroups.reduce((summaryTotal, group) => {
       const stakeCents = simpleStakeCentsByGroupId[group.eventId] ?? DEFAULT_SIMPLE_STAKE_CENTS
@@ -2412,7 +2463,7 @@ export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPagePr
     setAddedSelectionId((current) => (current === selectionId ? null : current))
   }
 
-  const handleRequestClose = useCallback(() => {
+  const handleRequestClose = useCallback((afterExit?: () => void) => {
     if (isBetslipLeaving) return
 
     if (confirmTimerRef.current !== null) {
@@ -2430,15 +2481,23 @@ export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPagePr
     setIsBetslipLeaving(true)
 
     closeTimerRef.current = window.setTimeout(() => {
+      afterExit?.()
       onClose?.()
+      closeTimerRef.current = null
     }, betslipExitDelayMs)
   }, [isBetslipLeaving, onClose])
+
+  const handleClearSelectionsAfterExit = useCallback(() => {
+    if (isBetslipLeaving) return
+
+    onSelectionsEmptyExitStart?.()
+    handleRequestClose(clearSelections)
+  }, [clearSelections, handleRequestClose, isBetslipLeaving, onSelectionsEmptyExitStart])
 
   const handleRemoveAllSelections = () => {
     if (selections.length === 0) return
 
-    clearSelections()
-    handleRequestClose()
+    handleClearSelectionsAfterExit()
   }
 
   const removeSelectionWithCardExit = (cardId: string, selectionIds: string[]) => {
@@ -2450,8 +2509,7 @@ export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPagePr
     ))
 
     if (isRemovingEverySelection) {
-      selectionIds.forEach((selectionId) => removeSelection(selectionId))
-      handleRequestClose()
+      handleClearSelectionsAfterExit()
       return
     }
 
@@ -2522,6 +2580,7 @@ export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPagePr
   const handleConfirmBet = (stakeCents: number, potentialWinCents: number) => {
     if (isConfirming || isBetslipLeaving || showSuccessSheet) return
     if (selectionGroups.length === 0) return
+    if (isPechinchaRuleBlocked) return
 
     const successSelectionGroups = isSplitSimpleMode
       ? selectionGroups.filter((group) => getSimpleStakeCents(group.eventId) > 0)
@@ -2589,7 +2648,7 @@ export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPagePr
             </div>
           </div>
 
-          <button type="button" className="betslip-page__close" aria-label="Fechar betslip" onClick={handleRequestClose}>
+          <button type="button" className="betslip-page__close" aria-label="Fechar betslip" onClick={() => handleRequestClose()}>
             <XIcon aria-hidden="true" weight="bold" />
           </button>
         </div>
@@ -2640,9 +2699,11 @@ export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPagePr
         <BetslipTurboBanner
           bonusCents={turboBonusCents}
           bonusPercent={turboBonusPercent}
+          hasTurboSelectionBadge={hasTurboSelectionBadge}
           isBlockedByPromotion={isTurboBlockedByPromotion}
           nextBonusPercent={nextTurboBonusPercent}
           onInfoOpen={handleTurboInfoOpen}
+          pechinchaRuleMessage={isPechinchaRuleBlocked ? BETSLIP_PECHINCHA_RULE_MESSAGE : undefined}
           selectionCount={turboEligibleSelectionCount}
         />
 
@@ -2692,8 +2753,8 @@ export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPagePr
                 )
                 const groupBenefitItems = getSelectionGroupBenefitItems(
                   group,
-                  effectiveTurboEligibleSelectionCount,
-                  !isTurboBlockedByPromotion
+                  turboEligibleSelectionCount,
+                  true
                 )
                 const hasGroupTurboBenefit = groupBenefitItems.some((item) => item.id === 'turbo')
 
@@ -2796,8 +2857,8 @@ export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPagePr
               const groupPotentialWinCents = Math.round(groupStakeCents * getSelectionGroupOddsValue(group.selections))
               const selectionBenefitItems = getSelectionBenefitItems(
                 selection,
-                effectiveTurboEligibleSelectionCount,
-                !isTurboBlockedByPromotion
+                turboEligibleSelectionCount,
+                true
               )
 
               return (
@@ -2925,6 +2986,7 @@ export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPagePr
       <BetslipFooter
         activeStakeCents={activeStakeCents}
         betMode={isSplitSimpleMode ? 'simple' : 'multiple'}
+        isPechinchaRuleBlocked={isPechinchaRuleBlocked}
         isStakeKeyboardOpen={isStakeKeyboardOpen}
         isSubmitting={isConfirming}
         potentialWinCents={footerPotentialWinCents}

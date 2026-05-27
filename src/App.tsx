@@ -98,6 +98,7 @@ function AppContent() {
   const isHandoffPage = useMemo(() => isHandoffPath(pathname), [pathname])
   const [promotionsProduct, setPromotionsProduct] = useState<ProductMode>(() => productRoute.product)
   const [isFullBetslipOpen, setIsFullBetslipOpen] = useState(false)
+  const [isCompactBetslipSuppressed, setIsCompactBetslipSuppressed] = useState(false)
   const [isDepositPanelOpen, setIsDepositPanelOpen] = useState(false)
   const [liveEventUi, setLiveEventUi] = useState({
     isOpen: false,
@@ -197,7 +198,21 @@ function AppContent() {
   }, [])
 
   const handleBetslipOpen = useCallback(() => {
+    setIsCompactBetslipSuppressed(false)
     setIsFullBetslipOpen(true)
+    setLiveEventUi((current) => (
+      current.isOpen
+        ? {
+            ...current,
+            isOpen: false,
+            isEventBetslipVisible: false,
+          }
+        : current
+    ))
+  }, [])
+
+  const handleCompactBetslipSuppress = useCallback(() => {
+    setIsCompactBetslipSuppressed(true)
   }, [])
 
   const handleDepositPanelOpen = useCallback(() => {
@@ -283,7 +298,17 @@ function AppContent() {
     ))
   }, [betslipOriginLiveEvent, handleBetslipOpen, handleLiveEventCloseStart])
 
-  const showCompactBetslip = activeProduct === 'apostas' && !isPromotionsPage && !isHandoffPage && betslipSummary.hasSelections
+  useEffect(() => {
+    if (!isCompactBetslipSuppressed || betslipSummary.hasSelections) return
+
+    setIsCompactBetslipSuppressed(false)
+  }, [betslipSummary.hasSelections, isCompactBetslipSuppressed])
+
+  const showCompactBetslip = activeProduct === 'apostas'
+    && !isPromotionsPage
+    && !isHandoffPage
+    && betslipSummary.hasSelections
+    && !isCompactBetslipSuppressed
   const shouldShowEventBetslip = showCompactBetslip && liveEventUi.isOpen && liveEventUi.isEventBetslipVisible
 
   useEffect(() => {
@@ -314,6 +339,7 @@ function AppContent() {
         <Home
           activeProduct={activeProduct}
           HeaderComponent={HeaderV2}
+          isLiveEventSuppressed={isFullBetslipOpen}
           onDepositOpen={handleDepositPanelOpen}
           onProductChange={handleProductChange}
           onLiveEventOpenChange={handleLiveEventOpenChange}
@@ -325,6 +351,7 @@ function AppContent() {
         <BetslipPage
           isCoveredByEvent={!!betslipOriginLiveEvent}
           onClose={handleBetslipClose}
+          onSelectionsEmptyExitStart={handleCompactBetslipSuppress}
         />
       ) : null}
       {!isHandoffPage && betslipOriginLiveEvent ? (

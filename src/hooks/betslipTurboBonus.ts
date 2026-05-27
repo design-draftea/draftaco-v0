@@ -37,6 +37,11 @@ export const isBetslipTurboSelectionGroupEligible = (selections: BetslipSelectio
 
 export const isBetslipTurboBlockedByPromotionSelection = (selection: BetslipSelection) => (
   turboBlockedPromotionalMarketIds.has(normalizeBetslipIdPart(selection.marketId))
+  || (
+    selection.comboTypeLabel
+      ? turboBlockedPromotionalMarketIds.has(normalizeBetslipIdPart(selection.comboTypeLabel))
+      : false
+  )
 )
 
 export const hasBetslipTurboBlockedByPromotionSelection = (selections: BetslipSelection[]) => (

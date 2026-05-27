@@ -13,6 +13,10 @@ import {
 import { useBetslip } from '../../hooks/useBetslip'
 import { useOddSelection } from '../../hooks/useOddSelection'
 import { useSlidingActiveIndicator } from '../../hooks/useSlidingActiveIndicator'
+import {
+  BETSLIP_PECHINCHA_SELECTION_RULE_LABEL,
+  BETSLIP_PECHINCHA_TOTAL_ODDS_RULE_LABEL,
+} from '../../hooks/betslipPechinchaRules'
 import { getTennisPlayerCountryIcon } from '../../data/tennisCountryIcons'
 
 import iconCombinada from '../../assets/iconCombinada.png'
@@ -68,8 +72,6 @@ const filterChips: FilterChip[] = [
   { id: 'aumentada', label: 'Aumentada' },
   { id: 'pechinchas', label: 'Pechinchas' },
 ]
-
-const pechinchaRules = ['Odd mín. 3.50x', 'Min. 3 seleções acima de 1.20x']
 
 const offerTeamNameByLogo: Record<string, string> = {
   [escudoBayerLeverkusen]: 'B. Leverkusen',
@@ -1450,10 +1452,15 @@ export function OffersSection({ sportFilter, liveOnly = false }: OffersSectionPr
     if (comboEntries.length > 0) {
       const selectedSelectionIds = new Set(Object.values(selectedSelectionIdsByGroup))
       const isSelected = comboEntries.every(({ selection }) => selectedSelectionIds.has(selection.id))
+      const buttonClassName = [
+        'offer-card__button',
+        offer.type === 'pechincha' ? 'offer-card__button--pechincha' : '',
+        isSelected ? 'odd-button--selected' : '',
+      ].filter(Boolean).join(' ')
 
       return {
         type: 'button' as const,
-        className: `offer-card__button${isSelected ? ' odd-button--selected' : ''}`,
+        className: buttonClassName,
         'aria-pressed': isSelected,
         onClick: (event: MouseEvent<HTMLButtonElement>) => {
           event.stopPropagation()
@@ -1475,7 +1482,7 @@ export function OffersSection({ sportFilter, liveOnly = false }: OffersSectionPr
     return getOddButtonProps(
       `offer:${offer.id}:odd`,
       `offer:${offer.id}`,
-      'offer-card__button',
+      `offer-card__button${offer.type === 'pechincha' ? ' offer-card__button--pechincha' : ''}`,
       createBetslipSelection({
         eventId: getBetslipEventId({
           sport: offer.sport ?? 'ofertas',
@@ -1759,7 +1766,7 @@ export function OffersSection({ sportFilter, liveOnly = false }: OffersSectionPr
 
             {/* Card Content - Player (for player type) */}
             {offer.player && (
-              <div className={`offer-card__player${offer.type === 'pechincha' ? ' offer-card__player--with-rules' : ''}`}>
+              <div className="offer-card__player">
                 <div className="offer-card__player-row">
                   <div className="offer-card__player-avatar">
                     <img src={offer.player.image} alt={offer.player.name} className="offer-card__player-img" />
@@ -1789,13 +1796,6 @@ export function OffersSection({ sportFilter, liveOnly = false }: OffersSectionPr
                     </div>
                   </div>
                 </div>
-                {offer.type === 'pechincha' ? (
-                  <div className="offer-card__pechincha-rules">
-                    <span>{pechinchaRules[0]}</span>
-                    <span aria-hidden="true">•</span>
-                    <span>{pechinchaRules[1]}</span>
-                  </div>
-                ) : null}
               </div>
             )}
 
@@ -1832,6 +1832,12 @@ export function OffersSection({ sportFilter, liveOnly = false }: OffersSectionPr
                 {...getOfferOddButtonProps(offer)}
                 aria-label={`Selecionar oferta ${offer.title} com odd ${offer.newOdd}`}
               >
+                {offer.type === 'pechincha' ? (
+                  <span className="offer-card__button-rules">
+                    <span>{BETSLIP_PECHINCHA_SELECTION_RULE_LABEL}</span>
+                    <span>{BETSLIP_PECHINCHA_TOTAL_ODDS_RULE_LABEL}</span>
+                  </span>
+                ) : null}
                 <div className="offer-card__odds">
                   {offer.oldOdd && (
                     <>

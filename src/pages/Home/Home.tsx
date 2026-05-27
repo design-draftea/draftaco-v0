@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useRef, useState, useLayoutEffect, useMemo, type ComponentType, type ReactNode } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState, useLayoutEffect, useMemo, type ComponentType, type ReactNode } from 'react'
 import { HeaderV2 } from '../../components/HeaderV2'
 import { TrilhoEBanner } from '../../components/TrilhoEBanner'
 import { PromotionSection } from '../../components/PromotionSection'
@@ -78,6 +78,7 @@ interface HeaderComponentProps {
 interface HomeProps {
   activeProduct?: ProductMode
   HeaderComponent?: ComponentType<HeaderComponentProps>
+  isLiveEventSuppressed?: boolean
   onProductChange?: (product: ProductMode) => void
   onDepositOpen?: () => void
   onLiveEventOpenChange?: (isOpen: boolean) => void
@@ -88,6 +89,7 @@ interface HomeProps {
 export function Home({
   activeProduct = 'apostas',
   HeaderComponent = HeaderV2,
+  isLiveEventSuppressed = false,
   onProductChange,
   onDepositOpen,
   onLiveEventOpenChange,
@@ -140,6 +142,12 @@ export function Home({
   const handleLiveEventCloseStart = useCallback(() => {
     onLiveEventCloseStart?.()
   }, [onLiveEventCloseStart])
+
+  useEffect(() => {
+    if (!isLiveEventSuppressed || !selectedLiveMatch) return
+
+    setSelectedLiveMatch(null)
+  }, [isLiveEventSuppressed, selectedLiveMatch])
 
   const handleCasinoGameOpen = (payload: CasinoGameOpenPayload) => {
     setSelectedCasinoGame(payload)
@@ -817,7 +825,7 @@ export function Home({
           {/* <WinningNowSection /> */}
         </Fragment>
       )}
-      {selectedLiveMatch && (
+      {selectedLiveMatch && !isLiveEventSuppressed && (
         <LiveEventPage
           isOpen={true}
           onClose={handleLiveEventClose}
