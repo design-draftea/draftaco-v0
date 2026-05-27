@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Home } from './pages/Home'
 import { PromotionsPage } from './pages/PromotionsPage'
 import { BetslipPage } from './pages/BetslipPage'
+import { LiveEventPage, type LiveEventOpenPayload } from './pages/LiveEventPage'
 import { HandoffPage } from './pages/Handoff'
 import { MobileOnly } from './components/MobileOnly'
 import { Navbar } from './components/Navbar'
@@ -10,7 +11,9 @@ import { HeaderV2 } from './components/HeaderV2'
 import { DepositPanel } from './components/DepositPanel'
 import { BetslipProvider } from './hooks/BetslipProvider'
 import { useBetslip } from './hooks/useBetslip'
+import { getBetslipTurboEligibleSelectionCount } from './hooks/betslipTurboBonus'
 import type { ProductMode } from './types/home'
+import { BETSLIP_LIVE_EVENT_OPEN_EVENT } from './utils/betslipLiveEvent'
 
 const defaultProduct: ProductMode = 'apostas'
 const productRoutes: ProductMode[] = ['apostas', 'cassino']
@@ -85,7 +88,11 @@ const buildPromotionsPath = () => {
 
 function AppContent() {
   const [pathname, setPathname] = useState(() => window.location.pathname)
-  const { summary: betslipSummary } = useBetslip()
+  const { selections: betslipSelections, summary: betslipSummary } = useBetslip()
+  const betslipTurboEligibleSelectionCount = useMemo(
+    () => getBetslipTurboEligibleSelectionCount(betslipSelections),
+    [betslipSelections]
+  )
   const productRoute = useMemo(() => resolveProductFromPath(pathname), [pathname])
   const isPromotionsPage = useMemo(() => isPromotionsPath(pathname), [pathname])
   const isHandoffPage = useMemo(() => isHandoffPath(pathname), [pathname])
@@ -97,6 +104,10 @@ function AppContent() {
     isEventBetslipVisible: false,
     betslipMotionKey: 0,
   })
+  const [betslipOriginLiveEvent, setBetslipOriginLiveEvent] = useState<{
+    isOpen: boolean
+    payload: LiveEventOpenPayload
+  } | null>(null)
   const activeProduct = isPromotionsPage ? promotionsProduct : productRoute.product
 
   useEffect(() => {
@@ -240,6 +251,38 @@ function AppContent() {
     })
   }, [])
 
+  useEffect(() => {
+    const handleBetslipLiveEventOpen = (event: Event) => {
+      const payload = (event as CustomEvent<LiveEventOpenPayload>).detail
+      if (!payload?.matches?.length) return
+
+      setIsFullBetslipOpen(true)
+      setBetslipOriginLiveEvent({ isOpen: true, payload })
+      handleLiveEventOpenChange(true)
+    }
+
+    window.addEventListener(BETSLIP_LIVE_EVENT_OPEN_EVENT, handleBetslipLiveEventOpen)
+    return () => window.removeEventListener(BETSLIP_LIVE_EVENT_OPEN_EVENT, handleBetslipLiveEventOpen)
+  }, [handleLiveEventOpenChange])
+
+  const handleBetslipOriginLiveEventClose = useCallback(() => {
+    setBetslipOriginLiveEvent(null)
+    handleLiveEventOpenChange(false)
+  }, [handleLiveEventOpenChange])
+
+  const handleEventBetslipOpen = useCallback(() => {
+    if (!betslipOriginLiveEvent) {
+      handleBetslipOpen()
+      return
+    }
+
+    setIsFullBetslipOpen(true)
+    handleLiveEventCloseStart()
+    setBetslipOriginLiveEvent((current) => (
+      current ? { ...current, isOpen: false } : current
+    ))
+  }, [betslipOriginLiveEvent, handleBetslipOpen, handleLiveEventCloseStart])
+
   const showCompactBetslip = activeProduct === 'apostas' && !isPromotionsPage && !isHandoffPage && betslipSummary.hasSelections
   const shouldShowEventBetslip = showCompactBetslip && liveEventUi.isOpen && liveEventUi.isEventBetslipVisible
 
@@ -279,7 +322,25 @@ function AppContent() {
         />
       )}
       {!isHandoffPage && isFullBetslipOpen ? (
-        <BetslipPage onClose={handleBetslipClose} />
+        <BetslipPage
+          isCoveredByEvent={!!betslipOriginLiveEvent}
+          onClose={handleBetslipClose}
+        />
+      ) : null}
+      {!isHandoffPage && betslipOriginLiveEvent ? (
+        <LiveEventPage
+          isOpen={betslipOriginLiveEvent.isOpen}
+          onClose={handleBetslipOriginLiveEventClose}
+          onOpenSettled={handleLiveEventOpenSettled}
+          onCloseStart={handleLiveEventCloseStart}
+          matches={betslipOriginLiveEvent.payload.matches}
+          railEvents={betslipOriginLiveEvent.payload.railEvents}
+          selectedIndex={betslipOriginLiveEvent.payload.selectedIndex}
+          currentTimes={betslipOriginLiveEvent.payload.currentTimes}
+          leagueName={betslipOriginLiveEvent.payload.leagueName}
+          leagueFlag={betslipOriginLiveEvent.payload.leagueFlag}
+          sport={betslipOriginLiveEvent.payload.sport}
+        />
       ) : null}
       {!isHandoffPage ? (
         <DepositPanel isOpen={isDepositPanelOpen} onClose={handleDepositPanelClose} />
@@ -289,15 +350,17 @@ function AppContent() {
           <Betslip
             visible={showCompactBetslip}
             summary={betslipSummary}
+            turboEligibleSelectionCount={betslipTurboEligibleSelectionCount}
             presentationKey="base"
             onOpen={handleBetslipOpen}
           />
           <Betslip
             visible={shouldShowEventBetslip}
             summary={betslipSummary}
+            turboEligibleSelectionCount={betslipTurboEligibleSelectionCount}
             compactOnly={true}
             presentationKey={`live-event-${liveEventUi.betslipMotionKey}`}
-            onOpen={handleBetslipOpen}
+            onOpen={handleEventBetslipOpen}
           />
           <Navbar
             activeProduct={activeProduct}

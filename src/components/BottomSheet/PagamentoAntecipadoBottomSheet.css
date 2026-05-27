@@ -1,0 +1,58 @@
+.bottom-sheet__container:has(.pagamento-antecipado-bs) {
+  z-index: 3400;
+}
+
+.bottom-sheet.pagamento-antecipado-bs {
+  background-color: var(--tokens-layer-layer-01);
+}
+
+.bottom-sheet.pagamento-antecipado-bs .bottom-sheet__header {
+  border-bottom-color: var(--tokens-border-border-02);
+}
+
+.bottom-sheet.pagamento-antecipado-bs .bottom-sheet__title span {
+  font-size: var(--typography-font-size-16);
+  font-weight: var(--typography-font-weight-bold);
+}
+
+.bottom-sheet__body.pagamento-antecipado-bs__body {
+  padding: 28px 20px;
+}
+
+.pagamento-antecipado-bs__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.pagamento-antecipado-bs__icon {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
+.pagamento-antecipado-bs__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pagamento-antecipado-bs__headline {
+  margin: 0;
+  color: var(--tokens-text-text-01);
+  font-family: 'Red Hat Text', system-ui, sans-serif;
+  font-size: var(--typography-font-size-16);
+  font-weight: var(--typography-font-weight-bold);
+  line-height: 1.35;
+}
+
+.pagamento-antecipado-bs__description {
+  margin: 0;
+  color: var(--tokens-text-text-01);
+  font-family: 'Red Hat Text', system-ui, sans-serif;
+  font-size: var(--typography-font-size-12);
+  font-weight: var(--typography-font-weight-regular);
+  line-height: 1.45;
+}

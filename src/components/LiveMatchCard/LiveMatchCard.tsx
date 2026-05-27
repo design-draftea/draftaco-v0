@@ -746,7 +746,6 @@ export function LiveMatchCard({ match, sport, activeMarket, currentTime, onClick
         homeTeamIcon,
         awayTeamIcon,
         selectionIcon: getMatchSelectionIcon(outcomeId, label),
-        badgeType: 'substitution',
       })
     )
   )

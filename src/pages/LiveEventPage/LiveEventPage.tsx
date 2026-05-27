@@ -6,8 +6,7 @@ import './LiveEventPage.css'
 import { PreMatchPlayerPropCard, getMatchPlayerProps, type MatchPlayerProp } from '../../components/PreMatchSection/PreMatchSection'
 import { getLivePlayerProps } from '../../components/LiveMatchCard'
 import iconAoVivo from '../../assets/iconAoVivo.png'
-import reiAntecipaFutebol from '../../assets/reiAntecipaFutebol.png'
-import reiAntecipaBasquete from '../../assets/reiAntecipaBasquete.png'
+import pagamentoAntecipado from '../../assets/pagamentoAntecipado.png'
 import substituicaoGarantida from '../../assets/substituicaoGarantida.png'
 import multiplaTurbinada from '../../assets/multiplaTurbinada.png'
 import streamingFutebol from '../../assets/streamingFutebol.png'
@@ -1456,7 +1455,7 @@ function LiveEventContent({
   const liveStreamImage = isBasketball ? streamingBasquete : streamingFutebol
   const eventBallIcon = isBasketball ? iconBasquete : iconFutebol
   const playerAvatarFallback = isBasketball ? playerAvatarBasquete : playerAvatarFutebol
-  const earlyPayoutImage = isBasketball ? reiAntecipaBasquete : reiAntecipaFutebol
+  const earlyPayoutImage = pagamentoAntecipado
   const resultMarketTitle = isBasketball ? 'Vencedor - Pagamento Antecipado' : 'Resultado final - Pagamento Antecipado'
   const fieldTabLabel = isBasketball ? 'Quadra' : 'Campo'
   const fieldViewLabel = isBasketball ? 'Visão da Quadra' : 'Visão do Campo'
@@ -1608,7 +1607,7 @@ function LiveEventContent({
             liveClock: isLiveMatch ? displayTime : undefined,
             homeScore: match.homeTeam.score,
             awayScore: match.awayTeam.score,
-            badgeType: marketId === resultMarketId ? 'boost' : 'substitution',
+            badgeType: marketId === resultMarketId ? 'boost' : undefined,
           })
         )}
       >
@@ -2919,12 +2918,13 @@ export function LiveEventPage({
           setShouldRender(false)
           setIsClosing(false)
           closeTimerRef.current = null
+          onClose()
         }, LIVE_EVENT_TRANSITION_MS)
       }
     }, 0)
 
     return () => window.clearTimeout(timer)
-  }, [isOpen, shouldRender, isClosing])
+  }, [isOpen, onClose, shouldRender, isClosing])
 
   useEffect(() => () => {
     if (closeTimerRef.current !== null) {

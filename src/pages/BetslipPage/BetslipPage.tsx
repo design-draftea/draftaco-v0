@@ -10,6 +10,7 @@ import {
   type KeyboardEvent,
   type MouseEvent,
   type PointerEvent,
+  type ReactNode,
 } from 'react'
 import {
   CaretRightIcon,
@@ -23,11 +24,28 @@ import {
 import confetti from 'canvas-confetti'
 import './BetslipPage.css'
 
-import reiAntecipaFutebol from '../../assets/reiAntecipaFutebol.png'
+import iconMultiplaGde from '../../assets/iconMultiplaGde.png'
+import multiplaTurbinadaIcon from '../../assets/multiplaTurbinada.png'
+import pagamentoAntecipado from '../../assets/pagamentoAntecipado.png'
+import {
+  BeneficiosApostaBottomSheet,
+  MultiplaTurbinadaBottomSheet,
+  PagamentoAntecipadoBottomSheet,
+  type BetslipBenefitSheetItem,
+  type PagamentoAntecipadoSport,
+} from '../../components/BottomSheet'
 import { StakeKeyboard, type StakeKeyboardKey } from '../../components/StakeKeyboard'
 import substituicaoGarantida from '../../assets/substituicaoGarantida.png'
+import {
+  BETSLIP_TURBO_MIN_ODD_VALUE,
+  getBetslipTurboBonusCents,
+  getBetslipTurboEligibleSelectionCount,
+  getBetslipTurboBonusPercent,
+  isBetslipTurboSelectionGroupEligible,
+} from '../../hooks/betslipTurboBonus'
 import { getTeamLogo } from '../../data/teamLogos'
 import { useBetslip } from '../../hooks/useBetslip'
+import type { LiveEventMatch, LiveEventOpenPayload, LiveEventRailItem } from '../LiveEventPage'
 import {
   BETSLIP_ODD_INTERACTION_EVENT,
   createBetslipSelection,
@@ -36,9 +54,11 @@ import {
   normalizeBetslipIdPart,
   type BetslipSelection,
 } from '../../hooks/betslipUtils'
+import { BETSLIP_LIVE_EVENT_OPEN_EVENT } from '../../utils/betslipLiveEvent'
 import { advanceLiveClock } from '../../utils/liveClock'
 
 interface BetslipPageProps {
+  isCoveredByEvent?: boolean
   onClose?: () => void
 }
 
@@ -70,6 +90,7 @@ const DEFAULT_SIMPLE_STAKE_CENTS = 0
 const animatedFooterValueDurationMs = 520
 const quickStakeFeedbackClassName = 'betslip-page__quick-stake--feedback'
 const betslipTabIndicatorAnimationDurationMs = 360
+const betslipPageEnterDurationMs = 360
 const betslipConfirmDelayMs = 3000
 const betslipConfirmDragThreshold = 0.6
 const betslipConfirmCompleteAnimationMs = 180
@@ -81,6 +102,8 @@ const betslipBuilderLegRemoveDelayMs = 220
 const betslipCardUpdateDelayMs = 320
 const betslipSuccessVisibleDelayMs = 10000
 const betslipSuccessConfettiZIndex = 3400
+const betslipTurboMinSelectionCount = 3
+const betslipLiveEventSupportedSports = new Set(['futebol', 'basquete'])
 
 type ConfettiOptions = NonNullable<Parameters<typeof confetti>[0]>
 type BetMode = 'multiple' | 'simple'
@@ -182,6 +205,137 @@ const getSelectionGroupOddsLabel = (selections: BetslipSelection[]) => {
   return formatOddsProduct(selections)
 }
 
+const parseBetslipScore = (score: BetslipSelection['homeScore'] | BetslipSelection['awayScore']) => {
+  const numericScore = Number(score)
+
+  return Number.isFinite(numericScore) ? numericScore : 0
+}
+
+const getBetslipLiveEventSport = (selection: BetslipSelection) => {
+  const sport = selection.sport ? normalizeBetslipIdPart(selection.sport) : 'futebol'
+
+  return betslipLiveEventSupportedSports.has(sport) ? sport : 'futebol'
+}
+
+const getBetslipTeamIcon = (
+  selection: BetslipSelection,
+  teamName: string | undefined,
+  side: 'home' | 'away'
+) => {
+  const icon = side === 'home' ? selection.homeTeamIcon : selection.awayTeamIcon
+  return icon ?? (teamName ? getTeamLogo(teamName) : '')
+}
+
+const getBetslipEventOddLabel = (
+  selections: BetslipSelection[],
+  predicate: (selection: BetslipSelection) => boolean,
+  fallback: string
+) => selections.find(predicate)?.oddLabel ?? fallback
+
+const buildLiveEventMatchFromBetslipGroup = (
+  group: BetslipSelectionGroup,
+  nowMs: number
+): { match: LiveEventMatch; railItem: LiveEventRailItem; currentTime: string } | null => {
+  const [firstSelection] = group.selections
+  if (!firstSelection?.homeTeam || !firstSelection.awayTeam) return null
+
+  const sport = getBetslipLiveEventSport(firstSelection)
+  const isLive = firstSelection.eventStatus === 'live'
+  const currentTime = getSelectionTimeLabel(firstSelection, nowMs)
+  const dateTime = firstSelection.eventTimeLabel ?? currentTime
+  const homeTeamName = firstSelection.homeTeam
+  const awayTeamName = firstSelection.awayTeam
+  const homeTeam = {
+    name: homeTeamName,
+    icon: getBetslipTeamIcon(firstSelection, homeTeamName, 'home'),
+    score: parseBetslipScore(firstSelection.homeScore),
+  }
+  const awayTeam = {
+    name: awayTeamName,
+    icon: getBetslipTeamIcon(firstSelection, awayTeamName, 'away'),
+    score: parseBetslipScore(firstSelection.awayScore),
+  }
+  const homeTeamSignature = normalizeBetslipIdPart(homeTeamName)
+  const awayTeamSignature = normalizeBetslipIdPart(awayTeamName)
+  const odds = {
+    home: getBetslipEventOddLabel(
+      group.selections,
+      (selection) => normalizeBetslipIdPart(getSelectionTitle(selection)) === homeTeamSignature,
+      '1.90x'
+    ),
+    draw: sport === 'futebol'
+      ? getBetslipEventOddLabel(
+          group.selections,
+          (selection) => normalizeBetslipIdPart(getSelectionTitle(selection)) === 'empate',
+          '3.20x'
+        )
+      : undefined,
+    away: getBetslipEventOddLabel(
+      group.selections,
+      (selection) => normalizeBetslipIdPart(getSelectionTitle(selection)) === awayTeamSignature,
+      '1.90x'
+    ),
+  }
+  const match: LiveEventMatch = {
+    id: group.eventId,
+    leagueName: 'Betslip',
+    sport,
+    isLive,
+    time: dateTime,
+    dateTime,
+    currentTime,
+    homeTeam,
+    awayTeam,
+    odds,
+  }
+  const railItem: LiveEventRailItem = {
+    id: group.eventId,
+    leagueName: 'Betslip',
+    sport,
+    isLive,
+    dateTime,
+    currentTime,
+    headerPrimary: isLive ? currentTime : undefined,
+    homeTeam,
+    awayTeam,
+    odds,
+  }
+
+  return { match, railItem, currentTime }
+}
+
+const buildBetslipLiveEventOpenPayload = (
+  groups: BetslipSelectionGroup[],
+  selectedEventId: string,
+  nowMs: number
+): LiveEventOpenPayload | null => {
+  const eventEntries = groups
+    .map((group) => ({
+      eventId: group.eventId,
+      event: buildLiveEventMatchFromBetslipGroup(group, nowMs),
+    }))
+    .filter((entry): entry is {
+      eventId: string
+      event: { match: LiveEventMatch; railItem: LiveEventRailItem; currentTime: string }
+    } => entry.event !== null)
+  const selectedIndex = eventEntries.findIndex((entry) => entry.eventId === selectedEventId)
+  if (selectedIndex < 0) return null
+
+  const selectedEvent = eventEntries[selectedIndex].event
+
+  return {
+    matches: eventEntries.map((entry) => entry.event.match),
+    railEvents: eventEntries.map((entry) => entry.event.railItem),
+    selectedIndex,
+    leagueName: selectedEvent.match.leagueName ?? 'Betslip',
+    leagueFlag: selectedEvent.match.leagueFlag,
+    sport: selectedEvent.match.sport ?? 'futebol',
+    currentTimes: Object.fromEntries(
+      eventEntries.map((entry) => [entry.event.match.id ?? entry.eventId, entry.event.currentTime])
+    ),
+  }
+}
+
 const getSelectionEventName = (selection: BetslipSelection) => (
   selection.eventName
     ?? (selection.homeTeam && selection.awayTeam ? `${selection.homeTeam} x ${selection.awayTeam}` : selection.eventId)
@@ -217,6 +371,16 @@ const getSelectionTitle = (selection: BetslipSelection) => {
 
 const getSelectionMarketLabel = (selection: BetslipSelection) => selection.marketLabel || selection.label
 
+const normalizeSelectionMarketDisplayLabel = (marketLabel: string) => {
+  const displayLabel = normalizeSelectionLineValue(
+    marketLabel.replace(/\s*[-–—]\s*Pagamento Antecipado\s*$/i, '')
+  )
+
+  if (normalizeBetslipIdPart(displayLabel) === 'resultado-final') return 'Resultado Final'
+
+  return displayLabel
+}
+
 const getPlayerSelectionValueLabel = (selection: BetslipSelection) => {
   const rawValue = selection.label.trim()
   const title = getSelectionTitle(selection).trim()
@@ -231,7 +395,7 @@ const getPlayerSelectionValueLabel = (selection: BetslipSelection) => {
 }
 
 const getSelectionMarketDisplayLabel = (selection: BetslipSelection) => {
-  const marketLabel = normalizeSelectionLineValue(getSelectionMarketLabel(selection))
+  const marketLabel = normalizeSelectionMarketDisplayLabel(getSelectionMarketLabel(selection))
   if (selection.selectionType !== 'player') return marketLabel
 
   const valueLabel = getPlayerSelectionValueLabel(selection)
@@ -252,8 +416,74 @@ const getSelectionMarketSignature = (selection: BetslipSelection) => [
 ].join(':')
 
 const isResultMarketSelection = (selection: BetslipSelection) => (
-  ['resultado-final', '1x2'].includes(normalizeBetslipIdPart(getSelectionMarketLabel(selection)))
+  ['resultado-final', 'resultado-final-pagamento-antecipado', '1x2', 'vencedor', 'vencedor-pagamento-antecipado'].includes(
+    normalizeBetslipIdPart(getSelectionMarketLabel(selection))
+  )
+  || ['resultado-final', '1x2', 'vencedor'].includes(selection.marketId)
 )
+
+const isDrawResultSelection = (selection: BetslipSelection) => {
+  const selectionTitle = normalizeBetslipIdPart(getSelectionTitle(selection))
+  const outcomeId = normalizeBetslipIdPart(selection.outcomeId)
+
+  return selectionTitle === 'empate' || outcomeId === 'draw' || outcomeId === 'empate'
+}
+
+const isEarlyPayoutSelection = (selection: BetslipSelection) => (
+  selection.eventStatus !== 'live'
+  && isResultMarketSelection(selection)
+  && !isDrawResultSelection(selection)
+)
+
+const getSelectionSecondaryBenefitItem = (
+  selection: BetslipSelection
+): BetslipBenefitSheetItem | null => {
+  if (selection.badgeType === 'substitution' && selection.selectionType === 'player') {
+    return { id: 'substitution' }
+  }
+
+  if (isEarlyPayoutSelection(selection)) {
+    return {
+      id: 'early-payout',
+      sport: getBetslipLiveEventSport(selection) as PagamentoAntecipadoSport,
+    }
+  }
+
+  return null
+}
+
+const getBetslipBenefitItemKey = (item: BetslipBenefitSheetItem) => {
+  if (item.id === 'early-payout') return `${item.id}:${item.sport ?? 'futebol'}`
+  return item.id
+}
+
+const dedupeBetslipBenefitItems = (items: BetslipBenefitSheetItem[]) => {
+  const seenItems = new Set<string>()
+
+  return items.filter((item) => {
+    const key = getBetslipBenefitItemKey(item)
+    if (seenItems.has(key)) return false
+
+    seenItems.add(key)
+    return true
+  })
+}
+
+const getSelectionBenefitItems = (
+  selection: BetslipSelection,
+  currentTurboSelectionCount: number,
+  includeTurbo = true
+) => {
+  const hasTurboBenefit = includeTurbo && selection.oddValue >= BETSLIP_TURBO_MIN_ODD_VALUE
+  const items: BetslipBenefitSheetItem[] = hasTurboBenefit
+    ? [{ id: 'turbo', currentSelectionCount: currentTurboSelectionCount }]
+    : []
+  const secondaryBenefit = getSelectionSecondaryBenefitItem(selection)
+
+  if (secondaryBenefit) items.push(secondaryBenefit)
+
+  return dedupeBetslipBenefitItems(items)
+}
 
 const getSuccessMarketSubtitle = (selection: BetslipSelection) => {
   const selectionTitle = getSelectionTitle(selection)
@@ -289,6 +519,23 @@ const getSuccessSelectionLineLabel = (selection: BetslipSelection) => {
 interface BetslipSelectionGroup {
   eventId: string
   selections: BetslipSelection[]
+}
+
+const getSelectionGroupBenefitItems = (
+  group: BetslipSelectionGroup,
+  currentTurboSelectionCount: number
+) => {
+  const items: BetslipBenefitSheetItem[] = isBetslipTurboSelectionGroupEligible(group.selections)
+    ? [{ id: 'turbo', currentSelectionCount: currentTurboSelectionCount }]
+    : []
+
+  items.push(
+    ...group.selections
+      .map(getSelectionSecondaryBenefitItem)
+      .filter((item): item is BetslipBenefitSheetItem => item !== null)
+  )
+
+  return dedupeBetslipBenefitItems(items)
 }
 
 const groupSelectionsByEvent = (selections: BetslipSelection[]) => {
@@ -457,8 +704,13 @@ const getRelatedRecommendations = (selections: BetslipSelection[]) => {
 }
 
 function DeleteButton({ label, onClick }: { label: string; onClick?: () => void }) {
+  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation()
+    onClick?.()
+  }
+
   return (
-    <button type="button" className="betslip-page__delete-button" aria-label={label} onClick={onClick}>
+    <button type="button" className="betslip-page__delete-button" aria-label={label} onClick={handleClick}>
       <XIcon aria-hidden="true" weight="bold" />
     </button>
   )
@@ -512,27 +764,156 @@ function SelectionIcon({
   )
 }
 
-function BoostBadge({ icon = false }: { icon?: boolean }) {
+function BoostBadge({
+  ariaLabel,
+  icon = false,
+  onInfoOpen,
+}: {
+  ariaLabel?: string
+  icon?: boolean
+  onInfoOpen?: () => void
+}) {
+  if (onInfoOpen) {
+    return (
+      <button
+        type="button"
+        className={`betslip-page__boost-badge betslip-page__boost-badge--button betslip-page__boost-badge--${icon ? 'arrow' : 'plus'}`}
+        aria-label={ariaLabel ?? 'Ver como funciona o Pagamento Antecipado'}
+        onClick={(event) => {
+          event.stopPropagation()
+          onInfoOpen()
+        }}
+      >
+        <img src={icon ? substituicaoGarantida : pagamentoAntecipado} alt="" />
+      </button>
+    )
+  }
+
   return (
     <span
       className={`betslip-page__boost-badge betslip-page__boost-badge--${icon ? 'arrow' : 'plus'}`}
       aria-hidden="true"
     >
-      <img src={icon ? substituicaoGarantida : reiAntecipaFutebol} alt="" />
+      <img src={icon ? substituicaoGarantida : pagamentoAntecipado} alt="" />
     </span>
   )
 }
 
-function SelectionBadge({ selection }: { selection: BetslipSelection }) {
-  if (selection.badgeType === 'substitution') {
-    return <BoostBadge icon />
+function TurboSelectionBadge({ onInfoOpen }: { onInfoOpen?: () => void }) {
+  if (onInfoOpen) {
+    return (
+      <button
+        type="button"
+        className="betslip-page__turbo-selection-badge betslip-page__turbo-selection-badge--button"
+        aria-label="Ver como funciona a Múltipla Turbinada"
+        onClick={(event) => {
+          event.stopPropagation()
+          onInfoOpen()
+        }}
+      >
+        <img src={multiplaTurbinadaIcon} alt="" />
+      </button>
+    )
   }
 
-  if (selection.badgeType === 'boost' && isResultMarketSelection(selection)) {
-    return <BoostBadge />
+  return (
+    <span className="betslip-page__turbo-selection-badge" aria-hidden="true">
+      <img src={multiplaTurbinadaIcon} alt="" />
+    </span>
+  )
+}
+
+function SelectionBadge({
+  benefitItems,
+  selection,
+  showTurbo = true,
+  onBenefitsInfoOpen,
+  onEarlyPayoutInfoOpen,
+  onTurboInfoOpen,
+}: {
+  benefitItems?: BetslipBenefitSheetItem[]
+  selection: BetslipSelection
+  showTurbo?: boolean
+  onBenefitsInfoOpen?: (
+    items: BetslipBenefitSheetItem[],
+    initialItemId?: BetslipBenefitSheetItem['id']
+  ) => void
+  onEarlyPayoutInfoOpen?: (sport: PagamentoAntecipadoSport) => void
+  onTurboInfoOpen?: () => void
+}) {
+  let secondaryBadge: ReactNode = null
+  const secondaryBenefit = getSelectionSecondaryBenefitItem(selection)
+  const visibleBenefitItems = benefitItems ?? getSelectionBenefitItems(selection, betslipTurboMinSelectionCount, showTurbo)
+  const hasTurboBenefit = visibleBenefitItems.some((item) => item.id === 'turbo')
+  const hasBenefitSlider = visibleBenefitItems.length > 1 && !!onBenefitsInfoOpen
+  const openBenefitSlider = (initialItemId: BetslipBenefitSheetItem['id']) => {
+    if (!onBenefitsInfoOpen) return false
+
+    onBenefitsInfoOpen(visibleBenefitItems, initialItemId)
+    return true
+  }
+  const handleTurboInfoOpen = showTurbo && hasTurboBenefit
+    ? () => {
+        if (hasBenefitSlider) {
+          openBenefitSlider('turbo')
+          return
+        }
+
+        onTurboInfoOpen?.()
+      }
+    : undefined
+  const canOpenSecondaryBenefit = Boolean(
+    secondaryBenefit
+    && (
+      hasBenefitSlider
+      || (secondaryBenefit.id === 'early-payout' && onEarlyPayoutInfoOpen)
+      || (secondaryBenefit.id === 'substitution' && onBenefitsInfoOpen)
+    )
+  )
+  const handleSecondaryInfoOpen = secondaryBenefit && canOpenSecondaryBenefit
+    ? () => {
+        if (hasBenefitSlider) {
+          openBenefitSlider(secondaryBenefit.id)
+          return
+        }
+
+        if (secondaryBenefit.id === 'early-payout') {
+          onEarlyPayoutInfoOpen?.(secondaryBenefit.sport ?? 'futebol')
+          return
+        }
+
+        if (secondaryBenefit.id === 'substitution') {
+          openBenefitSlider('substitution')
+        }
+      }
+    : undefined
+
+  if (secondaryBenefit?.id === 'substitution') {
+    secondaryBadge = (
+      <BoostBadge
+        ariaLabel="Ver como funciona a Substituição Garantida"
+        icon
+        onInfoOpen={handleSecondaryInfoOpen}
+      />
+    )
+  } else if (secondaryBenefit?.id === 'early-payout') {
+    secondaryBadge = (
+      <BoostBadge
+        ariaLabel="Ver como funciona o Pagamento Antecipado"
+        onInfoOpen={handleSecondaryInfoOpen}
+      />
+    )
   }
 
-  return null
+  if (!hasTurboBenefit && !secondaryBadge) return null
+  const hasInteractiveBadge = (hasTurboBenefit && !!handleTurboInfoOpen) || !!handleSecondaryInfoOpen
+
+  return (
+    <span className="betslip-page__selection-badges" aria-hidden={hasInteractiveBadge ? undefined : true}>
+      {hasTurboBenefit ? <TurboSelectionBadge onInfoOpen={handleTurboInfoOpen} /> : null}
+      {secondaryBadge}
+    </span>
+  )
 }
 
 function AnimatedFooterValue({
@@ -595,6 +976,76 @@ function AnimatedFooterValue({
     <strong ref={valueRef} className="betslip-page__footer-value--rolling">
       {formatValue(initialValue)}
     </strong>
+  )
+}
+
+interface BetslipTurboBannerProps {
+  bonusCents: number
+  bonusPercent: number | null
+  nextBonusPercent: number | null
+  onInfoOpen: () => void
+  selectionCount: number
+}
+
+function BetslipTurboBanner({
+  bonusCents,
+  bonusPercent,
+  nextBonusPercent,
+  onInfoOpen,
+  selectionCount,
+}: BetslipTurboBannerProps) {
+  if (selectionCount <= 0) return null
+
+  const isActive = bonusPercent !== null
+
+  if (!isActive) {
+    const missingSelectionCount = Math.max(0, betslipTurboMinSelectionCount - selectionCount)
+    const missingSelectionLabel = missingSelectionCount === 1
+      ? '+1 seleção elegível'
+      : `+${missingSelectionCount} seleções elegíveis`
+    const missingSelectionAriaLabel = missingSelectionCount === 1
+      ? 'Falta 1 seleção elegível para desbloquear 5 por cento de Múltipla Turbinada.'
+      : `Faltam ${missingSelectionCount} seleções elegíveis para desbloquear 5 por cento de Múltipla Turbinada.`
+
+    return (
+      <div className="betslip-page__turbo-banner-shell">
+        <button
+          type="button"
+          className="betslip-page__turbo-banner betslip-page__turbo-banner--locked"
+          aria-label={missingSelectionAriaLabel}
+          onClick={onInfoOpen}
+        >
+          <img className="betslip-page__turbo-banner-icon" src={iconMultiplaGde} alt="" aria-hidden="true" />
+          <div className="betslip-page__turbo-banner-copy">
+            <span>Adicione {missingSelectionLabel} para desbloquear</span>
+            <strong className="betslip-page__turbo-banner-gradient">5% Múltipla Turbinada</strong>
+          </div>
+        </button>
+      </div>
+    )
+  }
+
+  const hasNextBonus = nextBonusPercent !== null && nextBonusPercent > bonusPercent
+  const nextBonusLabel = hasNextBonus
+    ? `Adicione +1 seleção para ${nextBonusPercent}%`
+    : 'Bônus máximo liberado'
+
+  return (
+    <div className="betslip-page__turbo-banner-shell">
+      <button
+        type="button"
+        className="betslip-page__turbo-banner betslip-page__turbo-banner--active"
+        aria-label={`Múltipla Turbinada liberada com ${bonusPercent} por cento. Bônus de ${formatCurrency(bonusCents)} no valor para ganhar.`}
+        onClick={onInfoOpen}
+      >
+        <img className="betslip-page__turbo-banner-icon" src={iconMultiplaGde} alt="" aria-hidden="true" />
+        <div className="betslip-page__turbo-banner-copy">
+          <strong className="betslip-page__turbo-banner-gradient">Liberado {bonusPercent}% Múltipla Turbinada</strong>
+          <span>{nextBonusLabel}</span>
+        </div>
+        <strong className="betslip-page__turbo-banner-bonus">+{formatCurrency(bonusCents)}</strong>
+      </button>
+    </div>
   )
 }
 
@@ -676,7 +1127,7 @@ function BetslipCardStakeControls({
   }
 
   return (
-    <div className="betslip-page-card__stake-panel">
+    <div className="betslip-page-card__stake-panel" onClick={(event) => event.stopPropagation()}>
       <div className="betslip-page-card__stake-row" aria-label="Valor da aposta">
         <div className="betslip-page__quick-stakes betslip-page-card__quick-stakes">
           {[
@@ -1365,7 +1816,7 @@ function BetslipSuccessSheet({
   )
 }
 
-export function BetslipPage({ onClose }: BetslipPageProps) {
+export function BetslipPage({ isCoveredByEvent = false, onClose }: BetslipPageProps) {
   const {
     selections,
     summary,
@@ -1377,6 +1828,14 @@ export function BetslipPage({ onClose }: BetslipPageProps) {
   const [isStakeKeyboardOpen, setIsStakeKeyboardOpen] = useState(false)
   const [isConfirming, setIsConfirming] = useState(false)
   const [isBetslipLeaving, setIsBetslipLeaving] = useState(false)
+  const [isTurboInfoOpen, setIsTurboInfoOpen] = useState(false)
+  const [earlyPayoutInfoSport, setEarlyPayoutInfoSport] = useState<PagamentoAntecipadoSport>('futebol')
+  const [isEarlyPayoutInfoOpen, setIsEarlyPayoutInfoOpen] = useState(false)
+  const [benefitInfoSheet, setBenefitInfoSheet] = useState<{
+    initialItemId?: BetslipBenefitSheetItem['id']
+    items: BetslipBenefitSheetItem[]
+  } | null>(null)
+  const [hasCompletedEnterAnimation, setHasCompletedEnterAnimation] = useState(false)
   const [selectedBetMode, setSelectedBetMode] = useState<BetMode>('multiple')
   const [useBetCredit, setUseBetCredit] = useState(false)
   const [multipleStakeCents, setMultipleStakeCents] = useState(DEFAULT_BETSLIP_STAKE_CENTS)
@@ -1412,10 +1871,27 @@ export function BetslipPage({ onClose }: BetslipPageProps) {
   const startX = useRef(0)
   const scrollLeft = useRef(0)
   const hadSelectionsRef = useRef(selections.length > 0)
+
+  useEffect(() => {
+    if (isCoveredByEvent) {
+      setHasCompletedEnterAnimation(true)
+      return undefined
+    }
+
+    if (hasCompletedEnterAnimation) return undefined
+
+    const timer = window.setTimeout(() => {
+      setHasCompletedEnterAnimation(true)
+    }, betslipPageEnterDurationMs)
+
+    return () => window.clearTimeout(timer)
+  }, [hasCompletedEnterAnimation, isCoveredByEvent])
+
   const selectionGroups = useMemo(() => groupSelectionsByEvent(selections), [selections])
   const recommendations = useMemo(() => getRelatedRecommendations(selections), [selections])
   const hasLiveSelections = selections.some((selection) => selection.eventStatus === 'live')
   const totalSelectionCount = summary.selectionCount
+  const turboEligibleSelectionCount = getBetslipTurboEligibleSelectionCount(selections)
   const isSingleBetMode = selectionGroups.length < 2
   const isMultipleTabDisabled = selectionGroups.length < 2
   const activeBetMode: BetMode = isSingleBetMode ? 'simple' : selectedBetMode
@@ -1435,10 +1911,111 @@ export function BetslipPage({ onClose }: BetslipPageProps) {
     }, { stakeCents: 0, potentialWinCents: 0 })
   ), [selectionGroups, simpleStakeCentsByGroupId])
   const multiplePotentialWinCents = Math.round(multipleStakeCents * totalOdds)
+  const turboBonusPercent = getBetslipTurboBonusPercent(turboEligibleSelectionCount)
+  const nextTurboBonusPercent = getBetslipTurboBonusPercent(turboEligibleSelectionCount + 1)
+  const turboBonusCents = getBetslipTurboBonusCents({
+    bonusPercent: turboBonusPercent,
+    potentialWinCents: multiplePotentialWinCents,
+    stakeCents: multipleStakeCents,
+  })
   const footerStakeCents = isSplitSimpleMode ? simpleStakeSummary.stakeCents : multipleStakeCents
   const footerPotentialWinCents = isSplitSimpleMode
     ? simpleStakeSummary.potentialWinCents
-    : multiplePotentialWinCents
+    : multiplePotentialWinCents + turboBonusCents
+  const liveEventPayloadsByEventId = useMemo(() => {
+    const payloads = new Map<string, LiveEventOpenPayload>()
+
+    selectionGroups.forEach((group) => {
+      const payload = buildBetslipLiveEventOpenPayload(selectionGroups, group.eventId, liveClockNowMs)
+      if (payload) payloads.set(group.eventId, payload)
+    })
+
+    return payloads
+  }, [liveClockNowMs, selectionGroups])
+
+  const handleBetslipLiveEventOpen = useCallback((payload: LiveEventOpenPayload) => {
+    window.dispatchEvent(new CustomEvent<LiveEventOpenPayload>(BETSLIP_LIVE_EVENT_OPEN_EVENT, {
+      detail: payload,
+    }))
+  }, [])
+
+  const handleTurboInfoOpen = useCallback(() => {
+    setBenefitInfoSheet(null)
+    setIsTurboInfoOpen(true)
+  }, [])
+
+  const handleTurboInfoClose = useCallback(() => {
+    setIsTurboInfoOpen(false)
+  }, [])
+
+  const handleEarlyPayoutInfoOpen = useCallback((sport: PagamentoAntecipadoSport) => {
+    setBenefitInfoSheet(null)
+    setEarlyPayoutInfoSport(sport)
+    setIsEarlyPayoutInfoOpen(true)
+  }, [])
+
+  const handleEarlyPayoutInfoClose = useCallback(() => {
+    setIsEarlyPayoutInfoOpen(false)
+  }, [])
+
+  const handleBenefitsInfoOpen = useCallback((
+    items: BetslipBenefitSheetItem[],
+    initialItemId?: BetslipBenefitSheetItem['id']
+  ) => {
+    const visibleItems = dedupeBetslipBenefitItems(items)
+
+    if (visibleItems.length === 0) return
+
+    setIsTurboInfoOpen(false)
+    setIsEarlyPayoutInfoOpen(false)
+
+    if (visibleItems.length === 1) {
+      const [item] = visibleItems
+
+      if (item.id === 'turbo') {
+        setIsTurboInfoOpen(true)
+        return
+      }
+
+      if (item.id === 'early-payout') {
+        setEarlyPayoutInfoSport(item.sport ?? 'futebol')
+        setIsEarlyPayoutInfoOpen(true)
+        return
+      }
+
+      setBenefitInfoSheet({
+        items: visibleItems,
+        initialItemId: item.id,
+      })
+      return
+    }
+
+    setBenefitInfoSheet({
+      items: visibleItems,
+      initialItemId,
+    })
+  }, [])
+
+  const handleBenefitsInfoClose = useCallback(() => {
+    setBenefitInfoSheet(null)
+  }, [])
+
+  const getLiveEventCardProps = useCallback((payload: LiveEventOpenPayload | undefined, eventName: string) => {
+    if (!payload) return {}
+
+    return {
+      role: 'button' as const,
+      tabIndex: 0,
+      'aria-label': `Abrir evento ${eventName}`,
+      onClick: () => handleBetslipLiveEventOpen(payload),
+      onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
+        if (!['Enter', ' '].includes(event.key)) return
+
+        event.preventDefault()
+        handleBetslipLiveEventOpen(payload)
+      },
+    }
+  }, [handleBetslipLiveEventOpen])
 
   useLayoutEffect(() => {
     const trackEl = tabsTrackRef.current
@@ -1913,10 +2490,13 @@ export function BetslipPage({ onClose }: BetslipPageProps) {
       <main
         className={[
           'betslip-page',
+          hasCompletedEnterAnimation ? '' : 'betslip-page--entering',
           isStakeKeyboardOpen ? 'betslip-page--keyboard-open' : '',
           isBetslipLeaving ? 'betslip-page--leaving' : '',
           isSplitSimpleMode ? 'betslip-page--simple-split' : '',
+          isCoveredByEvent ? 'betslip-page--covered-by-event' : '',
         ].filter(Boolean).join(' ')}
+        aria-hidden={isCoveredByEvent ? true : undefined}
         aria-labelledby="betslip-page-title"
       >
       <header className="betslip-page__header">
@@ -1985,6 +2565,14 @@ export function BetslipPage({ onClose }: BetslipPageProps) {
       </nav>
 
       <div className="betslip-page__content" ref={contentScrollRef}>
+        <BetslipTurboBanner
+          bonusCents={turboBonusCents}
+          bonusPercent={turboBonusPercent}
+          nextBonusPercent={nextTurboBonusPercent}
+          onInfoOpen={handleTurboInfoOpen}
+          selectionCount={turboEligibleSelectionCount}
+        />
+
         <section className="betslip-page__selections" aria-labelledby="betslip-page-selections-title">
           <div className="betslip-page__section-header">
             <h2 id="betslip-page-selections-title">Suas seleções:</h2>
@@ -2010,6 +2598,12 @@ export function BetslipPage({ onClose }: BetslipPageProps) {
               const isAddedGroup = group.selections.some((selection) => selection.id === addedSelectionId)
               const isRemovingGroup = removingCardId === group.eventId
               const isUpdatedGroup = updatedGroupId === group.eventId
+              const liveEventPayload = liveEventPayloadsByEventId.get(group.eventId)
+              const liveEventCardProps = getLiveEventCardProps(
+                liveEventPayload,
+                getSelectionEventName(firstSelection)
+              )
+              const liveEventCardClassName = liveEventPayload ? ' betslip-page-card--clickable' : ''
               const articleAnimationProps = {
                 onAnimationEnd: (event: AnimationEvent<HTMLElement>) => {
                   const animatedSelection = group.selections.find((selection) => selection.id === addedSelectionId)
@@ -2023,12 +2617,15 @@ export function BetslipPage({ onClose }: BetslipPageProps) {
                 const groupPotentialWinCents = Math.round(
                   groupStakeCents * getSelectionGroupOddsValue(group.selections)
                 )
+                const groupBenefitItems = getSelectionGroupBenefitItems(group, turboEligibleSelectionCount)
+                const hasGroupTurboBenefit = groupBenefitItems.some((item) => item.id === 'turbo')
 
                 return (
                   <article
                     key={group.eventId}
-                    className={`betslip-page-card betslip-page-card--builder${isRemovingGroup ? ' betslip-page-card--removing' : ''}${isUpdatedGroup ? ' betslip-page-card--updated' : ''}`}
+                    className={`betslip-page-card betslip-page-card--builder${liveEventCardClassName}${isRemovingGroup ? ' betslip-page-card--removing' : ''}${isUpdatedGroup ? ' betslip-page-card--updated' : ''}`}
                     {...articleAnimationProps}
+                    {...liveEventCardProps}
                   >
                     {isLiveBuilder ? (
                       <div className="betslip-page-card__event betslip-page-card__event--live">
@@ -2054,7 +2651,12 @@ export function BetslipPage({ onClose }: BetslipPageProps) {
 
                     <div className="betslip-page-card__builder-title">
                       <span className="betslip-page-card__create-badge">CA</span>
-                      <strong>Criar Aposta</strong>
+                      <span className="betslip-page-card__builder-label">
+                        <strong>Criar Aposta</strong>
+                        {hasGroupTurboBenefit ? (
+                          <TurboSelectionBadge onInfoOpen={() => handleBenefitsInfoOpen(groupBenefitItems, 'turbo')} />
+                        ) : null}
+                      </span>
                       <strong className="betslip-page-card__odd">{getSelectionGroupOddsLabel(group.selections)}</strong>
                       <DeleteButton
                         label={`Remover aposta criada ${getSelectionEventName(firstSelection)}`}
@@ -2076,7 +2678,13 @@ export function BetslipPage({ onClose }: BetslipPageProps) {
                           <div className="betslip-page-card__builder-copy">
                             <div className="betslip-page-card__builder-name">
                               <strong>{getSelectionTitle(selection)}</strong>
-                              <SelectionBadge selection={selection} />
+                              <SelectionBadge
+                                benefitItems={groupBenefitItems}
+                                selection={selection}
+                                showTurbo={false}
+                                onBenefitsInfoOpen={handleBenefitsInfoOpen}
+                                onEarlyPayoutInfoOpen={handleEarlyPayoutInfoOpen}
+                              />
                             </div>
                             <span>{getSelectionMarketDisplayLabel(selection)}</span>
                           </div>
@@ -2110,13 +2718,15 @@ export function BetslipPage({ onClose }: BetslipPageProps) {
               const isUpdatedSelection = updatedGroupId === group.eventId
               const groupStakeCents = getSimpleStakeCents(group.eventId)
               const groupPotentialWinCents = Math.round(groupStakeCents * getSelectionGroupOddsValue(group.selections))
+              const selectionBenefitItems = getSelectionBenefitItems(selection, turboEligibleSelectionCount)
 
               return (
                 <article
                   key={selection.id}
                   data-betslip-selection-id={selection.id}
-                  className={`betslip-page-card betslip-page-card--${isLive ? 'live' : 'simple'}${isAddedGroup ? ' betslip-page-card--added' : ''}${isRemovingSelection ? ' betslip-page-card--removing' : ''}${isUpdatedSelection ? ' betslip-page-card--updated' : ''}`}
+                  className={`betslip-page-card betslip-page-card--${isLive ? 'live' : 'simple'}${liveEventCardClassName}${isAddedGroup ? ' betslip-page-card--added' : ''}${isRemovingSelection ? ' betslip-page-card--removing' : ''}${isUpdatedSelection ? ' betslip-page-card--updated' : ''}`}
                   {...articleAnimationProps}
+                  {...liveEventCardProps}
                 >
                   {isLive ? (
                     <div className="betslip-page-card__event betslip-page-card__event--live">
@@ -2146,7 +2756,13 @@ export function BetslipPage({ onClose }: BetslipPageProps) {
                     <div className="betslip-page-card__simple-info">
                       <div className="betslip-page-card__choice-line">
                         <strong>{getSelectionTitle(selection)}</strong>
-                        <SelectionBadge selection={selection} />
+                        <SelectionBadge
+                          benefitItems={selectionBenefitItems}
+                          selection={selection}
+                          onBenefitsInfoOpen={handleBenefitsInfoOpen}
+                          onEarlyPayoutInfoOpen={handleEarlyPayoutInfoOpen}
+                          onTurboInfoOpen={handleTurboInfoOpen}
+                        />
                       </div>
                       <span className="betslip-page-card__market">{getSelectionMarketDisplayLabel(selection)}</span>
                     </div>
@@ -2242,6 +2858,22 @@ export function BetslipPage({ onClose }: BetslipPageProps) {
         onStakeKeyboardOpenChange={setIsStakeKeyboardOpen}
       />
       </main>
+      <MultiplaTurbinadaBottomSheet
+        isOpen={isTurboInfoOpen}
+        onClose={handleTurboInfoClose}
+        currentSelectionCount={turboEligibleSelectionCount}
+      />
+      <PagamentoAntecipadoBottomSheet
+        isOpen={isEarlyPayoutInfoOpen}
+        onClose={handleEarlyPayoutInfoClose}
+        sport={earlyPayoutInfoSport}
+      />
+      <BeneficiosApostaBottomSheet
+        isOpen={benefitInfoSheet !== null}
+        onClose={handleBenefitsInfoClose}
+        items={benefitInfoSheet?.items ?? []}
+        initialItemId={benefitInfoSheet?.initialItemId}
+      />
       {showSuccessSheet && successSummary ? (
         <BetslipSuccessSheet summary={successSummary} isLeaving={isSuccessSheetLeaving} />
       ) : null}

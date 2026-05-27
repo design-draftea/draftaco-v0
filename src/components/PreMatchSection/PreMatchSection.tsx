@@ -71,9 +71,7 @@ import escudoWolfsburg from '../../assets/escudoWolfsburg.png'
 import escudoEintracht from '../../assets/escudoEintracht.png'
 import escudoAugsburg from '../../assets/escudoAugsburg.png'
 import escudoHamburger from '../../assets/escudoHamburger.png'
-// Rei Antecipa badges
-import reiAntecipaFutebol from '../../assets/reiAntecipaFutebol.png'
-import reiAntecipaBasquete from '../../assets/reiAntecipaBasquete.png'
+import pagamentoAntecipado from '../../assets/pagamentoAntecipado.png'
 import playerAvatarFutebol from '../../assets/playerAvatarFutebol.svg'
 import playerAvatarBasquete from '../../assets/playerAvatarBasquete.svg'
 import arrascaetaProps from '../../assets/arrascaetaProps.png'
@@ -1629,6 +1627,7 @@ export function PreMatchPlayerPropCard({ player }: { player: MatchPlayerProp }) 
                   playerName: player.playerName,
                   selectionIcon: resolvedTeamIcon || player.teamIcon,
                   playerImage: player.image,
+                  badgeType: 'substitution',
                 })
                 : undefined
             )
@@ -2462,7 +2461,7 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
                                 <div className="prematch-section__pag-antecipado">
                                   <span className="prematch-section__pag-antecipado-label">Pag. Antecipado</span>
                                   <img 
-                                    src={league.sport === 'basquete' ? reiAntecipaBasquete : reiAntecipaFutebol} 
+                                    src={pagamentoAntecipado} 
                                     alt="" 
                                     className="prematch-section__rei-antecipa" 
                                   />

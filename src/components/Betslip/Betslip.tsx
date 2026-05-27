@@ -9,20 +9,24 @@ import {
   formatBetslipOdd,
   type BetslipSummary,
 } from '../../hooks/betslipUtils'
-import { getBetslipTurboBonusPercent } from '../../hooks/betslipTurboBonus'
+import {
+  getBetslipTurboBonusCents,
+  getBetslipTurboBonusPercent,
+} from '../../hooks/betslipTurboBonus'
 import { useAnimatedBetslipNumber } from '../../hooks/useAnimatedBetslipNumber'
 
 interface BetslipProps {
   summary?: BetslipSummary
   visible?: boolean
   compactOnly?: boolean
+  turboEligibleSelectionCount?: number
   presentationKey?: string | number
   onOpen?: () => void
 }
 
 type CountMotionDirection = 'idle' | 'add' | 'remove'
 
-const formatBetslipTurboBonus = (value: number) => `${Math.max(0, Math.round(value))}%`
+const formatBetslipTurboBonus = (value: number) => `+${Math.max(0, Math.round(value))}%`
 const shouldAnimateTurboBonusChange = (startValue: number, targetValue: number) => (
   startValue > 0 && targetValue > 0
 )
@@ -31,6 +35,7 @@ export function Betslip({
   summary,
   visible = false,
   compactOnly = false,
+  turboEligibleSelectionCount,
   presentationKey = 'default',
   onOpen,
 }: BetslipProps) {
@@ -51,6 +56,9 @@ export function Betslip({
   const [isTurboInfoOpen, setIsTurboInfoOpen] = useState(false)
   const [lastVisibleSummary, setLastVisibleSummary] = useState<BetslipSummary | undefined>(
     summary?.hasSelections ? summary : undefined
+  )
+  const [lastVisibleTurboEligibleSelectionCount, setLastVisibleTurboEligibleSelectionCount] = useState(
+    turboEligibleSelectionCount ?? summary?.selectionCount ?? 0
   )
   const [selectionMotion, setSelectionMotion] = useState({
     direction: 'idle' as CountMotionDirection,
@@ -88,6 +96,7 @@ export function Betslip({
       presentationStateFrameRef.current = window.requestAnimationFrame(() => {
         presentationStateFrameRef.current = null
         setLastVisibleSummary(summary)
+        setLastVisibleTurboEligibleSelectionCount(turboEligibleSelectionCount ?? summary.selectionCount)
 
         if (shouldRestartPresentation) {
           if (enterFrameRef.current !== null) {
@@ -123,7 +132,7 @@ export function Betslip({
         }, 420)
       })
     }
-  }, [presentationKey, shouldShow, summary])
+  }, [presentationKey, shouldShow, summary, turboEligibleSelectionCount])
 
   useLayoutEffect(() => {
     if (!isRendered || !shouldShow || isPresented) return undefined
@@ -200,18 +209,30 @@ export function Betslip({
   }, [])
 
   const renderedSummary = shouldShow ? summary : lastVisibleSummary
+  const renderedTurboEligibleSelectionCount = shouldShow
+    ? turboEligibleSelectionCount ?? summary?.selectionCount ?? 0
+    : lastVisibleTurboEligibleSelectionCount
   const visibleSelectedOddsCount = shouldShow ? summary?.selectedOddsCount ?? 0 : 0
   const animatedTotalOddsLabel = useAnimatedBetslipNumber(
     renderedSummary?.totalOdds ?? 0,
     formatBetslipOdd,
     isPresented && !!renderedSummary
   )
+  const turboBonusPercent = getBetslipTurboBonusPercent(renderedTurboEligibleSelectionCount)
+  const turboBonusCents = renderedSummary
+    ? getBetslipTurboBonusCents({
+        bonusPercent: turboBonusPercent,
+        potentialWinCents: Math.round(renderedSummary.potentialWin * 100),
+        stakeCents: Math.round(renderedSummary.stake * 100),
+      })
+    : 0
+  const boostedPotentialWin = (renderedSummary?.potentialWin ?? 0) + (turboBonusCents / 100)
+  const boostedPotentialWinLabel = formatBetslipCurrency(boostedPotentialWin)
   const animatedPotentialWinLabel = useAnimatedBetslipNumber(
-    renderedSummary?.potentialWin ?? 0,
+    boostedPotentialWin,
     formatBetslipCurrency,
     isPresented && !!renderedSummary
   )
-  const turboBonusPercent = getBetslipTurboBonusPercent(renderedSummary?.selectionCount ?? 0)
   const animatedTurboBonusLabel = useAnimatedBetslipNumber(
     turboBonusPercent ?? 0,
     formatBetslipTurboBonus,
@@ -283,9 +304,9 @@ export function Betslip({
 
   if (!isRendered || !renderedSummary) return null
 
-  const oddsAssistiveLabel = turboBonusPercent
-    ? `Odds totais ${renderedSummary.totalOddsLabel}. Múltipla turbinada com bônus de ${turboBonusPercent} por cento.`
-    : `Odds totais ${renderedSummary.totalOddsLabel}.`
+  const turboAssistiveLabel = turboBonusPercent
+    ? ` Múltipla Turbinada com bônus de ${turboBonusPercent} por cento sobre o lucro se a aposta vencer.`
+    : ''
 
   const presentationClassName = isPresented
     ? 'betslip--visible'
@@ -317,11 +338,11 @@ export function Betslip({
           className="betslip__compact"
           role="button"
           tabIndex={0}
-          aria-label={`Bilhete com ${renderedSummary.selectionCount} seleções. ${oddsAssistiveLabel} Aposta ${renderedSummary.stakeLabel}. Para ganhar ${renderedSummary.potentialWinLabel}.`}
+          aria-label={`Bilhete com ${renderedSummary.selectionCount} seleções. Odds totais ${renderedSummary.totalOddsLabel}. Aposta ${renderedSummary.stakeLabel}. Para ganhar ${boostedPotentialWinLabel}.${turboAssistiveLabel}`}
           onClick={onOpen}
           onKeyDown={handleCompactKeyDown}
         >
-          <span className="betslip__metrics">
+          <span className="betslip__metrics" aria-hidden="true">
             <span className="betslip__metric betslip__metric--bets">
               <strong className="betslip__value betslip__count-value">
                 <span className="betslip__count-anchor">
@@ -344,40 +365,42 @@ export function Betslip({
             </span>
             <span className="betslip__metric">
               <strong className="betslip__value betslip__value--rolling">{animatedTotalOddsLabel}</strong>
-              {turboBonusPercent ? (
-                <button
-                  type="button"
-                  className="betslip__turbo-tag"
-                  aria-label="Ver como funciona a Múltipla Turbinada"
-                  onClick={handleTurboInfoOpen}
-                >
-                  <span className="betslip__turbo-value">{animatedTurboBonusLabel}</span>
-                  <img
-                    key={`turbo-icon-${turboIconPulseKey}`}
-                    src={multiplaTurbinadaIcon}
-                    alt=""
-                    className={[
-                      'betslip__turbo-icon',
-                      turboIconPulseKey > 0 ? 'betslip__turbo-icon--pulse' : '',
-                    ].filter(Boolean).join(' ')}
-                    draggable="false"
-                  />
-                </button>
-              ) : (
-                <span className="betslip__label">Odds</span>
-              )}
+              <span className="betslip__label">Odds</span>
             </span>
             <span className="betslip__metric betslip__metric--stake">
               <strong className="betslip__value">{renderedSummary.stakeLabel}</strong>
               <span className="betslip__label">Aposta</span>
             </span>
           </span>
-          <span className="betslip__payout" aria-hidden="true">
+          <span className="betslip__payout">
             <span className="betslip__payout-button">
-              <strong className="betslip__value betslip__value--rolling betslip__value--potential-win">{animatedPotentialWinLabel}</strong>
-              <span className="betslip__payout-label">
-                <span>Para ganhar</span>
-                <CaretRightIcon aria-hidden="true" className="betslip__icon" weight="bold" />
+              <strong className="betslip__value betslip__value--rolling betslip__value--potential-win" aria-hidden="true">{animatedPotentialWinLabel}</strong>
+              <span className={`betslip__payout-label${turboBonusPercent ? ' betslip__payout-label--turbo' : ''}`}>
+                {turboBonusPercent ? (
+                  <button
+                    type="button"
+                    className="betslip__turbo-tag"
+                    aria-label="Ver como funciona a Múltipla Turbinada"
+                    onClick={handleTurboInfoOpen}
+                  >
+                    <span className="betslip__turbo-value">{animatedTurboBonusLabel}</span>
+                    <img
+                      key={`turbo-icon-${turboIconPulseKey}`}
+                      src={multiplaTurbinadaIcon}
+                      alt=""
+                      className={[
+                        'betslip__turbo-icon',
+                        turboIconPulseKey > 0 ? 'betslip__turbo-icon--pulse' : '',
+                      ].filter(Boolean).join(' ')}
+                      draggable="false"
+                    />
+                  </button>
+                ) : (
+                  <>
+                    <span aria-hidden="true">Para ganhar</span>
+                    <CaretRightIcon aria-hidden="true" className="betslip__icon" weight="bold" />
+                  </>
+                )}
               </span>
             </span>
           </span>
@@ -386,7 +409,7 @@ export function Betslip({
       <MultiplaTurbinadaBottomSheet
         isOpen={isTurboInfoOpen}
         onClose={handleTurboInfoClose}
-        currentSelectionCount={renderedSummary.selectionCount}
+        currentSelectionCount={renderedTurboEligibleSelectionCount}
       />
     </div>
   )

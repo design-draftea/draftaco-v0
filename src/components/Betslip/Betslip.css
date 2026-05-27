@@ -362,11 +362,20 @@
   color: var(--tokens-text-text-on-color-white);
 }
 
+.betslip__payout-label--turbo {
+  padding-left: 0;
+  overflow: visible;
+}
+
 .betslip__payout-label span {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.betslip__payout-label--turbo .betslip__turbo-tag {
+  max-width: 100%;
 }
 
 .betslip__icon {

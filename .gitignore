@@ -25,3 +25,6 @@ dist-ssr
 
 # Claude Code
 .claude/
+
+# Playwright CLI cache
+.playwright-cli/

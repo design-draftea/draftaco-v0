@@ -75,19 +75,28 @@ const addSelectionsToState = (
     selectedSelectionIdsByGroup[groupId] = selection.id
   })
 
-  const selectionsById = { ...current.selectionsById }
-  selectionIdsToRemove.forEach((selectionId) => {
-    delete selectionsById[selectionId]
-  })
-
   const activeSelectionIds = new Set(Object.values(selectedSelectionIdsByGroup))
-  Object.keys(selectionsById).forEach((selectionId) => {
-    if (!activeSelectionIds.has(selectionId)) delete selectionsById[selectionId]
-  })
-
-  entries.forEach(({ selection }) => {
-    selectionsById[selection.id] = selection
-  })
+  const entrySelectionIds = new Set(entries.map(({ selection }) => selection.id))
+  const currentSelections = Object.values(current.selectionsById)
+  const firstReplacedSelectionIndex = currentSelections.findIndex((selection) => (
+    selectionIdsToRemove.has(selection.id)
+  ))
+  const remainingSelections = currentSelections.filter((selection) => (
+    activeSelectionIds.has(selection.id)
+    && !selectionIdsToRemove.has(selection.id)
+    && !entrySelectionIds.has(selection.id)
+  ))
+  const insertionIndex = firstReplacedSelectionIndex === -1
+    ? remainingSelections.length
+    : Math.min(firstReplacedSelectionIndex, remainingSelections.length)
+  const nextSelections = [
+    ...remainingSelections.slice(0, insertionIndex),
+    ...entries.map(({ selection }) => selection),
+    ...remainingSelections.slice(insertionIndex),
+  ]
+  const selectionsById = Object.fromEntries(
+    nextSelections.map((selection) => [selection.id, selection])
+  )
 
   return {
     selectionsById,

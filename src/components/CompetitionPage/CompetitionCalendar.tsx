@@ -9,8 +9,7 @@ import { useOddSelection } from '../../hooks/useOddSelection'
 import { useSlidingActiveIndicator } from '../../hooks/useSlidingActiveIndicator'
 
 import iconAoVivo from '../../assets/iconAoVivo.png'
-import reiAntecipaFutebol from '../../assets/reiAntecipaFutebol.png'
-import reiAntecipaBasquete from '../../assets/reiAntecipaBasquete.png'
+import pagamentoAntecipado from '../../assets/pagamentoAntecipado.png'
 import { TeamLogo } from '../TeamLogo'
 
 import type { CompetitionMatch } from './competitionData'
@@ -88,8 +87,6 @@ export function CompetitionCalendar({ sport, matches }: CompetitionCalendarProps
     containerRef: marketChipsRef,
     getActiveElement: () => marketChipRefs.current[activeMarketChipIndex],
   })
-
-  const reiAntecipa = sport === 'basquete' ? reiAntecipaBasquete : reiAntecipaFutebol
 
   const live = matches.filter((m) => m.isLive).slice(0, 3)
   const preMatch = matches.filter((m) => !m.isLive).slice(0, 5)
@@ -253,7 +250,7 @@ export function CompetitionCalendar({ sport, matches }: CompetitionCalendarProps
                     {m.earlyPayout && (
                       <div className="prematch-section__pag-antecipado">
                         <span className="prematch-section__pag-antecipado-label">Pag. Antecipado</span>
-                        <img src={reiAntecipa} alt="" className="prematch-section__rei-antecipa" />
+                        <img src={pagamentoAntecipado} alt="" className="prematch-section__rei-antecipa" />
                       </div>
                     )}
                     <span className="prematch-section__match-datetime">{m.dateTime}</span>

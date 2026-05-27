@@ -14,18 +14,19 @@ interface MultiplaTurbinadaBottomSheetProps {
 }
 
 const maxTurboSelectionCount = getBetslipTurboMaxSelectionCount()
+const minTurboSelectionCount = 3
 
 const formatSelectionCountLabel = (selectionCount: number) => (
   `${selectionCount} ${selectionCount === 1 ? 'seleção' : 'seleções'}`
 )
 
-const getVisibleTurboTiers = (currentSelectionCount = 3) => {
+const getVisibleTurboTiers = (currentSelectionCount = minTurboSelectionCount) => {
   const activeSelectionCount = Math.min(
-    Math.max(Math.round(currentSelectionCount), 3),
+    Math.max(Math.round(currentSelectionCount), minTurboSelectionCount),
     maxTurboSelectionCount
   )
 
-  if (activeSelectionCount <= 3) return [3, 4, 5, maxTurboSelectionCount]
+  if (activeSelectionCount <= minTurboSelectionCount) return [3, 4, 5, maxTurboSelectionCount]
   if (activeSelectionCount >= maxTurboSelectionCount) return [18, 19, maxTurboSelectionCount]
 
   const tierCounts = [
@@ -38,37 +39,30 @@ const getVisibleTurboTiers = (currentSelectionCount = 3) => {
   return [...new Set(tierCounts)]
 }
 
-export function MultiplaTurbinadaBottomSheet({
-  isOpen,
-  onClose,
+export function MultiplaTurbinadaContent({
   currentSelectionCount,
-}: MultiplaTurbinadaBottomSheetProps) {
-  const activeSelectionCount = Math.min(
-    Math.max(Math.round(currentSelectionCount ?? 3), 3),
-    maxTurboSelectionCount
-  )
+}: {
+  currentSelectionCount?: number
+}) {
+  const roundedSelectionCount = Math.round(currentSelectionCount ?? minTurboSelectionCount)
+  const hasActiveTurboTier = roundedSelectionCount >= minTurboSelectionCount
+  const activeSelectionCount = hasActiveTurboTier
+    ? Math.min(roundedSelectionCount, maxTurboSelectionCount)
+    : null
   const turboTiers = getVisibleTurboTiers(currentSelectionCount)
 
   return (
-    <BottomSheet
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Múltipla Turbinada"
-      sheetClassName="multipla-turbinada-bs"
-      bodyClassName="multipla-turbinada-bs__body"
-      hideScrollIndicator
-      blurBackdrop
-    >
+    <>
       <div className="multipla-turbinada-bs__hero">
         <img src={iconMultiplaGde} alt="" className="multipla-turbinada-bs__icon" />
         <div className="multipla-turbinada-bs__copy">
-          <h3 className="multipla-turbinada-bs__headline">Odds turbinadas na sua múltipla</h3>
+          <h3 className="multipla-turbinada-bs__headline">Bônus no valor para ganhar</h3>
           <p className="multipla-turbinada-bs__description">
-            A partir de 3 seleções, sua múltipla recebe um bônus nas odds. Quanto mais seleções,
-            maior o bônus aplicado ao valor para ganhar.
+            A partir de 3 seleções elegíveis, sua múltipla recebe um bônus sobre o lucro se for
+            vencedora. Quanto mais seleções, maior o percentual aplicado ao valor final.
           </p>
           <p className="multipla-turbinada-bs__restriction">
-            Válido para odd mínima de 1.25x
+            Válido para seleções com odd mínima de 1.30x
           </p>
         </div>
       </div>
@@ -76,7 +70,7 @@ export function MultiplaTurbinadaBottomSheet({
       <div className="multipla-turbinada-bs__tiers" aria-label="Bônus por quantidade de seleções">
         {turboTiers.map((selectionCount) => {
           const bonusPercent = getBetslipTurboBonusPercent(selectionCount)
-          const isActive = activeSelectionCount === selectionCount
+          const isActive = hasActiveTurboTier && activeSelectionCount === selectionCount
 
           return (
             <div
@@ -97,6 +91,26 @@ export function MultiplaTurbinadaBottomSheet({
           )
         })}
       </div>
+    </>
+  )
+}
+
+export function MultiplaTurbinadaBottomSheet({
+  isOpen,
+  onClose,
+  currentSelectionCount,
+}: MultiplaTurbinadaBottomSheetProps) {
+  return (
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Múltipla Turbinada"
+      sheetClassName="multipla-turbinada-bs"
+      bodyClassName="multipla-turbinada-bs__body"
+      hideScrollIndicator
+      blurBackdrop
+    >
+      <MultiplaTurbinadaContent currentSelectionCount={currentSelectionCount} />
     </BottomSheet>
   )
 }

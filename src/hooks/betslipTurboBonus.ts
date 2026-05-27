@@ -1,10 +1,47 @@
+import type { BetslipSelection } from './betslipUtils'
+
 const turboBonusMinSelectionCount = 3
 const turboBonusLinearStartSelectionCount = 6
 const turboBonusMaxSelectionCount = 20
 const turboBonusLinearStartPercent = 20
 const turboBonusMaxPercent = 200
+export const BETSLIP_TURBO_MIN_ODD_VALUE = 1.3
 
 const roundToNearestFive = (value: number) => Math.round(value / 5) * 5
+
+export const getBetslipSelectionGroupOddsValue = (selections: BetslipSelection[]) => {
+  const firstSelection = selections[0]
+  const isCompleteCombo = Boolean(
+    firstSelection?.comboId
+    && firstSelection.comboTotalOddValue
+    && firstSelection.comboLegCount
+    && selections.length >= firstSelection.comboLegCount
+    && selections.every((selection) => selection.comboId === firstSelection.comboId)
+  )
+
+  if (isCompleteCombo) {
+    return firstSelection.comboTotalOddValue ?? selections.reduce((total, selection) => total * selection.oddValue, 1)
+  }
+
+  return selections.reduce((total, selection) => total * selection.oddValue, 1)
+}
+
+export const isBetslipTurboSelectionGroupEligible = (selections: BetslipSelection[]) => (
+  getBetslipSelectionGroupOddsValue(selections) >= BETSLIP_TURBO_MIN_ODD_VALUE
+)
+
+export const getBetslipTurboEligibleSelectionCount = (selections: BetslipSelection[]) => {
+  const selectionGroupsByEventId = new Map<string, BetslipSelection[]>()
+
+  selections.forEach((selection) => {
+    selectionGroupsByEventId.set(selection.eventId, [
+      ...(selectionGroupsByEventId.get(selection.eventId) ?? []),
+      selection,
+    ])
+  })
+
+  return Array.from(selectionGroupsByEventId.values()).filter(isBetslipTurboSelectionGroupEligible).length
+}
 
 export const getBetslipTurboBonusPercent = (selectionCount: number) => {
   const normalizedSelectionCount = Math.floor(selectionCount)
@@ -24,6 +61,22 @@ export const getBetslipTurboBonusPercent = (selectionCount: number) => {
     turboBonusLinearStartPercent
     + progress * (turboBonusMaxPercent - turboBonusLinearStartPercent)
   )
+}
+
+export const getBetslipTurboBonusCents = ({
+  bonusPercent,
+  potentialWinCents,
+  stakeCents,
+}: {
+  bonusPercent: number | null
+  potentialWinCents: number
+  stakeCents: number
+}) => {
+  if (!bonusPercent || stakeCents <= 0 || potentialWinCents <= stakeCents) return 0
+
+  const profitCents = potentialWinCents - stakeCents
+
+  return Math.floor(profitCents * (bonusPercent / 100))
 }
 
 export const getBetslipTurboMaxSelectionCount = () => turboBonusMaxSelectionCount

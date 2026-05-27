@@ -22,8 +22,7 @@ import {
   type CompetitionLinkTarget,
 } from '../../utils/competitionNavigation'
 
-import reiAntecipaFutebol from '../../assets/reiAntecipaFutebol.png'
-import reiAntecipaBasquete from '../../assets/reiAntecipaBasquete.png'
+import pagamentoAntecipado from '../../assets/pagamentoAntecipado.png'
 import iconBasquete from '../../assets/iconSports/basketball.png'
 import iconFutebol from '../../assets/iconSports/soccer.png'
 import iconTenis from '../../assets/iconSports/tennis.png'
@@ -3026,8 +3025,6 @@ export function CalendarSection({
       )
     }
 
-    const reiAntecipa = league.sport === 'basquete' ? reiAntecipaBasquete : reiAntecipaFutebol
-
     return (
       <div
         key={event.id}
@@ -3060,7 +3057,7 @@ export function CalendarSection({
               {event.earlyPayout !== false && (
                 <div className="prematch-section__pag-antecipado">
                   <span className="prematch-section__pag-antecipado-label">Pag. Antecipado</span>
-                  <img src={reiAntecipa} alt="" className="prematch-section__rei-antecipa" />
+                  <img src={pagamentoAntecipado} alt="" className="prematch-section__rei-antecipa" />
                 </div>
               )}
               <span className="prematch-section__match-datetime">{event.dateTime}</span>

@@ -1,0 +1,158 @@
+.bottom-sheet__container:has(.beneficios-aposta-bs) {
+  z-index: 3450;
+}
+
+.bottom-sheet.beneficios-aposta-bs {
+  background-color: var(--tokens-layer-layer-01);
+}
+
+.bottom-sheet.beneficios-aposta-bs .bottom-sheet__header {
+  border-bottom-color: var(--tokens-border-border-02);
+}
+
+.bottom-sheet.beneficios-aposta-bs .bottom-sheet__title span {
+  color: var(--tokens-text-text-01);
+  font-size: var(--typography-font-size-16);
+  font-weight: var(--typography-font-weight-bold);
+}
+
+.bottom-sheet__body.beneficios-aposta-bs__body {
+  padding: 28px 0;
+}
+
+.beneficios-aposta-bs__slider {
+  --beneficios-slider-offset: 0%;
+  --beneficios-slider-drag-x: 0px;
+  width: 100%;
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  overscroll-behavior-x: none;
+}
+
+.beneficios-aposta-bs__track {
+  display: flex;
+  width: 100%;
+  transform: translate3d(
+    calc(var(--beneficios-slider-offset) + var(--beneficios-slider-drag-x)),
+    0,
+    0
+  );
+  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
+}
+
+.beneficios-aposta-bs__slider--dragging .beneficios-aposta-bs__track {
+  transition: none;
+}
+
+.beneficios-aposta-bs__slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  padding: 0 20px;
+}
+
+.beneficios-aposta-bs__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.beneficios-aposta-bs__icon {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
+.beneficios-aposta-bs__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.beneficios-aposta-bs__headline {
+  margin: 0;
+  color: var(--tokens-text-text-01);
+  font-family: 'Red Hat Text', system-ui, sans-serif;
+  font-size: var(--typography-font-size-16);
+  font-weight: var(--typography-font-weight-bold);
+  line-height: 1.35;
+}
+
+.beneficios-aposta-bs__description {
+  margin: 0;
+  color: var(--tokens-text-text-01);
+  font-family: 'Red Hat Text', system-ui, sans-serif;
+  font-size: var(--typography-font-size-12);
+  font-weight: var(--typography-font-weight-regular);
+  line-height: 1.45;
+}
+
+.beneficios-aposta-bs__pagination {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 20px;
+}
+
+.beneficios-aposta-bs__dot {
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(var(--tokens-text-text-01-rgb) / 0.28);
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  transition:
+    background-color 160ms ease,
+    width 160ms ease;
+}
+
+.beneficios-aposta-bs__dot--active {
+  width: 16px;
+  background: var(--tokens-layer-layer-03);
+}
+
+.beneficios-aposta-bs__dot-progress {
+  position: absolute;
+  inset: 0;
+  width: 0;
+  border-radius: inherit;
+  background: var(--tokens-gradient-primary);
+  animation: beneficiosApostaDotProgress 5s linear forwards;
+}
+
+.beneficios-aposta-bs__pagination--paused .beneficios-aposta-bs__dot-progress {
+  animation-play-state: paused;
+}
+
+.beneficios-aposta-bs__dot:focus-visible {
+  outline: 2px solid var(--tokens-border-border-gradient-01);
+  outline-offset: 3px;
+}
+
+@keyframes beneficiosApostaDotProgress {
+  from {
+    width: 0;
+  }
+
+  to {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beneficios-aposta-bs__track {
+    transition: none;
+  }
+
+  .beneficios-aposta-bs__dot-progress {
+    animation: none;
+    width: 100%;
+  }
+}
