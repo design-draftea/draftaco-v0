@@ -1,9 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Home } from './pages/Home'
-import { PromotionsPage } from './pages/PromotionsPage'
-import { BetslipPage } from './pages/BetslipPage'
-import { LiveEventPage, type LiveEventOpenPayload } from './pages/LiveEventPage'
-import { HandoffPage } from './pages/Handoff'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react'
+import type { LiveEventOpenPayload } from './pages/LiveEventPage'
 import { MobileOnly } from './components/MobileOnly'
 import { Navbar } from './components/Navbar'
 import { Betslip } from './components/Betslip'
@@ -16,6 +12,19 @@ import { useBetslip } from './hooks/useBetslip'
 import { getBetslipTurboEligibleSelectionCount } from './hooks/betslipTurboBonus'
 import type { ProductMode } from './types/home'
 import { BETSLIP_LIVE_EVENT_OPEN_EVENT } from './utils/betslipLiveEvent'
+
+const Home = lazy(() => import('./pages/Home').then((m) => ({ default: m.Home })))
+const PromotionsPage = lazy(() => import('./pages/PromotionsPage').then((m) => ({ default: m.PromotionsPage })))
+const BetslipPage = lazy(() => import('./pages/BetslipPage').then((m) => ({ default: m.BetslipPage })))
+const LiveEventPage = lazy(() => import('./pages/LiveEventPage').then((m) => ({ default: m.LiveEventPage })))
+const HandoffPage = lazy(() => import('./pages/Handoff').then((m) => ({ default: m.HandoffPage })))
+
+const RouteFallback = () => (
+  <div
+    style={{ minHeight: '100dvh', background: 'var(--tokens-background-background)' }}
+    aria-busy="true"
+  />
+)
 
 const defaultProduct: ProductMode = 'apostas'
 const productRoutes: ProductMode[] = ['apostas', 'cassino']
@@ -324,6 +333,12 @@ function AppContent() {
     setIsCompactBetslipSuppressed(false)
   }, [betslipSummary.hasSelections, isCompactBetslipSuppressed])
 
+  useEffect(() => {
+    if (!betslipSummary.hasSelections) return
+
+    void import('./pages/BetslipPage')
+  }, [betslipSummary.hasSelections])
+
   const showCompactBetslip = activeProduct === 'apostas'
     && !isPromotionsPage
     && !isHandoffPage
@@ -347,50 +362,56 @@ function AppContent() {
   return (
     <div className="app-shell">
       {!isHandoffPage ? <MobileOnly /> : null}
-      {isHandoffPage ? (
-        <HandoffPage />
-      ) : isPromotionsPage ? (
-        <PromotionsPage
-          activeProduct={activeProduct}
-          HeaderComponent={HeaderV2}
-          onDepositOpen={handleDepositPanelOpen}
-          onLogoDoubleClick={handleFeatureFlagsPanelOpen}
-          onProductChange={handleProductChange}
-        />
-      ) : (
-        <Home
-          activeProduct={activeProduct}
-          HeaderComponent={HeaderV2}
-          isLiveEventSuppressed={isFullBetslipOpen}
-          onDepositOpen={handleDepositPanelOpen}
-          onLogoDoubleClick={handleFeatureFlagsPanelOpen}
-          onProductChange={handleProductChange}
-          onLiveEventOpenChange={handleLiveEventOpenChange}
-          onLiveEventOpenSettled={handleLiveEventOpenSettled}
-          onLiveEventCloseStart={handleLiveEventCloseStart}
-        />
-      )}
+      <Suspense fallback={<RouteFallback />}>
+        {isHandoffPage ? (
+          <HandoffPage />
+        ) : isPromotionsPage ? (
+          <PromotionsPage
+            activeProduct={activeProduct}
+            HeaderComponent={HeaderV2}
+            onDepositOpen={handleDepositPanelOpen}
+            onLogoDoubleClick={handleFeatureFlagsPanelOpen}
+            onProductChange={handleProductChange}
+          />
+        ) : (
+          <Home
+            activeProduct={activeProduct}
+            HeaderComponent={HeaderV2}
+            isLiveEventSuppressed={isFullBetslipOpen}
+            onDepositOpen={handleDepositPanelOpen}
+            onLogoDoubleClick={handleFeatureFlagsPanelOpen}
+            onProductChange={handleProductChange}
+            onLiveEventOpenChange={handleLiveEventOpenChange}
+            onLiveEventOpenSettled={handleLiveEventOpenSettled}
+            onLiveEventCloseStart={handleLiveEventCloseStart}
+          />
+        )}
+      </Suspense>
       {!isHandoffPage && isFullBetslipOpen ? (
-        <BetslipPage
-          isCoveredByEvent={!!betslipOriginLiveEvent}
-          onClose={handleBetslipClose}
-          onSelectionsEmptyExitStart={handleCompactBetslipSuppress}
-        />
+        <Suspense fallback={null}>
+          <BetslipPage
+            isCoveredByEvent={!!betslipOriginLiveEvent}
+            onClose={handleBetslipClose}
+            onSelectionsEmptyExitStart={handleCompactBetslipSuppress}
+          />
+        </Suspense>
       ) : null}
       {!isHandoffPage && betslipOriginLiveEvent ? (
-        <LiveEventPage
-          isOpen={betslipOriginLiveEvent.isOpen}
-          onClose={handleBetslipOriginLiveEventClose}
-          onOpenSettled={handleLiveEventOpenSettled}
-          onCloseStart={handleLiveEventCloseStart}
-          matches={betslipOriginLiveEvent.payload.matches}
-          railEvents={betslipOriginLiveEvent.payload.railEvents}
-          selectedIndex={betslipOriginLiveEvent.payload.selectedIndex}
-          currentTimes={betslipOriginLiveEvent.payload.currentTimes}
-          leagueName={betslipOriginLiveEvent.payload.leagueName}
-          leagueFlag={betslipOriginLiveEvent.payload.leagueFlag}
-          sport={betslipOriginLiveEvent.payload.sport}
-        />
+        <Suspense fallback={null}>
+          <LiveEventPage
+            isOpen={betslipOriginLiveEvent.isOpen}
+            onClose={handleBetslipOriginLiveEventClose}
+            onOpenSettled={handleLiveEventOpenSettled}
+            onCloseStart={handleLiveEventCloseStart}
+            matches={betslipOriginLiveEvent.payload.matches}
+            railEvents={betslipOriginLiveEvent.payload.railEvents}
+            selectedIndex={betslipOriginLiveEvent.payload.selectedIndex}
+            currentTimes={betslipOriginLiveEvent.payload.currentTimes}
+            leagueName={betslipOriginLiveEvent.payload.leagueName}
+            leagueFlag={betslipOriginLiveEvent.payload.leagueFlag}
+            sport={betslipOriginLiveEvent.payload.sport}
+          />
+        </Suspense>
       ) : null}
       {!isHandoffPage ? (
         <DepositPanel isOpen={isDepositPanelOpen} onClose={handleDepositPanelClose} />

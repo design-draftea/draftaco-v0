@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useRef, useState, useLayoutEffect, useMemo, type ComponentType, type ReactNode } from 'react'
+import { Fragment, Suspense, lazy, useCallback, useEffect, useRef, useState, useLayoutEffect, useMemo, type ComponentType, type ReactNode } from 'react'
 import { HeaderV2 } from '../../components/HeaderV2'
 import { TrilhoEBanner } from '../../components/TrilhoEBanner'
 import { PromotionSection } from '../../components/PromotionSection'
@@ -12,14 +12,15 @@ import { CompetitionPage } from '../../components/CompetitionPage'
 import { SportRail } from '../../components/SportRail'
 import { CasinoRail } from '../../components/CasinoRail'
 import { CasinoContent, casinoCarouselSections } from '../../components/CasinoContent'
-import { LiveEventPage } from '../LiveEventPage'
-import { CasinoGamePage } from '../CasinoGamePage'
 import { casinoBanners, casinoPromotions, sportsPromotions } from '../../data/homeProducts'
 import type { LiveEventOpenPayload } from '../LiveEventPage'
 import type { CasinoGameOpenPayload } from '../../components/CasinoContent'
 import type { Banner, CasinoCategoryId, ProductMode } from '../../types/home'
 import type { CompetitionLinkTarget } from '../../utils/competitionNavigation'
 import './Home.css'
+
+const LiveEventPage = lazy(() => import('../LiveEventPage').then((m) => ({ default: m.LiveEventPage })))
+const CasinoGamePage = lazy(() => import('../CasinoGamePage').then((m) => ({ default: m.CasinoGamePage })))
 
 const HEADER_COMPACT_SCROLL_TOP = 28
 const HEADER_EXPAND_SCROLL_TOP = 4
@@ -830,28 +831,32 @@ export function Home({
         </Fragment>
       )}
       {selectedLiveMatch && !isLiveEventSuppressed && (
-        <LiveEventPage
-          isOpen={true}
-          onClose={handleLiveEventClose}
-          onOpenSettled={onLiveEventOpenSettled}
-          onCloseStart={handleLiveEventCloseStart}
-          matches={selectedLiveMatch.matches}
-          railEvents={selectedLiveMatch.railEvents}
-          selectedIndex={selectedLiveMatch.selectedIndex}
-          currentTimes={selectedLiveMatch.currentTimes}
-          leagueName={selectedLiveMatch.leagueName}
-          leagueFlag={selectedLiveMatch.leagueFlag}
-          sport={selectedLiveMatch.sport}
-        />
+        <Suspense fallback={null}>
+          <LiveEventPage
+            isOpen={true}
+            onClose={handleLiveEventClose}
+            onOpenSettled={onLiveEventOpenSettled}
+            onCloseStart={handleLiveEventCloseStart}
+            matches={selectedLiveMatch.matches}
+            railEvents={selectedLiveMatch.railEvents}
+            selectedIndex={selectedLiveMatch.selectedIndex}
+            currentTimes={selectedLiveMatch.currentTimes}
+            leagueName={selectedLiveMatch.leagueName}
+            leagueFlag={selectedLiveMatch.leagueFlag}
+            sport={selectedLiveMatch.sport}
+          />
+        </Suspense>
       )}
       {selectedCasinoGame && (
-        <CasinoGamePage
-          isOpen={true}
-          onClose={() => setSelectedCasinoGame(null)}
-          games={selectedCasinoGame.section.games}
-          selectedIndex={selectedCasinoGame.selectedIndex}
-          sectionTitle={selectedCasinoGame.section.title}
-        />
+        <Suspense fallback={null}>
+          <CasinoGamePage
+            isOpen={true}
+            onClose={() => setSelectedCasinoGame(null)}
+            games={selectedCasinoGame.section.games}
+            selectedIndex={selectedCasinoGame.selectedIndex}
+            sectionTitle={selectedCasinoGame.section.title}
+          />
+        </Suspense>
       )}
     </div>
   )

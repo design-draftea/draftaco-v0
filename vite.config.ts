@@ -23,6 +23,15 @@ export default defineConfig(({ command }) => ({
       },
     },
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-dom/client'],
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       '/sportsdb': {
