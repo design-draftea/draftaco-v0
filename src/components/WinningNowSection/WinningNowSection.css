@@ -129,6 +129,6 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 14px;
   font-weight: 700;
-  color: #32a866;
+  color: var(--color-feedback-positive);
   line-height: 1.4;
 }

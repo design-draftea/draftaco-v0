@@ -91,7 +91,7 @@
   justify-content: center;
   border: 1px solid var(--tokens-layer-layer-01);
   border-radius: 999px;
-  background: #ff304f;
+  background: #ff304f; /* sem token equivalente no Figma */
   color: var(--tokens-text-text-on-color-white);
   font-size: 8px;
   font-weight: 700;
@@ -189,7 +189,7 @@
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: #cd5e1a;
+  background: #cd5e1a; /* sem token equivalente no Figma */
   filter: blur(30px);
   pointer-events: none;
 }

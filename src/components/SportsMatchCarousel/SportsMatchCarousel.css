@@ -215,7 +215,7 @@
 
 .sports-match-carousel__team-icon--basketball-home,
 .sports-match-carousel__team-icon--sport-home {
-  border: 1px solid #00a0dd;
+  border: 1px solid var(--color-team-home);
   border-radius: 100%;
   padding: 2px;
   box-sizing: border-box;
@@ -223,7 +223,7 @@
 
 .sports-match-carousel__team-icon--basketball-away,
 .sports-match-carousel__team-icon--sport-away {
-  border: 1px solid #ad0924;
+  border: 1px solid var(--color-team-away);
   border-radius: 100%;
   padding: 2px;
   box-sizing: border-box;

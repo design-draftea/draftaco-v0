@@ -383,11 +383,11 @@
 }
 
 .live-event-page__rail-team-icon--sport-home {
-  border: 1px solid #00a0dd;
+  border: 1px solid var(--color-team-home);
 }
 
 .live-event-page__rail-team-icon--sport-away {
-  border: 1px solid #ad0924;
+  border: 1px solid var(--color-team-away);
 }
 
 .live-event-page__rail-team-icon--placeholder {
@@ -948,11 +948,11 @@
 }
 
 .live-event-page__sticky-score-logo--sport-home {
-  border: 1px solid #00a0dd;
+  border: 1px solid var(--color-team-home);
 }
 
 .live-event-page__sticky-score-logo--sport-away {
-  border: 1px solid #ad0924;
+  border: 1px solid var(--color-team-away);
 }
 
 .live-event-page__sticky-score-board {
@@ -1251,11 +1251,11 @@
 }
 
 .live-event-page__logo--sport-home {
-  border: 2px solid #00a0dd;
+  border: 2px solid var(--color-team-home);
 }
 
 .live-event-page__logo--sport-away {
-  border: 2px solid #ad0924;
+  border: 2px solid var(--color-team-away);
 }
 
 .live-event-page__logo-placeholder {
@@ -1376,7 +1376,7 @@
 }
 
 .live-event-page__event-icon--yellow {
-  background-color: #FFCB05;
+  background-color: #FFCB05; /* sem token equivalente no Figma */
 }
 
 .live-event-page__event-icon--red {
@@ -1554,8 +1554,8 @@
   position: absolute;
   top: 12px;
   left: 12px;
-  background: #d12f1d;
-  color: #f7f7f8;
+  background: #d12f1d; /* sem token equivalente no Figma */
+  color: #f7f7f8; /* sem token equivalente no Figma */
   font-family: 'Inter', sans-serif;
   font-size: 13px;
   font-weight: 700;

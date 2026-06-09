@@ -361,25 +361,25 @@
 
 .prematch-section__team-icon--basketball-home {
   border-radius: 100%;
-  border: 1px solid #00A0DD;
+  border: 1px solid var(--color-team-home);
   padding: 3px;
 }
 
 .prematch-section__team-icon--basketball-away {
   border-radius: 100%;
-  border: 1px solid #AD0924;
+  border: 1px solid var(--color-team-away);
   padding: 3px;
 }
 
 .prematch-section__team-icon--sport-home {
   border-radius: 100%;
-  border: 1px solid #00A0DD;
+  border: 1px solid var(--color-team-home);
   padding: 3px;
 }
 
 .prematch-section__team-icon--sport-away {
   border-radius: 100%;
-  border: 1px solid #AD0924;
+  border: 1px solid var(--color-team-away);
   padding: 3px;
 }
 
@@ -564,14 +564,14 @@
 .prematch-section__player-prop-team-icon--basketball-home,
 .prematch-section__player-prop-team-icon--sport-home {
   border-radius: 100%;
-  border: 1px solid #00A0DD;
+  border: 1px solid var(--color-team-home);
   padding: 2px;
 }
 
 .prematch-section__player-prop-team-icon--basketball-away,
 .prematch-section__player-prop-team-icon--sport-away {
   border-radius: 100%;
-  border: 1px solid #AD0924;
+  border: 1px solid var(--color-team-away);
   padding: 2px;
 }
 

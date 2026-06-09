@@ -120,7 +120,7 @@
   height: 24px;
   object-fit: contain;
   border-radius: 2px;
-  border: 1px solid #19954f;
+  border: 1px solid var(--color-feedback-positive-deep);
 }
 
 .bottom-sheet__title span {
@@ -252,7 +252,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 12px;
   font-weight: 700;
-  color: #32a866;
+  color: var(--color-feedback-positive);
   line-height: 1.4;
 }
 
@@ -260,7 +260,7 @@
   position: relative;
   width: 100%;
   height: 6px;
-  background-color: #373737;
+  background-color: #373737; /* sem token equivalente no Figma */
   border-radius: 3px;
 }
 
@@ -269,7 +269,7 @@
   top: 0;
   left: 0;
   height: 100%;
-  background-color: #32a866;
+  background-color: var(--color-feedback-positive);
   border-radius: 3px;
   transition: width 0.3s ease;
 }
@@ -280,7 +280,7 @@
   transform: translate(-50%, -50%);
   width: 12px;
   height: 12px;
-  background-color: #32a866;
+  background-color: var(--color-feedback-positive);
   border-radius: 50%;
   box-shadow: 0 0 0 2px var(--tokens-border-border-02);
   transition: left 0.3s ease;
@@ -296,7 +296,7 @@
 .mission-timer__dot {
   width: 8px;
   height: 8px;
-  background-color: #c00a28;
+  background-color: var(--color-feedback-negative);
   border-radius: 50%;
 }
 
@@ -318,7 +318,7 @@
 .mission-objective__radio {
   width: 16px;
   height: 16px;
-  border: 1px solid #32a866;
+  border: 1px solid var(--color-feedback-positive);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -327,7 +327,7 @@
 }
 
 .mission-objective__radio--completed {
-  background-color: #32a866;
+  background-color: var(--color-feedback-positive);
 }
 
 .mission-objective__check {
@@ -362,7 +362,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 12px;
   font-weight: 700;
-  color: #32a866;
+  color: var(--color-feedback-positive);
   line-height: 1;
 }
 
@@ -370,7 +370,7 @@
   width: 16px;
   height: 16px;
   transform: rotate(-360deg);
-  color: #32a866;
+  color: var(--color-feedback-positive);
 }
 
 /* Mission Info Row */
@@ -442,7 +442,7 @@
 }
 
 .mission-faq-item--expanded .mission-faq-item__question {
-  color: #32a866;
+  color: var(--color-feedback-positive);
 }
 
 .mission-faq-item__icon {
@@ -454,7 +454,7 @@
 }
 
 .mission-faq-item--expanded .mission-faq-item__icon {
-  color: #32a866;
+  color: var(--color-feedback-positive);
 }
 
 .mission-faq-item__icon--rotated {
@@ -492,7 +492,7 @@
 .bottom-sheet__btn-primary {
   width: 100%;
   padding: 14px 16px;
-  background-color: #32a866;
+  background-color: var(--color-feedback-positive);
   border: none;
   border-radius: 1000px;
   cursor: pointer;

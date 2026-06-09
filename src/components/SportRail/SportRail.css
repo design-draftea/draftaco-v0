@@ -5,9 +5,9 @@
 
 .sport-rail {
   --sport-rail-pulse-safe-area: 4px;
-  --sport-rail-active-start: #5228ff;
+  --sport-rail-active-start: var(--color-brand-gradient-start);
   --sport-rail-active-start-rgb: 82 40 255;
-  --sport-rail-active-end: #ae18ff;
+  --sport-rail-active-end: var(--color-brand-gradient-end);
   --sport-rail-active-end-rgb: 174 24 255;
   --sport-rail-active-fill-start-rgb: 82 40 255;
   --sport-rail-active-fill-end-rgb: 174 24 255;
@@ -163,9 +163,9 @@
 }
 
 .sport-rail__active-indicator {
-  --sport-rail-active-start: #5228ff;
+  --sport-rail-active-start: var(--color-brand-gradient-start);
   --sport-rail-active-start-rgb: 82 40 255;
-  --sport-rail-active-end: #ae18ff;
+  --sport-rail-active-end: var(--color-brand-gradient-end);
   --sport-rail-active-end-rgb: 174 24 255;
   --sport-rail-active-fill-start-rgb: 82 40 255;
   --sport-rail-active-fill-end-rgb: 174 24 255;
@@ -584,9 +584,9 @@
 }
 
 .header--v2 .sport-rail--competitions {
-  --sport-rail-v2-active-start: #5228ff;
+  --sport-rail-v2-active-start: var(--color-brand-gradient-start);
   --sport-rail-v2-active-start-rgb: 82 40 255;
-  --sport-rail-v2-active-end: #ae18ff;
+  --sport-rail-v2-active-end: var(--color-brand-gradient-end);
   --sport-rail-v2-active-end-rgb: 174 24 255;
   --sport-rail-v2-active-fill-start-rgb: 82 40 255;
   --sport-rail-v2-active-fill-end-rgb: 174 24 255;
@@ -639,9 +639,9 @@
 }
 
 :root[data-theme="light"] .header--v2 .sport-rail--competitions {
-  --sport-rail-v2-active-start: #5228ff;
+  --sport-rail-v2-active-start: var(--color-brand-gradient-start);
   --sport-rail-v2-active-start-rgb: 82 40 255;
-  --sport-rail-v2-active-end: #ae18ff;
+  --sport-rail-v2-active-end: var(--color-brand-gradient-end);
   --sport-rail-v2-active-end-rgb: 174 24 255;
   --sport-rail-v2-active-fill-start-rgb: 82 40 255;
   --sport-rail-v2-active-fill-end-rgb: 174 24 255;

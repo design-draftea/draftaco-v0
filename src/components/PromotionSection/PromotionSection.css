@@ -154,7 +154,7 @@
   justify-content: center;
   width: 24px;
   height: 24px;
-  background-color: #32a866;
+  background-color: var(--color-feedback-positive);
   border-radius: 50%;
   font-family: 'Red Hat Text', sans-serif;
   font-size: 12px;

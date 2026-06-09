@@ -491,24 +491,24 @@
 }
 
 .live-section__team-icon--basketball-home {
-  border: 1px solid #00A0DD;
+  border: 1px solid var(--color-team-home);
   padding: 3px;
 }
 
 .live-section__team-icon--basketball-away {
-  border: 1px solid #AD0924;
+  border: 1px solid var(--color-team-away);
   padding: 3px;
 }
 
 .live-section__team-icon--sport-home {
   border-radius: 100%;
-  border: 1px solid #00A0DD;
+  border: 1px solid var(--color-team-home);
   padding: 3px;
 }
 
 .live-section__team-icon--sport-away {
   border-radius: 100%;
-  border: 1px solid #AD0924;
+  border: 1px solid var(--color-team-away);
   padding: 3px;
 }
 

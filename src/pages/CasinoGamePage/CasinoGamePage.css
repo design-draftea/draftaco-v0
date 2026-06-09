@@ -706,15 +706,15 @@
 }
 
 .casino-game-page__return-icon--up {
-  color: #7dffa9;
+  color: #7dffa9; /* sem token equivalente no Figma */
 }
 
 .casino-game-page__return-icon--down {
-  color: #7fc7ff;
+  color: #7fc7ff; /* sem token equivalente no Figma */
 }
 
 .casino-game-page__return-icon--max {
-  color: #ffe16a;
+  color: #ffe16a; /* sem token equivalente no Figma */
 }
 
 :root[data-theme="light"] .casino-game-page__return-icon--up {
@@ -846,7 +846,7 @@
   width: 36px;
   height: 36px;
   border: 3px solid var(--tokens-layer-layer-03);
-  border-top-color: #8f2dff;
+  border-top-color: #8f2dff; /* sem token equivalente no Figma */
   border-radius: 50%;
   animation: casino-game-page__spin 0.8s linear infinite;
 }

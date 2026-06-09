@@ -76,7 +76,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #AD0924;
+  background-color: var(--color-team-away);
 }
 
 .banner-card__content {
@@ -317,7 +317,7 @@
 .banner-card__btn-activated-divider {
   width: 1px;
   height: 16px;
-  background-color: #32a866;
+  background-color: var(--color-feedback-positive);
   flex-shrink: 0;
 }
 

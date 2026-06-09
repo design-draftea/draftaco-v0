@@ -151,7 +151,7 @@
   height: 16px;
   padding: 0 6px;
   border-radius: 8px;
-  background: #fff333;
+  background: #fff333; /* sem token equivalente no Figma */
   color: var(--tokens-text-text-on-color-black);
   font-family: 'Red Hat Text', sans-serif;
   font-size: 10px;

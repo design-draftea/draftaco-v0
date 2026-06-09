@@ -337,7 +337,7 @@
   padding: 16px 20px;
   background: var(
     --promotions-mission-card-image,
-    linear-gradient(135deg, #ff0d0d 0%, #ee1010 100%)
+    linear-gradient(135deg, #ff0d0d 0%, #ee1010 100%) /* sem token equivalente no Figma */
   );
   background-position: center;
   background-size: cover;
@@ -359,7 +359,7 @@
   height: 8px;
   flex: 0 0 auto;
   border-radius: 50%;
-  background: #ff4b4b;
+  background: #ff4b4b; /* sem token equivalente no Figma */
 }
 
 .promotions-mission-card__expires-text {

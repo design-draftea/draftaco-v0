@@ -46,7 +46,7 @@
 /* Tab ativa */
 .content-tabs__item--active .content-tabs__label {
   color: var(--tokens-text-text-01);
-  border-bottom-color: #32a866;
+  border-bottom-color: var(--color-feedback-positive);
 }
 
 /* Mantém visual normal quando desabilitado durante scroll */

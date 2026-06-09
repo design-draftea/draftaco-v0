@@ -424,7 +424,7 @@
   padding: 0 20px;
   border: 0;
   border-radius: 160px;
-  background: linear-gradient(97deg, #5228ff 0%, #ae18ff 100%);
+  background: linear-gradient(97deg, var(--color-brand-gradient-start) 0%, var(--color-brand-gradient-end) 100%);
   color: var(--tokens-text-text-on-color-white);
   font-size: 12px;
   font-weight: 700;
@@ -567,8 +567,8 @@
   justify-content: center;
   padding: 0 12px;
   border-radius: 4px;
-  background: #ffc4f1;
-  color: #1d1320;
+  background: #ffc4f1; /* sem token equivalente no Figma */
+  color: #1d1320; /* sem token equivalente no Figma */
   font-size: 10px;
   font-weight: 700;
   line-height: 1.2;
@@ -827,7 +827,7 @@
   padding: 0 20px;
   border: 0;
   border-radius: 160px;
-  background: linear-gradient(97deg, #5228ff 0%, #ae18ff 100%);
+  background: linear-gradient(97deg, var(--color-brand-gradient-start) 0%, var(--color-brand-gradient-end) 100%);
   color: var(--tokens-text-text-on-color-white);
   font-family: inherit;
   font-size: 12px;

@@ -1,5 +1,24 @@
 @import './tokens.css';
 
+/*
+ * Aliases semanticos para cores recorrentes que ainda nao existem no export
+ * de tokens do Figma. Avaliar com design a inclusao no tokenset:
+ * - brand-gradient (#5228ff/#ae18ff) difere dos tokens
+ *   --tokens-border-border-gradient-01/02 (#9730FF/#4B20FF); convergir
+ *   seria mudanca visual e fica fora deste escopo.
+ */
+:root {
+  --color-feedback-positive: #32a866;
+  --color-feedback-positive-deep: #19954f;
+  --color-feedback-negative: #c00a28;
+  --color-team-home: #00a0dd;
+  --color-team-away: #ad0924;
+  --color-brand-gradient-start: #5228ff;
+  --color-brand-gradient-start-rgb: 82 40 255;
+  --color-brand-gradient-end: #ae18ff;
+  --color-brand-gradient-end-rgb: 174 24 255;
+}
+
 :root {
   --app-viewport-height: 100vh;
   --navbar-height: 64px;
@@ -454,22 +473,22 @@ img {
 }
 
 .home--v2 :is(.live-section__chips--sticky, .prematch-section__chips--sticky) .sliding-chip-indicator {
-  --sliding-chip-v2-active-start: #5228ff;
-  --sliding-chip-v2-active-start-rgb: 82 40 255;
-  --sliding-chip-v2-active-end: #ae18ff;
-  --sliding-chip-v2-active-end-rgb: 174 24 255;
-  --sliding-chip-v2-active-fill-start-rgb: 82 40 255;
-  --sliding-chip-v2-active-fill-end-rgb: 174 24 255;
+  --sliding-chip-v2-active-start: var(--color-brand-gradient-start);
+  --sliding-chip-v2-active-start-rgb: var(--color-brand-gradient-start-rgb);
+  --sliding-chip-v2-active-end: var(--color-brand-gradient-end);
+  --sliding-chip-v2-active-end-rgb: var(--color-brand-gradient-end-rgb);
+  --sliding-chip-v2-active-fill-start-rgb: var(--color-brand-gradient-start-rgb);
+  --sliding-chip-v2-active-fill-end-rgb: var(--color-brand-gradient-end-rgb);
   --sliding-chip-v2-active-fill-opacity: 0.56;
 }
 
 :root[data-theme="light"] .home--v2 :is(.live-section__chips--sticky, .prematch-section__chips--sticky) .sliding-chip-indicator {
-  --sliding-chip-v2-active-start: #5228ff;
-  --sliding-chip-v2-active-start-rgb: 82 40 255;
-  --sliding-chip-v2-active-end: #ae18ff;
-  --sliding-chip-v2-active-end-rgb: 174 24 255;
-  --sliding-chip-v2-active-fill-start-rgb: 82 40 255;
-  --sliding-chip-v2-active-fill-end-rgb: 174 24 255;
+  --sliding-chip-v2-active-start: var(--color-brand-gradient-start);
+  --sliding-chip-v2-active-start-rgb: var(--color-brand-gradient-start-rgb);
+  --sliding-chip-v2-active-end: var(--color-brand-gradient-end);
+  --sliding-chip-v2-active-end-rgb: var(--color-brand-gradient-end-rgb);
+  --sliding-chip-v2-active-fill-start-rgb: var(--color-brand-gradient-start-rgb);
+  --sliding-chip-v2-active-fill-end-rgb: var(--color-brand-gradient-end-rgb);
   --sliding-chip-v2-active-fill-opacity: 0.72;
 }
 
@@ -498,12 +517,12 @@ img {
 .home--v2 .offers-section__filters .sliding-chip-indicator,
 .home--v2 .calendar-section .prematch-section__chips--sticky .sliding-chip-indicator,
 .promotions-page--v2 .promotions-page__filters .sliding-chip-indicator {
-  --sliding-chip-v2-active-start: #5228ff;
-  --sliding-chip-v2-active-start-rgb: 82 40 255;
-  --sliding-chip-v2-active-end: #ae18ff;
-  --sliding-chip-v2-active-end-rgb: 174 24 255;
-  --sliding-chip-v2-active-fill-start-rgb: 82 40 255;
-  --sliding-chip-v2-active-fill-end-rgb: 174 24 255;
+  --sliding-chip-v2-active-start: var(--color-brand-gradient-start);
+  --sliding-chip-v2-active-start-rgb: var(--color-brand-gradient-start-rgb);
+  --sliding-chip-v2-active-end: var(--color-brand-gradient-end);
+  --sliding-chip-v2-active-end-rgb: var(--color-brand-gradient-end-rgb);
+  --sliding-chip-v2-active-fill-start-rgb: var(--color-brand-gradient-start-rgb);
+  --sliding-chip-v2-active-fill-end-rgb: var(--color-brand-gradient-end-rgb);
   --sliding-chip-v2-active-fill-opacity: 0.56;
   --sliding-chip-v2-active-border-width: 1px;
   --sliding-chip-v2-active-inset: var(--sliding-chip-v2-active-border-width);
@@ -513,23 +532,23 @@ img {
 :root[data-theme="light"] .home--v2 .offers-section__filters .sliding-chip-indicator,
 :root[data-theme="light"] .home--v2 .calendar-section .prematch-section__chips--sticky .sliding-chip-indicator,
 :root[data-theme="light"] .promotions-page--v2 .promotions-page__filters .sliding-chip-indicator {
-  --sliding-chip-v2-active-start: #5228ff;
-  --sliding-chip-v2-active-start-rgb: 82 40 255;
-  --sliding-chip-v2-active-end: #ae18ff;
-  --sliding-chip-v2-active-end-rgb: 174 24 255;
-  --sliding-chip-v2-active-fill-start-rgb: 82 40 255;
-  --sliding-chip-v2-active-fill-end-rgb: 174 24 255;
+  --sliding-chip-v2-active-start: var(--color-brand-gradient-start);
+  --sliding-chip-v2-active-start-rgb: var(--color-brand-gradient-start-rgb);
+  --sliding-chip-v2-active-end: var(--color-brand-gradient-end);
+  --sliding-chip-v2-active-end-rgb: var(--color-brand-gradient-end-rgb);
+  --sliding-chip-v2-active-fill-start-rgb: var(--color-brand-gradient-start-rgb);
+  --sliding-chip-v2-active-fill-end-rgb: var(--color-brand-gradient-end-rgb);
   --sliding-chip-v2-active-fill-opacity: 0.24;
 }
 
 .home--v2 #section-aovivo .live-section__chips:not(.live-section__chips--sticky) .sliding-chip-indicator,
 .home--v2 #section-breve .prematch-section__chips:not(.prematch-section__chips--sticky) .sliding-chip-indicator {
-  --sliding-chip-v2-active-start: #5228ff;
-  --sliding-chip-v2-active-start-rgb: 82 40 255;
-  --sliding-chip-v2-active-end: #ae18ff;
-  --sliding-chip-v2-active-end-rgb: 174 24 255;
-  --sliding-chip-v2-active-fill-start-rgb: 82 40 255;
-  --sliding-chip-v2-active-fill-end-rgb: 174 24 255;
+  --sliding-chip-v2-active-start: var(--color-brand-gradient-start);
+  --sliding-chip-v2-active-start-rgb: var(--color-brand-gradient-start-rgb);
+  --sliding-chip-v2-active-end: var(--color-brand-gradient-end);
+  --sliding-chip-v2-active-end-rgb: var(--color-brand-gradient-end-rgb);
+  --sliding-chip-v2-active-fill-start-rgb: var(--color-brand-gradient-start-rgb);
+  --sliding-chip-v2-active-fill-end-rgb: var(--color-brand-gradient-end-rgb);
   --sliding-chip-v2-active-fill-opacity: 0.56;
   --sliding-chip-v2-active-border-width: 1px;
   --sliding-chip-v2-active-inset: var(--sliding-chip-v2-active-border-width);

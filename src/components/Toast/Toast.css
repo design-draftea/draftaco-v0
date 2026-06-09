@@ -3,7 +3,7 @@
   bottom: 16px;
   left: 20px;
   right: 20px;
-  background-color: #19954f;
+  background-color: var(--color-feedback-positive-deep);
   border-radius: 8px;
   padding: 16px;
   z-index: 1200;
