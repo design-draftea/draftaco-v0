@@ -1,0 +1,50 @@
+.feature-flags-sheet {
+  font-family: 'Red Hat Text', sans-serif;
+}
+
+.feature-flags-sheet .bottom-sheet__title span {
+  font-size: 16px;
+}
+
+.feature-flags-sheet__body {
+  padding: 0;
+}
+
+.feature-flags-sheet__list {
+  display: grid;
+  gap: 0;
+}
+
+.feature-flags-sheet__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 84px;
+  padding: 16px 18px;
+}
+
+.feature-flags-sheet__content {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.feature-flags-sheet__item-title {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--tokens-text-text-01);
+}
+
+.feature-flags-sheet__item-description {
+  color: var(--tokens-text-text-02);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.feature-flags-sheet .betslip-page__credit-toggle:focus-visible {
+  outline: 2px solid rgba(141, 108, 255, 0.78);
+  outline-offset: 2px;
+}

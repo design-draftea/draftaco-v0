@@ -12,6 +12,7 @@ interface HeaderComponentProps {
   activeProduct?: ProductMode
   changeProductOnPointerDown?: boolean
   onProductChange?: (product: ProductMode) => void
+  onLogoDoubleClick?: () => void
   onDepositOpen?: () => void
   children?: ReactNode
 }
@@ -20,6 +21,7 @@ interface PromotionsPageProps {
   activeProduct?: ProductMode
   HeaderComponent?: ComponentType<HeaderComponentProps>
   onProductChange?: (product: ProductMode) => void
+  onLogoDoubleClick?: () => void
   onDepositOpen?: () => void
 }
 
@@ -55,6 +57,7 @@ export function PromotionsPage({
   activeProduct = 'apostas',
   HeaderComponent = HeaderV2,
   onProductChange,
+  onLogoDoubleClick,
   onDepositOpen,
 }: PromotionsPageProps = {}) {
   const pageRef = useRef<HTMLDivElement>(null)
@@ -232,6 +235,7 @@ export function PromotionsPage({
         activeProduct={activeProduct}
         changeProductOnPointerDown={false}
         onDepositOpen={onDepositOpen}
+        onLogoDoubleClick={onLogoDoubleClick}
         onProductChange={onProductChange}
       >
         <nav className="promotions-page__tabs" aria-label="Seções de promoções">

@@ -9,7 +9,9 @@ import { Navbar } from './components/Navbar'
 import { Betslip } from './components/Betslip'
 import { HeaderV2 } from './components/HeaderV2'
 import { DepositPanel } from './components/DepositPanel'
+import { FeatureFlagsPanel } from './components/FeatureFlagsPanel'
 import { BetslipProvider } from './hooks/BetslipProvider'
+import { FeatureFlagsProvider, useFeatureFlags } from './hooks/FeatureFlagsProvider'
 import { useBetslip } from './hooks/useBetslip'
 import { getBetslipTurboEligibleSelectionCount } from './hooks/betslipTurboBonus'
 import type { ProductMode } from './types/home'
@@ -20,6 +22,8 @@ const productRoutes: ProductMode[] = ['apostas', 'cassino']
 const promotionsRouteSegment = 'promocoes'
 const handoffRouteSegment = 'handoff'
 const deployedBasePath = '/pitaquinho'
+const brasileiraoLeagueIdPattern = /(?:brasil-serie-a|fut-brasileir|fut-brasileirao-a)/
+const brasileiraoLeagueNamePattern = /(?:brasileir|brasileir[aã]o|brasil\s*-\s*s[eé]rie\s*a|s[eé]rie\s*a)/i
 
 const getBasePath = () => {
   const baseUrl = import.meta.env.BASE_URL || '/'
@@ -89,10 +93,17 @@ const buildPromotionsPath = () => {
 function AppContent() {
   const [pathname, setPathname] = useState(() => window.location.pathname)
   const { selections: betslipSelections, summary: betslipSummary } = useBetslip()
+  const { isFeatureEnabled } = useFeatureFlags()
   const betslipTurboEligibleSelectionCount = useMemo(
     () => getBetslipTurboEligibleSelectionCount(betslipSelections),
     [betslipSelections]
   )
+  const hasOnlyBrasileiraoSelections = useMemo(() => (
+    betslipSelections.length > 0 && betslipSelections.every((selection) => (
+      (!!selection.leagueId && brasileiraoLeagueIdPattern.test(selection.leagueId)) ||
+      (!!selection.leagueName && brasileiraoLeagueNamePattern.test(selection.leagueName))
+    ))
+  ), [betslipSelections])
   const productRoute = useMemo(() => resolveProductFromPath(pathname), [pathname])
   const isPromotionsPage = useMemo(() => isPromotionsPath(pathname), [pathname])
   const isHandoffPage = useMemo(() => isHandoffPath(pathname), [pathname])
@@ -100,6 +111,7 @@ function AppContent() {
   const [isFullBetslipOpen, setIsFullBetslipOpen] = useState(false)
   const [isCompactBetslipSuppressed, setIsCompactBetslipSuppressed] = useState(false)
   const [isDepositPanelOpen, setIsDepositPanelOpen] = useState(false)
+  const [isFeatureFlagsPanelOpen, setIsFeatureFlagsPanelOpen] = useState(false)
   const [liveEventUi, setLiveEventUi] = useState({
     isOpen: false,
     isEventBetslipVisible: false,
@@ -223,6 +235,14 @@ function AppContent() {
     setIsDepositPanelOpen(false)
   }, [])
 
+  const handleFeatureFlagsPanelOpen = useCallback(() => {
+    setIsFeatureFlagsPanelOpen(true)
+  }, [])
+
+  const handleFeatureFlagsPanelClose = useCallback(() => {
+    setIsFeatureFlagsPanelOpen(false)
+  }, [])
+
   const handleLiveEventOpenChange = useCallback((isOpen: boolean) => {
     setLiveEventUi((current) => {
       if (current.isOpen === isOpen) return current
@@ -310,6 +330,7 @@ function AppContent() {
     && betslipSummary.hasSelections
     && !isCompactBetslipSuppressed
   const shouldShowEventBetslip = showCompactBetslip && liveEventUi.isOpen && liveEventUi.isEventBetslipVisible
+  const showFreeBetTag = isFeatureEnabled('freeBetsAvailable') && hasOnlyBrasileiraoSelections
 
   useEffect(() => {
     document.documentElement.toggleAttribute('data-betslip-compact-visible', showCompactBetslip)
@@ -333,6 +354,7 @@ function AppContent() {
           activeProduct={activeProduct}
           HeaderComponent={HeaderV2}
           onDepositOpen={handleDepositPanelOpen}
+          onLogoDoubleClick={handleFeatureFlagsPanelOpen}
           onProductChange={handleProductChange}
         />
       ) : (
@@ -341,6 +363,7 @@ function AppContent() {
           HeaderComponent={HeaderV2}
           isLiveEventSuppressed={isFullBetslipOpen}
           onDepositOpen={handleDepositPanelOpen}
+          onLogoDoubleClick={handleFeatureFlagsPanelOpen}
           onProductChange={handleProductChange}
           onLiveEventOpenChange={handleLiveEventOpenChange}
           onLiveEventOpenSettled={handleLiveEventOpenSettled}
@@ -373,11 +396,15 @@ function AppContent() {
         <DepositPanel isOpen={isDepositPanelOpen} onClose={handleDepositPanelClose} />
       ) : null}
       {!isHandoffPage ? (
+        <FeatureFlagsPanel isOpen={isFeatureFlagsPanelOpen} onClose={handleFeatureFlagsPanelClose} />
+      ) : null}
+      {!isHandoffPage ? (
         <>
           <Betslip
             visible={showCompactBetslip}
             summary={betslipSummary}
             turboEligibleSelectionCount={betslipTurboEligibleSelectionCount}
+            showFreeBetTag={showFreeBetTag && !shouldShowEventBetslip}
             presentationKey="base"
             onOpen={handleBetslipOpen}
           />
@@ -386,6 +413,7 @@ function AppContent() {
             summary={betslipSummary}
             turboEligibleSelectionCount={betslipTurboEligibleSelectionCount}
             compactOnly={true}
+            showFreeBetTag={showFreeBetTag && shouldShowEventBetslip}
             presentationKey={`live-event-${liveEventUi.betslipMotionKey}`}
             onOpen={handleEventBetslipOpen}
           />
@@ -402,9 +430,11 @@ function AppContent() {
 
 function App() {
   return (
-    <BetslipProvider>
-      <AppContent />
-    </BetslipProvider>
+    <FeatureFlagsProvider>
+      <BetslipProvider>
+        <AppContent />
+      </BetslipProvider>
+    </FeatureFlagsProvider>
   )
 }
 

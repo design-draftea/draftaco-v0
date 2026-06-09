@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type MouseEvent, type PointerEvent, type ReactNode } from 'react'
 import { flushSync } from 'react-dom'
 import { ListIcon } from '@phosphor-icons/react'
 import './HeaderV2.css'
@@ -15,6 +15,7 @@ interface HeaderV2Props {
   showMenuButton?: boolean
   changeProductOnPointerDown?: boolean
   onProductChange?: (product: ProductMode) => void
+  onLogoDoubleClick?: () => void
   onDepositOpen?: () => void
   children?: ReactNode
 }
@@ -23,6 +24,9 @@ const balanceDisplayOptions = ['R$ 3.400,00', 'R$ 3.400', 'R$ 3.4k']
 const headerLogoExpandedWidth = 103
 const headerLogoCompactWidth = 96
 const headerMinimumControlGap = 20
+const headerLogoDoubleTapDelay = 650
+const headerLogoActivationCooldown = 300
+const headerLogoLongPressDelay = 550
 
 export function HeaderV2({
   activeProduct = 'apostas',
@@ -31,6 +35,7 @@ export function HeaderV2({
   showMenuButton = true,
   changeProductOnPointerDown = true,
   onProductChange,
+  onLogoDoubleClick,
   onDepositOpen,
   children,
 }: HeaderV2Props = {}) {
@@ -50,6 +55,9 @@ export function HeaderV2({
   const balanceMeasureRefs = useRef<(HTMLSpanElement | null)[]>([])
   const pointerProductChangeRef = useRef<ProductMode | null>(null)
   const pointerProductChangeResetTimerRef = useRef<number | null>(null)
+  const lastLogoTapTimeRef = useRef(0)
+  const lastLogoActivationTimeRef = useRef(0)
+  const logoLongPressTimerRef = useRef<number | null>(null)
   const toggleSwitchingFrameRef = useRef<number | null>(null)
   const toggleSwitchingResetTimerRef = useRef<number | null>(null)
 
@@ -58,6 +66,13 @@ export function HeaderV2({
 
     window.clearTimeout(pointerProductChangeResetTimerRef.current)
     pointerProductChangeResetTimerRef.current = null
+  }
+
+  const clearLogoLongPressTimer = () => {
+    if (logoLongPressTimerRef.current === null) return
+
+    window.clearTimeout(logoLongPressTimerRef.current)
+    logoLongPressTimerRef.current = null
   }
 
   const clearToggleSwitchingTimers = () => {
@@ -124,6 +139,51 @@ export function HeaderV2({
     scheduleProductChange(displayProduct === 'apostas' ? 'cassino' : 'apostas')
   }
 
+  const openFeatureFlagsFromLogo = () => {
+    if (!onLogoDoubleClick) return
+
+    const currentTime = Date.now()
+    if (currentTime - lastLogoActivationTimeRef.current <= headerLogoActivationCooldown) return
+
+    clearLogoLongPressTimer()
+    lastLogoActivationTimeRef.current = currentTime
+    lastLogoTapTimeRef.current = 0
+    onLogoDoubleClick()
+  }
+
+  const handleLogoPointerDown = (event: PointerEvent<HTMLButtonElement>) => {
+    if (!onLogoDoubleClick) return
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+
+    clearLogoLongPressTimer()
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+    logoLongPressTimerRef.current = window.setTimeout(() => {
+      openFeatureFlagsFromLogo()
+    }, headerLogoLongPressDelay)
+  }
+
+  const handleLogoPointerEnd = () => {
+    clearLogoLongPressTimer()
+  }
+
+  const handleLogoClick = (event: MouseEvent<HTMLButtonElement>) => {
+    if (!onLogoDoubleClick) return
+    if (event.detail >= 2) {
+      openFeatureFlagsFromLogo()
+      return
+    }
+
+    const currentTime = Date.now()
+    const elapsedTime = currentTime - lastLogoTapTimeRef.current
+
+    if (elapsedTime > 0 && elapsedTime <= headerLogoDoubleTapDelay) {
+      openFeatureFlagsFromLogo()
+      return
+    }
+
+    lastLogoTapTimeRef.current = currentTime
+  }
+
   useLayoutEffect(() => {
     const timer = window.setTimeout(() => {
       setDisplayProduct(activeProduct)
@@ -134,6 +194,7 @@ export function HeaderV2({
 
   useLayoutEffect(() => () => {
     clearPointerProductChangeResetTimer()
+    clearLogoLongPressTimer()
     clearToggleSwitchingTimers()
   }, [])
 
@@ -253,10 +314,29 @@ export function HeaderV2({
       <div className="header__bg-gradient" />
 
       <div className="header__top" ref={headerTopRef}>
-        <div className="header__logo">
-          <img src={logoReidoPitaco} alt="Rei do Pitaco" className="header__logo-img header__logo-img--dark" />
-          <img src={logoReidoPitacoLight} alt="Rei do Pitaco" className="header__logo-img header__logo-img--light" />
-        </div>
+        {onLogoDoubleClick ? (
+          <button
+            type="button"
+            className="header__logo header__logo-button"
+            aria-label="Abrir feature flags"
+            aria-haspopup="dialog"
+            onPointerDown={handleLogoPointerDown}
+            onPointerUp={handleLogoPointerEnd}
+            onPointerCancel={handleLogoPointerEnd}
+            onPointerLeave={handleLogoPointerEnd}
+            onClick={handleLogoClick}
+            onDoubleClick={openFeatureFlagsFromLogo}
+            onContextMenu={(event) => event.preventDefault()}
+          >
+            <img src={logoReidoPitaco} alt="Rei do Pitaco" className="header__logo-img header__logo-img--dark" />
+            <img src={logoReidoPitacoLight} alt="Rei do Pitaco" className="header__logo-img header__logo-img--light" />
+          </button>
+        ) : (
+          <div className="header__logo">
+            <img src={logoReidoPitaco} alt="Rei do Pitaco" className="header__logo-img header__logo-img--dark" />
+            <img src={logoReidoPitacoLight} alt="Rei do Pitaco" className="header__logo-img header__logo-img--light" />
+          </div>
+        )}
 
         <button
           ref={toggleRef}

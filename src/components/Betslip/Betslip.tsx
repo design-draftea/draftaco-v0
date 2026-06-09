@@ -3,6 +3,7 @@ import { CaretRightIcon } from '@phosphor-icons/react'
 import './Betslip.css'
 
 import multiplaTurbinadaIcon from '../../assets/multiplaTurbinada.png'
+import apostaGratisIcon from '../../assets/iconSports/aposta-gratis.png'
 import {
   formatBetslipCurrency,
   formatBetslipOdd,
@@ -18,6 +19,7 @@ interface BetslipProps {
   summary?: BetslipSummary
   visible?: boolean
   compactOnly?: boolean
+  showFreeBetTag?: boolean
   turboEligibleSelectionCount?: number
   presentationKey?: string | number
   onOpen?: () => void
@@ -34,6 +36,7 @@ export function Betslip({
   summary,
   visible = false,
   compactOnly = false,
+  showFreeBetTag = false,
   turboEligibleSelectionCount,
   presentationKey = 'default',
   onOpen,
@@ -42,10 +45,15 @@ export function Betslip({
   const [isRendered, setIsRendered] = useState(shouldShow)
   const [isPresented, setIsPresented] = useState(false)
   const [presentationCycle, setPresentationCycle] = useState(0)
+  const [isFreeBetTagRendered, setIsFreeBetTagRendered] = useState(false)
+  const [isFreeBetTagPresented, setIsFreeBetTagPresented] = useState(false)
+  const [isFreeBetTagExiting, setIsFreeBetTagExiting] = useState(false)
   const surfaceRef = useRef<HTMLDivElement>(null)
   const presentationStateFrameRef = useRef<number | null>(null)
   const enterFrameRef = useRef<number | null>(null)
   const exitTimeoutRef = useRef<number | null>(null)
+  const freeBetTagFrameRef = useRef<number | null>(null)
+  const freeBetTagExitTimeoutRef = useRef<number | null>(null)
   const previousPresentationKeyRef = useRef(presentationKey)
   const previousTurboBonusPercentRef = useRef<number | null>(null)
   const shouldShowRef = useRef(shouldShow)
@@ -173,8 +181,52 @@ export function Betslip({
       if (exitTimeoutRef.current !== null) {
         window.clearTimeout(exitTimeoutRef.current)
       }
+
+      if (freeBetTagFrameRef.current !== null) {
+        window.cancelAnimationFrame(freeBetTagFrameRef.current)
+      }
+
+      if (freeBetTagExitTimeoutRef.current !== null) {
+        window.clearTimeout(freeBetTagExitTimeoutRef.current)
+      }
     }
   }, [])
+
+  useEffect(() => {
+    const shouldPresentFreeBetTag = showFreeBetTag && shouldShow
+
+    if (freeBetTagFrameRef.current !== null) {
+      window.cancelAnimationFrame(freeBetTagFrameRef.current)
+      freeBetTagFrameRef.current = null
+    }
+
+    if (freeBetTagExitTimeoutRef.current !== null) {
+      window.clearTimeout(freeBetTagExitTimeoutRef.current)
+      freeBetTagExitTimeoutRef.current = null
+    }
+
+    if (shouldPresentFreeBetTag) {
+      setIsFreeBetTagRendered(true)
+      setIsFreeBetTagPresented(false)
+      setIsFreeBetTagExiting(false)
+      freeBetTagFrameRef.current = window.requestAnimationFrame(() => {
+        freeBetTagFrameRef.current = window.requestAnimationFrame(() => {
+          freeBetTagFrameRef.current = null
+          setIsFreeBetTagPresented(true)
+        })
+      })
+      return
+    }
+
+    setIsFreeBetTagPresented(false)
+    setIsFreeBetTagExiting(isFreeBetTagRendered)
+
+    freeBetTagExitTimeoutRef.current = window.setTimeout(() => {
+      setIsFreeBetTagRendered(false)
+      setIsFreeBetTagExiting(false)
+      freeBetTagExitTimeoutRef.current = null
+    }, 260)
+  }, [isFreeBetTagRendered, shouldShow, showFreeBetTag])
 
   const handleSurfaceTransitionEnd = useCallback((event: TransitionEvent<HTMLDivElement>) => {
     if (event.target !== event.currentTarget) return
@@ -322,6 +374,25 @@ export function Betslip({
 
   return (
     <div className={className}>
+      {isFreeBetTagRendered ? (
+        <button
+          type="button"
+          className={[
+            'betslip__free-bet-tag',
+            isFreeBetTagPresented ? 'betslip__free-bet-tag--visible' : '',
+            isFreeBetTagExiting ? 'betslip__free-bet-tag--exiting' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          aria-label="Abrir betslip. Aposta grátis disponível"
+          onClick={onOpen}
+        >
+          <span className="betslip__free-bet-icon-wrap" aria-hidden="true">
+            <img src={apostaGratisIcon} alt="" className="betslip__free-bet-icon" draggable="false" />
+          </span>
+          <span className="betslip__free-bet-label">Aposta grátis disponível</span>
+        </button>
+      ) : null}
       <div className="betslip__surface" ref={surfaceRef} onTransitionEnd={handleSurfaceTransitionEnd}>
         <div
           className="betslip__compact"

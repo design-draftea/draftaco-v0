@@ -71,6 +71,7 @@ interface HeaderComponentProps {
   activeSport?: string | null
   rail?: ReactNode
   onProductChange?: (product: ProductMode) => void
+  onLogoDoubleClick?: () => void
   onDepositOpen?: () => void
   children?: ReactNode
 }
@@ -80,6 +81,7 @@ interface HomeProps {
   HeaderComponent?: ComponentType<HeaderComponentProps>
   isLiveEventSuppressed?: boolean
   onProductChange?: (product: ProductMode) => void
+  onLogoDoubleClick?: () => void
   onDepositOpen?: () => void
   onLiveEventOpenChange?: (isOpen: boolean) => void
   onLiveEventOpenSettled?: () => void
@@ -91,6 +93,7 @@ export function Home({
   HeaderComponent = HeaderV2,
   isLiveEventSuppressed = false,
   onProductChange,
+  onLogoDoubleClick,
   onDepositOpen,
   onLiveEventOpenChange,
   onLiveEventOpenSettled,
@@ -747,6 +750,7 @@ export function Home({
         activeProduct={activeProduct}
         activeSport={displayActiveSport}
         onDepositOpen={onDepositOpen}
+        onLogoDoubleClick={onLogoDoubleClick}
         onProductChange={onProductChange}
         rail={headerRail}
       >
@@ -811,8 +815,8 @@ export function Home({
       ) : (
         <Fragment key={`destaques-${contentResetKey}`}>
           {/* <ContentTabs /> */}
-          <PromotionSection promotions={sportsPromotions} />
           <OffersSection />
+          <PromotionSection promotions={sportsPromotions} />
           <LiveSection
             onMatchClick={handleLiveMatchClick}
             onOpenCompetition={handleOpenCompetition}
