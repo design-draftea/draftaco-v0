@@ -2,31 +2,21 @@ import type {
   Banner,
   CasinoGameSection,
   CasinoRailItem,
+  HomeCompetitionHighlight,
+  HomeCompetitionMatch,
+  HomeOfferCarouselItem,
   NavbarConfig,
   ProductMode,
   ProductRailSection,
   Promotion,
 } from '../types/home'
 
-import bg1x2 from '../assets/bg1x2.webp'
-import bgAumentada from '../assets/bgAumentada.webp'
-import bgVirtuais from '../assets/bgVirtuais.png'
-import bgAoVivoBasquete from '../assets/aoVivoBasquete.webp'
-import bgAoVivoTenis from '../assets/bgAoVivoTenis.webp'
-import bgCombinada from '../assets/combinada.webp'
-import escudoKnicksGde from '../assets/escudoKnicksGde.png'
-import escudoMagicGde from '../assets/escudoMagicGde.png'
-import escudoBarcelonaGde from '../assets/escudoBarcelonaGde.png'
-import escudoRealGde from '../assets/escudoRealGde.png'
-import flagRussia from '../assets/iconPaises/russia.png'
-import flagUSA from '../assets/iconPaises/estados-unidos.png'
+import bannerTennisAlcaraz from '../assets/iconSports/alcaraz.png'
+import bannerTennisSinner from '../assets/iconSports/sinner.png'
 
-import imgMissaoVerdao from '../assets/imgMissaoVerdao.png'
-import imgPagamentoAntecipado from '../assets/img-promo-pagamento-antecipado-futebol.png'
-import imgFlamengo from '../assets/bgFlamengo.webp'
-import imgTesouroRei from '../assets/img-promo-tesouro-do-rei.png'
 import imgPromoPiggy from '../assets/img-promo-piggy.png'
 import imgPromoRabbit from '../assets/img-promo-rabbit.webp'
+import imgTesouroRei from '../assets/img-promo-tesouro-do-rei.png'
 import imgMissao100k from '../assets/img-missao-100k.webp'
 import imgTorneioWazdan from '../assets/img-torneio-wazdan.webp'
 import imgJogoFortune from '../assets/img-jogo-fortune.webp'
@@ -37,6 +27,21 @@ import imgFutebolStudio from '../assets/imgFutebolStudio.png'
 import imgRabbit from '../assets/imgRabbit.png'
 import imgTigrinho from '../assets/imgTigrinho.png'
 import imgRatinho from '../assets/img-ratinho.webp'
+import promoHighlightFlamengoGlow from '../assets/bgPromoBlue.png'
+import promoHighlightCopaGlow from '../assets/bgPromoGreen.png'
+import promoHighlightNbaGlow from '../assets/bgPromoYellow.png'
+import bgCombinada from '../assets/bgCombinada.png'
+import bgSuperCombinada from '../assets/bgSuperCombinada.png'
+import bgGarantida from '../assets/bgGarantida.png'
+import mbappeCard from '../assets/mbappe-card.png'
+import escudoBarcelonaGde from '../assets/escudoBarcelonaGde.png'
+import escudoRealGde from '../assets/escudoRealGde.png'
+import escudoArsenal from '../assets/escudoArsenal.png'
+import escudoFlamengoGde from '../assets/escudoFlamengoGde.png'
+import escudoCruzeiro from '../assets/escudoCruzeiro.png'
+import escudoLakers from '../assets/escudoLakers.png'
+import escudoMiami from '../assets/escudoMiami.png'
+import escudoWarriorsGde from '../assets/escudoWarriosGde.png'
 
 import iconBlackjack from '../assets/iconSports/blackjack.png'
 import iconCasino from '../assets/iconSports/casino.png'
@@ -49,11 +54,9 @@ import iconSlots from '../assets/iconSports/slots.png'
 
 import navApostas from '../assets/navApostas.svg'
 import navBusca from '../assets/navBusca.svg'
-import navHistorico from '../assets/navHistorico.svg'
-import navHome from '../assets/navHome.svg'
+import navEntrada from '../assets/navEntrada.svg'
 import navLive from '../assets/navLive.svg'
-import navMeusJogos from '../assets/navMeusJogos.svg'
-import navPromo from '../assets/navPromo.svg'
+import navPitacoClub from '../assets/navPitacoClub.svg'
 
 export const productLabels: Record<ProductMode, string> = {
   apostas: 'APOSTAS',
@@ -64,20 +67,20 @@ export const productNavbarConfigs: Record<ProductMode, NavbarConfig> = {
   apostas: {
     activeItemId: 'home',
     mainItems: [
-      { id: 'home', icon: navHome, label: 'Início' },
+      { id: 'home', icon: navApostas, label: 'Apostas' },
+      { id: 'entradas', icon: navEntrada, label: 'Entradas' },
       { id: 'ao-vivo', icon: navLive, label: 'Ao Vivo' },
-      { id: 'promocoes', icon: navPromo, label: 'Promoções' },
-      { id: 'apostas', icon: navApostas, label: 'Entradas' },
+      { id: 'promocoes', icon: navPitacoClub, label: 'Pitaco Club' },
     ],
     searchItem: { id: 'buscar', icon: navBusca, label: 'Buscar' },
   },
   cassino: {
     activeItemId: 'home',
     mainItems: [
-      { id: 'home', icon: navHome, label: 'Início' },
-      { id: 'meus-jogos', icon: navMeusJogos, label: 'Frequentes' },
-      { id: 'promocoes', icon: navPromo, label: 'Promoções' },
-      { id: 'historico', icon: navHistorico, label: 'Histórico' },
+      { id: 'home', icon: navApostas, label: 'Apostas' },
+      { id: 'entradas', icon: navEntrada, label: 'Entradas' },
+      { id: 'ao-vivo', icon: navLive, label: 'Ao Vivo' },
+      { id: 'promocoes', icon: navPitacoClub, label: 'Pitaco Club' },
     ],
     searchItem: { id: 'buscar', icon: navBusca, label: 'Buscar' },
   },
@@ -85,110 +88,101 @@ export const productNavbarConfigs: Record<ProductMode, NavbarConfig> = {
 
 export const sportsBanners: Banner[] = [
   {
-    id: 7,
-    type: 'aoVivoTenis',
-    headerLeft: 'Ao Vivo',
-    headerRight: 'Aberto de Madrid',
-    showTimer: true,
-    background: bgAoVivoTenis,
+    id: 1,
+    type: 'market',
+    headerLeft: '',
+    headerRight: '',
+    background: '',
     title: '',
     description: '',
-    tennisMatch: {
-      player1: {
-        name: 'A. Sabalenka',
-        sets: 5,
-        games: 5,
-        points: '40',
-        isServing: true,
-        flag: flagRussia,
-      },
-      player2: {
-        name: 'P. Stearns',
-        sets: 2,
-        games: 2,
-        points: '15',
-        isServing: false,
-        flag: flagUSA,
-      },
-      currentSet: '1º set',
-      setScore: '1 x 0',
-      odds: { player1: '1.22x', player2: '4.75x' },
-    },
-  },
-  {
-    id: 9,
-    type: 'combinada',
-    headerLeft: 'Hoje, 17:00',
-    headerRight: 'Chelsea x Arsenal',
-    background: bgCombinada,
-    title: 'Super Combo',
-    description: '',
-    comboStats: [
-      { value: 'CHE', label: 'Resultado Final' },
-      { value: 'CHE +2', label: 'Total de Gols' },
-      { value: 'ARS +4', label: 'Total de Escanteios' },
-    ],
-    oddBoosted: { old: '7.50x', new: '10.50x' },
-  },
-  {
-    id: 6,
-    type: 'aoVivo',
-    headerLeft: 'Ao Vivo',
-    headerRight: 'NBA',
-    showTimer: true,
-    background: bgAoVivoBasquete,
-    title: '',
-    description: '',
-    liveMatch: {
-      homeTeam: {
-        name: 'Knicks',
-        shortName: 'NYK',
-        badge: escudoKnicksGde,
-        score: 42,
-      },
-      awayTeam: {
-        name: 'Magic',
-        shortName: 'ORL',
-        badge: escudoMagicGde,
-        score: 38,
-      },
-      matchTime: 'Q2 05:00',
-      odds: { home: '1.72x', draw: '', away: '2.15x' },
+    marketBanner: {
+      variant: 'football-live',
+      sport: 'futebol',
+      league: 'CHAMPIONS LEAGUE',
+      footerLabel: '1T 12:33',
+      live: true,
+      liveClock: '1T 12:33',
+      teams: [
+        { name: 'Paris Saint-Germain', imageSourceName: 'PSG', score: '2' },
+        { name: 'Manchester City', imageSourceName: 'Manchester City', score: '1' },
+      ],
+      odds: [
+        { label: 'Paris Saint-Germain', value: '1.78x', outcomeId: 'home' },
+        { label: 'EMPATE', value: '3.50x', outcomeId: 'draw' },
+        { label: 'Manchester City', value: '2.10x', outcomeId: 'away' },
+      ],
     },
   },
   {
     id: 2,
-    type: '1x2',
-    headerLeft: 'Hoje, 17:00',
-    headerRight: 'Champions League',
-    background: bg1x2,
+    type: 'market',
+    headerLeft: '',
+    headerRight: '',
+    background: '',
     title: '',
     description: '',
-    odds: [
-      { team: 'Real Madrid', value: '1.78x', badge: escudoRealGde },
-      { team: 'Empate', value: '3.50x' },
-      { team: 'Barcelona', value: '2.10x', badge: escudoBarcelonaGde },
-    ],
+    marketBanner: {
+      variant: 'tennis-live',
+      sport: 'tenis',
+      league: 'ROLAND GARROS',
+      footerLabel: '1º set',
+      live: true,
+      teams: [
+        { name: 'Carlos Alcaraz', image: bannerTennisAlcaraz, sets: ['6', '6', '6'], currentScore: '15' },
+        { name: 'Jannik Sinner', image: bannerTennisSinner, sets: ['2', '4', '4'], currentScore: '30', isServing: true },
+      ],
+      odds: [
+        { label: 'Alcaraz', value: '1.78x', outcomeId: 'player-1' },
+        { label: 'Sinner', value: '2.05x', outcomeId: 'player-2' },
+      ],
+    },
+  },
+  {
+    id: 3,
+    type: 'market',
+    headerLeft: '',
+    headerRight: '',
+    background: '',
+    title: '',
+    description: '',
+    marketBanner: {
+      variant: 'football-pre',
+      sport: 'futebol',
+      league: 'PREMIER LEAGUE',
+      footerLabel: '21/jan (15:00)',
+      teams: [
+        { name: 'Arsenal', imageSourceName: 'Arsenal' },
+        { name: 'Chelsea', imageSourceName: 'Chelsea' },
+      ],
+      odds: [
+        { label: 'Arsenal', value: '2.62x', outcomeId: 'home' },
+        { label: 'EMPATE', value: '3.45x', outcomeId: 'draw' },
+        { label: 'Chelsea', value: '2.58x', outcomeId: 'away' },
+      ],
+    },
   },
   {
     id: 4,
-    type: 'aumentada',
-    headerLeft: '11/09, 16:00',
-    headerRight: 'Flamengo vs Racing',
-    background: bgAumentada,
-    title: 'Aumentada',
-    description: 'Pedro\nMais de 3.5\nFinalizações ao gol',
-    oddBoosted: { old: '3.87x', new: '4.50x' },
-  },
-  {
-    id: 5,
-    type: 'virtuais',
-    headerLeft: 'Novidade no Rei',
-    headerRight: 'Virtuais',
-    background: bgVirtuais,
-    title: 'Chegou Virtuais!',
-    description: 'Jogos a todo minuto para você não parar de se divertir.',
-    buttonText: 'Jogue Agora',
+    type: 'market',
+    headerLeft: '',
+    headerRight: '',
+    background: '',
+    title: '',
+    description: '',
+    marketBanner: {
+      variant: 'basketball-pre',
+      sport: 'basquete',
+      league: 'NBA',
+      footerLabel: '21/jan (17:30)',
+      teams: [
+        { name: 'Chicago Bulls', imageSourceName: 'Chicago Bulls' },
+        { name: 'Miami Heat', imageSourceName: 'Miami Heat' },
+      ],
+      odds: [
+        { label: 'Bulls', value: '2.45x', outcomeId: 'home' },
+        { label: 'Heat', value: '1.58x', outcomeId: 'away' },
+      ],
+    },
   },
 ]
 
@@ -242,45 +236,1046 @@ export const casinoBanners: Banner[] = [
 
 export const sportsPromotions: Promotion[] = [
   {
-    id: '1',
+    id: 'selecao-copa',
     type: 'missao',
-    timeLabel: 'Termina em 3 dias',
+    timeLabel: '23h : 23m',
     hasTimer: true,
-    label: ['Missão'],
-    title: 'Aposte no Verdão e ganhe R$50!',
-    description: 'Aposte R$50 no jogo do Palmeiras na Liberta e ganhe R$10 em créditos.',
-    image: imgMissaoVerdao,
+    label: ['Seleções da copa'],
+    title: 'Aposte e ganhe R$10',
+    description: 'Aposte nas seleções da copa e ganhe R$10.',
+    image: promoHighlightCopaGlow,
+    headline: 'Seleções da copa',
+    titleLines: ['APOSTE', 'E GANHE', 'R$10'],
+    countdownLabel: '23h : 23m',
+    countdownMinutes: 23 * 60 + 23,
+    rulesLabel: 'Ver regras',
+    glowImage: promoHighlightCopaGlow,
+    accent: 'mint',
   },
   {
-    id: '2',
-    type: 'vantagem',
-    timeLabel: 'Só no Rei',
-    hasTimer: false,
-    label: ['Pagamento', 'Antecipado'],
-    title: 'Fature até 200% na múltipla.',
-    description: 'Se o time abrir dois gols, seu pagamento já cai na conta.',
-    image: imgPagamentoAntecipado,
-  },
-  {
-    id: '3',
+    id: 'nba-tarefas',
     type: 'missao',
-    timeLabel: 'Termina em 3 dias',
+    timeLabel: '23h : 23m',
     hasTimer: true,
-    label: ['Missão'],
-    title: 'Ganhe R$5 no brasileirão.',
-    description: 'Aposte R$50 no jogo do Flamengo e ganhe mais 20 coroas.',
-    image: imgFlamengo,
+    label: ['NBA no Pitaco'],
+    title: 'Complete tarefas e ganhe',
+    description: 'Complete tarefas da NBA no Pitaco e ganhe.',
+    image: promoHighlightNbaGlow,
+    headline: 'NBA NO PITACO',
+    titleLines: ['COMPLETE', 'TAREFAS', 'E GANHE'],
+    countdownLabel: '18h : 07m',
+    countdownMinutes: 18 * 60 + 7,
+    rulesLabel: 'Ver regras',
+    glowImage: promoHighlightNbaGlow,
+    accent: 'gold',
   },
   {
-    id: '5',
-    type: 'vantagem',
-    timeLabel: 'Só no Rei',
-    hasTimer: false,
-    label: ['Tesouro', 'do Pitaco'],
-    title: 'Tesouro do Pitaco',
-    description: 'Quanto mais você jogar mais chaves irá conseguir.',
-    image: imgTesouroRei,
+    id: 'flamengo-liberta',
+    type: 'missao',
+    timeLabel: '23h : 23m',
+    hasTimer: true,
+    label: ['Ganhe R$20'],
+    title: 'Flamengo na liberta é aqui',
+    description: 'Ganhe R$20 com Flamengo na Liberta.',
+    image: promoHighlightFlamengoGlow,
+    headline: 'GANHE R$20',
+    titleLines: ['FLAMENGO', 'NA LIBERTA', 'É AQUI'],
+    countdownLabel: '06h : 42m',
+    countdownMinutes: 6 * 60 + 42,
+    rulesLabel: 'Ver regras',
+    glowImage: promoHighlightFlamengoGlow,
+    accent: 'cyan',
   },
+]
+
+export const drafteaSportsPromotions: Promotion[] = [
+  {
+    id: 'draftea-ambos-anotan',
+    type: 'missao',
+    timeLabel: '23h : 23m',
+    hasTimer: true,
+    label: ['EM PARLAYS de Min. 4 SELECiones'],
+    title: 'AMBOS ANOTAN +40%',
+    description: 'EM PARLAYS de Min. 4 SELECiones',
+    image: promoHighlightCopaGlow,
+    headline: 'EM PARLAYS de Min. 4 SELECiones',
+    titleLines: ['AMBOS ANOTAN +40%'],
+    countdownLabel: '23h : 23m',
+    rulesLabel: 'Ver reglas',
+    glowImage: promoHighlightCopaGlow,
+    accent: 'mint',
+  },
+  {
+    id: 'draftea-mexico-coreia',
+    type: 'missao',
+    timeLabel: '23h : 23m',
+    hasTimer: true,
+    label: ['EM PARLAYS de Min. 3 SELECiones'],
+    title: 'mexico vs coreia +20%',
+    description: 'EM PARLAYS de Min. 3 SELECiones',
+    image: promoHighlightNbaGlow,
+    headline: 'EM PARLAYS de Min. 3 SELECiones',
+    titleLines: ['mexico vs coreia +20%'],
+    countdownLabel: '23h : 23m',
+    rulesLabel: 'Ver reglas',
+    glowImage: promoHighlightNbaGlow,
+    accent: 'gold',
+  },
+  {
+    id: 'draftea-nba-hot',
+    type: 'missao',
+    timeLabel: '23h : 23m',
+    hasTimer: true,
+    label: ['EM PARLAYS de Min. 8 SELECiones'],
+    title: 'nba hot +80%',
+    description: 'EM PARLAYS de Min. 8 SELECiones',
+    image: promoHighlightFlamengoGlow,
+    headline: 'EM PARLAYS de Min. 8 SELECiones',
+    titleLines: ['nba hot +80%'],
+    countdownLabel: '23h : 23m',
+    rulesLabel: 'Ver reglas',
+    glowImage: promoHighlightFlamengoGlow,
+    accent: 'cyan',
+  },
+]
+
+export const homeOfferCarouselItems: HomeOfferCarouselItem[] = [
+  {
+    id: 'craque-demais',
+    title: 'Craque demais!',
+    badge: 'GARANTIDA',
+    badgeTone: 'garantida',
+    matchup: 'REA vs ARS',
+    dateLabel: '21/jan (15:00)',
+    background: bgGarantida,
+    odd: '1.75x',
+    player: {
+      name: 'K. Mbappé',
+      teamName: 'Real Madrid',
+      image: mbappeCard,
+    },
+    boost: {
+      from: '3.5',
+      to: '0.5+',
+      marketLabel: 'Finalizações ao gol',
+    },
+    restrictions: ['Até R$50', '3+ seleções de 1.20+', 'Odd total mín. 3.50x'],
+  },
+  {
+    id: 'combinada-top',
+    title: 'Combinada top!',
+    badge: 'SUPER COMBINADA',
+    badgeTone: 'super-combinada',
+    matchup: 'FCB vs SLB',
+    dateLabel: '21/jan (15:00)',
+    background: bgSuperCombinada,
+    oldOdd: '4.30x',
+    odd: '7.30x',
+    legs: [
+      { id: 'total-gols', icon: 'total-goals', label: 'Total de gols', detail: '2.5' },
+      { id: 'lewandowski', image: escudoBarcelonaGde, label: 'R. Lewandowski', detail: '2.0+ Finalizações ao gol' },
+      { id: 'yamal', image: escudoBarcelonaGde, label: 'L. Yamal', detail: 'Sim Para Marcar Gol' },
+    ],
+    footerAction: {
+      label: 'Ver todos (5 )',
+    },
+  },
+  {
+    id: 'dobradinha-premier',
+    title: 'Dobradinha da rodada',
+    badge: 'COMBINADA',
+    badgeTone: 'combinada',
+    matchup: 'ARS vs CHE',
+    dateLabel: '21/jan (17:30)',
+    background: bgCombinada,
+    odd: '3.10x',
+    legs: [
+      { id: 'arsenal-vence', image: escudoArsenal, label: 'Arsenal', detail: 'Vence a partida' },
+      { id: 'total-gols-premier', icon: 'total-goals', label: 'Total de gols', detail: '1.5+' },
+      { id: 'saka', image: escudoArsenal, label: 'B. Saka', detail: '1.0+ Finalizações ao gol' },
+    ],
+    footerAction: {
+      label: 'Ver todos (5 )',
+    },
+  },
+]
+
+export const drafteaHomeOfferCarouselItems: HomeOfferCarouselItem[] = [
+  ...homeOfferCarouselItems
+    .filter((offer) => offer.badgeTone !== 'garantida')
+    .map((offer) => {
+      if (offer.badgeTone === 'super-combinada') {
+        return { ...offer, badge: 'PROBABLE' }
+      }
+
+      if (offer.badgeTone === 'combinada') {
+        return { ...offer, badge: 'MODERADA' }
+      }
+
+      return offer
+    }),
+  {
+    id: 'draftea-nba-moderada',
+    title: 'NBA moderada',
+    badge: 'MODERADA',
+    badgeTone: 'combinada',
+    matchup: 'LAL vs GSW',
+    dateLabel: '22/jan (21:30)',
+    background: bgCombinada,
+    odd: '4.10x',
+    legs: [
+      { id: 'draftea-nba-lebron-puntos', image: escudoLakers, label: 'LeBron James', detail: '25+ Puntos' },
+      { id: 'draftea-nba-curry-triples', image: escudoWarriorsGde, label: 'Stephen Curry', detail: '4+ Triples' },
+      { id: 'draftea-nba-lakers-gana', image: escudoLakers, label: 'Lakers', detail: 'Gana el partido' },
+    ],
+    footerAction: {
+      label: 'Ver todos (5 )',
+    },
+  },
+]
+
+export const sportHomeOfferCarouselItemsBySport: Record<string, HomeOfferCarouselItem[]> = {
+  futebol: [
+    {
+      id: 'sport-fut-super-raphinha',
+      title: 'Tá voando!',
+      badge: 'SUPER COMBINADA',
+      badgeTone: 'super-combinada',
+      matchup: 'FCB vs RMA',
+      dateLabel: '11/set (16:00)',
+      background: bgSuperCombinada,
+      oldOdd: '2.85x',
+      odd: '3.50x',
+      legs: [
+        { id: 'barcelona-vence-super', image: escudoBarcelonaGde, label: 'Barcelona', detail: 'Resultado Final' },
+        { id: 'raphinha-finalizacoes-super', image: escudoBarcelonaGde, label: 'Raphinha', detail: '1.5+ Finalizações ao gol' },
+        { id: 'real-gols-super', image: escudoRealGde, label: 'Real Madrid', detail: '0.5+ Gols' },
+      ],
+      footerAction: {
+        label: 'Ver todos (5 )',
+      },
+    },
+    {
+      id: 'sport-fut-super-arrascaeta',
+      title: 'Maestro em campo!',
+      badge: 'SUPER COMBINADA',
+      badgeTone: 'super-combinada',
+      matchup: 'FLA vs CRU',
+      dateLabel: 'Hoje',
+      background: bgSuperCombinada,
+      oldOdd: '3.20x',
+      odd: '4.00x',
+      legs: [
+        { id: 'flamengo-vence-super', image: escudoFlamengoGde, label: 'Flamengo', detail: 'Resultado Final' },
+        { id: 'arrascaeta-finalizacoes-super', image: escudoFlamengoGde, label: 'Arrascaeta', detail: '2.5+ Finalizações ao gol' },
+        { id: 'cruzeiro-escanteios-super', image: escudoCruzeiro, label: 'Cruzeiro', detail: '3.5+ Escanteios' },
+      ],
+      footerAction: {
+        label: 'Ver todos (5 )',
+      },
+    },
+    {
+      id: 'sport-fut-aumentada-lewa',
+      title: 'Artilheiro na área!',
+      badge: 'COMBINADA',
+      badgeTone: 'combinada',
+      matchup: 'FCB vs RMA',
+      dateLabel: '11/set (16:00)',
+      background: bgCombinada,
+      oldOdd: '1.75x',
+      odd: '2.10x',
+      legs: [
+        { id: 'lewandowski-gol-aumentada', image: escudoBarcelonaGde, label: 'R. Lewandowski', detail: 'Sim Para Marcar Gol' },
+        { id: 'barcelona-gols-aumentada', image: escudoBarcelonaGde, label: 'Barcelona', detail: '1.5+ Gols' },
+        { id: 'total-gols-aumentada', icon: 'total-goals', label: 'Total de gols', detail: '2.5+' },
+      ],
+      footerAction: {
+        label: 'Ver todos (5 )',
+      },
+    },
+    {
+      id: 'sport-fut-combinada-classico',
+      title: 'Clássico quente!',
+      badge: 'COMBINADA',
+      badgeTone: 'combinada',
+      matchup: 'FLA vs CRU',
+      dateLabel: 'Hoje',
+      background: bgCombinada,
+      odd: '4.25x',
+      legs: [
+        { id: 'flamengo-gols', image: escudoFlamengoGde, label: 'Flamengo', detail: '1.5+ Gols' },
+        { id: 'kaio-jorge', image: escudoCruzeiro, label: 'Kaio Jorge', detail: 'Sim Para Marcar Gol' },
+        { id: 'cruzeiro-escanteios', image: escudoCruzeiro, label: 'Cruzeiro', detail: '4.5+ Escanteios' },
+      ],
+      footerAction: {
+        label: 'Ver todos (4 )',
+      },
+    },
+  ],
+  basquete: [
+    {
+      id: 'sport-bask-super-lebron',
+      title: 'Favoritos da NBA!',
+      badge: 'SUPER COMBINADA',
+      badgeTone: 'super-combinada',
+      matchup: 'NBA',
+      dateLabel: 'Rodada completa',
+      background: bgSuperCombinada,
+      oldOdd: '5.90x',
+      odd: '8.50x',
+      legs: [
+        { id: 'heat-vence-super', image: escudoMiami, label: 'Heat', detail: 'Resultado Final' },
+        { id: 'lakers-vence-super', image: escudoLakers, label: 'Lakers', detail: 'Resultado Final' },
+        { id: 'warriors-pontos-super', image: escudoWarriorsGde, label: 'Warriors', detail: '110.5+ Pontos' },
+      ],
+      footerAction: {
+        label: 'Ver todos (5 )',
+      },
+    },
+    {
+      id: 'sport-bask-super-curry',
+      title: 'Chef de três!',
+      badge: 'SUPER COMBINADA',
+      badgeTone: 'super-combinada',
+      matchup: 'GSW vs LAL',
+      dateLabel: '14/set (22:30)',
+      background: bgSuperCombinada,
+      oldOdd: '4.30x',
+      odd: '7.30x',
+      legs: [
+        { id: 'curry-triplos-super', image: escudoWarriorsGde, label: 'Stephen Curry', detail: '5+ Cestas de 3' },
+        { id: 'lebron-pontos-super', image: escudoLakers, label: 'LeBron James', detail: '30+ Pontos' },
+        { id: 'warriors-vence-super', image: escudoWarriorsGde, label: 'Warriors', detail: 'Resultado Final' },
+      ],
+      footerAction: {
+        label: 'Ver todos (5 )',
+      },
+    },
+    {
+      id: 'sport-bask-aumentada-curry',
+      title: 'Splash Brothers!',
+      badge: 'COMBINADA',
+      badgeTone: 'combinada',
+      matchup: 'GSW vs LAL',
+      dateLabel: '14/set (22:30)',
+      background: bgCombinada,
+      oldOdd: '2.10x',
+      odd: '2.70x',
+      legs: [
+        { id: 'warriors-triplos-aumentada', image: escudoWarriorsGde, label: 'Warriors', detail: '14.5+ Cestas de 3' },
+        { id: 'curry-triplos-aumentada', image: escudoWarriorsGde, label: 'Stephen Curry', detail: '5+ Cestas de 3' },
+        { id: 'lakers-pontos-aumentada', image: escudoLakers, label: 'Lakers', detail: '105.5+ Pontos' },
+      ],
+      footerAction: {
+        label: 'Ver todos (5 )',
+      },
+    },
+    {
+      id: 'sport-bask-combinada-pontos',
+      title: 'Noite de pontos!',
+      badge: 'COMBINADA',
+      badgeTone: 'combinada',
+      matchup: 'NBA',
+      dateLabel: 'Rodada completa',
+      background: bgCombinada,
+      oldOdd: '6.10x',
+      odd: '7.80x',
+      legs: [
+        { id: 'lebron-pontos', image: escudoLakers, label: 'LeBron James', detail: '30+ Pontos' },
+        { id: 'curry-triplos', image: escudoWarriorsGde, label: 'Stephen Curry', detail: '5+ Cestas de 3' },
+        { id: 'jimmy-pontos', image: escudoMiami, label: 'Jimmy Butler', detail: '22+ Pontos' },
+      ],
+      footerAction: {
+        label: 'Ver todos (5 )',
+      },
+    },
+  ],
+}
+
+export const drafteaSportHomeOfferCarouselItemsBySport: Record<string, HomeOfferCarouselItem[]> =
+  Object.fromEntries(
+    Object.entries(sportHomeOfferCarouselItemsBySport).map(([sport, offers]) => [
+      sport,
+      offers.map((offer) => {
+        if (offer.badgeTone === 'super-combinada') {
+          return { ...offer, badge: 'PROBABLE' }
+        }
+
+        if (offer.badgeTone === 'combinada') {
+          return { ...offer, badge: 'MODERADA' }
+        }
+
+        return offer
+      }),
+    ])
+  ) as Record<string, HomeOfferCarouselItem[]>
+
+export const homeCompetitionHighlight: HomeCompetitionHighlight = {
+  title: 'Champions League',
+  sportLabel: 'Futebol',
+  matches: [
+    {
+      id: 'ucl-psg-city-live',
+      homeTeam: 'Paris Saint-Germain',
+      awayTeam: 'Manchester City',
+      sport: 'futebol',
+      homeScore: '2',
+      awayScore: '1',
+      marketLabel: 'RESULTADO FINAL',
+      tags: ['90’'],
+      footerLabel: '1T 34:22',
+      live: true,
+      liveClock: '1T 34:22',
+      odds: [
+        { label: 'PSG', value: '1.78x' },
+        { label: 'EMPATE', value: '3.50x' },
+        { label: 'CITY', value: '2.10x' },
+      ],
+    },
+    {
+      id: 'ucl-real-bayern',
+      homeTeam: 'Real Madrid',
+      awayTeam: 'Bayern',
+      sport: 'futebol',
+      marketLabel: 'RESULTADO FINAL',
+      tags: ['PA', '90’'],
+      footerLabel: '21/jan (15:00)',
+      odds: [
+        { label: 'REAL', value: '2.15x' },
+        { label: 'EMPATE', value: '3.40x' },
+        { label: 'BAY', value: '3.10x' },
+      ],
+    },
+    {
+      id: 'ucl-barca-inter',
+      homeTeam: 'Barcelona',
+      awayTeam: 'Inter',
+      sport: 'futebol',
+      marketLabel: 'RESULTADO FINAL',
+      tags: ['PA', '90’'],
+      footerLabel: '21/jan (15:00)',
+      odds: [
+        { label: 'BAR', value: '1.95x' },
+        { label: 'EMPATE', value: '3.55x' },
+        { label: 'INT', value: '3.75x' },
+      ],
+    },
+  ],
+  playerProps: [
+    {
+      id: 'prop-dembele',
+      playerName: 'O. Dembele',
+      position: 'ATA',
+      marketLabel: 'Finalizações no Gol',
+      matchLabel: 'PSG vs MCI',
+      timeLabel: 'AO VIVO',
+      teamName: 'Paris Saint-Germain',
+      teamAbbreviation: 'PSG',
+      sport: 'futebol',
+      odds: [
+        { label: '1.0+', value: '1.53x' },
+        { label: '2.0+', value: '2.12x' },
+        { label: '3.0+', value: '4.20x' },
+      ],
+    },
+    {
+      id: 'prop-haaland',
+      playerName: 'Haaland',
+      position: 'ATA',
+      marketLabel: 'Chutes Totais',
+      matchLabel: 'PSG vs MCI',
+      timeLabel: 'AO VIVO',
+      teamName: 'Manchester City',
+      teamAbbreviation: 'MCI',
+      sport: 'futebol',
+      odds: [
+        { label: '2.0+', value: '1.44x' },
+        { label: '3.0+', value: '2.08x' },
+        { label: '4.0+', value: '3.55x' },
+      ],
+    },
+    {
+      id: 'prop-vini',
+      playerName: 'Vini Jr.',
+      position: 'ATA',
+      marketLabel: 'Dribles Completos',
+      matchLabel: 'RMA vs BAY',
+      timeLabel: 'HOJE 15:00',
+      teamName: 'Real Madrid',
+      teamAbbreviation: 'RMA',
+      sport: 'futebol',
+      odds: [
+        { label: '1.0+', value: '1.48x' },
+        { label: '2.0+', value: '2.35x' },
+        { label: '3.0+', value: '4.75x' },
+      ],
+    },
+    {
+      id: 'prop-kane',
+      playerName: 'H. Kane',
+      position: 'ATA',
+      marketLabel: 'Total de Gols',
+      matchLabel: 'RMA vs BAY',
+      timeLabel: 'HOJE 15:00',
+      teamName: 'Bayern',
+      teamAbbreviation: 'BAY',
+      sport: 'futebol',
+      odds: [
+        { label: '0.5+', value: '2.05x' },
+        { label: '1.0+', value: '4.10x' },
+        { label: '2.0+', value: '9.80x' },
+      ],
+    },
+    {
+      id: 'prop-yamal',
+      playerName: 'L. Yamal',
+      position: 'ATA',
+      marketLabel: 'Finalizações no Gol',
+      matchLabel: 'BAR vs INT',
+      timeLabel: 'HOJE 20:00',
+      teamName: 'Barcelona',
+      teamAbbreviation: 'BAR',
+      sport: 'futebol',
+      odds: [
+        { label: '1.0+', value: '1.53x' },
+        { label: '2.0+', value: '2.05x' },
+        { label: '3.0+', value: '3.80x' },
+      ],
+    },
+    {
+      id: 'prop-lautaro',
+      playerName: 'Lautaro',
+      position: 'ATA',
+      marketLabel: 'Chutes Totais',
+      matchLabel: 'BAR vs INT',
+      timeLabel: 'HOJE 20:00',
+      teamName: 'Inter',
+      teamAbbreviation: 'INT',
+      sport: 'futebol',
+      odds: [
+        { label: '1.0+', value: '1.62x' },
+        { label: '2.0+', value: '2.55x' },
+        { label: '3.0+', value: '5.10x' },
+      ],
+    },
+    {
+      id: 'prop-mbappe',
+      playerName: 'K. Mbappe',
+      position: 'ATA',
+      marketLabel: 'Chutes Totais',
+      matchLabel: 'RMA vs BAY',
+      timeLabel: 'HOJE 15:00',
+      teamName: 'Real Madrid',
+      teamAbbreviation: 'RMA',
+      sport: 'futebol',
+      odds: [
+        { label: '2.0+', value: '1.42x' },
+        { label: '3.0+', value: '2.18x' },
+        { label: '4.0+', value: '3.95x' },
+      ],
+    },
+    {
+      id: 'prop-foden',
+      playerName: 'P. Foden',
+      position: 'MEI',
+      marketLabel: 'Finalizações no Gol',
+      matchLabel: 'PSG vs MCI',
+      timeLabel: 'AO VIVO',
+      teamName: 'Manchester City',
+      teamAbbreviation: 'MCI',
+      sport: 'futebol',
+      odds: [
+        { label: '1.0+', value: '1.74x' },
+        { label: '2.0+', value: '2.90x' },
+        { label: '3.0+', value: '6.20x' },
+      ],
+    },
+  ],
+}
+
+const championsLeagueAdditionalEventMatches = [
+  {
+    id: 'ucl-arsenal-liverpool',
+    homeTeam: 'Arsenal',
+    awayTeam: 'Liverpool',
+    sport: 'futebol',
+    marketLabel: 'RESULTADO FINAL',
+    tags: ['PA', '90’'],
+    footerLabel: '21/jan (17:30)',
+    odds: [
+      { label: 'ARS', value: '2.25x' },
+      { label: 'EMPATE', value: '3.35x' },
+      { label: 'LIV', value: '2.95x' },
+    ],
+  },
+  {
+    id: 'ucl-chelsea-napoli',
+    homeTeam: 'Chelsea',
+    awayTeam: 'Napoli',
+    sport: 'futebol',
+    marketLabel: 'RESULTADO FINAL',
+    tags: ['PA', '90’'],
+    footerLabel: '22/jan (15:00)',
+    odds: [
+      { label: 'CHE', value: '2.35x' },
+      { label: 'EMPATE', value: '3.25x' },
+      { label: 'NAP', value: '2.85x' },
+    ],
+  },
+  {
+    id: 'ucl-lyon-newcastle',
+    homeTeam: 'Lyon',
+    awayTeam: 'Newcastle',
+    sport: 'futebol',
+    marketLabel: 'RESULTADO FINAL',
+    tags: ['PA', '90’'],
+    footerLabel: '22/jan (17:30)',
+    odds: [
+      { label: 'LYO', value: '2.80x' },
+      { label: 'EMPATE', value: '3.40x' },
+      { label: 'NEW', value: '2.38x' },
+    ],
+  },
+  {
+    id: 'ucl-benfica-ajax',
+    homeTeam: 'Benfica',
+    awayTeam: 'Ajax',
+    sport: 'futebol',
+    marketLabel: 'RESULTADO FINAL',
+    tags: ['PA', '90’'],
+    footerLabel: '22/jan (15:00)',
+    odds: [
+      { label: 'BEN', value: '2.05x' },
+      { label: 'EMPATE', value: '3.45x' },
+      { label: 'AJX', value: '3.20x' },
+    ],
+  },
+] satisfies HomeCompetitionMatch[]
+
+export const championsLeagueEventMatches: HomeCompetitionMatch[] = [
+  ...homeCompetitionHighlight.matches,
+  ...championsLeagueAdditionalEventMatches,
+]
+
+export const premierLeagueCompetitionHighlight: HomeCompetitionHighlight = {
+  title: 'Premier League',
+  sportLabel: 'Futebol',
+  matches: [
+    {
+      id: 'pl-arsenal-chelsea',
+      homeTeam: 'Arsenal',
+      awayTeam: 'Chelsea',
+      sport: 'futebol',
+      marketLabel: 'RESULTADO FINAL',
+      tags: ['PA', '90’'],
+      footerLabel: '21/jan (15:00)',
+      odds: [
+        { label: 'ARS', value: '2.28x' },
+        { label: 'EMPATE', value: '3.45x' },
+        { label: 'CHE', value: '2.95x' },
+      ],
+    },
+    {
+      id: 'pl-liverpool-tottenham',
+      homeTeam: 'Liverpool',
+      awayTeam: 'Tottenham',
+      sport: 'futebol',
+      marketLabel: 'RESULTADO FINAL',
+      tags: ['PA', '90’'],
+      footerLabel: '21/jan (17:30)',
+      odds: [
+        { label: 'LIV', value: '1.88x' },
+        { label: 'EMPATE', value: '3.70x' },
+        { label: 'TOT', value: '3.90x' },
+      ],
+    },
+    {
+      id: 'pl-newcastle-aston-villa',
+      homeTeam: 'Newcastle',
+      awayTeam: 'Aston Villa',
+      sport: 'futebol',
+      marketLabel: 'RESULTADO FINAL',
+      tags: ['PA', '90’'],
+      footerLabel: '22/jan (12:30)',
+      odds: [
+        { label: 'NEW', value: '2.10x' },
+        { label: 'EMPATE', value: '3.35x' },
+        { label: 'AVL', value: '3.25x' },
+      ],
+    },
+  ],
+  playerProps: [
+    {
+      id: 'pl-prop-saka',
+      playerName: 'B. Saka',
+      position: 'ATA',
+      marketLabel: 'Finalizações no Gol',
+      matchLabel: 'ARS vs CHE',
+      timeLabel: 'HOJE 15:00',
+      teamName: 'Arsenal',
+      teamAbbreviation: 'ARS',
+      sport: 'futebol',
+      odds: [
+        { label: '1.0+', value: '1.58x' },
+        { label: '2.0+', value: '2.22x' },
+        { label: '3.0+', value: '4.10x' },
+      ],
+    },
+    {
+      id: 'pl-prop-palmer',
+      playerName: 'C. Palmer',
+      position: 'MEI',
+      marketLabel: 'Chutes Totais',
+      matchLabel: 'ARS vs CHE',
+      timeLabel: 'HOJE 15:00',
+      teamName: 'Chelsea',
+      teamAbbreviation: 'CHE',
+      sport: 'futebol',
+      odds: [
+        { label: '1.0+', value: '1.46x' },
+        { label: '2.0+', value: '2.18x' },
+        { label: '3.0+', value: '4.45x' },
+      ],
+    },
+    {
+      id: 'pl-prop-salah',
+      playerName: 'M. Salah',
+      position: 'ATA',
+      marketLabel: 'Total de Gols',
+      matchLabel: 'LIV vs TOT',
+      timeLabel: 'HOJE 17:30',
+      teamName: 'Liverpool',
+      teamAbbreviation: 'LIV',
+      sport: 'futebol',
+      odds: [
+        { label: '0.5+', value: '2.05x' },
+        { label: '1.0+', value: '4.20x' },
+        { label: '2.0+', value: '10.50x' },
+      ],
+    },
+    {
+      id: 'pl-prop-son',
+      playerName: 'Son',
+      position: 'ATA',
+      marketLabel: 'Finalizações no Gol',
+      matchLabel: 'LIV vs TOT',
+      timeLabel: 'HOJE 17:30',
+      teamName: 'Tottenham',
+      teamAbbreviation: 'TOT',
+      sport: 'futebol',
+      odds: [
+        { label: '1.0+', value: '1.72x' },
+        { label: '2.0+', value: '2.85x' },
+        { label: '3.0+', value: '5.80x' },
+      ],
+    },
+    {
+      id: 'pl-prop-isak',
+      playerName: 'A. Isak',
+      position: 'ATA',
+      marketLabel: 'Chutes Totais',
+      matchLabel: 'NEW vs AVL',
+      timeLabel: 'AMANHÃ 12:30',
+      teamName: 'Newcastle',
+      teamAbbreviation: 'NEW',
+      sport: 'futebol',
+      odds: [
+        { label: '2.0+', value: '1.62x' },
+        { label: '3.0+', value: '2.38x' },
+        { label: '4.0+', value: '4.75x' },
+      ],
+    },
+    {
+      id: 'pl-prop-watkins',
+      playerName: 'Watkins',
+      position: 'ATA',
+      marketLabel: 'Total de Gols',
+      matchLabel: 'NEW vs AVL',
+      timeLabel: 'AMANHÃ 12:30',
+      teamName: 'Aston Villa',
+      teamAbbreviation: 'AVL',
+      sport: 'futebol',
+      odds: [
+        { label: '0.5+', value: '2.35x' },
+        { label: '1.0+', value: '5.10x' },
+        { label: '2.0+', value: '13.00x' },
+      ],
+    },
+    {
+      id: 'pl-prop-havertz',
+      playerName: 'K. Havertz',
+      position: 'ATA',
+      marketLabel: 'Finalizações no Gol',
+      matchLabel: 'ARS vs CHE',
+      timeLabel: 'HOJE 15:00',
+      teamName: 'Arsenal',
+      teamAbbreviation: 'ARS',
+      sport: 'futebol',
+      odds: [
+        { label: '1.0+', value: '1.66x' },
+        { label: '2.0+', value: '2.70x' },
+        { label: '3.0+', value: '5.60x' },
+      ],
+    },
+    {
+      id: 'pl-prop-gordon',
+      playerName: 'A. Gordon',
+      position: 'ATA',
+      marketLabel: 'Chutes Totais',
+      matchLabel: 'NEW vs AVL',
+      timeLabel: 'AMANHÃ 12:30',
+      teamName: 'Newcastle',
+      teamAbbreviation: 'NEW',
+      sport: 'futebol',
+      odds: [
+        { label: '1.0+', value: '1.44x' },
+        { label: '2.0+', value: '2.12x' },
+        { label: '3.0+', value: '4.40x' },
+      ],
+    },
+  ],
+}
+
+export const nbaCompetitionHighlight: HomeCompetitionHighlight = {
+  title: 'NBA',
+  sportLabel: 'Basquete',
+  matches: [
+    {
+      id: 'nba-jazz-thunder-live',
+      homeTeam: 'Utah Jazz',
+      awayTeam: 'Oklahoma City Thunder',
+      sport: 'basquete',
+      homeScore: '8',
+      awayScore: '11',
+      marketLabel: 'NBA',
+      tags: [],
+      footerLabel: 'Q1 08:25',
+      live: true,
+      liveClock: 'Q1 08:25',
+      marketColumns: [
+        {
+          label: 'Vencer',
+          homeOdd: { label: 'JAZ', value: '3.10x' },
+          awayOdd: { label: 'OKC', value: '1.36x' },
+        },
+        {
+          label: 'Handicap',
+          homeOdd: { label: 'JAZ +7.5', value: '1.91x' },
+          awayOdd: { label: 'OKC -7.5', value: '1.91x' },
+        },
+        {
+          label: 'Total',
+          homeOdd: { label: '↑ 221.5', value: '1.86x' },
+          awayOdd: { label: '↓ 221.5', value: '1.95x' },
+        },
+      ],
+      odds: [
+        { label: 'JAZ', value: '3.10x' },
+        { label: 'OKC', value: '1.36x' },
+        { label: 'TOTAL', value: '1.86x' },
+      ],
+    },
+    {
+      id: 'nba-knicks-magic',
+      homeTeam: 'New York Knicks',
+      awayTeam: 'Orlando Magic',
+      sport: 'basquete',
+      marketLabel: 'NBA',
+      tags: [],
+      footerLabel: '21/jan (15:00)',
+      marketColumns: [
+        {
+          label: 'Vencer',
+          tag: 'PA',
+          homeOdd: { label: 'NYK', value: '1.72x' },
+          awayOdd: { label: 'ORL', value: '2.15x' },
+        },
+        {
+          label: 'Handicap',
+          homeOdd: { label: 'NYK -4.5', value: '1.93x' },
+          awayOdd: { label: 'ORL +4.5', value: '1.88x' },
+        },
+        {
+          label: 'Total',
+          homeOdd: { label: '↑ 212.5', value: '1.90x' },
+          awayOdd: { label: '↓ 212.5', value: '1.90x' },
+        },
+      ],
+      odds: [
+        { label: 'NYK', value: '1.72x' },
+        { label: 'ORL', value: '2.15x' },
+        { label: 'TOTAL', value: '1.90x' },
+      ],
+    },
+    {
+      id: 'nba-bulls-heat',
+      homeTeam: 'Chicago Bulls',
+      awayTeam: 'Miami Heat',
+      sport: 'basquete',
+      marketLabel: 'NBA',
+      tags: [],
+      footerLabel: '21/jan (17:30)',
+      marketColumns: [
+        {
+          label: 'Vencer',
+          tag: 'PA',
+          homeOdd: { label: 'CHI', value: '2.45x' },
+          awayOdd: { label: 'MIA', value: '1.58x' },
+        },
+        {
+          label: 'Handicap',
+          homeOdd: { label: 'CHI +5.5', value: '1.87x' },
+          awayOdd: { label: 'MIA -5.5', value: '1.94x' },
+        },
+        {
+          label: 'Total',
+          homeOdd: { label: '↑ 218.5', value: '1.89x' },
+          awayOdd: { label: '↓ 218.5', value: '1.92x' },
+        },
+      ],
+      odds: [
+        { label: 'CHI', value: '2.45x' },
+        { label: 'MIA', value: '1.58x' },
+        { label: 'TOTAL', value: '1.89x' },
+      ],
+    },
+  ],
+  playerProps: [
+    {
+      id: 'nba-prop-markkanen',
+      playerName: 'L. Markkanen',
+      position: 'ALA',
+      marketLabel: 'Pontos',
+      matchLabel: 'UTA vs OKC',
+      timeLabel: 'AO VIVO',
+      teamName: 'Utah Jazz',
+      teamAbbreviation: 'UTA',
+      sport: 'basquete',
+      odds: [
+        { label: '18.0+', value: '1.58x' },
+        { label: '22.0+', value: '2.05x' },
+        { label: '26.0+', value: '3.25x' },
+      ],
+    },
+    {
+      id: 'nba-prop-shai',
+      playerName: 'S. Gilgeous-Alexander',
+      position: 'ARM',
+      marketLabel: 'Pontos',
+      matchLabel: 'UTA vs OKC',
+      timeLabel: 'AO VIVO',
+      teamName: 'Oklahoma City Thunder',
+      teamAbbreviation: 'OKC',
+      sport: 'basquete',
+      odds: [
+        { label: '25.0+', value: '1.50x' },
+        { label: '30.0+', value: '2.12x' },
+        { label: '35.0+', value: '3.90x' },
+      ],
+    },
+    {
+      id: 'nba-prop-brunson',
+      playerName: 'J. Brunson',
+      position: 'ARM',
+      marketLabel: 'Assistências',
+      matchLabel: 'NYK vs ORL',
+      timeLabel: 'HOJE 15:00',
+      teamName: 'New York Knicks',
+      teamAbbreviation: 'NYK',
+      sport: 'basquete',
+      odds: [
+        { label: '5.0+', value: '1.48x' },
+        { label: '7.0+', value: '2.22x' },
+        { label: '9.0+', value: '4.15x' },
+      ],
+    },
+    {
+      id: 'nba-prop-banchero',
+      playerName: 'P. Banchero',
+      position: 'ALA',
+      marketLabel: 'Rebotes',
+      matchLabel: 'NYK vs ORL',
+      timeLabel: 'HOJE 15:00',
+      teamName: 'Orlando Magic',
+      teamAbbreviation: 'ORL',
+      sport: 'basquete',
+      odds: [
+        { label: '5.0+', value: '1.54x' },
+        { label: '7.0+', value: '2.30x' },
+        { label: '9.0+', value: '4.35x' },
+      ],
+    },
+    {
+      id: 'nba-prop-lavine',
+      playerName: 'Z. LaVine',
+      position: 'ALA',
+      marketLabel: 'Pontos',
+      matchLabel: 'CHI vs MIA',
+      timeLabel: 'HOJE 17:30',
+      teamName: 'Chicago Bulls',
+      teamAbbreviation: 'CHI',
+      sport: 'basquete',
+      odds: [
+        { label: '18.0+', value: '1.60x' },
+        { label: '22.0+', value: '2.18x' },
+        { label: '26.0+', value: '3.70x' },
+      ],
+    },
+    {
+      id: 'nba-prop-butler',
+      playerName: 'J. Butler',
+      position: 'ALA',
+      marketLabel: 'Assistências',
+      matchLabel: 'MIA vs CHI',
+      timeLabel: 'HOJE 17:30',
+      teamName: 'Miami Heat',
+      teamAbbreviation: 'MIA',
+      sport: 'basquete',
+      odds: [
+        { label: '4.0+', value: '1.62x' },
+        { label: '6.0+', value: '2.48x' },
+        { label: '8.0+', value: '4.90x' },
+      ],
+    },
+    {
+      id: 'nba-prop-randle',
+      playerName: 'J. Randle',
+      position: 'ALA',
+      marketLabel: 'Rebotes',
+      matchLabel: 'NYK vs ORL',
+      timeLabel: 'HOJE 15:00',
+      teamName: 'New York Knicks',
+      teamAbbreviation: 'NYK',
+      sport: 'basquete',
+      odds: [
+        { label: '6.0+', value: '1.57x' },
+        { label: '8.0+', value: '2.25x' },
+        { label: '10.0+', value: '4.05x' },
+      ],
+    },
+    {
+      id: 'nba-prop-herro',
+      playerName: 'T. Herro',
+      position: 'ARM',
+      marketLabel: 'Pontos',
+      matchLabel: 'MIA vs CHI',
+      timeLabel: 'HOJE 17:30',
+      teamName: 'Miami Heat',
+      teamAbbreviation: 'MIA',
+      sport: 'basquete',
+      odds: [
+        { label: '16.0+', value: '1.52x' },
+        { label: '20.0+', value: '2.18x' },
+        { label: '24.0+', value: '3.95x' },
+      ],
+    },
+  ],
+}
+
+export const homeCompetitionHighlights: HomeCompetitionHighlight[] = [
+  homeCompetitionHighlight,
+  premierLeagueCompetitionHighlight,
+  nbaCompetitionHighlight,
 ]
 
 export const casinoPromotions: Promotion[] = [

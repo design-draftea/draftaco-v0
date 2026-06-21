@@ -11,6 +11,8 @@ type PromotionsFilterId = 'todos' | ProductMode
 interface HeaderComponentProps {
   activeProduct?: ProductMode
   changeProductOnPointerDown?: boolean
+  disableProductToggle?: boolean
+  disableMenuButton?: boolean
   onProductChange?: (product: ProductMode) => void
   onLogoDoubleClick?: () => void
   onDepositOpen?: () => void
@@ -234,6 +236,8 @@ export function PromotionsPage({
       <HeaderComponent
         activeProduct={activeProduct}
         changeProductOnPointerDown={false}
+        disableProductToggle={true}
+        disableMenuButton={true}
         onDepositOpen={onDepositOpen}
         onLogoDoubleClick={onLogoDoubleClick}
         onProductChange={onProductChange}

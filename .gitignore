@@ -28,3 +28,6 @@ dist-ssr
 
 # Playwright CLI cache
 .playwright-cli/
+
+# Local test artifacts
+output/

@@ -43,18 +43,18 @@
 }
 
 .sport-rail--competitions.sport-rail--show-right-fade {
-  -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 32px), rgba(0, 0, 0, 0));
-  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 32px), rgba(0, 0, 0, 0));
+  -webkit-mask-image: linear-gradient(to right, var(--ds-fill-dark, #000000) 0, var(--ds-fill-dark, #000000) calc(100% - 32px), rgb(var(--ds-fill-dark-rgb) / 0));
+  mask-image: linear-gradient(to right, var(--ds-fill-dark, #000000) 0, var(--ds-fill-dark, #000000) calc(100% - 32px), rgb(var(--ds-fill-dark-rgb) / 0));
 }
 
 .sport-rail--competitions.sport-rail--show-left-fade {
-  -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 0), #000 48px, #000 100%);
-  mask-image: linear-gradient(to right, rgba(0, 0, 0, 0), #000 48px, #000 100%);
+  -webkit-mask-image: linear-gradient(to right, rgb(var(--ds-fill-dark-rgb) / 0), var(--ds-fill-dark, #000000) 48px, var(--ds-fill-dark, #000000) 100%);
+  mask-image: linear-gradient(to right, rgb(var(--ds-fill-dark-rgb) / 0), var(--ds-fill-dark, #000000) 48px, var(--ds-fill-dark, #000000) 100%);
 }
 
 .sport-rail--competitions.sport-rail--show-left-fade.sport-rail--show-right-fade {
-  -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 0), #000 48px, #000 calc(100% - 32px), rgba(0, 0, 0, 0));
-  mask-image: linear-gradient(to right, rgba(0, 0, 0, 0), #000 48px, #000 calc(100% - 32px), rgba(0, 0, 0, 0));
+  -webkit-mask-image: linear-gradient(to right, rgb(var(--ds-fill-dark-rgb) / 0), var(--ds-fill-dark, #000000) 48px, var(--ds-fill-dark, #000000) calc(100% - 32px), rgb(var(--ds-fill-dark-rgb) / 0));
+  mask-image: linear-gradient(to right, rgb(var(--ds-fill-dark-rgb) / 0), var(--ds-fill-dark, #000000) 48px, var(--ds-fill-dark, #000000) calc(100% - 32px), rgb(var(--ds-fill-dark-rgb) / 0));
 }
 
 .sport-rail__scroll-arrow {
@@ -70,7 +70,7 @@
   border: 0;
   border-radius: 50%;
   background: var(--tokens-layer-layer-01);
-  color: rgba(255, 255, 255, 0.92);
+  color: rgb(var(--ds-fill-primary-rgb) / 0.92);
   opacity: 0;
   pointer-events: none;
   transform: translateY(-50%) scale(0.94);
@@ -273,9 +273,9 @@
     sport-rail-liquid-toggle-squish 560ms cubic-bezier(0.16, 1, 0.24, 1),
     sport-rail-liquid-toggle-bubble 560ms ease;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.34),
-    inset 0 -4px 9px rgba(0, 0, 0, 0.055),
-    inset 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+    inset 0 1px 0 rgb(var(--ds-fill-primary-rgb) / 0.34),
+    inset 0 -4px 9px rgb(var(--ds-fill-dark-rgb) / 0.055),
+    inset 0 0 0 0.5px rgb(var(--ds-fill-primary-rgb) / 0.12);
 }
 
 .sport-rail__list--liquid-switching .sport-rail__active-indicator::after {
@@ -340,34 +340,34 @@
   0% {
     opacity: 1;
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.28),
-      inset 0 -5px 10px rgba(0, 0, 0, 0.08),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+      inset 0 1px 0 rgb(var(--ds-fill-primary-rgb) / 0.28),
+      inset 0 -5px 10px rgb(var(--ds-fill-dark-rgb) / 0.08),
+      inset 0 0 0 0.5px rgb(var(--ds-fill-primary-rgb) / 0.08);
   }
 
   34%,
   48% {
     opacity: 0.72;
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.42),
-      inset 0 -4px 9px rgba(0, 0, 0, 0.045),
-      inset 0 0 0 0.6px rgba(255, 255, 255, 0.18);
+      inset 0 1px 0 rgb(var(--ds-fill-primary-rgb) / 0.42),
+      inset 0 -4px 9px rgb(var(--ds-fill-dark-rgb) / 0.045),
+      inset 0 0 0 0.6px rgb(var(--ds-fill-primary-rgb) / 0.18);
   }
 
   72% {
     opacity: 0.9;
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.36),
-      inset 0 -4px 9px rgba(0, 0, 0, 0.06),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+      inset 0 1px 0 rgb(var(--ds-fill-primary-rgb) / 0.36),
+      inset 0 -4px 9px rgb(var(--ds-fill-dark-rgb) / 0.06),
+      inset 0 0 0 0.5px rgb(var(--ds-fill-primary-rgb) / 0.12);
   }
 
   100% {
     opacity: 1;
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.28),
-      inset 0 -5px 10px rgba(0, 0, 0, 0.08),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+      inset 0 1px 0 rgb(var(--ds-fill-primary-rgb) / 0.28),
+      inset 0 -5px 10px rgb(var(--ds-fill-dark-rgb) / 0.08),
+      inset 0 0 0 0.5px rgb(var(--ds-fill-primary-rgb) / 0.08);
   }
 }
 
@@ -432,7 +432,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: rgba(0, 0, 0, 0.16);
+  background-color: rgb(var(--ds-fill-dark-rgb) / 0.16);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -584,17 +584,49 @@
 }
 
 .header--v2 .sport-rail--competitions {
-  --sport-rail-v2-active-start: var(--color-brand-gradient-start);
-  --sport-rail-v2-active-start-rgb: 82 40 255;
-  --sport-rail-v2-active-end: var(--color-brand-gradient-end);
-  --sport-rail-v2-active-end-rgb: 174 24 255;
-  --sport-rail-v2-active-fill-start-rgb: 82 40 255;
-  --sport-rail-v2-active-fill-end-rgb: 174 24 255;
-  --sport-rail-v2-active-fill-opacity: 0.56;
+  --sport-rail-pulse-safe-area: 0px;
+  --sport-rail-label-max-height: 15px;
+  --sport-rail-v2-active-start: var(--ds-action-primary-default-start);
+  --sport-rail-v2-active-end: var(--ds-action-primary-default-end);
+  --sport-rail-v2-active-fill-opacity: 0.24;
   --sport-rail-active-fill-opacity: var(--sport-rail-v2-active-fill-opacity);
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: 78px;
   margin-top: 0;
-  padding-top: 0;
-  padding-bottom: max(0px, calc(var(--sport-rail-padding-bottom, 24px) - 4px));
+  padding: 0 0 0 20px;
+  border-bottom: 1px solid var(--ds-fill-opacity-quaternary);
+}
+
+.header--v2 .sport-rail-shell--competitions {
+  height: 78px;
+}
+
+.header--v2 .sport-rail-shell--competitions .sport-rail__scroll-arrow {
+  display: none;
+}
+
+.header--v2 .sport-rail--competitions .sport-rail__list--competitions {
+  align-items: center;
+  gap: 12px;
+}
+
+.header--v2 .sport-rail--competitions .sport-rail__section,
+.header--v2 .sport-rail--competitions .sport-rail__section--compact {
+  gap: 12px;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.header--v2 .sport-rail--competitions .sport-rail__section--tail {
+  padding-right: 20px;
+}
+
+.header--v2 .sport-rail--competitions .sport-rail__item {
+  width: 52px;
+  gap: 4px;
+  transform-origin: center 22px;
 }
 
 .header--v2 .sport-rail--competitions .sport-rail__active-indicator {
@@ -605,11 +637,7 @@
 }
 
 .header--v2 .sport-rail--competitions .sport-rail__active-indicator::before {
-  background: linear-gradient(
-    90deg,
-    rgb(var(--sport-rail-v2-active-fill-start-rgb) / var(--sport-rail-v2-active-fill-opacity)) 0%,
-    rgb(var(--sport-rail-v2-active-fill-end-rgb) / var(--sport-rail-v2-active-fill-opacity)) 100%
-  );
+  background: var(--ds-action-primary-opacity-24);
   border: 0;
   box-shadow: none;
   transform: scale3d(1, 1, 1);
@@ -621,48 +649,39 @@
   inset: 0;
   z-index: 2;
   border-radius: inherit;
-  padding: 2px;
-  background: linear-gradient(90deg, var(--sport-rail-v2-active-start) 0%, var(--sport-rail-v2-active-end) 100%);
+  padding: 1px;
+  background: var(--ds-action-primary-default);
   pointer-events: none;
   -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
+    linear-gradient(var(--ds-fill-dark, #000000) 0 0) content-box,
+    linear-gradient(var(--ds-fill-dark, #000000) 0 0);
   -webkit-mask-composite: xor;
   mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
+    linear-gradient(var(--ds-fill-dark, #000000) 0 0) content-box,
+    linear-gradient(var(--ds-fill-dark, #000000) 0 0);
   mask-composite: exclude;
 }
 
 .header--v2 .sport-rail--competitions .sport-rail__icon {
+  width: 44px;
+  height: 44px;
   background: transparent;
 }
 
 :root[data-theme="light"] .header--v2 .sport-rail--competitions {
-  --sport-rail-v2-active-start: var(--color-brand-gradient-start);
-  --sport-rail-v2-active-start-rgb: 82 40 255;
-  --sport-rail-v2-active-end: var(--color-brand-gradient-end);
-  --sport-rail-v2-active-end-rgb: 174 24 255;
-  --sport-rail-v2-active-fill-start-rgb: 82 40 255;
-  --sport-rail-v2-active-fill-end-rgb: 174 24 255;
   --sport-rail-v2-active-fill-opacity: 0.24;
 }
 
 .header--v2 .sport-rail--competitions .sport-rail__icon:not(.sport-rail__icon--active) {
-  border: 1.1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--ds-fill-opacity-tertiary);
 }
 
 :root[data-theme="light"] .header--v2 .sport-rail--competitions .sport-rail__icon:not(.sport-rail__icon--active) {
-  border-color: rgba(0, 0, 0, 0.16);
+  border-color: var(--ds-fill-opacity-tertiary);
 }
 
 .header--v2 .sport-rail--competitions .sport-rail__icon--active {
   border: 0;
-}
-
-.header--v2 .sport-rail--competitions .sport-rail__icon img {
-  width: 26.4px;
-  height: 26.4px;
 }
 
 :root[data-theme="light"] .header--v2 .sport-rail--competitions [data-sport-rail-item-id="competition:fut-champions"] .sport-rail__icon > img:not(.sport-rail__live-icon),
@@ -670,15 +689,22 @@
   filter: brightness(0) invert(20%);
 }
 
+.header--v2 .sport-rail--competitions .sport-rail__icon img,
 .header--v2 .sport-rail--competitions .sport-rail__icon--active > img {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
 }
 
 .header--v2 .sport-rail--competitions .sport-rail__label {
-  color: var(--tokens-text-text-01);
-  font-weight: 500;
-  line-height: 1.2;
+  color: var(--ds-fill-tertiary);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 15px;
+  text-transform: uppercase;
+}
+
+.header--v2 .sport-rail--competitions .sport-rail__item--active .sport-rail__label {
+  color: var(--ds-fill-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {

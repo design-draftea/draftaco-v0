@@ -11,7 +11,7 @@
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: rgba(0, 0, 0, 0.76);
+  background: rgb(var(--ds-fill-dark-rgb) / 0.76);
   opacity: 0;
   pointer-events: auto;
   transition: opacity 220ms ease-out;
@@ -477,12 +477,12 @@
   background: conic-gradient(
     from 0deg,
     var(--tokens-text-text-on-color-white) 0deg,
-    rgba(255, 255, 255, 0.78) 210deg,
-    rgba(255, 255, 255, 0) 330deg,
-    rgba(255, 255, 255, 0) 360deg
+    rgb(var(--ds-fill-primary-rgb) / 0.78) 210deg,
+    rgb(var(--ds-fill-primary-rgb) / 0) 330deg,
+    rgb(var(--ds-fill-primary-rgb) / 0) 360deg
   );
-  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.8px));
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.8px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), var(--ds-fill-dark, #000000) calc(100% - 1.8px));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), var(--ds-fill-dark, #000000) calc(100% - 1.8px));
   animation: depositPanelConfirmSpinner 720ms linear infinite;
 }
 
@@ -522,15 +522,15 @@
   -webkit-overflow-scrolling: touch;
   -webkit-mask-image: linear-gradient(
     180deg,
-    rgba(0, 0, 0, 0) 0,
-    #000 var(--deposit-pix-top-fade-height),
-    #000 100%
+    rgb(var(--ds-fill-dark-rgb) / 0) 0,
+    var(--ds-fill-dark, #000000) var(--deposit-pix-top-fade-height),
+    var(--ds-fill-dark, #000000) 100%
   );
   mask-image: linear-gradient(
     180deg,
-    rgba(0, 0, 0, 0) 0,
-    #000 var(--deposit-pix-top-fade-height),
-    #000 100%
+    rgb(var(--ds-fill-dark-rgb) / 0) 0,
+    var(--ds-fill-dark, #000000) var(--deposit-pix-top-fade-height),
+    var(--ds-fill-dark, #000000) 100%
   );
 }
 

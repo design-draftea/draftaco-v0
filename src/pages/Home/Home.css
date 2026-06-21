@@ -22,15 +22,22 @@
   --sports-carousel-teams-padding-y: 8px;
   --sports-carousel-team-row-height: 13px;
   --sports-carousel-team-font-size: 11px;
+  position: relative;
+  isolation: isolate;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: var(--tokens-background-background);
+  background-color: var(--ds-background-app, var(--tokens-background-background));
   padding-top: 194px;
   padding-bottom: 60px;
   scrollbar-width: none;
   -ms-overflow-style: none;
   transition: padding-top var(--sport-header-transition);
+}
+
+.home > :not(.header) {
+  position: relative;
+  z-index: 1;
 }
 
 .home::-webkit-scrollbar {
@@ -116,13 +123,13 @@
 .home--header-morph-active.home--novo-trilho {
   --highlight-header-bg-height: 210px;
   --sport-header-bg-height: 210px;
-  padding-top: var(--home-header-content-padding-top, 159px);
+  padding-top: var(--home-header-content-padding-top, 142px);
 }
 
 .home--novo-trilho.home--header-compact {
   --highlight-header-bg-height: 210px;
   --sport-header-bg-height: 210px;
-  padding-top: var(--home-header-content-padding-top, 159px);
+  padding-top: var(--home-header-content-padding-top, 142px);
 }
 
 .home--novo-trilho.home--event-rail-active {
@@ -146,8 +153,63 @@
   padding-top: var(--home-header-content-padding-top, 159px);
 }
 
-.home--novo-trilho.home--competition-active > .calendar-section {
+.home--novo-trilho.home--competition-active > .calendar-section,
+.home--novo-trilho.home--competition-active > .home-competition {
   padding-top: 0;
+}
+
+.home--event-inline-active,
+.home--header-morph-active.home--event-inline-active,
+.home--novo-trilho.home--event-inline-active,
+.home--header-morph-active.home--novo-trilho.home--event-inline-active,
+.home--novo-trilho.home--event-inline-active.home--header-compact {
+  --highlight-header-bg-height: 210px;
+  --sport-header-bg-height: 210px;
+  padding-top: var(--home-header-content-padding-top, 159px);
+}
+
+.home--event-inline-active .header--v2 {
+  background-position: center top;
+  background-size: 100% 220px;
+}
+
+.home--event-inline-active .header .sport-rail-shell {
+  max-height: 112px;
+  overflow: hidden;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition:
+    max-height 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 180ms ease,
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0s linear 0s;
+}
+
+.home--event-inline-compact .header .sport-rail-shell {
+  position: absolute;
+  top: 56px;
+  left: 0;
+  right: 0;
+  max-height: 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition:
+    max-height 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 160ms ease,
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0s linear 180ms;
+}
+
+.home--event-inline-compact .header .sport-rail {
+  padding-bottom: 0;
+}
+
+.home--event-inline-compact .header .sport-rail__scroll-arrow {
+  opacity: 0;
+  animation: none;
 }
 
 .home__content-event-rail {
@@ -157,6 +219,28 @@
   --sports-carousel-collapse-padding-bottom: 24px;
   --sports-carousel-collapse-opacity: 1;
   --sports-carousel-collapse-translate-y: 0px;
+}
+
+.home__content-filter-anchor {
+  display: block;
+  width: 100%;
+  height: 0;
+  pointer-events: none;
+}
+
+.home__content-filter-content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.home__sport-featured-content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+  padding-bottom: 24px;
 }
 
 .home--header-morph-active .header__bg-dark,
@@ -249,6 +333,10 @@
   padding-bottom: 0;
 }
 
+.home--no-dividers .promotion-section--highlight {
+  padding: 0 0 8px;
+}
+
 .home--casino-active .casino-content {
   padding-top: 24px;
 }
@@ -271,6 +359,10 @@
     scroll-padding-bottom: var(--navbar-page-bottom-padding);
   }
 
+  .home__sport-featured-content {
+    padding-bottom: 0;
+  }
+
   :root[data-betslip-compact-visible] .home {
     padding-bottom: var(--betslip-page-bottom-padding);
     scroll-padding-bottom: var(--betslip-page-bottom-padding);
@@ -278,7 +370,7 @@
 
   .home
     > :is(
-      .trilho-e-banner,
+      .banner-highlight,
       .promotion-section,
       .offers-section,
       .live-section,
@@ -289,9 +381,33 @@
       .casino-content,
       .casino-games-section,
       .competition-players,
-      .competition-longterm
+      .competition-longterm,
+      .home-competition
     ):last-of-type {
     margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .home__content-filter-content
+    > :is(
+      .casino-games-section,
+      .home-competition,
+      .home-offer-carousel,
+      .live-section,
+      .prematch-section,
+      .treasure-section,
+      .winning-now-section
+    ):last-child,
+  .home__sport-featured-content > .home-competition:last-child,
+  .home--casino-active
+    .casino-content
+    > :is(.casino-crash-page, .casino-games-section, .treasure-section, .winning-now-section):last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .home > .home-offer-carousel:last-child .home-offer-carousel__list,
+  .home__content-filter-content > .home-offer-carousel:last-child .home-offer-carousel__list {
     padding-bottom: 0;
   }
 

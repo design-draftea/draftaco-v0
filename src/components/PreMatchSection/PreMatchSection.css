@@ -12,14 +12,14 @@
   align-items: center;
   
   padding: 0 12px;
-  height: 20px;
+  height: 24px;
 }
 
 .prematch-section__header--with-action {
   justify-content: space-between;
   gap: 12px;
   height: auto;
-  min-height: 20px;
+  min-height: 24px;
 }
 
 .prematch-section__title {
@@ -31,10 +31,10 @@
 
 .prematch-section__title span {
   font-family: 'Red Hat Text', sans-serif;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: var(--Typography-font-size-16, 16px);
+  font-weight: var(--Typography-font-weight-bold, 700);
   color: var(--tokens-text-text-01);
-  line-height: 1.4;
+  line-height: 24px;
 }
 
 .prematch-section__arrow {
@@ -679,15 +679,15 @@
   -webkit-mask-image: linear-gradient(
     90deg,
     transparent 0,
-    #000 var(--prematch-player-option-fade),
-    #000 calc(100% - var(--prematch-player-option-fade)),
+    var(--ds-fill-dark, #000000) var(--prematch-player-option-fade),
+    var(--ds-fill-dark, #000000) calc(100% - var(--prematch-player-option-fade)),
     transparent 100%
   );
   mask-image: linear-gradient(
     90deg,
     transparent 0,
-    #000 var(--prematch-player-option-fade),
-    #000 calc(100% - var(--prematch-player-option-fade)),
+    var(--ds-fill-dark, #000000) var(--prematch-player-option-fade),
+    var(--ds-fill-dark, #000000) calc(100% - var(--prematch-player-option-fade)),
     transparent 100%
   );
   -webkit-mask-size: 100% 100%;

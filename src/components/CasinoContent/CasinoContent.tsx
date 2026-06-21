@@ -1,7 +1,6 @@
 import { CaretRightIcon } from '@phosphor-icons/react'
 import iconAoVivo from '../../assets/iconAoVivo.png'
 import type { CasinoCategoryId } from '../../types/home'
-import { TreasureSection } from '../TreasureSection'
 import { casinoCarouselSections } from './casinoCarouselSections'
 import './CasinoContent.css'
 
@@ -156,7 +155,6 @@ export function CasinoContent({ activeCategory, onGameOpen }: CasinoContentProps
         </section>
       ))}
 
-      <TreasureSection />
     </div>
   )
 }

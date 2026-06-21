@@ -124,8 +124,8 @@ function TestQrCode() {
       role="img"
       aria-label="QR Code Pix de teste"
     >
-      <rect width="120" height="120" fill="#ffffff" />
-      <g fill="#111111">{modules}</g>
+      <rect width="120" height="120" fill="var(--ds-fill-primary, #FBFBFB)" />
+      <g fill="var(--ds-fill-dark, #000000)">{modules}</g>
     </svg>
   )
 }

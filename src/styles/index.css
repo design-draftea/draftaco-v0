@@ -1,4 +1,29 @@
 @import './tokens.css';
+@import './design-system-tokens.css';
+
+@font-face {
+  font-family: 'Forma DJR Display';
+  src: url('../assets/fonts/FormaDJRDisplay-MediumItalic.otf') format('opentype');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Forma DJR Display';
+  src: url('../assets/fonts/FormaDJRDisplay-BoldItalic.otf') format('opentype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Forma DJR Display';
+  src: url('../assets/fonts/FormaDJRDisplay-BlackItalic.otf') format('opentype');
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
 
 /*
  * Aliases semanticos para cores recorrentes que ainda nao existem no export
@@ -17,6 +42,7 @@
   --color-brand-gradient-start-rgb: 82 40 255;
   --color-brand-gradient-end: #ae18ff;
   --color-brand-gradient-end-rgb: 174 24 255;
+  --font-forma-djr-display: 'Forma DJR Display', 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
 }
 
 :root {
@@ -36,7 +62,12 @@
     - var(--navbar-floating-panel-inset-y)
   );
   --navbar-content-gap: 24px;
-  --navbar-page-bottom-padding: calc(var(--navbar-height) + var(--navbar-bottom-offset) + var(--navbar-content-gap));
+  --navbar-page-bottom-padding: calc(
+    var(--navbar-shell-height, var(--navbar-height))
+    + var(--navbar-bottom-offset)
+    + var(--navbar-floating-lift)
+    + var(--navbar-content-gap)
+  );
   --betslip-page-bottom-padding: calc(
     var(--betslip-compact-bottom-offset)
     + var(--betslip-compact-height)
@@ -78,7 +109,7 @@ html {
   min-width: 320px;
   min-height: 100vh;
   min-height: -webkit-fill-available;
-  background-color: var(--color-background);
+  background-color: var(--ds-background-app, var(--color-background));
   overscroll-behavior: none;
   -webkit-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
@@ -92,7 +123,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   min-height: -webkit-fill-available;
-  background-color: var(--color-background);
+  background-color: var(--ds-background-app, var(--color-background));
   overscroll-behavior: none;
   touch-action: pan-x pan-y;
   -webkit-overflow-scrolling: touch;
@@ -106,10 +137,12 @@ body {
 #root {
   width: 100%;
   min-height: 100vh;
+  background-color: var(--ds-background-app, var(--color-background));
 }
 
 .app-shell {
   min-height: 100%;
+  background-color: var(--ds-background-app, var(--color-background));
 }
 
 @media (max-width: 499px) {
@@ -180,6 +213,7 @@ button {
 .live-event-page__odd-btn.odd-button--selected,
 .live-event-page__market-odd.odd-button--selected,
 .live-event-page__player-odd.odd-button--selected,
+.home-competition__odd.odd-button--selected,
 .offer-card__button.odd-button--selected,
 .prematch-section__player-prop-option.odd-button--selected {
   --odd-selected-surface: var(--odd-selected-surface-default);
@@ -198,6 +232,7 @@ button {
   .live-event-page__odd-btn,
   .live-event-page__market-odd,
   .live-event-page__player-odd,
+  .home-competition__odd,
   .banner-card__odd-btn,
   .banner-card__live-odd-btn,
   .banner-card__boosted-btn,
@@ -216,6 +251,7 @@ button {
 .live-event-page__odd-btn.odd-button--selected,
 .live-event-page__market-odd.odd-button--selected,
 .live-event-page__player-odd.odd-button--selected,
+.home-competition__odd.odd-button--selected,
 .banner-card__odd-btn.odd-button--selected,
 .banner-card__live-odd-btn.odd-button--selected,
 .banner-card__boosted-btn.odd-button--selected,
@@ -240,6 +276,7 @@ button {
   .live-event-page__odd-btn,
   .live-event-page__market-odd,
   .live-event-page__player-odd,
+  .home-competition__odd,
   .banner-card__odd-btn,
   .banner-card__live-odd-btn,
   .banner-card__boosted-btn,
@@ -253,6 +290,7 @@ button {
   .live-event-page__odd-btn,
   .live-event-page__market-odd,
   .live-event-page__player-odd,
+  .home-competition__odd,
   .banner-card__odd-btn,
   .banner-card__live-odd-btn,
   .banner-card__boosted-btn,
@@ -269,6 +307,7 @@ button {
   .live-event-page__odd-btn,
   .live-event-page__market-odd,
   .live-event-page__player-odd,
+  .home-competition__odd,
   .banner-card__odd-btn,
   .banner-card__live-odd-btn,
   .banner-card__boosted-btn,
@@ -282,6 +321,7 @@ button {
   .live-event-page__odd-btn,
   .live-event-page__market-odd,
   .live-event-page__player-odd,
+  .home-competition__odd,
   .banner-card__odd-btn,
   .banner-card__live-odd-btn,
   .banner-card__boosted-btn,
@@ -299,6 +339,7 @@ button {
   .live-event-page__odd-btn,
   .live-event-page__market-odd,
   .live-event-page__player-odd,
+  .home-competition__odd,
   .banner-card__odd-btn,
   .banner-card__live-odd-btn,
   .banner-card__boosted-btn,
@@ -315,6 +356,7 @@ button {
   .live-event-page__odd-btn,
   .live-event-page__market-odd,
   .live-event-page__player-odd,
+  .home-competition__odd,
   .banner-card__odd-btn,
   .banner-card__live-odd-btn,
   .banner-card__boosted-btn,
@@ -328,6 +370,7 @@ button {
   .live-event-page__odd-btn,
   .live-event-page__market-odd,
   .live-event-page__player-odd,
+  .home-competition__odd,
   .banner-card__odd-btn,
   .banner-card__live-odd-btn,
   .banner-card__boosted-btn,
@@ -418,12 +461,12 @@ img {
 .promotions-page--liquid-glass-new .sliding-chip-indicator::before {
   background-color: var(--tokens-background-background-on-color-dark);
   background-image:
-    radial-gradient(120% 130% at 18% 0%, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 38%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(120% 130% at 18% 0%, rgb(var(--ds-fill-primary-rgb) / 0.18) 0%, rgb(var(--ds-fill-primary-rgb) / 0.04) 38%, rgb(var(--ds-fill-primary-rgb) / 0) 100%),
     linear-gradient(45deg, rgba(82, 40, 255, 0.42) 0.62%, rgba(174, 24, 255, 0.42) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.26),
-    inset 0 -4px 8px rgba(0, 0, 0, 0.08),
-    inset 0 0 0 0.5px rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 rgb(var(--ds-fill-primary-rgb) / 0.26),
+    inset 0 -4px 8px rgb(var(--ds-fill-dark-rgb) / 0.08),
+    inset 0 0 0 0.5px rgb(var(--ds-fill-primary-rgb) / 0.08),
     0 0 14px rgba(174, 24, 255, 0.18),
     0 6px 16px rgba(82, 40, 255, 0.16);
   z-index: 1;
@@ -438,8 +481,8 @@ img {
   border-radius: inherit;
   pointer-events: none;
   background-image:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.02) 58%, rgba(0, 0, 0, 0.06)),
-    radial-gradient(90% 120% at 12% 0%, rgba(255, 255, 255, 0.16), transparent 62%);
+    linear-gradient(180deg, rgb(var(--ds-fill-primary-rgb) / 0.16), rgb(var(--ds-fill-primary-rgb) / 0.02) 58%, rgb(var(--ds-fill-dark-rgb) / 0.06)),
+    radial-gradient(90% 120% at 12% 0%, rgb(var(--ds-fill-primary-rgb) / 0.16), transparent 62%);
 }
 
 .home--v2 .sliding-chip-indicator,
@@ -603,12 +646,12 @@ img {
   );
   pointer-events: none;
   -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
+    linear-gradient(var(--ds-fill-dark, #000000) 0 0) content-box,
+    linear-gradient(var(--ds-fill-dark, #000000) 0 0);
   -webkit-mask-composite: xor;
   mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
+    linear-gradient(var(--ds-fill-dark, #000000) 0 0) content-box,
+    linear-gradient(var(--ds-fill-dark, #000000) 0 0);
   mask-composite: exclude;
 }
 
@@ -768,9 +811,9 @@ img {
   0% {
     opacity: 1;
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.26),
-      inset 0 -4px 8px rgba(0, 0, 0, 0.08),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.08),
+      inset 0 1px 0 rgb(var(--ds-fill-primary-rgb) / 0.26),
+      inset 0 -4px 8px rgb(var(--ds-fill-dark-rgb) / 0.08),
+      inset 0 0 0 0.5px rgb(var(--ds-fill-primary-rgb) / 0.08),
       0 0 14px rgba(174, 24, 255, 0.18),
       0 6px 16px rgba(82, 40, 255, 0.16);
   }
@@ -779,9 +822,9 @@ img {
   48% {
     opacity: 0.76;
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.38),
-      inset 0 -3px 8px rgba(0, 0, 0, 0.045),
-      inset 0 0 0 0.6px rgba(255, 255, 255, 0.16),
+      inset 0 1px 0 rgb(var(--ds-fill-primary-rgb) / 0.38),
+      inset 0 -3px 8px rgb(var(--ds-fill-dark-rgb) / 0.045),
+      inset 0 0 0 0.6px rgb(var(--ds-fill-primary-rgb) / 0.16),
       0 0 18px rgba(174, 24, 255, 0.22),
       0 6px 16px rgba(82, 40, 255, 0.13);
   }
@@ -789,9 +832,9 @@ img {
   72% {
     opacity: 0.9;
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.32),
-      inset 0 -4px 8px rgba(0, 0, 0, 0.06),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.12),
+      inset 0 1px 0 rgb(var(--ds-fill-primary-rgb) / 0.32),
+      inset 0 -4px 8px rgb(var(--ds-fill-dark-rgb) / 0.06),
+      inset 0 0 0 0.5px rgb(var(--ds-fill-primary-rgb) / 0.12),
       0 0 12px rgba(174, 24, 255, 0.17),
       0 6px 16px rgba(82, 40, 255, 0.14);
   }
@@ -799,9 +842,9 @@ img {
   100% {
     opacity: 1;
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.26),
-      inset 0 -4px 8px rgba(0, 0, 0, 0.08),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.08),
+      inset 0 1px 0 rgb(var(--ds-fill-primary-rgb) / 0.26),
+      inset 0 -4px 8px rgb(var(--ds-fill-dark-rgb) / 0.08),
+      inset 0 0 0 0.5px rgb(var(--ds-fill-primary-rgb) / 0.08),
       0 0 14px rgba(174, 24, 255, 0.18),
       0 6px 16px rgba(82, 40, 255, 0.16);
   }

@@ -3,8 +3,11 @@ import { createPortal, flushSync } from 'react-dom'
 import { CaretRightIcon, CourtBasketballIcon, MonitorPlayIcon, SoccerBallIcon } from '@phosphor-icons/react'
 import './LiveEventPage.css'
 
+import { ContentFilterChips } from '../../components/ContentFilterChips'
+import { HomeCompetitionOddButton, HomeCompetitionPlayerPropCard } from '../../components/HomeCompetitionSection'
 import { PreMatchPlayerPropCard, getMatchPlayerProps, type MatchPlayerProp } from '../../components/PreMatchSection/PreMatchSection'
 import { getLivePlayerProps } from '../../components/LiveMatchCard'
+import type { HomeCompetitionOdd, HomeCompetitionPlayerProp } from '../../types/home'
 import iconAoVivo from '../../assets/iconAoVivo.png'
 import pagamentoAntecipado from '../../assets/pagamentoAntecipado.png'
 import substituicaoGarantida from '../../assets/substituicaoGarantida.png'
@@ -21,6 +24,10 @@ import pedroProps from '../../assets/pedroProps.png'
 import depayProps from '../../assets/depayProps.png'
 import yuriProps from '../../assets/yuriProps.png'
 import flacoLopezProps from '../../assets/flacoLopezProps.png'
+import cartaoAmareloIcon from '../../assets/iconsDraftaco/cartaoAmarelo.svg'
+import cartaoVermelhoIcon from '../../assets/iconsDraftaco/cartaoVermelho.svg'
+import escanteiosIcon from '../../assets/iconsDraftaco/escanteios.svg'
+import chevronDown from '../../assets/iconsDraftaco/chevronDown.svg'
 import { useOddSelection } from '../../hooks/useOddSelection'
 import { createBetslipSelection, getBetslipEventId, getBetslipMarketGroupId } from '../../hooks/betslipUtils'
 import { useSportsDbTeamLogo } from '../../hooks/useSportsDbTeamLogo'
@@ -81,6 +88,35 @@ export interface LiveEventPageProps {
   currentTime?: string
 }
 
+export interface LiveEventInlineProps {
+  match?: LiveEventMatch
+  matches?: LiveEventMatch[]
+  railEvents?: LiveEventRailItem[]
+  selectedIndex?: number
+  currentTimes?: Record<string, string>
+  leagueName: string
+  leagueFlag?: string
+  sport: string
+  currentTime?: string
+  onSelectedIndexChange?: (index: number) => void
+  onCompactChange?: (isCompact: boolean) => void
+}
+
+export interface LiveEventInlineHeaderProps {
+  match?: LiveEventMatch
+  matches?: LiveEventMatch[]
+  railEvents?: LiveEventRailItem[]
+  selectedIndex?: number
+  currentTimes?: Record<string, string>
+  leagueName: string
+  leagueFlag?: string
+  sport: string
+  currentTime?: string
+  isCompact?: boolean
+  onSelectedIndexChange?: (index: number) => void
+  onLayoutReady?: () => void
+}
+
 export interface LiveEventOpenPayload {
   matches: LiveEventMatch[]
   selectedIndex: number
@@ -113,14 +149,16 @@ interface LiveEventContentProps {
   onSwipeStart: () => void
   onSwipeMove: (dx: number) => void
   onSwipeEnd: (dx: number, velocity: number) => void
+  disableSheetInteractions?: boolean
 }
 
 type TabId = 'transmissao' | 'campo'
-type DetailTabId = 'destaques' | 'criar-aposta' | 'times' | 'jogadores'
+type DetailTabId = 'destaques' | 'criar-aposta' | 'cartoes' | 'times' | 'jogadores'
 
 const detailTabs: Array<{ id: DetailTabId; label: string }> = [
   { id: 'destaques', label: 'Destaques' },
   { id: 'criar-aposta', label: 'Criar Aposta' },
+  { id: 'cartoes', label: 'Cartões' },
   { id: 'times', label: 'Times' },
   { id: 'jogadores', label: 'Jogadores' },
 ]
@@ -154,24 +192,18 @@ interface ThreeWayMarketRow {
 const shotOutcomes = (values: Array<[string, string]>): ShotOutcome[] =>
   values.map(([label, odd]) => ({ label, odd }))
 
-const doubleChanceDisplayNames: Record<string, string> = {
-  Internacional: 'Inter',
-  Bragantino: 'Braga',
-  'Red Bull Bragantino': 'Braga',
-  'Atlético Madrid': 'Atl. Madrid',
-  'Boca Juniors': 'Boca',
-  'Argentinos Jrs': 'Argentinos',
-  'River Plate': 'River',
-  'New York City': 'NYC',
-  'Chicago Fire': 'Chicago',
-  Panathinaikos: 'Panath.',
-}
-
 const LIVE_EVENT_HOME_FALLBACK_GLOW = '#00a0dd'
 const LIVE_EVENT_AWAY_FALLBACK_GLOW = '#ad0924'
 const LIVE_EVENT_LOGO_COLOR_CANVAS_MAX_SIZE = 72
 const LIVE_EVENT_PLAYER_PROPS_PER_MARKET = 10
 const LIVE_EVENT_PLAYER_PROPS_PER_TEAM = Math.ceil(LIVE_EVENT_PLAYER_PROPS_PER_MARKET / 2)
+const LIVE_EVENT_INLINE_PLAYER_PROPS_INITIAL_COUNT = 4
+const LIVE_EVENT_INLINE_PLAYER_PROPS_MAX_COUNT = 8
+const LIVE_EVENT_INLINE_PLAYER_PROPS_LOAD_STEP = 2
+const LIVE_EVENT_INLINE_PLAYER_PROPS_ACCORDION_DURATION_MS = 600
+const LIVE_EVENT_INLINE_SHOW_STREAM_BLOCK = false
+const LIVE_EVENT_INLINE_ENABLE_ODD_ACTIONS = false
+const LIVE_EVENT_INLINE_COMPACT_THRESHOLD_OFFSET = 48
 const logoDominantColorCache = new Map<string, string | null>()
 const pendingLogoDominantColorRequests = new Map<string, Promise<string | null>>()
 
@@ -224,9 +256,9 @@ const teamGlowFallbackColors: Record<string, string> = {
   Minas: '#f4c430',
   Pinheiros: '#005baa',
   Valencia: '#f37021',
-  'Virtus Bologna': '#000000',
+  'Virtus Bologna': 'var(--ds-fill-dark, #000000)',
   Varese: '#c8102e',
-  Tortona: '#111111',
+  Tortona: 'var(--ds-fill-dark, #000000)',
   Fenerbahçe: '#f6c500',
 }
 
@@ -346,6 +378,10 @@ function loadLogoImage(src: string) {
   })
 }
 
+const isRemoteLogoColorExtractionBlocked = (src: string) => (
+  /^https:\/\/r2\.thesportsdb\.com\//i.test(src)
+)
+
 async function extractDominantLogoColor(src: string): Promise<string | null> {
   if (logoDominantColorCache.has(src)) return logoDominantColorCache.get(src) ?? null
 
@@ -388,7 +424,7 @@ function useLogoGlowColor(src: string | undefined, teamName: string, isFallback:
   const teamGlowFallbackColor = getTeamGlowFallbackColor(teamName)
 
   useEffect(() => {
-    if (!src || isFallback || logoDominantColorCache.has(src)) return
+    if (!src || isFallback || isRemoteLogoColorExtractionBlocked(src) || logoDominantColorCache.has(src)) return
 
     let isCancelled = false
 
@@ -404,6 +440,7 @@ function useLogoGlowColor(src: string | undefined, teamName: string, isFallback:
   }, [isFallback, src])
 
   if (!src || isFallback) return fallbackGlowColor
+  if (isRemoteLogoColorExtractionBlocked(src)) return teamGlowFallbackColor
   if (logoDominantColorCache.has(src)) return logoDominantColorCache.get(src) ?? teamGlowFallbackColor
   if (resolvedLogoColor?.src === src) return resolvedLogoColor.color ?? teamGlowFallbackColor
 
@@ -411,18 +448,7 @@ function useLogoGlowColor(src: string | undefined, teamName: string, isFallback:
 }
 
 function getDoubleChanceDisplayName(teamName: string): string {
-  const trimmedName = teamName.trim()
-
-  if (doubleChanceDisplayNames[trimmedName]) {
-    return doubleChanceDisplayNames[trimmedName]
-  }
-
-  const [firstWord] = trimmedName.split(/\s+/)
-  if (trimmedName.length > 10 && firstWord.length >= 4 && firstWord.length <= 9) {
-    return firstWord
-  }
-
-  return trimmedName
+  return getInlineTeamAbbreviation(teamName)
 }
 
 const teamShotMarkets: Record<string, PlayerShotMarket[]> = {
@@ -490,10 +516,45 @@ const teamShotMarkets: Record<string, PlayerShotMarket[]> = {
     { id: 'psg-dembele', player: 'Dembélé', team: 'PSG', outcomes: shotOutcomes([['0.5+', '1.62x'], ['1.5+', '2.24x'], ['2.5+', '4.85x']]) },
     { id: 'psg-ramos', player: 'Gonçalo Ramos', team: 'PSG', outcomes: shotOutcomes([['0.5+', '1.58x'], ['1.5+', '2.20x'], ['2.5+', '4.70x']]) },
   ],
+  'Paris Saint-Germain': [
+    { id: 'paris-saint-germain-dembele', player: 'Dembélé', team: 'Paris Saint-Germain', outcomes: shotOutcomes([['0.5+', '1.62x'], ['1.5+', '2.24x'], ['2.5+', '4.85x']]) },
+    { id: 'paris-saint-germain-ramos', player: 'Gonçalo Ramos', team: 'Paris Saint-Germain', outcomes: shotOutcomes([['0.5+', '1.58x'], ['1.5+', '2.20x'], ['2.5+', '4.70x']]) },
+  ],
+  'Manchester City': [
+    { id: 'manchester-city-haaland', player: 'Haaland', team: 'Manchester City', outcomes: shotOutcomes([['1.0+', '1.48x'], ['2.0+', '1.92x'], ['3.0+', '3.55x']]) },
+    { id: 'manchester-city-foden', player: 'Foden', team: 'Manchester City', outcomes: shotOutcomes([['0.5+', '1.74x'], ['1.5+', '2.55x'], ['2.5+', '5.60x']]) },
+  ],
   Inter: [
     { id: 'inter-lautaro', player: 'Lautaro Martínez', team: 'Inter', outcomes: shotOutcomes([['0.5+', '1.50x'], ['1.5+', '2.08x'], ['2.5+', '4.35x']]) },
     { id: 'inter-thuram', player: 'Thuram', team: 'Inter', outcomes: shotOutcomes([['0.5+', '1.72x'], ['1.5+', '2.52x'], ['2.5+', '5.70x']]) },
   ],
+}
+
+const liveEventPlayerTeamAliases: Record<string, string> = {
+  'Paris Saint-Germain': 'PSG',
+  'Man. City': 'Manchester City',
+  'Utah Jazz': 'Jazz',
+  'Oklahoma City Thunder': 'Thunder',
+  'New York Knicks': 'Knicks',
+  'Orlando Magic': 'Magic',
+  'Chicago Bulls': 'Bulls',
+  'Miami Heat': 'Heat',
+  'Golden State Warriors': 'Warriors',
+  'Los Angeles Lakers': 'Lakers',
+  'Philadelphia 76ers': '76ers',
+  'Boston Celtics': 'Celtics',
+  'Denver Nuggets': 'Nuggets',
+  'Phoenix Suns': 'Suns',
+  'Dallas Mavericks': 'Mavericks',
+  'San Antonio Spurs': 'Spurs',
+  'Los Angeles Clippers': 'Clippers',
+  'LA Clippers': 'Clippers',
+  'Sacramento Kings': 'Kings',
+}
+
+function getLiveEventPlayerTeamKey(teamName: string): string {
+  const trimmedTeamName = teamName.trim()
+  return liveEventPlayerTeamAliases[trimmedTeamName] ?? trimmedTeamName
 }
 
 const basketballTeamPlayers: Record<string, string[]> = {
@@ -554,16 +615,16 @@ const basketballTeamPlayers: Record<string, string[]> = {
 }
 
 const BASKETBALL_FALLBACK_PLAYERS = [
-  'Armador Titular',
-  'Ala Principal',
-  'Pivo',
-  'Sexto Homem',
-  'Ala-pivo',
-  'Especialista 3PT',
-  'Armador Reserva',
-  'Defensor Perimetral',
-  'Pontuador do Banco',
-  'Rotacao',
+  'Lauri Markkanen',
+  'Shai Gilgeous-Alexander',
+  'Jalen Brunson',
+  'Paolo Banchero',
+  'Coby White',
+  'Tyler Herro',
+  'Stephen Curry',
+  'LeBron James',
+  'Nikola Jokic',
+  'Devin Booker',
 ]
 
 function slugifyTeamName(teamName: string): string {
@@ -577,8 +638,9 @@ function slugifyTeamName(teamName: string): string {
 
 function buildFallbackShotMarkets(teamName: string): PlayerShotMarket[] {
   const slug = slugifyTeamName(teamName)
+  const teamKey = getLiveEventPlayerTeamKey(teamName)
   const mappedPlayers = Array.from(
-    new Set((TEAM_EVENTS[teamName] ?? []).map((event) => event.player))
+    new Set((TEAM_EVENTS[teamName] ?? TEAM_EVENTS[teamKey] ?? []).map((event) => event.player))
   )
   const [primaryPlayer = 'Jogador', secondaryPlayer = 'Atacante'] = mappedPlayers
 
@@ -631,8 +693,14 @@ function buildSupplementalAssistMarket(teamName: string, playerName: string, ind
 }
 
 function getTeamShotMarketRows(teamName: string, playerLimit = 4): PlayerShotMarket[] {
-  const rows = [...(teamShotMarkets[teamName] ?? buildFallbackShotMarkets(teamName))]
-  const mappedPlayers = Array.from(new Set((TEAM_EVENTS[teamName] ?? []).map((event) => event.player)))
+  const teamKey = getLiveEventPlayerTeamKey(teamName)
+  const baseRows = teamShotMarkets[teamName] ?? teamShotMarkets[teamKey] ?? buildFallbackShotMarkets(teamName)
+  const rows = baseRows.map((row) => ({
+    ...row,
+    id: row.team === teamName ? row.id : `${slugifyTeamName(teamName)}-${row.id}`,
+    team: teamName,
+  }))
+  const mappedPlayers = Array.from(new Set((TEAM_EVENTS[teamName] ?? TEAM_EVENTS[teamKey] ?? []).map((event) => event.player)))
   const fallbackPlayers = FALLBACK_PLAYERS.map((player) => `${player}`)
   const candidates = [...mappedPlayers, ...fallbackPlayers]
 
@@ -660,7 +728,12 @@ function formatMarketLine(line: number): string {
 }
 
 function getBasketballTeamPlayers(teamName: string, playerLimit?: number): string[] {
-  const candidates = [...(basketballTeamPlayers[teamName] ?? []), ...BASKETBALL_FALLBACK_PLAYERS]
+  const teamKey = getLiveEventPlayerTeamKey(teamName)
+  const mappedPlayers = [
+    ...(basketballTeamPlayers[teamName] ?? []),
+    ...(teamKey !== teamName ? basketballTeamPlayers[teamKey] ?? [] : []),
+  ]
+  const candidates = mappedPlayers.length > 0 ? mappedPlayers : BASKETBALL_FALLBACK_PLAYERS
   const players = Array.from(new Set(candidates))
 
   return typeof playerLimit === 'number' ? players.slice(0, playerLimit) : players
@@ -698,10 +771,11 @@ function getBasketballPlayerPointRows(match: LiveEventMatch, isExpanded: boolean
 }
 
 function getTeamAssistMarketRows(teamName: string, isBasketball: boolean, playerLimit = 4): PlayerShotMarket[] {
+  const teamKey = getLiveEventPlayerTeamKey(teamName)
   const playerCandidates = isBasketball
     ? getBasketballTeamPlayers(teamName, playerLimit)
     : [
-      ...Array.from(new Set((TEAM_EVENTS[teamName] ?? []).map((event) => event.player))),
+      ...Array.from(new Set((TEAM_EVENTS[teamName] ?? TEAM_EVENTS[teamKey] ?? []).map((event) => event.player))),
       ...FALLBACK_PLAYERS,
     ]
   const rows: PlayerShotMarket[] = []
@@ -898,7 +972,7 @@ function getDoubleChanceRows(match: LiveEventMatch): ThreeWayMarketRow[] {
       options: [
         {
           label: `${match.homeTeam.name} ou Empate`,
-          labelParts: [homeDisplayName, 'Empate'],
+          labelParts: [homeDisplayName, 'EMP'],
           odd: match.doubleChanceOdds?.homeOrDraw ?? '1.30x',
         },
         {
@@ -907,8 +981,8 @@ function getDoubleChanceRows(match: LiveEventMatch): ThreeWayMarketRow[] {
           odd: match.doubleChanceOdds?.homeOrAway ?? '1.28x',
         },
         {
-          label: `Empate ou ${match.awayTeam.name}`,
-          labelParts: ['Empate', awayDisplayName],
+          label: `${match.awayTeam.name} ou Empate`,
+          labelParts: [awayDisplayName, 'EMP'],
           odd: match.doubleChanceOdds?.awayOrDraw ?? '1.65x',
         },
       ],
@@ -1326,30 +1400,122 @@ const TEAM_EVENTS: Record<string, MatchEvent[]> = {
 // Generic player names used for unmapped teams
 const FALLBACK_PLAYERS = ['Silva', 'Rodríguez', 'Martínez', 'García', 'López', 'Müller', 'Schmidt', 'Smith', 'Johnson']
 
-function getTeamEvents(teamName: string, score: number): MatchEvent[] {
-  const mapped = TEAM_EVENTS[teamName]
+const FOOTBALL_MATCH_MINUTES = 90
+const FOOTBALL_SECOND_HALF_OFFSET = 45
+const FALLBACK_LIVE_MATCH_PROGRESS = 0.55
+
+const TEAM_EVENT_ALIASES: Record<string, string> = {
+  'Paris Saint-Germain': 'PSG',
+}
+
+function getStableTeamSeed(teamName: string): number {
+  let seed = 0
+  for (let i = 0; i < teamName.length; i++) seed = (seed * 31 + teamName.charCodeAt(i)) >>> 0
+  return seed
+}
+
+function getMappedTeamEvents(teamName: string): MatchEvent[] | undefined {
+  return TEAM_EVENTS[teamName] ?? TEAM_EVENTS[TEAM_EVENT_ALIASES[teamName] ?? '']
+}
+
+function getFootballPeriodMinute(time?: string): number | null {
+  const normalizedTime = time?.trim()
+  if (!normalizedTime) return null
+
+  const parsed = parseLiveTime(normalizedTime)
+  if (!parsed || parsed.isQuarter) return null
+
+  return Math.floor(Math.max(0, parsed.totalSeconds) / 60)
+}
+
+function getFootballVisibleMinute(time?: string): number | null {
+  const normalizedTime = time?.trim()
+  if (!normalizedTime) return null
+  if (/^(intervalo|int)$/i.test(normalizedTime)) return FOOTBALL_SECOND_HALF_OFFSET
+  if (/^ao vivo$/i.test(normalizedTime)) return Math.round(FOOTBALL_MATCH_MINUTES * 0.28)
+
+  const periodMinute = getFootballPeriodMinute(normalizedTime)
+  if (periodMinute !== null) return periodMinute
+
+  const minuteLabelMatch = normalizedTime.match(/^(\d{1,3})\s*(?:min(?:uto)?s?|m|')$/i)
+  if (minuteLabelMatch) return Number.parseInt(minuteLabelMatch[1], 10)
+
+  const clockOnlyMatch = normalizedTime.match(/^(\d{1,3}):\d{2}$/)
+  if (clockOnlyMatch) return Number.parseInt(clockOnlyMatch[1], 10)
+
+  return null
+}
+
+function getFootballElapsedMinute(time?: string): number | null {
+  const normalizedTime = time?.trim()
+  if (!normalizedTime) return null
+  if (/^(intervalo|int)$/i.test(normalizedTime)) return FOOTBALL_SECOND_HALF_OFFSET
+  if (/^ao vivo$/i.test(normalizedTime)) return Math.round(FOOTBALL_MATCH_MINUTES * FALLBACK_LIVE_MATCH_PROGRESS)
+
+  const parsed = parseLiveTime(normalizedTime)
+  if (!parsed || parsed.isQuarter) return getFootballVisibleMinute(normalizedTime)
+
+  const periodMatch = parsed.prefix.match(/^(\d+)T$/)
+  if (!periodMatch) return null
+
+  const period = Number.parseInt(periodMatch[1], 10)
+  const periodOffset = Math.max(0, period - 1) * FOOTBALL_SECOND_HALF_OFFSET
+  const periodMinute = getFootballPeriodMinute(normalizedTime) ?? 0
+  return Math.max(0, periodOffset + periodMinute)
+}
+
+function getFootballMatchProgress(time?: string): number {
+  const visibleMinute = getFootballVisibleMinute(time)
+  if (visibleMinute === null) return FALLBACK_LIVE_MATCH_PROGRESS
+  return Math.min(1, Math.max(0, visibleMinute / FOOTBALL_MATCH_MINUTES))
+}
+
+function getScoredGoalEvents(
+  teamName: string,
+  allEvents: MatchEvent[],
+  score: number,
+  elapsedMinute: number | null
+): MatchEvent[] {
+  const targetGoals = Math.max(0, score)
+  let goalEvents = allEvents.filter((event) => event.type === 'goal').slice(0, targetGoals)
+
+  if (goalEvents.length < targetGoals) {
+    const fallbackGoals = buildFallbackEvents(teamName, targetGoals)
+      .filter((event) => event.type === 'goal')
+      .slice(goalEvents.length, targetGoals)
+    goalEvents = [...goalEvents, ...fallbackGoals]
+  }
+
+  if (elapsedMinute === null) return goalEvents
+
+  const latestGoalMinute = Math.max(1, elapsedMinute - 1)
+  return goalEvents.map((event, index) => {
+    if ((event.minute ?? 0) <= latestGoalMinute) return event
+
+    const goalsAfterThis = goalEvents.length - index - 1
+    const adjustedMinute = Math.max(1, latestGoalMinute - goalsAfterThis * 6)
+    return { ...event, minute: adjustedMinute }
+  })
+}
+
+function getTeamEvents(teamName: string, score: number, currentTime?: string): MatchEvent[] {
+  const mapped = getMappedTeamEvents(teamName)
+  const elapsedMinute = getFootballElapsedMinute(currentTime)
   const allEvents = mapped
     ? mapped.slice().sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0))
     : buildFallbackEvents(teamName, score)
-  let goalsAdded = 0
-  const result: MatchEvent[] = []
-  for (const event of allEvents) {
-    if (event.type === 'goal') {
-      if (goalsAdded < score) {
-        result.push(event)
-        goalsAdded++
-      }
-    } else {
-      result.push(event)
-    }
-  }
-  return result
+  const goalEvents = getScoredGoalEvents(teamName, allEvents, score, elapsedMinute)
+  const timedEvents = allEvents.filter((event) => (
+    event.type !== 'goal'
+    && (elapsedMinute === null || event.minute === undefined || event.minute <= elapsedMinute)
+  ))
+
+  return [...goalEvents, ...timedEvents].sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0))
 }
 
 function buildFallbackEvents(teamName: string, score: number): MatchEvent[] {
   // deterministic seed from team name so the same team always gets the same names
-  let seed = 0
-  for (let i = 0; i < teamName.length; i++) seed = (seed * 31 + teamName.charCodeAt(i)) >>> 0
+  const seed = getStableTeamSeed(teamName)
   const pick = (offset: number) => FALLBACK_PLAYERS[(seed + offset) % FALLBACK_PLAYERS.length]
   const events: MatchEvent[] = [{ type: 'yellow', player: pick(0), minute: 18 + (seed % 10) }]
   const goals = Math.max(score, 0)
@@ -1377,10 +1543,65 @@ function getBasketballTeamEvents(teamName: string, score: number): MatchEvent[] 
   return events.filter((event) => Boolean(event.player))
 }
 
-function getMatchEvents(teamName: string, score: number, isBasketball: boolean): MatchEvent[] {
+function getMatchEvents(teamName: string, score: number, isBasketball: boolean, currentTime?: string): MatchEvent[] {
   return isBasketball
     ? getBasketballTeamEvents(teamName, score)
-    : getTeamEvents(teamName, score)
+    : getTeamEvents(teamName, score, currentTime)
+}
+
+function getInlineFootballCardEventCount(teamName: string, type: 'yellow' | 'red', currentTime: string): number {
+  const visibleMinute = getFootballVisibleMinute(currentTime)
+  const events = getMappedTeamEvents(teamName) ?? buildFallbackEvents(teamName, 0)
+
+  return events.filter((event) => (
+    event.type === type
+    && (visibleMinute === null || event.minute === undefined || event.minute <= visibleMinute)
+  )).length
+}
+
+function getInlineFootballYellowCards(teamName: string, currentTime: string): number {
+  const seed = getStableTeamSeed(teamName)
+  const visibleMinute = getFootballVisibleMinute(currentTime)
+  const progress = getFootballMatchProgress(currentTime)
+  const projectedCards = 1 + (seed % 3)
+  const eventCards = getInlineFootballCardEventCount(teamName, 'yellow', currentTime)
+  const scaledCards = Math.floor(projectedCards * Math.max(0, progress - 0.12) / 0.88)
+  let cards = Math.min(projectedCards, Math.max(eventCards, scaledCards))
+
+  if (visibleMinute !== null && visibleMinute < 12) cards = 0
+  if (visibleMinute !== null && visibleMinute < 35) cards = Math.min(cards, 1)
+  if (visibleMinute !== null && visibleMinute < 55) cards = Math.min(cards, 2)
+
+  return cards
+}
+
+function getInlineFootballRedCards(teamName: string, currentTime: string): number {
+  const eventCards = getInlineFootballCardEventCount(teamName, 'red', currentTime)
+  if (eventCards > 0) return eventCards
+
+  const visibleMinute = getFootballVisibleMinute(currentTime)
+  if (visibleMinute === null || visibleMinute < 60) return 0
+
+  const seed = getStableTeamSeed(teamName)
+  return seed % 11 === 0 && visibleMinute >= 72 ? 1 : 0
+}
+
+function getInlineFootballCorners(teamName: string, currentTime: string): number {
+  const seed = getStableTeamSeed(teamName)
+  const visibleMinute = getFootballVisibleMinute(currentTime)
+  const progress = getFootballMatchProgress(currentTime)
+  const projectedCorners = 2 + (seed % 5)
+  let corners = Math.floor(projectedCorners * Math.pow(progress, 1.05))
+
+  if (visibleMinute !== null && visibleMinute >= 18 && seed % 4 === 0) corners += 1
+  if (visibleMinute !== null && visibleMinute < 10) corners = 0
+  if (visibleMinute !== null && visibleMinute < 20) corners = Math.min(corners, 1)
+  if (visibleMinute !== null && visibleMinute < 30) corners = Math.min(corners, 2)
+  if (visibleMinute !== null && visibleMinute < 45) corners = Math.min(corners, 3)
+  if (visibleMinute !== null && visibleMinute < 60) corners = Math.min(corners, 4)
+  if (visibleMinute !== null && visibleMinute < 75) corners = Math.min(corners, 5)
+
+  return Math.min(projectedCorners, Math.max(0, corners))
 }
 
 function getMatchEventLabel(event: MatchEvent): string {
@@ -1406,6 +1627,7 @@ function LiveEventContent({
   leagueName,
   sport,
   currentTime,
+  disableSheetInteractions = false,
 }: LiveEventContentProps) {
   const [activeTab, setActiveTab] = useState<TabId>('transmissao')
   const [activeDetailTab, setActiveDetailTab] = useState<DetailTabId>('destaques')
@@ -1456,7 +1678,7 @@ function LiveEventContent({
   const eventBallIcon = isBasketball ? iconBasquete : iconFutebol
   const playerAvatarFallback = isBasketball ? playerAvatarBasquete : playerAvatarFutebol
   const earlyPayoutImage = pagamentoAntecipado
-  const resultMarketTitle = isBasketball ? 'Vencedor - Pagamento Antecipado' : 'Resultado final - Pagamento Antecipado'
+  const resultMarketTitle = isBasketball ? 'Vencedor' : 'Resultado final'
   const fieldTabLabel = isBasketball ? 'Quadra' : 'Campo'
   const fieldViewLabel = isBasketball ? 'Visão da Quadra' : 'Visão do Campo'
   const playerMarketTitle = isBasketball ? 'Pontos do Jogador' : 'Finalizações ao Gol'
@@ -1554,8 +1776,8 @@ function LiveEventContent({
     awayTeamIcon.isFallback,
     LIVE_EVENT_AWAY_FALLBACK_GLOW
   )
-  const homeEvents = isLiveMatch ? getMatchEvents(match.homeTeam.name, match.homeTeam.score, isBasketball) : []
-  const awayEvents = isLiveMatch ? getMatchEvents(match.awayTeam.name, match.awayTeam.score, isBasketball) : []
+  const homeEvents = isLiveMatch ? getMatchEvents(match.homeTeam.name, match.homeTeam.score, isBasketball, displayTime) : []
+  const awayEvents = isLiveMatch ? getMatchEvents(match.awayTeam.name, match.awayTeam.score, isBasketball, displayTime) : []
   const homePrimaryEvent = homeEvents[0]
   const awayPrimaryEvent = awayEvents[0]
   const homeExtraEventsCount = Math.max(0, homeEvents.length - 1)
@@ -1662,6 +1884,8 @@ function LiveEventContent({
   }, [updateStickyScoreHeaderVisibility])
 
   const handleContentWheel = useCallback((event: WheelEvent<HTMLDivElement>) => {
+    if (disableSheetInteractions) return
+
     const verticalDelta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : 0
     if (verticalDelta === 0) return
 
@@ -1684,7 +1908,7 @@ function LiveEventContent({
 
     expansionProgressRef.current = nextProgress
     onExpansionProgressChange(nextProgress, { deferSettle: true })
-  }, [onCompactPullChange, onExpansionProgressChange])
+  }, [disableSheetInteractions, onCompactPullChange, onExpansionProgressChange])
 
   useEffect(() => {
     const syncTimer = window.setTimeout(() => setDisplayTime(currentTime), 0)
@@ -1735,6 +1959,8 @@ function LiveEventContent({
   }, [match, updateStickyScoreHeaderVisibility])
 
   useEffect(() => {
+    if (disableSheetInteractions) return
+
     const scrollElement = scrollRef.current
     if (!scrollElement || !isMobileTouchScreen()) return
 
@@ -1880,7 +2106,7 @@ function LiveEventContent({
       scrollElement.removeEventListener('touchend', finishGesture)
       scrollElement.removeEventListener('touchcancel', finishGesture)
     }
-  }, [isExpanded, onBlockNextClose, onCompactPullChange, onCompactPullEnd, onExpansionGestureEnd, onExpansionProgressChange, onSwipeStart, onSwipeMove, onSwipeEnd])
+  }, [disableSheetInteractions, isExpanded, onBlockNextClose, onCompactPullChange, onCompactPullEnd, onExpansionGestureEnd, onExpansionProgressChange, onSwipeStart, onSwipeMove, onSwipeEnd])
 
   const handleCloseHandlePointerDown = (event: PointerEvent<HTMLSpanElement>) => {
     if (expansionProgressRef.current > 0) onBlockNextClose()
@@ -2376,21 +2602,6 @@ function LiveEventContent({
             </div>
           </div>
 
-          <div className="live-event-page__market-tags">
-            <div className="live-event-page__market-tag">
-              <span>Substituição Garantida</span>
-              <span className="live-event-page__market-tag-badge">
-                <img src={substituicaoGarantida} alt="" className="live-event-page__market-tag-img" />
-              </span>
-            </div>
-            <div className="live-event-page__market-tag">
-              <span>Múltipla Turbinada</span>
-              <span className="live-event-page__market-tag-badge">
-                <img src={multiplaTurbinada} alt="" className="live-event-page__market-tag-img" />
-              </span>
-            </div>
-          </div>
-
           <div className={`live-event-page__market-collapse${isShotsMarketOpen ? ' live-event-page__market-collapse--open' : ''}`}>
             <div className="live-event-page__market-collapse-inner">
               <div
@@ -2677,7 +2888,7 @@ function LiveEventContent({
                       renderMarketOddButton(
                         finalMarketId,
                         liveEventDoubleChanceOutcomeIds[optionIndex] ?? option.label,
-                        option.labelParts ? `${option.labelParts[0]} ou ${option.labelParts[1]}` : option.label,
+                        option.labelParts ? `${option.labelParts[0]}/${option.labelParts[1]}` : option.label,
                         option.odd,
                         'live-event-page__market-odd live-event-page__market-odd--double-chance',
                         'live-event-page__market-odd-label',
@@ -2704,6 +2915,7 @@ const MemoLiveEventContent = memo(LiveEventContent, (previous, next) => (
   && previous.currentTime === next.currentTime
   && previous.isExpanded === next.isExpanded
   && previous.expansionProgress === next.expansionProgress
+  && previous.disableSheetInteractions === next.disableSheetInteractions
 ))
 
 const LIVE_EVENT_COMPACT_SIDE_MARGIN = 24
@@ -2762,6 +2974,1424 @@ const getCompactPullDistance = (distance: number) => (
 const clampLiveEventExpansionProgress = (progress: number) => (
   Math.min(1, Math.max(0, progress))
 )
+
+const inlineTeamAbbreviationAliases: Record<string, string> = {
+  Flamengo: 'FLA',
+  Cruzeiro: 'CRU',
+  Internacional: 'INT',
+  Inter: 'INT',
+  Bragantino: 'RBB',
+  'Red Bull Bragantino': 'RBB',
+  Vasco: 'VAS',
+  Corinthians: 'COR',
+  Palmeiras: 'PAL',
+  Fluminense: 'FLU',
+  Botafogo: 'BOT',
+  'Atl. Mineiro': 'CAM',
+  'Atletico-MG': 'CAM',
+  'Atlético-MG': 'CAM',
+  'São Paulo': 'SAO',
+  Mirassol: 'MIR',
+  Barcelona: 'BAR',
+  Bayern: 'BAY',
+  PSG: 'PSG',
+  'Paris Saint-Germain': 'PSG',
+  'Real Madrid': 'RMA',
+  Liverpool: 'LIV',
+  Arsenal: 'ARS',
+  Chelsea: 'CHE',
+  'Manchester City': 'MCI',
+  Jazz: 'UTA',
+  Thunder: 'OKC',
+  Knicks: 'NYK',
+  Magic: 'ORL',
+  Bulls: 'CHI',
+  Heat: 'MIA',
+  Warriors: 'GSW',
+  Lakers: 'LAL',
+  Celtics: 'BOS',
+  Nuggets: 'DEN',
+  Suns: 'PHX',
+  Mavericks: 'DAL',
+  Spurs: 'SAS',
+  Clippers: 'LAC',
+  Kings: 'SAC',
+}
+
+const getInlineTeamAbbreviation = (teamName: string) => {
+  const alias = inlineTeamAbbreviationAliases[teamName]
+  if (alias) return alias
+
+  const cleanWords = teamName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .split(/\s+/)
+    .map((word) => word.replace(/[^a-z0-9]/gi, ''))
+    .filter(Boolean)
+
+  if (cleanWords.length >= 2) {
+    return cleanWords
+      .slice(0, 3)
+      .map((word) => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 3)
+  }
+
+  return (cleanWords[0] ?? teamName).slice(0, 3).toUpperCase()
+}
+
+function getInlineScoreClockLabel(time: string): string {
+  const parsed = parseLiveTime(time)
+  if (!parsed) return time
+  if (parsed.isQuarter) return time
+
+  return `${Math.floor(parsed.totalSeconds / 60)} min`
+}
+
+function getInlineRailLiveClockLabel(time: string): string {
+  const parsed = parseLiveTime(time)
+  if (!parsed) return time
+
+  const minutes = Math.floor(Math.max(0, parsed.totalSeconds) / 60)
+  const seconds = Math.max(0, parsed.totalSeconds) % 60
+  return `${minutes}:${String(seconds).padStart(2, '0')}`
+}
+
+function getInlinePreMatchRailLabel(item: LiveEventRailItem): string {
+  const preMatchHeader = getLiveEventRailPreMatchHeader(item)
+  if (
+    !preMatchHeader.secondary
+    || preMatchHeader.secondary === item.leagueName
+    || preMatchHeader.secondary === preMatchHeader.primary
+  ) return preMatchHeader.primary
+
+  return `${preMatchHeader.secondary} (${preMatchHeader.primary})`
+}
+
+const inlineSummaryStatIconByType: Record<string, string> = {
+  red: cartaoVermelhoIcon,
+  yellow: cartaoAmareloIcon,
+  corner: escanteiosIcon,
+}
+
+function getInlineTeamStats(teamName: string, score: number, isBasketball: boolean, currentTime: string, isLiveMatch: boolean) {
+  if (isBasketball) {
+    return [
+      { type: 'text', label: 'PTS', value: Math.max(score, 0) },
+      { type: 'text', label: 'REB', value: 12 + (teamName.length % 8) },
+      { type: 'text', label: 'AST', value: 6 + (teamName.length % 7) },
+    ] as const
+  }
+
+  if (!isLiveMatch) {
+    return [
+      { type: 'red', value: 0 },
+      { type: 'yellow', value: 0 },
+      { type: 'corner', value: 0 },
+    ] as const
+  }
+
+  return [
+    { type: 'red', value: getInlineFootballRedCards(teamName, currentTime) },
+    { type: 'yellow', value: getInlineFootballYellowCards(teamName, currentTime) },
+    { type: 'corner', value: getInlineFootballCorners(teamName, currentTime) },
+  ] as const
+}
+
+interface LiveEventInlineTeamLogoProps {
+  team: LiveEventMatch['homeTeam']
+  sport: string
+  side: 'home' | 'away'
+}
+
+function LiveEventInlineTeamLogo({ team, sport, side }: LiveEventInlineTeamLogoProps) {
+  const resolvedIcon = useSportsDbTeamLogo(team.name, team.icon, sport, getLiveEventSportFallbackIcon(sport), {
+    useCurrentLogoFallback: false,
+  })
+  const teamIcon = getLiveEventTeamIconView(resolvedIcon, sport)
+  const logoGlowColor = useLogoGlowColor(
+    teamIcon.src,
+    team.name,
+    teamIcon.isFallback,
+    side === 'home' ? LIVE_EVENT_HOME_FALLBACK_GLOW : LIVE_EVENT_AWAY_FALLBACK_GLOW
+  )
+
+  if (!teamIcon.src) {
+    return <span className="live-event-inline__compact-logo-wrap live-event-inline__compact-logo-wrap--placeholder" />
+  }
+
+  return (
+    <span className={`live-event-inline__compact-logo-wrap live-event-inline__compact-logo-wrap--${side}`}>
+      <span
+        className="live-event-inline__compact-logo-glow"
+        style={getLogoGlowStyle(logoGlowColor)}
+        aria-hidden="true"
+      />
+      <img
+        src={teamIcon.src}
+        alt=""
+        className={[
+          'live-event-inline__compact-logo',
+          teamIcon.isFallback ? `live-event-inline__compact-logo--sport-fallback live-event-inline__compact-logo--sport-${side}` : '',
+        ].filter(Boolean).join(' ')}
+      />
+    </span>
+  )
+}
+
+interface LiveEventInlineEventRailProps {
+  items: LiveEventRailItem[]
+  activeIdentity: string
+  railTimes: Record<string, string>
+  matchIndexByIdentity: Map<string, number>
+  onSelectIndex?: (index: number) => void
+}
+
+function LiveEventInlineEventRail({
+  items,
+  activeIdentity,
+  railTimes,
+  matchIndexByIdentity,
+  onSelectIndex,
+}: LiveEventInlineEventRailProps) {
+  const railRef = useRef<HTMLDivElement>(null)
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const activeIndex = items.findIndex((item) => getLiveEventRailIdentity(item) === activeIdentity)
+
+  useLayoutEffect(() => {
+    if (activeIndex < 0) return
+
+    const railEl = railRef.current
+    const itemEl = itemRefs.current[activeIndex]
+    if (!railEl || !itemEl) return
+
+    const maxScrollLeft = Math.max(0, railEl.scrollWidth - railEl.clientWidth)
+    const centeredLeft = itemEl.offsetLeft - (railEl.clientWidth - itemEl.offsetWidth) / 2
+    const targetLeft = activeIndex === 0
+      ? 0
+      : activeIndex === items.length - 1
+        ? maxScrollLeft
+        : Math.min(maxScrollLeft, Math.max(0, centeredLeft))
+
+    railEl.scrollTo({ left: targetLeft, top: 0, behavior: 'smooth' })
+  }, [activeIndex, items.length])
+
+  if (items.length === 0) return null
+
+  return (
+    <div className="live-event-inline__event-rail" ref={railRef} aria-label="Jogos do campeonato">
+      <div className="live-event-inline__event-track">
+        {items.map((item, index) => {
+          const identity = getLiveEventRailIdentity(item)
+          const matchIndex = matchIndexByIdentity.get(identity)
+          const isActive = identity === activeIdentity
+          const isSelectable = matchIndex !== undefined
+          const displayTime = railTimes[identity] ?? item.currentTime ?? item.headerPrimary ?? item.dateTime
+          const matchup = `${getInlineTeamAbbreviation(item.homeTeam.name)} vs ${getInlineTeamAbbreviation(item.awayTeam.name)}`
+
+          return (
+            <button
+              key={identity}
+              ref={(element) => { itemRefs.current[index] = element }}
+              type="button"
+              className={[
+                'live-event-inline__event-item',
+                item.isLive ? 'live-event-inline__event-item--live' : 'live-event-inline__event-item--prematch',
+                isActive ? 'live-event-inline__event-item--active' : '',
+              ].filter(Boolean).join(' ')}
+              aria-label={`${item.homeTeam.name} contra ${item.awayTeam.name}`}
+              aria-pressed={isActive && isSelectable ? true : undefined}
+              disabled={!isSelectable}
+              onClick={() => {
+                if (matchIndex !== undefined) onSelectIndex?.(matchIndex)
+              }}
+            >
+              <span className="live-event-inline__event-label">{matchup}</span>
+              {item.isLive ? (
+                <span className={[
+                  'live-event-inline__event-meta',
+                  isActive ? 'live-event-inline__event-meta--active' : '',
+                  isActive ? 'live-event-inline__event-meta--active-live' : 'live-event-inline__event-meta--live',
+                ].filter(Boolean).join(' ')}>
+                  <span className="live-event-inline__event-live-dot" aria-hidden="true" />
+                  {isActive ? 'Ao Vivo' : getInlineRailLiveClockLabel(displayTime)}
+                </span>
+              ) : (
+                <span className={[
+                  'live-event-inline__event-meta',
+                  'live-event-inline__event-meta--prematch',
+                  isActive ? 'live-event-inline__event-meta--active' : '',
+                  isActive ? 'live-event-inline__event-meta--active-prematch' : '',
+                ].filter(Boolean).join(' ')}>
+                  {getInlinePreMatchRailLabel(item)}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+interface LiveEventInlineCompactHeaderProps {
+  match: LiveEventMatch
+  sport: string
+  currentTime: string
+}
+
+function LiveEventInlineCompactHeader({
+  match,
+  sport,
+  currentTime,
+}: LiveEventInlineCompactHeaderProps) {
+  const contentSport = match.sport ?? sport
+  const isLiveMatch = match.isLive ?? true
+  const scheduledDateTime = match.dateTime ?? match.time ?? currentTime
+
+  return (
+    <div className="live-event-inline__compact-header" aria-label={`${match.homeTeam.name} contra ${match.awayTeam.name}`}>
+      <div className="live-event-inline__compact-team live-event-inline__compact-team--home">
+        <span className="live-event-inline__compact-team-code">{getInlineTeamAbbreviation(match.homeTeam.name)}</span>
+        <LiveEventInlineTeamLogo team={match.homeTeam} sport={contentSport} side="home" />
+      </div>
+      <div className="live-event-inline__compact-score">
+        {isLiveMatch ? (
+          <span className="live-event-inline__compact-score-row">
+            <strong>{match.homeTeam.score}</strong>
+            <span>:</span>
+            <strong>{match.awayTeam.score}</strong>
+          </span>
+        ) : (
+          <span className="live-event-inline__compact-matchup">vs</span>
+        )}
+        <span className="live-event-inline__compact-time">
+          {isLiveMatch ? getInlineScoreClockLabel(currentTime) : scheduledDateTime}
+        </span>
+      </div>
+      <div className="live-event-inline__compact-team live-event-inline__compact-team--away">
+        <LiveEventInlineTeamLogo team={match.awayTeam} sport={contentSport} side="away" />
+        <span className="live-event-inline__compact-team-code">{getInlineTeamAbbreviation(match.awayTeam.name)}</span>
+      </div>
+    </div>
+  )
+}
+
+interface LiveEventInlineScoreTeamProps {
+  team: LiveEventMatch['homeTeam']
+  sport: string
+  side: 'home' | 'away'
+  isBasketball: boolean
+  currentTime: string
+  isLiveMatch: boolean
+  showStats: boolean
+}
+
+function LiveEventInlineScoreTeam({
+  team,
+  sport,
+  side,
+  isBasketball,
+  currentTime,
+  isLiveMatch,
+  showStats,
+}: LiveEventInlineScoreTeamProps) {
+  const resolvedIcon = useSportsDbTeamLogo(team.name, team.icon, sport, getLiveEventSportFallbackIcon(sport), {
+    useCurrentLogoFallback: false,
+  })
+  const teamIcon = getLiveEventTeamIconView(resolvedIcon, sport)
+  const logoGlowColor = useLogoGlowColor(
+    teamIcon.src,
+    team.name,
+    teamIcon.isFallback,
+    side === 'home' ? LIVE_EVENT_HOME_FALLBACK_GLOW : LIVE_EVENT_AWAY_FALLBACK_GLOW
+  )
+  const stats = getInlineTeamStats(team.name, team.score, isBasketball, currentTime, isLiveMatch)
+
+  return (
+    <div className={`live-event-inline__summary-team live-event-inline__summary-team--${side}`}>
+      <div className="live-event-inline__summary-logo-wrap">
+        {teamIcon.src ? (
+          <>
+            <span
+              className="live-event-inline__summary-logo-glow"
+              style={getLogoGlowStyle(logoGlowColor)}
+              aria-hidden="true"
+            />
+            <img
+              src={teamIcon.src}
+              alt={team.name}
+              className={[
+                'live-event-inline__summary-logo',
+                teamIcon.isFallback ? `live-event-inline__summary-logo--sport-fallback live-event-inline__summary-logo--sport-${side}` : '',
+              ].filter(Boolean).join(' ')}
+            />
+          </>
+        ) : (
+          <span className="live-event-inline__summary-logo live-event-inline__summary-logo--placeholder" />
+        )}
+      </div>
+      <span className="live-event-inline__summary-team-name">{team.name}</span>
+      {showStats && (
+        <div className="live-event-inline__summary-stats" aria-label={`Estatísticas de ${team.name}`}>
+          {stats.map((stat, index) => (
+            <span key={`${stat.type}-${index}`} className="live-event-inline__summary-stat">
+              {stat.type === 'text' ? (
+                <span className="live-event-inline__summary-stat-text">{stat.label}</span>
+              ) : (
+                <span className={`live-event-inline__summary-stat-icon live-event-inline__summary-stat-icon--${stat.type}`} aria-hidden="true">
+                  <img src={inlineSummaryStatIconByType[stat.type]} alt="" />
+                </span>
+              )}
+              <span>{stat.value}</span>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+interface LiveEventInlineScoreHeaderProps {
+  match: LiveEventMatch
+  sport: string
+  currentTime: string
+}
+
+function LiveEventInlineScoreHeader({
+  match,
+  sport,
+  currentTime,
+}: LiveEventInlineScoreHeaderProps) {
+  const contentSport = match.sport ?? sport
+  const isBasketball = contentSport === 'basquete'
+  const isLiveMatch = match.isLive ?? true
+  const scheduledDateTime = match.dateTime ?? match.time ?? currentTime
+
+  return (
+    <section
+      className={[
+        'live-event-inline__score-header',
+        isLiveMatch ? '' : 'live-event-inline__score-header--prematch',
+      ].filter(Boolean).join(' ')}
+      aria-label={`${match.homeTeam.name} contra ${match.awayTeam.name}`}
+    >
+      <LiveEventInlineScoreTeam
+        team={match.homeTeam}
+        sport={contentSport}
+        side="home"
+        isBasketball={isBasketball}
+        currentTime={currentTime}
+        isLiveMatch={isLiveMatch}
+        showStats={isLiveMatch}
+      />
+      <div className="live-event-inline__score-center">
+        {isLiveMatch ? (
+          <span className="live-event-inline__score-row">
+            <strong>{match.homeTeam.score}</strong>
+            <span>:</span>
+            <strong>{match.awayTeam.score}</strong>
+          </span>
+        ) : (
+          <span className="live-event-inline__score-matchup">vs</span>
+        )}
+        <span className="live-event-inline__score-time">
+          {isLiveMatch ? getInlineScoreClockLabel(currentTime) : scheduledDateTime}
+        </span>
+      </div>
+      <LiveEventInlineScoreTeam
+        team={match.awayTeam}
+        sport={contentSport}
+        side="away"
+        isBasketball={isBasketball}
+        currentTime={currentTime}
+        isLiveMatch={isLiveMatch}
+        showStats={isLiveMatch}
+      />
+    </section>
+  )
+}
+
+interface LiveEventInlineStreamBlockProps {
+  sport: string
+}
+
+function LiveEventInlineStreamBlock({ sport }: LiveEventInlineStreamBlockProps) {
+  const [activeTab, setActiveTab] = useState<TabId>('transmissao')
+  const isBasketball = sport === 'basquete'
+  const streamImage = isBasketball ? streamingBasquete : streamingFutebol
+  const fieldTabLabel = isBasketball ? 'Quadra' : 'Campo'
+
+  return (
+    <section className="live-event-inline__stream-block" aria-label="Transmissão do evento">
+      <div className="live-event-inline__media-tabs" role="tablist" aria-label="Visualização do jogo">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'transmissao'}
+          className={[
+            'live-event-inline__media-tab',
+            activeTab === 'transmissao' ? 'live-event-inline__media-tab--active' : '',
+          ].filter(Boolean).join(' ')}
+          onClick={() => setActiveTab('transmissao')}
+        >
+          <MonitorPlayIcon aria-hidden="true" className="live-event-inline__media-tab-icon" weight="bold" />
+          <span>Transmissão</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'campo'}
+          className={[
+            'live-event-inline__media-tab',
+            activeTab === 'campo' ? 'live-event-inline__media-tab--active' : '',
+          ].filter(Boolean).join(' ')}
+          onClick={() => setActiveTab('campo')}
+        >
+          {isBasketball ? (
+            <CourtBasketballIcon aria-hidden="true" className="live-event-inline__media-tab-icon" weight="bold" />
+          ) : (
+            <SoccerBallIcon aria-hidden="true" className="live-event-inline__media-tab-icon" weight="bold" />
+          )}
+          <span>{fieldTabLabel}</span>
+        </button>
+      </div>
+      {activeTab === 'transmissao' ? (
+        <div className="live-event-inline__stream-media">
+          <img src={streamImage} alt="Transmissão ao vivo" className="live-event-inline__stream-img" />
+          <div className="live-event-inline__live-badge">LIVE</div>
+          <button type="button" className="live-event-inline__stream-control live-event-inline__stream-control--close" aria-label="Fechar transmissão">
+            <CloseStreamIcon />
+          </button>
+          <div className="live-event-inline__stream-controls">
+            <button type="button" className="live-event-inline__stream-control" aria-label="Pausar">
+              <PauseIcon />
+            </button>
+            <button type="button" className="live-event-inline__stream-control" aria-label="Mudo">
+              <MuteIcon />
+            </button>
+          </div>
+          <button type="button" className="live-event-inline__stream-control live-event-inline__stream-control--fullscreen" aria-label="Tela cheia">
+            <FullscreenIcon />
+          </button>
+        </div>
+      ) : (
+        <div className={`live-event-inline__field-view live-event-inline__field-view--${isBasketball ? 'basketball' : 'soccer'}`} aria-label={fieldTabLabel}>
+          <span aria-hidden="true" />
+        </div>
+      )}
+    </section>
+  )
+}
+
+const liveEventInlineMarketChips = [
+  { id: 'populares', label: 'POPULARES' },
+  { id: 'criar-aposta', label: 'CRIAR APOSTA' },
+  { id: 'cartoes', label: 'CARTÕES' },
+  { id: 'times', label: 'TIMES' },
+  { id: 'jogadores', label: 'JOGADORES' },
+] as const
+
+type LiveEventInlineMarketChipId = typeof liveEventInlineMarketChips[number]['id']
+
+function LiveEventInlineMarketChips() {
+  const activeMarketChip: LiveEventInlineMarketChipId = liveEventInlineMarketChips[0].id
+
+  return (
+    <ContentFilterChips
+      filters={liveEventInlineMarketChips}
+      activeFilter={activeMarketChip}
+      ariaLabel="Filtros de mercado"
+      className="live-event-inline__market-chips"
+      disabled
+    />
+  )
+}
+
+interface LiveEventInlineMarketSectionProps {
+  title: string
+  badges?: string[]
+  className?: string
+  children: ReactNode
+}
+
+const normalizeInlineMarketBadge = (badge: string) => (
+  badge.replace(/90['’]?/g, '90’')
+)
+
+function LiveEventInlineMarketSection({
+  title,
+  badges = ['PA', '90’'],
+  className = '',
+  children,
+}: LiveEventInlineMarketSectionProps) {
+  const [isOpen, setIsOpen] = useState(true)
+
+  return (
+    <section className={[
+      'live-event-inline__market-section',
+      isOpen ? '' : 'live-event-inline__market-section--collapsed',
+      className,
+    ].filter(Boolean).join(' ')}>
+      <header className="live-event-inline__market-header">
+        <h3>{title}</h3>
+        <div className="live-event-inline__market-actions">
+          <span className="home-competition__tags live-event-inline__market-badges">
+            {badges.map((badge) => {
+              const normalizedBadge = normalizeInlineMarketBadge(badge)
+
+              return (
+                <span key={badge} className="home-competition__tag">{normalizedBadge}</span>
+              )
+            })}
+          </span>
+          <button
+            type="button"
+            className="live-event-inline__market-toggle"
+            aria-expanded={isOpen}
+            aria-label={`${isOpen ? 'Recolher' : 'Expandir'} ${title}`}
+            onClick={() => setIsOpen((current) => !current)}
+          >
+            <CaretRightIcon aria-hidden="true" className="live-event-inline__market-chevron" weight="bold" />
+          </button>
+        </div>
+      </header>
+      <div className="live-event-inline__market-body" aria-hidden={!isOpen}>
+        <div className="live-event-inline__market-body-inner">
+          {children}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+type InlineOddButtonRenderer = (
+  marketId: string,
+  outcomeId: string,
+  label: ReactNode,
+  odd: ReactNode,
+  className?: string,
+  selectionDetails?: {
+    selectionLabel?: string
+    selectionType?: 'team' | 'player' | 'market'
+    playerName?: string
+    selectionIcon?: string
+    playerImage?: string
+    badgeType?: 'boost' | 'substitution'
+  }
+) => ReactNode
+
+interface LiveEventInlinePlayerPropCardProps {
+  player: MatchPlayerProp
+  marketId: string
+  marketLabel: string
+  timeLabel: string
+  sport: HomeCompetitionPlayerProp['sport']
+  className?: string
+  renderOddButton: InlineOddButtonRenderer
+}
+
+function getInlineHomePlayerProp(player: MatchPlayerProp, marketLabel: string, timeLabel: string, sport: HomeCompetitionPlayerProp['sport']): HomeCompetitionPlayerProp {
+  const playerOdds = player.options.map((option) => ({
+    label: option.label,
+    value: option.odd,
+  }))
+  const fallbackOdd = playerOdds[playerOdds.length - 1] ?? { label: '', value: '' }
+  const odds: [HomeCompetitionOdd, HomeCompetitionOdd, HomeCompetitionOdd] = [
+    playerOdds[0] ?? fallbackOdd,
+    playerOdds[1] ?? fallbackOdd,
+    playerOdds[2] ?? fallbackOdd,
+  ]
+
+  return {
+    id: player.id,
+    playerName: player.playerName,
+    position: player.position,
+    marketLabel,
+    matchLabel: player.teamName,
+    timeLabel,
+    teamName: player.teamName,
+    teamAbbreviation: getInlineTeamAbbreviation(player.teamName),
+    sport,
+    odds,
+  }
+}
+
+function LiveEventInlinePlayerPropCard({
+  player,
+  marketId,
+  marketLabel,
+  timeLabel,
+  sport,
+  className,
+  renderOddButton,
+}: LiveEventInlinePlayerPropCardProps) {
+  const homePlayerProp = getInlineHomePlayerProp(player, marketLabel, timeLabel, sport)
+
+  return (
+    <HomeCompetitionPlayerPropCard
+      prop={homePlayerProp}
+      className={className}
+      matchLabel={homePlayerProp.teamAbbreviation}
+      showTimeLabel={false}
+      showMarketLabel={false}
+      renderOddButton={(odd, context) => {
+        const option = player.options[context.index] ?? player.options[0]
+        const outcomeId = `${player.teamSide}-${normalizePlayerName(player.playerName)}-${normalizePlayerName(option?.label ?? String(odd.label) ?? 'linha')}`
+
+        return renderOddButton(
+          marketId,
+          outcomeId,
+          odd.label,
+          odd.value,
+          context.className,
+          {
+            selectionLabel: `${player.playerName} ${option?.label ?? odd.label}`,
+            selectionType: 'player',
+            playerName: player.playerName,
+            selectionIcon: player.teamIcon,
+            playerImage: player.image,
+            badgeType: 'substitution',
+          }
+        )
+      }}
+    />
+  )
+}
+
+interface LiveEventInlineMarketsProps {
+  match: LiveEventMatch
+  leagueName: string
+  sport: string
+  currentTime: string
+}
+
+function LiveEventInlineMarkets({
+  match,
+  leagueName,
+  sport,
+  currentTime,
+}: LiveEventInlineMarketsProps) {
+  const contentSport = match.sport ?? sport
+  const isBasketball = contentSport === 'basquete'
+  const isLiveMatch = match.isLive ?? true
+  const scheduledDateTime = match.dateTime ?? match.time ?? currentTime
+  const playerAvatarFallback = isBasketball ? playerAvatarBasquete : playerAvatarFutebol
+  const [displayTime, setDisplayTime] = useState(currentTime)
+  const playerPropsGridRef = useRef<HTMLDivElement | null>(null)
+  const playerPropsAnimationRef = useRef<{ fromHeight: number } | null>(null)
+  const playerPropsAnimationStartTimerRef = useRef<number | null>(null)
+  const playerPropsAnimationTimerRef = useRef<number | null>(null)
+  const [visiblePlayerPropsCount, setVisiblePlayerPropsCount] = useState(LIVE_EVENT_INLINE_PLAYER_PROPS_INITIAL_COUNT)
+  const [enteringPlayerPropIds, setEnteringPlayerPropIds] = useState<Set<string>>(() => new Set())
+  const getOddButtonProps = useOddSelection('')
+  const eventId = getBetslipEventId({
+    sport: contentSport,
+    homeTeam: match.homeTeam.name,
+    awayTeam: match.awayTeam.name,
+  })
+  const resultMarketId = isBasketball ? 'vencedor' : 'resultado-final'
+  const playerPropsMarketId = isBasketball ? 'pontos-jogador' : 'finalizacao-gol'
+  const playerPropsSport = isBasketball ? 'basquete' : 'futebol'
+  const primaryTotalMarketId = isBasketball ? 'total-pontos' : 'total-gols'
+  const secondaryMarketId = isBasketball ? 'handicap' : 'escanteios'
+  const finalMarketId = isBasketball ? 'q4-total' : 'dupla-chance'
+  const resultMarketTitle = isBasketball ? 'Vencedor' : 'Resultado final'
+  const playerMarketTitle = isBasketball ? 'Pontos do Jogador' : 'Finalizações ao Gol'
+  const primaryTotalMarketTitle = isBasketball ? 'Total de Pontos' : 'Total de Gols'
+  const secondaryMarketTitle = isBasketball ? 'Handicap' : 'Total de Escanteios'
+  const finalMarketTitle = isBasketball ? '4° Quarto - Total de Pontos' : 'Dupla Chance'
+  const primaryTotalRows = isBasketball ? getTotalPointsRows(match) : getTotalGoalsRows(match, false)
+  const secondaryRows = isBasketball ? getHandicapRows(match) : getTotalCornersRows(match)
+  const finalRows = isBasketball ? getQuarterTotalRows(match.q4TotalOdds) : []
+  const doubleChanceRows = isBasketball ? [] : getDoubleChanceRows(match)
+
+  const getMarketTitle = (marketId: string) => {
+    if (marketId === resultMarketId) return resultMarketTitle
+    if (marketId === playerPropsMarketId) return playerMarketTitle
+    if (marketId === primaryTotalMarketId) return primaryTotalMarketTitle
+    if (marketId === secondaryMarketId) return secondaryMarketTitle
+    if (marketId === finalMarketId) return finalMarketTitle
+
+    return marketId
+  }
+
+  const buildEventPlayerPropCards = (marketId: string, fallbackRows: PlayerShotMarket[] = []): MatchPlayerProp[] => {
+    const syncedCards = isLiveMatch
+      ? getLivePlayerProps({
+        ...match,
+        id: match.id ?? 'live-event',
+        time: match.time ?? scheduledDateTime,
+      }, contentSport, marketId, LIVE_EVENT_PLAYER_PROPS_PER_MARKET)
+      : getMatchPlayerProps({
+        id: match.id ?? 'live-event',
+        homeTeam: match.homeTeam,
+        awayTeam: match.awayTeam,
+      }, contentSport, marketId, LIVE_EVENT_PLAYER_PROPS_PER_MARKET)
+    const fallbackCards: MatchPlayerProp[] = fallbackRows.map((row) => {
+      const teamSide = row.team === match.awayTeam.name ? 'away' : 'home'
+
+      return {
+        id: `${match.id ?? 'live-event'}-${row.id}`,
+        playerName: row.player,
+        teamName: row.team,
+        teamIcon: teamSide === 'away' ? match.awayTeam.icon : match.homeTeam.icon,
+        teamSide,
+        sport: contentSport,
+        position: row.position ?? getPlayerPropCardPosition(row.player, isBasketball),
+        image: row.image ?? playerAvatarFallback,
+        options: row.outcomes.map((outcome, outcomeIndex) => ({
+          label: outcome.label,
+          odd: outcome.odd,
+          active: outcomeIndex === Math.min(1, row.outcomes.length - 1),
+        })),
+      }
+    })
+    const uniqueCardKeys = new Set<string>()
+    const playerCards = [...syncedCards, ...fallbackCards].reduce<MatchPlayerProp[]>((cards, player) => {
+      const cardKey = `${normalizePlayerName(player.teamName)}:${normalizePlayerName(player.playerName)}`
+      if (cards.length >= LIVE_EVENT_PLAYER_PROPS_PER_MARKET || uniqueCardKeys.has(cardKey)) return cards
+
+      uniqueCardKeys.add(cardKey)
+      cards.push(player)
+      return cards
+    }, [])
+
+    return playerCards.map((player) => ({
+      ...player,
+      eventId,
+      marketId,
+      marketLabel: getMarketTitle(marketId),
+      eventStatus: isLiveMatch ? 'live' as const : 'prematch' as const,
+      leagueId: match.leagueId,
+      leagueName: match.leagueName ?? leagueName,
+      homeTeam: match.homeTeam.name,
+      awayTeam: match.awayTeam.name,
+      eventTimeLabel: isLiveMatch ? displayTime : scheduledDateTime,
+      liveClock: isLiveMatch ? displayTime : undefined,
+      homeScore: match.homeTeam.score,
+      awayScore: match.awayTeam.score,
+    }))
+  }
+
+  const playerPropCards = buildEventPlayerPropCards(playerPropsMarketId, getPlayerPropRows(match, isBasketball, true))
+  const visiblePlayerPropsMaxCount = Math.min(LIVE_EVENT_INLINE_PLAYER_PROPS_MAX_COUNT, playerPropCards.length)
+  const visiblePlayerProps = playerPropCards.slice(0, Math.min(visiblePlayerPropsCount, visiblePlayerPropsMaxCount))
+  const canLoadMorePlayerProps = visiblePlayerProps.length < visiblePlayerPropsMaxCount
+
+  const clearPlayerPropsAnimation = useCallback(() => {
+    if (playerPropsAnimationStartTimerRef.current !== null) {
+      window.clearTimeout(playerPropsAnimationStartTimerRef.current)
+      playerPropsAnimationStartTimerRef.current = null
+    }
+
+    if (playerPropsAnimationTimerRef.current !== null) {
+      window.clearTimeout(playerPropsAnimationTimerRef.current)
+      playerPropsAnimationTimerRef.current = null
+    }
+  }, [])
+
+  const handleLoadMorePlayerProps = useCallback(() => {
+    const currentCount = Math.min(visiblePlayerPropsCount, visiblePlayerPropsMaxCount)
+    const nextCount = Math.min(
+      currentCount + LIVE_EVENT_INLINE_PLAYER_PROPS_LOAD_STEP,
+      visiblePlayerPropsMaxCount
+    )
+
+    if (nextCount <= currentCount) return
+
+    const gridEl = playerPropsGridRef.current
+    if (gridEl) {
+      clearPlayerPropsAnimation()
+      playerPropsAnimationRef.current = { fromHeight: gridEl.getBoundingClientRect().height }
+      gridEl.classList.add('home-competition__players--accordion')
+      gridEl.style.height = `${playerPropsAnimationRef.current.fromHeight}px`
+      gridEl.style.overflow = 'hidden'
+    }
+
+    setEnteringPlayerPropIds(new Set(
+      playerPropCards.slice(currentCount, nextCount).map((player) => player.id)
+    ))
+    setVisiblePlayerPropsCount(nextCount)
+  }, [
+    clearPlayerPropsAnimation,
+    playerPropCards,
+    visiblePlayerPropsCount,
+    visiblePlayerPropsMaxCount,
+  ])
+
+  const renderOddButton: InlineOddButtonRenderer = (
+    marketId,
+    outcomeId,
+    label,
+    odd,
+    className = '',
+    selectionDetails
+  ) => {
+    const groupId = getBetslipMarketGroupId({ eventId, marketId })
+
+    if (!LIVE_EVENT_INLINE_ENABLE_ODD_ACTIONS) {
+      return (
+        <HomeCompetitionOddButton
+          key={`${groupId}:${outcomeId}`}
+          odd={{ label, value: odd }}
+          className={className}
+        />
+      )
+    }
+
+    return (
+      <HomeCompetitionOddButton
+        key={`${groupId}:${outcomeId}`}
+        odd={{ label, value: odd }}
+        disabled={false}
+        {...getOddButtonProps(
+          `${groupId}:${outcomeId}`,
+          groupId,
+          className,
+          createBetslipSelection({
+            eventId,
+            marketId,
+            outcomeId,
+            label,
+            odd,
+            marketLabel: getMarketTitle(marketId),
+            eventStatus: isLiveMatch ? 'live' : 'prematch',
+            selectionType: selectionDetails?.selectionType,
+            selectionLabel: selectionDetails?.selectionLabel,
+            sport: contentSport,
+            leagueId: match.leagueId,
+            leagueName: match.leagueName ?? leagueName,
+            homeTeam: match.homeTeam.name,
+            awayTeam: match.awayTeam.name,
+            eventTimeLabel: isLiveMatch ? displayTime : scheduledDateTime,
+            liveClock: isLiveMatch ? displayTime : undefined,
+            homeScore: match.homeTeam.score,
+            awayScore: match.awayTeam.score,
+            playerName: selectionDetails?.playerName,
+            selectionIcon: selectionDetails?.selectionIcon,
+            playerImage: selectionDetails?.playerImage,
+            badgeType: selectionDetails?.badgeType ?? (marketId === resultMarketId ? 'boost' : undefined),
+          })
+        )}
+      />
+    )
+  }
+
+  useEffect(() => {
+    const syncTimer = window.setTimeout(() => setDisplayTime(currentTime), 0)
+    if (!isLiveMatch) return () => window.clearTimeout(syncTimer)
+    const parsed = parseLiveTime(currentTime)
+    if (!parsed) return () => window.clearTimeout(syncTimer)
+    let totalSeconds = parsed.totalSeconds
+    const interval = setInterval(() => {
+      totalSeconds = parsed.isQuarter ? totalSeconds - 1 : totalSeconds + 1
+      setDisplayTime(formatLiveTime(parsed.prefix, totalSeconds))
+    }, 1000)
+    return () => {
+      window.clearTimeout(syncTimer)
+      clearInterval(interval)
+    }
+  }, [currentTime, isLiveMatch])
+
+  useLayoutEffect(() => {
+    const animation = playerPropsAnimationRef.current
+    const gridEl = playerPropsGridRef.current
+
+    if (!animation || !gridEl) return
+
+    playerPropsAnimationRef.current = null
+    const fromHeight = animation.fromHeight
+    gridEl.classList.remove('home-competition__players--accordion')
+    gridEl.style.height = `${fromHeight}px`
+    gridEl.style.overflow = 'hidden'
+    void gridEl.offsetHeight
+
+    const toHeight = gridEl.scrollHeight
+
+    if (Math.abs(toHeight - fromHeight) < 1) {
+      gridEl.style.height = ''
+      gridEl.style.overflow = ''
+      playerPropsAnimationStartTimerRef.current = window.setTimeout(() => {
+        playerPropsAnimationStartTimerRef.current = null
+        setEnteringPlayerPropIds(new Set())
+      }, 0)
+      return
+    }
+
+    gridEl.classList.add('home-competition__players--accordion')
+    playerPropsAnimationStartTimerRef.current = window.setTimeout(() => {
+      playerPropsAnimationStartTimerRef.current = null
+      gridEl.style.height = `${toHeight}px`
+
+      playerPropsAnimationTimerRef.current = window.setTimeout(() => {
+        gridEl.style.height = ''
+        gridEl.style.overflow = ''
+        gridEl.classList.remove('home-competition__players--accordion')
+        setEnteringPlayerPropIds(new Set())
+        playerPropsAnimationTimerRef.current = null
+      }, LIVE_EVENT_INLINE_PLAYER_PROPS_ACCORDION_DURATION_MS)
+    }, 24)
+
+    return clearPlayerPropsAnimation
+  }, [clearPlayerPropsAnimation, visiblePlayerProps.length])
+
+  useEffect(() => () => {
+    clearPlayerPropsAnimation()
+  }, [clearPlayerPropsAnimation])
+
+  return (
+    <div className="live-event-inline__markets">
+      <LiveEventInlineMarketSection title={resultMarketTitle}>
+        <div className="home-competition__odds">
+          {renderOddButton(resultMarketId, 'home', match.homeTeam.name, match.odds.home)}
+          {match.odds.draw && renderOddButton(resultMarketId, 'draw', 'Empate', match.odds.draw)}
+          {renderOddButton(resultMarketId, 'away', match.awayTeam.name, match.odds.away)}
+        </div>
+      </LiveEventInlineMarketSection>
+
+      <LiveEventInlineMarketSection title={playerMarketTitle} badges={[]} className="live-event-inline__market-section--player-props">
+        <div
+          ref={playerPropsGridRef}
+          className="home-competition__players home-competition__players--grid live-event-inline__player-grid"
+          aria-label={`Cards de ${playerMarketTitle}`}
+        >
+          {visiblePlayerProps.map((player) => (
+            <LiveEventInlinePlayerPropCard
+              key={player.id}
+              player={player}
+              marketId={playerPropsMarketId}
+              marketLabel={player.marketLabel ?? playerMarketTitle}
+              timeLabel={isLiveMatch ? 'AO VIVO' : scheduledDateTime}
+              sport={playerPropsSport}
+              className={enteringPlayerPropIds.has(player.id) ? 'home-competition__player-card--entering' : ''}
+              renderOddButton={renderOddButton}
+            />
+          ))}
+        </div>
+        {canLoadMorePlayerProps && (
+          <button type="button" className="home-competition__load-more" onClick={handleLoadMorePlayerProps}>
+            <span>Carregar mais</span>
+            <img src={chevronDown} alt="" className="home-competition__load-more-icon" />
+          </button>
+        )}
+      </LiveEventInlineMarketSection>
+
+      <LiveEventInlineMarketSection title={primaryTotalMarketTitle} badges={['90’']}>
+        <div className="live-event-inline__line-list">
+          {primaryTotalRows.slice(0, 4).map((row) => {
+            const isCurrentRow = isLineMarketCurrentRow(row, isBasketball ? match.totalPointsOdds?.line : match.totalGoalsOdds?.line)
+            const underOutcomeId = getLiveEventLineOutcomeId(row, isCurrentRow, isBasketball ? 'under-points' : 'under')
+            const overOutcomeId = getLiveEventLineOutcomeId(row, isCurrentRow, isBasketball ? 'over-points' : 'over')
+
+            return (
+              <div key={row.id} className="home-competition__odds home-competition__odds--two">
+                {renderOddButton(primaryTotalMarketId, underOutcomeId, row.under.label, row.under.odd)}
+                {renderOddButton(primaryTotalMarketId, overOutcomeId, row.over.label, row.over.odd)}
+              </div>
+            )
+          })}
+        </div>
+      </LiveEventInlineMarketSection>
+
+      <LiveEventInlineMarketSection title={secondaryMarketTitle} badges={['90’']}>
+        <div className="live-event-inline__line-list">
+          {secondaryRows.slice(0, 4).map((row) => {
+            const isCurrentRow = isBasketball
+              ? isHandicapCurrentRow(row, match.handicapOdds?.line)
+              : isLineMarketCurrentRow(row, match.totalCornersOdds?.line)
+            const underOutcomeId = getLiveEventLineOutcomeId(row, isCurrentRow, isBasketball ? 'home-handicap' : 'under-corners')
+            const overOutcomeId = getLiveEventLineOutcomeId(row, isCurrentRow, isBasketball ? 'away-handicap' : 'over-corners')
+
+            return (
+              <div key={row.id} className="home-competition__odds home-competition__odds--two">
+                {renderOddButton(secondaryMarketId, underOutcomeId, row.under.label, row.under.odd)}
+                {renderOddButton(secondaryMarketId, overOutcomeId, row.over.label, row.over.odd)}
+              </div>
+            )
+          })}
+        </div>
+      </LiveEventInlineMarketSection>
+
+      <LiveEventInlineMarketSection title={finalMarketTitle} badges={['90’']}>
+        {isBasketball ? (
+          <div className="live-event-inline__line-list">
+            {finalRows.slice(0, 4).map((row) => {
+              const isCurrentRow = isLineMarketCurrentRow(row, match.q4TotalOdds?.line)
+              const underOutcomeId = getLiveEventLineOutcomeId(row, isCurrentRow, 'under-q4')
+              const overOutcomeId = getLiveEventLineOutcomeId(row, isCurrentRow, 'over-q4')
+
+              return (
+                <div key={row.id} className="home-competition__odds home-competition__odds--two">
+                  {renderOddButton(finalMarketId, underOutcomeId, row.under.label, row.under.odd)}
+                  {renderOddButton(finalMarketId, overOutcomeId, row.over.label, row.over.odd)}
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          doubleChanceRows.map((row) => (
+            <div key={row.id} className="home-competition__odds">
+              {row.options.map((option, optionIndex) => (
+                renderOddButton(
+                  finalMarketId,
+                  liveEventDoubleChanceOutcomeIds[optionIndex] ?? option.label,
+                  option.labelParts ? `${option.labelParts[0]}/${option.labelParts[1]}` : option.label,
+                  option.odd
+                )
+              ))}
+            </div>
+          ))
+        )}
+      </LiveEventInlineMarketSection>
+    </div>
+  )
+}
+
+interface LiveEventInlineStateOptions {
+  match?: LiveEventMatch
+  matches?: LiveEventMatch[]
+  railEvents?: LiveEventRailItem[]
+  selectedIndex?: number
+  currentTimes?: Record<string, string>
+  leagueName: string
+  leagueFlag?: string
+  sport: string
+  currentTime?: string
+  onSelectedIndexChange?: (index: number) => void
+}
+
+function useLiveEventInlineState({
+  match,
+  matches,
+  railEvents,
+  selectedIndex = 0,
+  currentTimes,
+  leagueName,
+  leagueFlag,
+  sport,
+  currentTime,
+  onSelectedIndexChange,
+}: LiveEventInlineStateOptions) {
+  const eventMatches = useMemo(
+    () => matches?.length ? matches : match ? [match] : [],
+    [match, matches]
+  )
+  const eventMatchesKey = useMemo(
+    () => eventMatches.map((eventMatch, index) => getLiveEventMatchIdentity(eventMatch, index)).join('|'),
+    [eventMatches]
+  )
+  const requestedSelectedMatchIndex = Math.min(Math.max(selectedIndex, 0), Math.max(eventMatches.length - 1, 0))
+  const [internalSelectedIndex, setInternalSelectedIndex] = useState(requestedSelectedMatchIndex)
+
+  useEffect(() => {
+    setInternalSelectedIndex(requestedSelectedMatchIndex)
+  }, [eventMatchesKey, requestedSelectedMatchIndex])
+
+  const selectedMatchIndex = onSelectedIndexChange ? requestedSelectedMatchIndex : internalSelectedIndex
+  const selectedMatch = eventMatches[selectedMatchIndex]
+  const selectedMatchIdentity = selectedMatch ? getLiveEventMatchIdentity(selectedMatch, selectedMatchIndex) : ''
+  const railItems = useMemo(
+    () => railEvents?.length
+      ? railEvents
+      : getLiveEventRailFallbackItems({
+          matches: eventMatches,
+          currentTimes,
+          leagueName,
+          leagueFlag,
+          sport,
+        }),
+    [currentTimes, eventMatches, leagueFlag, leagueName, railEvents, sport]
+  )
+  const railItemsKey = useMemo(
+    () => railItems.map((item) => getLiveEventRailIdentity(item)).join('|'),
+    [railItems]
+  )
+  const initialRailTimes = useMemo(
+    () => railItems.reduce<Record<string, string>>((times, item) => {
+      times[getLiveEventRailIdentity(item)] = item.currentTime ?? item.headerPrimary ?? item.dateTime
+      return times
+    }, {}),
+    [railItems]
+  )
+  const [railTimesState, setRailTimesState] = useState(() => ({
+    key: railItemsKey,
+    times: initialRailTimes,
+  }))
+  const railTimes = railTimesState.key === railItemsKey ? railTimesState.times : initialRailTimes
+  const matchIndexByIdentity = useMemo(() => {
+    const indexByIdentity = new Map<string, number>()
+    eventMatches.forEach((eventMatch, index) => {
+      indexByIdentity.set(getLiveEventMatchIdentity(eventMatch, index), index)
+    })
+    return indexByIdentity
+  }, [eventMatches])
+  const selectedMatchTime = selectedMatch
+    ? getLiveEventMatchTime(
+        selectedMatch,
+        selectedMatchIndex,
+        currentTimes,
+        selectedMatchIndex === selectedIndex ? currentTime : undefined
+      )
+    : ''
+  const selectedDisplayTime = selectedMatch
+    ? railTimes[selectedMatchIdentity] ?? selectedMatchTime
+    : selectedMatchTime
+
+  useEffect(() => {
+    if (railItems.length === 0 || !railItems.some((item) => item.isLive)) return
+
+    const interval = window.setInterval(() => {
+      setRailTimesState((current) => {
+        const sourceTimes = current.key === railItemsKey ? current.times : initialRailTimes
+        const next = { ...sourceTimes }
+
+        railItems.forEach((item) => {
+          if (!item.isLive) return
+
+          const identity = getLiveEventRailIdentity(item)
+          const sourceTime = next[identity] ?? item.currentTime ?? item.headerPrimary ?? item.dateTime
+          const parsed = parseLiveTime(sourceTime)
+          if (parsed) next[identity] = getNextLiveTime(parsed)
+        })
+
+        return { key: railItemsKey, times: next }
+      })
+    }, 1000)
+
+    return () => window.clearInterval(interval)
+  }, [initialRailTimes, railItems, railItemsKey])
+
+  const handleInlineSelectIndex = useCallback((index: number) => {
+    const nextIndex = Math.min(Math.max(index, 0), Math.max(eventMatches.length - 1, 0))
+    if (nextIndex === selectedMatchIndex) return
+
+    if (onSelectedIndexChange) {
+      onSelectedIndexChange(nextIndex)
+      return
+    }
+
+    setInternalSelectedIndex(nextIndex)
+  }, [eventMatches.length, onSelectedIndexChange, selectedMatchIndex])
+
+  return {
+    eventMatches,
+    selectedMatch,
+    selectedMatchIdentity,
+    selectedDisplayTime,
+    railItems,
+    railTimes,
+    matchIndexByIdentity,
+    handleInlineSelectIndex,
+  }
+}
+
+export function LiveEventInlineHeader({
+  match,
+  matches,
+  railEvents,
+  selectedIndex = 0,
+  currentTimes,
+  leagueName,
+  leagueFlag,
+  sport,
+  currentTime,
+  isCompact = false,
+  onSelectedIndexChange,
+  onLayoutReady,
+}: LiveEventInlineHeaderProps) {
+  const {
+    selectedMatch,
+    selectedMatchIdentity,
+    selectedDisplayTime,
+    railItems,
+    railTimes,
+    matchIndexByIdentity,
+    handleInlineSelectIndex,
+  } = useLiveEventInlineState({
+    match,
+    matches,
+    railEvents,
+    selectedIndex,
+    currentTimes,
+    leagueName,
+    leagueFlag,
+    sport,
+    currentTime,
+    onSelectedIndexChange,
+  })
+  const hasSelectedMatch = !!selectedMatch
+
+  useLayoutEffect(() => {
+    if (!hasSelectedMatch) return
+
+    onLayoutReady?.()
+    const frame = window.requestAnimationFrame(() => {
+      onLayoutReady?.()
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [hasSelectedMatch, isCompact, onLayoutReady, railItems.length, selectedMatchIdentity])
+
+  if (!selectedMatch) return null
+
+  return (
+    <div className="live-event-inline__header-stack">
+      <LiveEventInlineEventRail
+        items={railItems}
+        activeIdentity={selectedMatchIdentity}
+        railTimes={railTimes}
+        matchIndexByIdentity={matchIndexByIdentity}
+        onSelectIndex={handleInlineSelectIndex}
+      />
+      <div
+        className={[
+          'live-event-inline__compact-header-shell',
+          isCompact ? 'live-event-inline__compact-header-shell--visible' : '',
+        ].filter(Boolean).join(' ')}
+        aria-hidden={!isCompact}
+      >
+        <LiveEventInlineCompactHeader
+          match={selectedMatch}
+          sport={selectedMatch.sport ?? sport}
+          currentTime={selectedDisplayTime}
+        />
+      </div>
+    </div>
+  )
+}
+
+export function LiveEventInline({
+  match,
+  matches,
+  railEvents,
+  selectedIndex = 0,
+  currentTimes,
+  leagueName,
+  leagueFlag,
+  sport,
+  currentTime,
+  onSelectedIndexChange,
+  onCompactChange,
+}: LiveEventInlineProps) {
+  const rootRef = useRef<HTMLElement | null>(null)
+  const {
+    selectedMatch,
+    selectedMatchIdentity,
+    selectedDisplayTime,
+  } = useLiveEventInlineState({
+    match,
+    matches,
+    railEvents,
+    selectedIndex,
+    currentTimes,
+    leagueName,
+    leagueFlag,
+    sport,
+    currentTime,
+    onSelectedIndexChange,
+  })
+  const [isCompact, setIsCompact] = useState(false)
+
+  useEffect(() => {
+    setIsCompact(false)
+
+    const rootEl = rootRef.current
+    if (!rootEl || !selectedMatch) return
+
+    let frame: number | null = null
+    let compactTriggerScrollTop = 0
+
+    const homeEl = rootEl.closest<HTMLElement>('.home')
+    const getScrollTop = () => Math.max(
+      homeEl?.scrollTop ?? 0,
+      window.scrollY,
+      document.documentElement.scrollTop,
+      document.body.scrollTop
+    )
+
+    const measureCompactTrigger = () => {
+      const scoreHeaderEl = rootEl.querySelector<HTMLElement>('.live-event-inline__score-header')
+      if (!scoreHeaderEl) return false
+
+      const scoreHeaderRect = scoreHeaderEl.getBoundingClientRect()
+      compactTriggerScrollTop = getScrollTop() + scoreHeaderRect.bottom - LIVE_EVENT_INLINE_COMPACT_THRESHOLD_OFFSET
+      return true
+    }
+
+    const syncCompactState = () => {
+      frame = null
+      setIsCompact(getScrollTop() >= compactTriggerScrollTop)
+    }
+
+    const scheduleSyncCompactState = () => {
+      if (frame !== null) return
+      frame = window.requestAnimationFrame(syncCompactState)
+    }
+
+    const animationFrame = window.requestAnimationFrame(() => {
+      if (!measureCompactTrigger()) return
+      syncCompactState()
+    })
+
+    const handleResize = () => {
+      measureCompactTrigger()
+      scheduleSyncCompactState()
+    }
+
+    homeEl?.addEventListener('scroll', scheduleSyncCompactState, { passive: true })
+    window.addEventListener('scroll', scheduleSyncCompactState, { passive: true })
+    window.addEventListener('resize', handleResize, { passive: true })
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame)
+      if (frame !== null) window.cancelAnimationFrame(frame)
+      homeEl?.removeEventListener('scroll', scheduleSyncCompactState)
+      window.removeEventListener('scroll', scheduleSyncCompactState)
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [selectedMatch, selectedMatchIdentity])
+
+  useEffect(() => {
+    onCompactChange?.(isCompact)
+  }, [isCompact, onCompactChange])
+
+  useEffect(() => () => {
+    onCompactChange?.(false)
+  }, [onCompactChange])
+
+  if (!selectedMatch) return null
+
+  return (
+    <section
+      ref={rootRef}
+      className={[
+        'live-event-inline',
+        isCompact ? 'live-event-inline--compact' : '',
+      ].filter(Boolean).join(' ')}
+    >
+      <div className="live-event-inline__content">
+        <LiveEventInlineScoreHeader
+          match={selectedMatch}
+          sport={selectedMatch.sport ?? sport}
+          currentTime={selectedDisplayTime}
+        />
+        {LIVE_EVENT_INLINE_SHOW_STREAM_BLOCK && (selectedMatch.isLive ?? true) && (
+          <LiveEventInlineStreamBlock sport={selectedMatch.sport ?? sport} />
+        )}
+        <LiveEventInlineMarketChips />
+        <LiveEventInlineMarkets
+          key={selectedMatchIdentity}
+          match={selectedMatch}
+          leagueName={selectedMatch.leagueName ?? leagueName}
+          sport={selectedMatch.sport ?? sport}
+          currentTime={selectedDisplayTime}
+        />
+      </div>
+    </section>
+  )
+}
 
 interface SheetMetrics {
   viewportWidth: number

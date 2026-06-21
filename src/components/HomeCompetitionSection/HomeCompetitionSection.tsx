@@ -1,0 +1,1263 @@
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ButtonHTMLAttributes,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+  type WheelEvent,
+} from 'react'
+import { homeCompetitionHighlight } from '../../data/homeProducts'
+import { getTeamLogo } from '../../data/teamLogos'
+import { updateLiveClock } from '../../utils/liveClock'
+import { TeamLogo } from '../TeamLogo'
+import chevronDown from '../../assets/iconsDraftaco/chevronDown.svg'
+import chevronRight from '../../assets/iconsDraftaco/chevronRight.svg'
+import flagFallback from '../../assets/iconsDraftaco/flagFallback.svg'
+import iconStatistic from '../../assets/iconsDraftaco/iconStatistic.svg'
+import playerAvatarBasquete from '../../assets/playerAvatarBasquete.svg'
+import playerAvatarFutebol from '../../assets/playerAvatarFutebol.svg'
+import type {
+  HomeCompetitionHighlight,
+  HomeCompetitionMarketColumn,
+  HomeCompetitionMarketChip,
+  HomeCompetitionMatch,
+  HomeCompetitionOdd,
+  HomeCompetitionPlayerProp,
+} from '../../types/home'
+import './HomeCompetitionSection.css'
+
+const emptyMarketChips: HomeCompetitionMarketChip[] = []
+const PLAYER_PROPS_GRID_INITIAL_COUNT = 4
+const PLAYER_PROPS_GRID_LOAD_STEP = 2
+const PLAYER_PROPS_GRID_MAX_COUNT = 8
+const PLAYER_PROP_ODD_WIDTH = 58
+const PLAYER_PROP_ODD_GAP = 4
+const PLAYER_PROPS_ACCORDION_DURATION_MS = 900
+const playerPropsMarketIds = new Set(['finalizacao-gol', 'pontos-jogador', 'assistencias'])
+const basketballQuarterChipIds = new Set(['q1', 'q2', 'q3', 'q4'])
+
+type HomeCompetitionOddDisplay = {
+  label: ReactNode
+  value: ReactNode
+}
+
+interface HomeCompetitionOddButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  odd: HomeCompetitionOddDisplay
+}
+
+export type HomeCompetitionPlayerPropOddRenderer = (
+  odd: HomeCompetitionOddDisplay,
+  context: {
+    prop: HomeCompetitionPlayerProp
+    index: number
+    isActive: boolean
+    className: string
+  }
+) => ReactNode
+
+const teamLogoAliases: Record<string, string> = {
+  'Paris Saint-Germain': 'PSG',
+}
+
+const getLogoSource = (teamName: string) => getTeamLogo(teamLogoAliases[teamName] ?? teamName, flagFallback)
+
+const getPlayerPropAvatar = (sport: HomeCompetitionPlayerProp['sport']) => (
+  sport === 'basquete' ? playerAvatarBasquete : playerAvatarFutebol
+)
+
+const getInitialOddIndex = (odds: HomeCompetitionOdd[]) => Math.floor(odds.length / 2)
+
+const getInitialLiveTimes = (matches: HomeCompetitionMatch[]) =>
+  matches.reduce<Record<string, string>>((times, match) => {
+    if (match.live) times[match.id] = match.liveClock ?? match.footerLabel
+    return times
+  }, {})
+
+const getBasketballQuarterFromMarketId = (marketId: string) => {
+  if (!basketballQuarterChipIds.has(marketId)) return undefined
+
+  const quarter = Number(marketId.replace('q', ''))
+  return Number.isFinite(quarter) ? quarter : undefined
+}
+
+const getBasketballLiveQuarter = (
+  match: HomeCompetitionMatch,
+  liveTime?: string
+) => {
+  if (!match.live || match.sport !== 'basquete') return undefined
+
+  const timeLabel = liveTime ?? match.liveClock ?? match.footerLabel
+  const quarterMatch = timeLabel.match(/\bQ([1-4])\b/i)
+
+  if (quarterMatch) return Number(quarterMatch[1])
+  if (/intervalo/i.test(timeLabel)) return 3
+
+  return undefined
+}
+
+const isMarketAvailableForMatch = (
+  marketId: string,
+  match: HomeCompetitionMatch,
+  liveTime?: string
+) => {
+  const marketQuarter = getBasketballQuarterFromMarketId(marketId)
+  if (marketQuarter === undefined) return true
+  if (match.sport !== 'basquete') return true
+
+  const liveQuarter = getBasketballLiveQuarter(match, liveTime)
+  if (liveQuarter === undefined) return true
+
+  return marketQuarter >= liveQuarter
+}
+
+const getAvailableMarketChips = (
+  competition: HomeCompetitionHighlight,
+  marketChips: HomeCompetitionMarketChip[],
+  liveTimes: Record<string, string>
+) => marketChips.filter((chip) => (
+  competition.matches.some((match) => isMarketAvailableForMatch(chip.id, match, liveTimes[match.id]))
+))
+
+const formatMarketLine = (line: number) => `${line > 0 ? '+' : ''}${line}`
+
+const getMatchOddLabels = (match: HomeCompetitionMatch) => ({
+  home: match.odds[0]?.label ?? match.homeTeam,
+  away: match.sport === 'basquete'
+    ? match.odds[1]?.label ?? match.awayTeam
+    : match.odds[2]?.label ?? match.awayTeam,
+})
+
+const getMatchMarketOdds = (
+  match: HomeCompetitionMatch,
+  activeMarket?: string
+): HomeCompetitionOdd[] => {
+  const labels = getMatchOddLabels(match)
+
+  if (activeMarket === 'dupla-chance' && match.doubleChanceOdds) {
+    return [
+      { label: `${labels.home}/EMP`, value: match.doubleChanceOdds.homeOrDraw },
+      { label: `${labels.home}/${labels.away}`, value: match.doubleChanceOdds.homeOrAway },
+      { label: `${labels.away}/EMP`, value: match.doubleChanceOdds.awayOrDraw },
+    ]
+  }
+
+  if (activeMarket === 'ambos-marcam' && match.bothTeamsScoreOdds) {
+    return [
+      { label: 'Sim', value: match.bothTeamsScoreOdds.yes },
+      { label: 'Não', value: match.bothTeamsScoreOdds.no },
+    ]
+  }
+
+  if (activeMarket === 'total-gols' && match.totalGoalsOdds) {
+    return [
+      { label: `-${match.totalGoalsOdds.line}`, value: match.totalGoalsOdds.under },
+      { label: `+${match.totalGoalsOdds.line}`, value: match.totalGoalsOdds.over },
+    ]
+  }
+
+  if (activeMarket === 'escanteios' && match.totalCornersOdds) {
+    return [
+      { label: `-${match.totalCornersOdds.line}`, value: match.totalCornersOdds.under },
+      { label: `+${match.totalCornersOdds.line}`, value: match.totalCornersOdds.over },
+    ]
+  }
+
+  if (activeMarket === 'total-pontos' && match.totalPointsOdds) {
+    return [
+      { label: `-${match.totalPointsOdds.line}`, value: match.totalPointsOdds.under },
+      { label: `+${match.totalPointsOdds.line}`, value: match.totalPointsOdds.over },
+    ]
+  }
+
+  if (activeMarket === 'handicap' && match.handicapOdds) {
+    return [
+      { label: `${labels.home} ${formatMarketLine(match.handicapOdds.line)}`, value: match.handicapOdds.home },
+      { label: `${labels.away} ${formatMarketLine(-match.handicapOdds.line)}`, value: match.handicapOdds.away },
+    ]
+  }
+
+  if (activeMarket === 'vencedor') {
+    return [match.odds[0], match.odds[1]].filter(Boolean)
+  }
+
+  return match.odds
+}
+
+const getMatchMarketLabel = (
+  match: HomeCompetitionMatch,
+  activeMarketLabel?: string
+) => activeMarketLabel ? activeMarketLabel.toUpperCase() : match.marketLabel
+
+const parseOddValue = (odd?: string) => {
+  if (!odd) return 1.9
+
+  const value = Number(odd.replace('x', '').replace(',', '.'))
+  return Number.isFinite(value) ? value : 1.9
+}
+
+const formatOddValue = (odd: number) => `${Math.max(1.05, odd).toFixed(2)}x`
+
+const adjustOddValue = (odd: string | undefined, delta: number) => (
+  formatOddValue(parseOddValue(odd) + delta)
+)
+
+const roundMarketLine = (line: number) => Math.round(line * 2) / 2
+
+const getBasketballTotalColumn = (
+  label: string,
+  totalOdds: HomeCompetitionMatch['totalPointsOdds'] | HomeCompetitionMatch['q3TotalOdds'],
+  fallbackLine: number
+): HomeCompetitionMarketColumn => {
+  const line = totalOdds?.line ?? fallbackLine
+
+  return {
+    label,
+    homeOdd: { label: `Mais ${line}`, value: totalOdds?.over ?? '1.90x' },
+    awayOdd: { label: `Menos ${line}`, value: totalOdds?.under ?? '1.90x' },
+  }
+}
+
+const basketballQuarterMarketConfig = {
+  q1: { index: 1, totalOffset: -1, oddOffset: 0.1 },
+  q2: { index: 2, totalOffset: 0, oddOffset: 0.04 },
+  q3: { index: 3, totalOffset: 0.5, oddOffset: 0 },
+  q4: { index: 4, totalOffset: 1, oddOffset: 0.06 },
+} as const
+
+const getBasketballQuarterTotalOdds = (
+  match: HomeCompetitionMatch,
+  quarterId: keyof typeof basketballQuarterMarketConfig
+) => {
+  if (quarterId === 'q3') return match.q3TotalOdds
+  if (quarterId === 'q4') return match.q4TotalOdds
+
+  return undefined
+}
+
+const getBasketballQuarterMarketColumns = (
+  match: HomeCompetitionMatch,
+  quarterId: keyof typeof basketballQuarterMarketConfig
+): HomeCompetitionMarketColumn[] => {
+  const labels = getMatchOddLabels(match)
+  const config = basketballQuarterMarketConfig[quarterId]
+  const totalPointsLine = match.totalPointsOdds?.line ?? 212.5
+  const fallbackTotalLine = roundMarketLine((totalPointsLine / 4) + config.totalOffset)
+  const quarterTotalOdds = getBasketballQuarterTotalOdds(match, quarterId)
+  const totalLine = quarterTotalOdds?.line ?? fallbackTotalLine
+  const handicapBaseLine = Math.abs(match.handicapOdds?.line ?? 4.5)
+  const handicapLine = roundMarketLine(Math.max(0.5, (handicapBaseLine / 4) + (config.index % 2 === 0 ? 0.5 : 0)))
+  const homeHandicapLine = (match.handicapOdds?.line ?? handicapBaseLine) < 0 ? -handicapLine : handicapLine
+  const awayHandicapLine = -homeHandicapLine
+
+  return [
+    {
+      label: 'Vencer',
+      homeOdd: { label: labels.home, value: adjustOddValue(match.odds[0]?.value, config.oddOffset) },
+      awayOdd: { label: labels.away, value: adjustOddValue(match.odds[1]?.value, -config.oddOffset) },
+    },
+    {
+      label: 'Handicap',
+      homeOdd: {
+        label: `${labels.home} ${formatMarketLine(homeHandicapLine)}`,
+        value: adjustOddValue(match.handicapOdds?.home, config.oddOffset / 2),
+      },
+      awayOdd: {
+        label: `${labels.away} ${formatMarketLine(awayHandicapLine)}`,
+        value: adjustOddValue(match.handicapOdds?.away, -(config.oddOffset / 2)),
+      },
+    },
+    {
+      label: 'Total',
+      homeOdd: { label: `Mais ${totalLine}`, value: quarterTotalOdds?.over ?? adjustOddValue(match.totalPointsOdds?.over, config.oddOffset / 2) },
+      awayOdd: { label: `Menos ${totalLine}`, value: quarterTotalOdds?.under ?? adjustOddValue(match.totalPointsOdds?.under, -(config.oddOffset / 2)) },
+    },
+  ]
+}
+
+const getBasketballActiveMarketColumns = (
+  match: HomeCompetitionMatch,
+  activeMarket?: string
+): HomeCompetitionMarketColumn[] => {
+  const labels = getMatchOddLabels(match)
+  const totalPointsLine = match.totalPointsOdds?.line ?? 212.5
+  const q3TotalFallbackLine = Math.round((totalPointsLine / 4) * 2) / 2
+
+  if (activeMarket === 'principais' || activeMarket === 'vencedor') {
+    return match.marketColumns ?? [{
+      label: 'Vencer',
+      homeOdd: match.odds[0],
+      awayOdd: match.odds[1],
+    }]
+  }
+
+  if (activeMarket === 'q1' || activeMarket === 'q2' || activeMarket === 'q3' || activeMarket === 'q4') {
+    return getBasketballQuarterMarketColumns(match, activeMarket)
+  }
+
+  if (activeMarket === 'total-pontos') {
+    return [getBasketballTotalColumn('Total', match.totalPointsOdds, totalPointsLine)]
+  }
+
+  if (activeMarket === 'q3-total') {
+    return [getBasketballTotalColumn('Total', match.q3TotalOdds, q3TotalFallbackLine)]
+  }
+
+  if (activeMarket === 'q4-total') {
+    return [getBasketballTotalColumn('Total', match.q4TotalOdds, q3TotalFallbackLine + 1)]
+  }
+
+  if (activeMarket === 'q3-resultado') {
+    return [{
+      label: 'Resultado',
+      tag: '3Q',
+      homeOdd: { label: labels.home, value: match.q3ResultOdds?.home ?? match.odds[0].value },
+      awayOdd: { label: labels.away, value: match.q3ResultOdds?.away ?? match.odds[1].value },
+    }]
+  }
+
+  return match.marketColumns ?? []
+}
+
+const scrollMarketChipIntoView = (chipEl: HTMLButtonElement) => {
+  const containerEl = chipEl.parentElement
+  if (!containerEl) return
+
+  const chipLeft = chipEl.offsetLeft
+  const chipWidth = chipEl.offsetWidth
+  const containerWidth = containerEl.clientWidth
+  const containerScroll = containerEl.scrollLeft
+  const padding = 20
+
+  if (chipLeft + chipWidth > containerScroll + containerWidth - padding) {
+    containerEl.scrollTo({ left: chipLeft - padding, behavior: 'smooth' })
+  } else if (chipLeft < containerScroll + padding) {
+    containerEl.scrollTo({ left: chipLeft - padding, behavior: 'smooth' })
+  }
+}
+
+function renderPlayerPropMatchLabel(prop: HomeCompetitionPlayerProp) {
+  const labelParts = prop.matchLabel.toUpperCase().split(/\s+VS\s+/)
+
+  if (labelParts.length !== 2) return prop.matchLabel.toUpperCase()
+
+  return labelParts.map((label, index) => (
+    <span key={`${prop.id}-${label}`}>
+      {index > 0 && ' VS '}
+      {label === prop.teamAbbreviation ? <strong>{label}</strong> : label}
+    </span>
+  ))
+}
+
+const getPlayerPropGroupTitle = (prop: HomeCompetitionPlayerProp) => {
+  const timeLabel = prop.timeLabel.trim()
+
+  if (/^AO VIVO/i.test(timeLabel)) return 'Ao vivo'
+  if (/^HOJE/i.test(timeLabel)) return 'Hoje'
+  if (/^AMANH[ÃA]/i.test(timeLabel)) return 'Amanhã'
+
+  const compactDateMatch = timeLabel.match(/^\d{1,2}\/[a-zç]{3}/i)
+
+  return (compactDateMatch?.[0] ?? timeLabel.split(/\s+/)[0]) || 'Próximos'
+}
+
+const getPlayerPropGroupId = (title: string) => (
+  title
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'proximos'
+)
+
+type HomeCompetitionPlayerPropGroup = {
+  id: string
+  title: string
+  props: HomeCompetitionPlayerProp[]
+}
+
+const playerPropGroupOrder = new Map([
+  ['Ao vivo', 0],
+  ['Hoje', 1],
+  ['Amanhã', 2],
+])
+
+const getPlayerPropGroups = (props: HomeCompetitionPlayerProp[]): HomeCompetitionPlayerPropGroup[] => {
+  const groups: HomeCompetitionPlayerPropGroup[] = []
+  const groupsByTitle = new Map<string, HomeCompetitionPlayerPropGroup>()
+
+  props.forEach((prop) => {
+    const title = getPlayerPropGroupTitle(prop)
+    const existingGroup = groupsByTitle.get(title)
+
+    if (existingGroup) {
+      existingGroup.props.push(prop)
+      return
+    }
+
+    const group = {
+      id: getPlayerPropGroupId(title),
+      title,
+      props: [prop],
+    }
+
+    groupsByTitle.set(title, group)
+    groups.push(group)
+  })
+
+  return groups.sort((first, second) => (
+    (playerPropGroupOrder.get(first.title) ?? 10) - (playerPropGroupOrder.get(second.title) ?? 10)
+  ))
+}
+
+export function HomeCompetitionOddButton({
+  odd,
+  className = '',
+  type = 'button',
+  disabled = true,
+  ...buttonProps
+}: HomeCompetitionOddButtonProps) {
+  return (
+    <button
+      {...buttonProps}
+      className={['home-competition__odd', className].filter(Boolean).join(' ')}
+      type={type}
+      disabled={disabled}
+      aria-disabled={disabled ? 'true' : undefined}
+    >
+      <span>{odd.label}</span>
+      <strong>{odd.value}</strong>
+    </button>
+  )
+}
+
+function PlayerPropOddSlider({
+  prop,
+  renderOddButton,
+}: {
+  prop: HomeCompetitionPlayerProp
+  renderOddButton?: HomeCompetitionPlayerPropOddRenderer
+}) {
+  const oddsRef = useRef<HTMLDivElement | null>(null)
+  const initialOddIndex = getInitialOddIndex(prop.odds)
+  const dragRef = useRef<{
+    startX: number
+    scrollLeft: number
+    startIndex: number
+    moved: boolean
+  } | null>(null)
+  const [activeOddIndex, setActiveOddIndex] = useState(initialOddIndex)
+  const [isDragging, setIsDragging] = useState(false)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
+
+  const setOddsElement = useCallback((node: HTMLDivElement | null) => {
+    oddsRef.current = node
+    if (!node) return
+
+    node.scrollLeft = initialOddIndex * (PLAYER_PROP_ODD_WIDTH + PLAYER_PROP_ODD_GAP)
+  }, [initialOddIndex])
+
+  const getCenteredOddIndex = useCallback(() => {
+    const containerEl = oddsRef.current
+    if (!containerEl || containerEl.children.length === 0) return -1
+
+    const containerCenter = containerEl.scrollLeft + containerEl.clientWidth / 2
+    let nearestIndex = 0
+    let nearestDistance = Number.POSITIVE_INFINITY
+
+    Array.from(containerEl.children).forEach((child, index) => {
+      const oddEl = child as HTMLElement
+      if (!oddEl.classList.contains('home-competition__odd')) return
+
+      const oddCenter = oddEl.offsetLeft + oddEl.offsetWidth / 2
+      const distance = Math.abs(oddCenter - containerCenter)
+
+      if (distance < nearestDistance) {
+        nearestIndex = index
+        nearestDistance = distance
+      }
+    })
+
+    return Math.max(0, Math.min(prop.odds.length - 1, nearestIndex))
+  }, [prop.odds.length])
+
+  const updateScrollState = useCallback(() => {
+    const containerEl = oddsRef.current
+    if (!containerEl) return
+
+    const maxScrollLeft = Math.max(0, containerEl.scrollWidth - containerEl.clientWidth)
+    const centeredOddIndex = getCenteredOddIndex()
+
+    if (centeredOddIndex >= 0) setActiveOddIndex(centeredOddIndex)
+    setCanScrollLeft(containerEl.scrollLeft > 1)
+    setCanScrollRight(containerEl.scrollLeft < maxScrollLeft - 1)
+  }, [getCenteredOddIndex])
+
+  const scrollOddIntoCenter = useCallback((index: number, behavior: ScrollBehavior = 'smooth') => {
+    const containerEl = oddsRef.current
+    const oddEl = Array.from(containerEl?.children ?? []).filter((child) =>
+      (child as HTMLElement).classList.contains('home-competition__odd')
+    )[index] as HTMLElement | undefined
+
+    if (!containerEl || !oddEl) return
+
+    const oddCenter = oddEl.offsetLeft + oddEl.offsetWidth / 2
+    const targetScroll = oddCenter - containerEl.clientWidth / 2
+    const nextScrollLeft = Math.max(0, targetScroll)
+
+    if (behavior === 'auto') {
+      containerEl.scrollLeft = nextScrollLeft
+      return
+    }
+
+    containerEl.scrollTo({
+      left: nextScrollLeft,
+      behavior,
+    })
+  }, [])
+
+  const centerOdd = useCallback((index: number, behavior: ScrollBehavior = 'smooth') => {
+    const nextIndex = Math.max(0, Math.min(prop.odds.length - 1, index))
+    setActiveOddIndex(nextIndex)
+    window.requestAnimationFrame(() => scrollOddIntoCenter(nextIndex, behavior))
+  }, [prop.odds.length, scrollOddIntoCenter])
+
+  const snapToNearestOdd = useCallback((dragDelta = 0, startIndex?: number) => {
+    const nearestIndex = getCenteredOddIndex()
+    const initialIndex = startIndex ?? activeOddIndex
+    let targetIndex = nearestIndex >= 0 ? nearestIndex : initialIndex
+
+    if (Math.abs(dragDelta) > 24 && targetIndex === initialIndex) {
+      targetIndex = initialIndex + (dragDelta > 0 ? 1 : -1)
+    }
+
+    centerOdd(targetIndex)
+  }, [activeOddIndex, centerOdd, getCenteredOddIndex])
+
+  const handleMouseDown = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return
+
+    const containerEl = oddsRef.current
+    if (!containerEl) return
+
+    setIsDragging(true)
+    dragRef.current = {
+      startX: event.pageX - containerEl.offsetLeft,
+      scrollLeft: containerEl.scrollLeft,
+      startIndex: activeOddIndex,
+      moved: false,
+    }
+  }
+
+  const handleMouseMove = (event: MouseEvent<HTMLDivElement>) => {
+    const drag = dragRef.current
+    const containerEl = oddsRef.current
+    if (!drag || !containerEl) return
+
+    event.preventDefault()
+    const x = event.pageX - containerEl.offsetLeft
+    const walk = (x - drag.startX) * 1.5
+    drag.moved = drag.moved || Math.abs(walk) > 4
+    containerEl.scrollLeft = drag.scrollLeft - walk
+  }
+
+  const finishDrag = () => {
+    const drag = dragRef.current
+    const containerEl = oddsRef.current
+    if (!drag) return
+
+    const dragDelta = containerEl ? containerEl.scrollLeft - drag.scrollLeft : 0
+    dragRef.current = null
+    setIsDragging(false)
+    snapToNearestOdd(dragDelta, drag.startIndex)
+  }
+
+  const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
+    const movement = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY
+    if (Math.abs(movement) < 12) return
+
+    event.preventDefault()
+    centerOdd(activeOddIndex + (movement > 0 ? 1 : -1))
+  }
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(updateScrollState)
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [prop.odds, updateScrollState])
+
+  return (
+    <div
+      className={[
+        'home-competition__player-odds-frame',
+        canScrollLeft ? 'home-competition__player-odds-frame--fade-left' : '',
+        canScrollRight ? 'home-competition__player-odds-frame--fade-right' : '',
+      ].filter(Boolean).join(' ')}
+      aria-label={`Odds de ${prop.playerName}`}
+      onWheel={handleWheel}
+    >
+      <div
+        ref={setOddsElement}
+        className={`home-competition__player-odds ${isDragging ? 'home-competition__player-odds--dragging' : ''}`}
+        onScroll={updateScrollState}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={finishDrag}
+        onMouseLeave={finishDrag}
+        onTouchEnd={() => window.setTimeout(() => snapToNearestOdd(), 120)}
+      >
+        {prop.odds.map((odd, index) => {
+          const className = index === activeOddIndex ? 'home-competition__odd--center' : ''
+          const oddKey = `${prop.id}-${String(odd.label)}-${index}`
+
+          if (renderOddButton) {
+            return (
+              <Fragment key={oddKey}>
+                {renderOddButton(odd, {
+                  prop,
+                  index,
+                  isActive: index === activeOddIndex,
+                  className,
+                })}
+              </Fragment>
+            )
+          }
+
+          return (
+            <HomeCompetitionOddButton
+              odd={odd}
+              key={oddKey}
+              className={className}
+            />
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+interface HomeCompetitionSectionProps {
+  activeMarketId?: string
+  competition?: HomeCompetitionHighlight
+  hideMarketChips?: boolean
+  hideMatches?: boolean
+  hideTitleRow?: boolean
+  matchGroups?: HomeCompetitionMatchGroup[]
+  playerPropsLayout?: 'carousel' | 'grid'
+  onMatchClick?: (
+    match: HomeCompetitionMatch,
+    competition: HomeCompetitionHighlight,
+    liveTimes: Record<string, string>
+  ) => void
+}
+
+export interface HomeCompetitionMatchGroup {
+  id: string
+  title: string
+  matches: HomeCompetitionMatch[]
+}
+
+function MatchTeamRow({
+  teamName,
+  score,
+  sport,
+}: {
+  teamName: string
+  score?: string
+  sport: HomeCompetitionMatch['sport']
+}) {
+  return (
+    <div className="home-competition__team-row">
+      <span className="home-competition__team-info">
+        <TeamLogo
+          teamName={teamName}
+          sport={sport}
+          currentLogo={getLogoSource(teamName)}
+          className="home-competition__team-logo"
+          fallbackClassName="home-competition__team-logo--fallback"
+          placeholderClassName="home-competition__team-logo-placeholder"
+        />
+        <span className="home-competition__team-name">{teamName}</span>
+      </span>
+      {score !== undefined && <span className="home-competition__score">{score}</span>}
+    </div>
+  )
+}
+
+function BasketballMarketButton({ odd }: { odd: HomeCompetitionOdd }) {
+  return (
+    <button
+      className="home-competition__odd home-competition__odd--basketball"
+      type="button"
+      disabled
+      aria-disabled="true"
+    >
+      <span>{odd.label}</span>
+      <strong>{odd.value}</strong>
+    </button>
+  )
+}
+
+function BasketballMatchCard({
+  match,
+  liveTime,
+  activeMarket,
+  onClick,
+}: {
+  match: HomeCompetitionMatch
+  liveTime?: string
+  activeMarket?: string
+  onClick?: () => void
+}) {
+  const footerLabel = match.live ? liveTime ?? match.liveClock ?? match.footerLabel : match.footerLabel
+  const marketColumns = getBasketballActiveMarketColumns(match, activeMarket)
+  const isCompactMarketLayout = marketColumns.length < 3
+  const marketStateKey = activeMarket ?? 'default'
+  const isClickable = !!onClick
+  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (!onClick || (event.key !== 'Enter' && event.key !== ' ')) return
+    event.preventDefault()
+    onClick()
+  }
+
+  return (
+    <article
+      className={[
+        'home-competition__match-card',
+        'home-competition__match-card--basketball',
+        isClickable ? 'home-competition__match-card--clickable' : '',
+      ].filter(Boolean).join(' ')}
+      role={isClickable ? 'button' : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+    >
+      <div className="home-competition__basketball-header">
+        <div className="home-competition__basketball-header-spacer" />
+        <div
+          key={`${match.id}-${marketStateKey}-basketball-headings`}
+          className={`home-competition__basketball-market-headings${isCompactMarketLayout ? ' home-competition__basketball-market-headings--compact' : ''}`}
+          aria-hidden="true"
+        >
+          {marketColumns.map((column) => (
+            <span className="home-competition__basketball-market-heading" key={`${match.id}-${marketStateKey}-${column.label}`}>
+              {column.label}
+              {column.tag && <small>{column.tag}</small>}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="home-competition__basketball-main">
+        <div className="home-competition__teams">
+          <MatchTeamRow teamName={match.homeTeam} score={match.homeScore} sport={match.sport} />
+          <MatchTeamRow teamName={match.awayTeam} score={match.awayScore} sport={match.sport} />
+        </div>
+        <div
+          key={`${match.id}-${marketStateKey}-basketball-markets`}
+          className={`home-competition__basketball-markets${isCompactMarketLayout ? ' home-competition__basketball-markets--compact' : ''}`}
+          aria-label={`Mercados de ${match.homeTeam} contra ${match.awayTeam}`}
+        >
+          {marketColumns.map((column) => (
+            <div className="home-competition__basketball-market-column" key={`${match.id}-${marketStateKey}-${column.label}`}>
+              <BasketballMarketButton odd={column.homeOdd} />
+              <BasketballMarketButton odd={column.awayOdd} />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="home-competition__match-footer">
+        <div className="home-competition__status">
+          {match.live && (
+            <span className="home-competition__live-badge">
+              <span className="home-competition__live-dot" />
+              AO VIVO
+            </span>
+          )}
+          <span className="home-competition__footer-label">{footerLabel}</span>
+        </div>
+        <span className="home-competition__more">
+          Ver mais
+          <img src={chevronRight} alt="" className="home-competition__chevron home-competition__chevron--secondary" />
+        </span>
+      </div>
+    </article>
+  )
+}
+
+function MatchCard({
+  match,
+  liveTime,
+  activeMarket,
+  activeMarketLabel,
+  onClick,
+}: {
+  match: HomeCompetitionMatch
+  liveTime?: string
+  activeMarket?: string
+  activeMarketLabel?: string
+  onClick?: () => void
+}) {
+  const footerLabel = match.live ? liveTime ?? match.liveClock ?? match.footerLabel : match.footerLabel
+  const marketOdds = getMatchMarketOdds(match, activeMarket)
+  const marketStateKey = activeMarket ?? match.marketLabel
+  const isClickable = !!onClick
+  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (!onClick || (event.key !== 'Enter' && event.key !== ' ')) return
+    event.preventDefault()
+    onClick()
+  }
+
+  if (match.sport === 'basquete' && match.marketColumns) {
+    return <BasketballMatchCard match={match} liveTime={liveTime} activeMarket={activeMarket} onClick={onClick} />
+  }
+
+  return (
+    <article
+      className={[
+        'home-competition__match-card',
+        `home-competition__match-card--${match.sport}`,
+        isClickable ? 'home-competition__match-card--clickable' : '',
+      ].filter(Boolean).join(' ')}
+      role={isClickable ? 'button' : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+    >
+      <div className="home-competition__match-header">
+        <div className="home-competition__market">
+          <div className="home-competition__market-content" key={`${match.id}-${marketStateKey}-market`}>
+            <span className="home-competition__market-label">{getMatchMarketLabel(match, activeMarketLabel)}</span>
+            <span className="home-competition__tags">
+              {match.tags.map((tag) => (
+                <span className="home-competition__tag" key={`${match.id}-${tag}`}>
+                  {tag}
+                </span>
+              ))}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div className="home-competition__match-main">
+        <div className="home-competition__teams">
+          <MatchTeamRow teamName={match.homeTeam} score={match.homeScore} sport={match.sport} />
+          <MatchTeamRow teamName={match.awayTeam} score={match.awayScore} sport={match.sport} />
+        </div>
+        <div
+          key={`${match.id}-${marketStateKey}-odds`}
+          className={`home-competition__odds${marketOdds.length === 2 ? ' home-competition__odds--two' : ''}`}
+          aria-label={`Odds de ${match.homeTeam} contra ${match.awayTeam}`}
+        >
+          {marketOdds.map((odd, index) => (
+            <HomeCompetitionOddButton odd={odd} key={`${match.id}-${activeMarket ?? match.marketLabel}-${odd.label}-${index}`} />
+          ))}
+        </div>
+      </div>
+      <div className="home-competition__match-footer">
+        <div className="home-competition__status">
+          {match.live && (
+            <span className="home-competition__live-badge">
+              <span className="home-competition__live-dot" />
+              AO VIVO
+            </span>
+          )}
+          <span className="home-competition__footer-label">{footerLabel}</span>
+        </div>
+        <span className="home-competition__more">
+          Ver mais
+          <img src={chevronRight} alt="" className="home-competition__chevron home-competition__chevron--secondary" />
+        </span>
+      </div>
+    </article>
+  )
+}
+
+export function HomeCompetitionPlayerPropCard({
+  prop,
+  className = '',
+  matchLabel,
+  timeLabel,
+  showTimeLabel = true,
+  showMarketLabel = true,
+  renderOddButton,
+}: {
+  prop: HomeCompetitionPlayerProp
+  className?: string
+  matchLabel?: ReactNode
+  timeLabel?: ReactNode
+  showTimeLabel?: boolean
+  showMarketLabel?: boolean
+  renderOddButton?: HomeCompetitionPlayerPropOddRenderer
+}) {
+  return (
+    <article className={`home-competition__player-card${className ? ` ${className}` : ''}`}>
+      <span className="home-competition__stat-icon" aria-hidden="true">
+        <img src={iconStatistic} alt="" />
+      </span>
+      <div className="home-competition__player-meta">
+        <span className="home-competition__player-match-label">{matchLabel ?? renderPlayerPropMatchLabel(prop)}</span>
+        {showTimeLabel && <span>{timeLabel ?? prop.timeLabel}</span>}
+      </div>
+      <div className="home-competition__player-photo">
+        <img src={getPlayerPropAvatar(prop.sport)} alt="" />
+      </div>
+      <div className="home-competition__player-info">
+        <p>
+          <strong>{prop.playerName}</strong>
+          <span>{prop.position}</span>
+        </p>
+        {showMarketLabel && <small>{prop.marketLabel}</small>}
+      </div>
+      <PlayerPropOddSlider prop={prop} renderOddButton={renderOddButton} />
+    </article>
+  )
+}
+
+export function HomeCompetitionSection({
+  activeMarketId: controlledActiveMarketId,
+  competition = homeCompetitionHighlight,
+  hideMarketChips = false,
+  hideMatches = false,
+  hideTitleRow = false,
+  matchGroups,
+  playerPropsLayout = 'carousel',
+  onMatchClick,
+}: HomeCompetitionSectionProps = {}) {
+  const sectionTitleId = `home-competition-title-${competition.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+  const marketChips = competition.marketChips ?? emptyMarketChips
+  const playerPropsGridRef = useRef<HTMLDivElement | null>(null)
+  const playerPropsAnimationRef = useRef<{ fromHeight: number } | null>(null)
+  const playerPropsAnimationStartTimerRef = useRef<number | null>(null)
+  const playerPropsAnimationTimerRef = useRef<number | null>(null)
+  const [activeMarket, setActiveMarket] = useState(() => marketChips[0]?.id)
+  const [liveTimes, setLiveTimes] = useState(() => getInitialLiveTimes(competition.matches))
+  const availableMarketChips = getAvailableMarketChips(competition, marketChips, liveTimes)
+  const requestedActiveMarket = controlledActiveMarketId ?? activeMarket
+  const activeMarketId = requestedActiveMarket && availableMarketChips.some((chip) => chip.id === requestedActiveMarket)
+    ? requestedActiveMarket
+    : availableMarketChips[0]?.id
+  const activeMarketChip = availableMarketChips.find((chip) => chip.id === activeMarketId) ?? availableMarketChips[0]
+  const isPlayerPropsMarket = activeMarketId ? playerPropsMarketIds.has(activeMarketId) : false
+  const activePlayerProps = isPlayerPropsMarket
+    ? competition.playerProps.filter((prop) => !prop.marketId || prop.marketId === activeMarketId)
+    : competition.playerProps
+  const playerPropsStateKey = `${competition.title}:${playerPropsLayout}:${isPlayerPropsMarket ? activeMarketId : 'all'}`
+  const [visiblePlayerPropsState, setVisiblePlayerPropsState] = useState(() => ({
+    count: PLAYER_PROPS_GRID_INITIAL_COUNT,
+    key: playerPropsStateKey,
+  }))
+  const [enteringPlayerPropIds, setEnteringPlayerPropIds] = useState<Set<string>>(() => new Set())
+  const visiblePlayerPropsCount = visiblePlayerPropsState.key === playerPropsStateKey
+    ? visiblePlayerPropsState.count
+    : PLAYER_PROPS_GRID_INITIAL_COUNT
+  const visiblePlayerPropsMaxCount = Math.min(PLAYER_PROPS_GRID_MAX_COUNT, activePlayerProps.length)
+  const shouldGroupPlayerProps = hideTitleRow && playerPropsLayout === 'grid'
+  const visiblePlayerProps = playerPropsLayout === 'grid' && !shouldGroupPlayerProps
+    ? activePlayerProps.slice(0, Math.min(visiblePlayerPropsCount, visiblePlayerPropsMaxCount))
+    : activePlayerProps
+  const [visiblePlayerPropGroupCountsState, setVisiblePlayerPropGroupCountsState] = useState<{
+    key: string
+    counts: Record<string, number>
+  }>(() => ({
+    key: playerPropsStateKey,
+    counts: {},
+  }))
+  const marketMatches = activeMarketId
+    ? competition.matches.filter((match) => isMarketAvailableForMatch(activeMarketId, match, liveTimes[match.id]))
+    : competition.matches
+  const marketMatchIds = new Set(marketMatches.map((match) => match.id))
+  const visibleMatchGroups = matchGroups
+    ? matchGroups
+        .map((group) => ({
+          ...group,
+          matches: group.matches.filter((match) => marketMatchIds.has(match.id)),
+        }))
+        .filter((group) => group.matches.length > 0)
+    : []
+  const hasMatches = !hideMatches && (
+    matchGroups ? visibleMatchGroups.length > 0 : marketMatches.length > 0
+  )
+  const hasAvailableMarketChips = availableMarketChips.length > 0
+  const shouldShowMarketChips = !hideTitleRow && !hideMarketChips && hasAvailableMarketChips
+  const shouldShowMatches = hasMatches && !isPlayerPropsMarket
+  const hasPlayerProps = activePlayerProps.length > 0
+  const shouldShowPlayerProps = hasPlayerProps && (!hasAvailableMarketChips || isPlayerPropsMarket || !hasMatches)
+  const playerPropGroups = shouldGroupPlayerProps ? getPlayerPropGroups(activePlayerProps) : []
+  const getPlayerPropGroupVisibleCount = (groupId: string) => (
+    visiblePlayerPropGroupCountsState.key === playerPropsStateKey
+      ? visiblePlayerPropGroupCountsState.counts[groupId] ?? PLAYER_PROPS_GRID_INITIAL_COUNT
+      : PLAYER_PROPS_GRID_INITIAL_COUNT
+  )
+  const getPlayerPropGroupMaxCount = (group: HomeCompetitionPlayerPropGroup) => (
+    Math.min(PLAYER_PROPS_GRID_MAX_COUNT, group.props.length)
+  )
+  const visiblePlayerPropGroups = shouldGroupPlayerProps
+    ? playerPropGroups.map((group) => ({
+        ...group,
+        props: group.props.slice(0, Math.min(getPlayerPropGroupVisibleCount(group.id), getPlayerPropGroupMaxCount(group))),
+      }))
+    : []
+  const visibleGroupedPlayerPropsCount = visiblePlayerPropGroups.reduce((total, group) => (
+    total + group.props.length
+  ), 0)
+  const canLoadMorePlayerProps = shouldShowPlayerProps &&
+    playerPropsLayout === 'grid' &&
+    !shouldGroupPlayerProps &&
+    visiblePlayerProps.length < visiblePlayerPropsMaxCount
+  const clearPlayerPropsAnimation = useCallback(() => {
+    if (playerPropsAnimationStartTimerRef.current !== null) {
+      window.clearTimeout(playerPropsAnimationStartTimerRef.current)
+      playerPropsAnimationStartTimerRef.current = null
+    }
+
+    if (playerPropsAnimationTimerRef.current !== null) {
+      window.clearTimeout(playerPropsAnimationTimerRef.current)
+      playerPropsAnimationTimerRef.current = null
+    }
+  }, [])
+
+  const preparePlayerPropsAccordion = () => {
+    const gridEl = playerPropsGridRef.current
+    if (gridEl) {
+      clearPlayerPropsAnimation()
+      playerPropsAnimationRef.current = { fromHeight: gridEl.getBoundingClientRect().height }
+      gridEl.classList.add('home-competition__players--accordion')
+      gridEl.style.height = `${playerPropsAnimationRef.current.fromHeight}px`
+      gridEl.style.overflow = 'hidden'
+    }
+  }
+
+  const handleLoadMorePlayerProps = () => {
+    const currentCount = Math.min(visiblePlayerPropsCount, visiblePlayerPropsMaxCount)
+    const nextCount = Math.min(currentCount + PLAYER_PROPS_GRID_LOAD_STEP, visiblePlayerPropsMaxCount)
+
+    if (nextCount <= currentCount) return
+
+    preparePlayerPropsAccordion()
+    setEnteringPlayerPropIds(new Set(
+      activePlayerProps.slice(currentCount, nextCount).map((prop) => prop.id)
+    ))
+    setVisiblePlayerPropsState({
+      count: nextCount,
+      key: playerPropsStateKey,
+    })
+  }
+
+  const handleLoadMorePlayerPropGroup = (group: HomeCompetitionPlayerPropGroup) => {
+    const maxCount = getPlayerPropGroupMaxCount(group)
+    const currentCount = Math.min(getPlayerPropGroupVisibleCount(group.id), maxCount)
+    const nextCount = Math.min(currentCount + PLAYER_PROPS_GRID_LOAD_STEP, maxCount)
+
+    if (nextCount <= currentCount) return
+
+    preparePlayerPropsAccordion()
+    setEnteringPlayerPropIds(new Set(
+      group.props.slice(currentCount, nextCount).map((prop) => prop.id)
+    ))
+    setVisiblePlayerPropGroupCountsState((currentState) => ({
+      key: playerPropsStateKey,
+      counts: {
+        ...(currentState.key === playerPropsStateKey ? currentState.counts : {}),
+        [group.id]: nextCount,
+      },
+    }))
+  }
+
+  useEffect(() => {
+    if (!competition.matches.some((match) => match.live)) return
+
+    const interval = setInterval(() => {
+      setLiveTimes((currentTimes) => {
+        const nextTimes = { ...currentTimes }
+
+        competition.matches.forEach((match) => {
+          if (!match.live) return
+
+          const currentTime = currentTimes[match.id] ?? match.liveClock ?? match.footerLabel
+          nextTimes[match.id] = updateLiveClock(currentTime)
+        })
+
+        return nextTimes
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [competition.matches])
+
+  useLayoutEffect(() => {
+    const animation = playerPropsAnimationRef.current
+    const gridEl = playerPropsGridRef.current
+
+    if (!animation || !gridEl || playerPropsLayout !== 'grid') return
+
+    playerPropsAnimationRef.current = null
+    const fromHeight = animation.fromHeight
+    gridEl.classList.remove('home-competition__players--accordion')
+    gridEl.style.height = `${fromHeight}px`
+    gridEl.style.overflow = 'hidden'
+    void gridEl.offsetHeight
+
+    const toHeight = gridEl.scrollHeight
+
+    if (Math.abs(toHeight - fromHeight) < 1) {
+      gridEl.style.height = ''
+      gridEl.style.overflow = ''
+      playerPropsAnimationStartTimerRef.current = window.setTimeout(() => {
+        playerPropsAnimationStartTimerRef.current = null
+        setEnteringPlayerPropIds(new Set())
+      }, 0)
+      return
+    }
+
+    gridEl.classList.add('home-competition__players--accordion')
+    playerPropsAnimationStartTimerRef.current = window.setTimeout(() => {
+      playerPropsAnimationStartTimerRef.current = null
+      gridEl.style.height = `${toHeight}px`
+
+      playerPropsAnimationTimerRef.current = window.setTimeout(() => {
+        gridEl.style.height = ''
+        gridEl.style.overflow = ''
+        gridEl.classList.remove('home-competition__players--accordion')
+        setEnteringPlayerPropIds(new Set())
+        playerPropsAnimationTimerRef.current = null
+      }, PLAYER_PROPS_ACCORDION_DURATION_MS)
+    }, 24)
+
+    return clearPlayerPropsAnimation
+  }, [clearPlayerPropsAnimation, playerPropsLayout, visibleGroupedPlayerPropsCount, visiblePlayerProps.length])
+
+  useEffect(() => () => {
+    clearPlayerPropsAnimation()
+  }, [clearPlayerPropsAnimation])
+
+  const renderMatchCard = (match: HomeCompetitionMatch) => (
+    <MatchCard
+      match={match}
+      liveTime={liveTimes[match.id]}
+      activeMarket={activeMarketChip?.id}
+      activeMarketLabel={activeMarketChip?.label}
+      onClick={onMatchClick ? () => onMatchClick(match, competition, liveTimes) : undefined}
+      key={match.id}
+    />
+  )
+  const renderPlayerPropCard = (prop: HomeCompetitionPlayerProp) => (
+    <HomeCompetitionPlayerPropCard
+      prop={prop}
+      className={enteringPlayerPropIds.has(prop.id) ? 'home-competition__player-card--entering' : ''}
+      key={prop.id}
+    />
+  )
+
+  return (
+    <section
+      className={`home-competition${hideTitleRow ? ' home-competition--without-title' : ''}`}
+      {...(hideTitleRow ? { 'aria-label': competition.title } : { 'aria-labelledby': sectionTitleId })}
+    >
+      {!hideTitleRow && (
+        <div className={`home-competition__title-row${shouldShowMarketChips ? ' home-competition__title-row--with-markets' : ''}`}>
+          <div className="home-competition__title-main">
+            <h2 id={sectionTitleId}>{competition.title}</h2>
+            <img src={chevronRight} alt="" className="home-competition__chevron" />
+            {competition.sportLabel && <span>{competition.sportLabel}</span>}
+          </div>
+          {shouldShowMarketChips && (
+            <div className="home-competition__markets" role="tablist" aria-label={`Mercados de ${competition.title}`}>
+              {availableMarketChips.map((chip) => {
+                const isActive = activeMarketChip?.id === chip.id
+
+                return (
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    className={`home-competition__market-tab${isActive ? ' home-competition__market-tab--active' : ''}`}
+                    key={chip.id}
+                    onClick={(event) => {
+                      setActiveMarket(chip.id)
+                      scrollMarketChipIntoView(event.currentTarget)
+                    }}
+                  >
+                    <span>{chip.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+      <div className="home-competition__content">
+        {shouldShowMatches && matchGroups && (
+          <div className="home-competition__match-groups">
+            {visibleMatchGroups.map((group) => (
+              <section className="home-competition__match-group" aria-label={group.title} key={group.id}>
+                <h3 className="home-competition__match-group-title">{group.title}</h3>
+                <div className="home-competition__matches">
+                  {group.matches.map((match) => renderMatchCard(match))}
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
+        {shouldShowMatches && !matchGroups && (
+          <div className="home-competition__matches">
+            {marketMatches.map((match) => renderMatchCard(match))}
+          </div>
+        )}
+        {shouldShowPlayerProps && shouldGroupPlayerProps && (
+          <div
+            ref={playerPropsGridRef}
+            className="home-competition__player-groups"
+            aria-label="Player props"
+          >
+            {visiblePlayerPropGroups.map((group) => {
+              const sourceGroup = playerPropGroups.find((playerPropGroup) => playerPropGroup.id === group.id)
+              const canLoadMoreGroup = !!sourceGroup && group.props.length < getPlayerPropGroupMaxCount(sourceGroup)
+
+              return (
+                <section className="home-competition__match-group" aria-label={group.title} key={group.id}>
+                  <h3 className="home-competition__match-group-title">{group.title}</h3>
+                  <div className="home-competition__players home-competition__players--grid">
+                    {group.props.map((prop) => renderPlayerPropCard(prop))}
+                  </div>
+                  {canLoadMoreGroup && sourceGroup && (
+                    <button
+                      className="home-competition__load-more"
+                      type="button"
+                      onClick={() => handleLoadMorePlayerPropGroup(sourceGroup)}
+                    >
+                      <span>Carregar mais</span>
+                      <img src={chevronDown} alt="" className="home-competition__load-more-icon" />
+                    </button>
+                  )}
+                </section>
+              )
+            })}
+          </div>
+        )}
+        {shouldShowPlayerProps && !shouldGroupPlayerProps && (
+          <div
+            ref={playerPropsLayout === 'grid' ? playerPropsGridRef : undefined}
+            className={`home-competition__players${playerPropsLayout === 'grid' ? ' home-competition__players--grid' : ''}`}
+            aria-label="Player props"
+          >
+            {visiblePlayerProps.map((prop) => renderPlayerPropCard(prop))}
+          </div>
+        )}
+        {canLoadMorePlayerProps && (
+          <button
+            className="home-competition__load-more"
+            type="button"
+            onClick={handleLoadMorePlayerProps}
+          >
+            <span>Carregar mais</span>
+            <img src={chevronDown} alt="" className="home-competition__load-more-icon" />
+          </button>
+        )}
+      </div>
+    </section>
+  )
+}

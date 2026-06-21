@@ -13,6 +13,7 @@ import { useBetslip } from './hooks/useBetslip'
 import { getBetslipTurboEligibleSelectionCount } from './hooks/betslipTurboBonus'
 import type { ProductMode } from './types/home'
 import { BETSLIP_LIVE_EVENT_OPEN_EVENT } from './utils/betslipLiveEvent'
+import { BrandLocalizationEffect } from './i18n/brandLocalization'
 
 const Home = lazy(() => import('./pages/Home').then((m) => ({ default: m.Home })))
 const PromotionsPage = lazy(() => import('./pages/PromotionsPage').then((m) => ({ default: m.PromotionsPage })))
@@ -22,7 +23,7 @@ const HandoffPage = lazy(() => import('./pages/Handoff').then((m) => ({ default:
 
 const RouteFallback = () => (
   <div
-    style={{ minHeight: '100dvh', background: 'var(--tokens-background-background)' }}
+    style={{ minHeight: '100dvh', background: 'var(--ds-background-app, var(--tokens-background-background))' }}
     aria-busy="true"
   />
 )
@@ -32,6 +33,7 @@ const productRoutes: ProductMode[] = ['apostas', 'cassino']
 const promotionsRouteSegment = 'promocoes'
 const handoffRouteSegment = 'handoff'
 const deployedBasePath = '/pitaquinho'
+const ENABLE_APP_PROMOTIONS_NAV_LINK = false
 const brasileiraoLeagueIdPattern = /(?:brasil-serie-a|fut-brasileir|fut-brasileirao-a)/
 const brasileiraoLeagueNamePattern = /(?:brasileir|brasileir[aã]o|brasil\s*-\s*s[eé]rie\s*a|s[eé]rie\s*a)/i
 
@@ -103,7 +105,7 @@ const buildPromotionsPath = () => {
 function AppContent() {
   const [pathname, setPathname] = useState(() => window.location.pathname)
   const { selections: betslipSelections, summary: betslipSummary } = useBetslip()
-  const { isFeatureEnabled } = useFeatureFlags()
+  const { brandMode, isFeatureEnabled } = useFeatureFlags()
   const betslipTurboEligibleSelectionCount = useMemo(
     () => getBetslipTurboEligibleSelectionCount(betslipSelections),
     [betslipSelections]
@@ -193,6 +195,8 @@ function AppContent() {
 
   const handleNavbarItemSelect = useCallback((itemId: string) => {
     if (itemId === promotionsRouteSegment) {
+      if (!ENABLE_APP_PROMOTIONS_NAV_LINK) return
+
       const nextPath = buildPromotionsPath()
       setPromotionsProduct(activeProduct)
 
@@ -362,6 +366,7 @@ function AppContent() {
 
   return (
     <div className="app-shell">
+      <BrandLocalizationEffect brandMode={brandMode} />
       {!isHandoffPage ? <MobileOnly /> : null}
       <Suspense fallback={<RouteFallback />}>
         {isHandoffPage ? (
@@ -442,6 +447,7 @@ function AppContent() {
           <Navbar
             activeProduct={activeProduct}
             activeItemId={isPromotionsPage ? promotionsRouteSegment : undefined}
+            disabledItemIds={ENABLE_APP_PROMOTIONS_NAV_LINK ? undefined : [promotionsRouteSegment]}
             onItemSelect={handleNavbarItemSelect}
           />
         </>

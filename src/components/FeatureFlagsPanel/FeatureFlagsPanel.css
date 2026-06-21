@@ -15,6 +15,84 @@
   gap: 0;
 }
 
+.feature-flags-sheet__product {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 84px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--tokens-border-border-02);
+}
+
+.feature-flags-sheet__brand-toggle {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  height: 32px;
+  padding: 4px;
+  overflow: hidden;
+  border: none;
+  border-radius: 100px;
+  background: rgb(var(--ds-fill-dark-rgb) / 0.08);
+  color: var(--tokens-text-text-01);
+  cursor: pointer;
+  font-family: 'Red Hat Text', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.feature-flags-sheet__brand-toggle:focus-visible {
+  outline: 2px solid rgba(141, 108, 255, 0.78);
+  outline-offset: 2px;
+}
+
+.feature-flags-sheet__brand-toggle-indicator {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 0;
+  width: calc((100% - 8px) / 2);
+  height: calc(100% - 8px);
+  border-radius: 1000px;
+  background: var(--tokens-text-text-01);
+  box-shadow: 0 2px 8px rgb(var(--ds-fill-dark-rgb) / 0.14);
+  transform: translateX(0);
+  transition: transform 150ms cubic-bezier(0.2, 0, 0, 1);
+  pointer-events: none;
+}
+
+.feature-flags-sheet__brand-toggle--pitaco .feature-flags-sheet__brand-toggle-indicator {
+  transform: translateX(100%);
+}
+
+.feature-flags-sheet__brand-toggle-option {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 1000px;
+  background: transparent;
+  color: var(--tokens-text-text-01);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: color 120ms ease, transform 120ms ease;
+}
+
+.feature-flags-sheet__brand-toggle-option--active {
+  color: var(--tokens-text-text-inverse, var(--tokens-text-text-on-color-black));
+  transform: scale(1.02);
+}
+
 .feature-flags-sheet__item {
   display: flex;
   align-items: center;

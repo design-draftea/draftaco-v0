@@ -59,6 +59,7 @@ export const TEAM_LOGOS: Record<string, string> = {
 
   // ─── França ───
   'PSG':              'https://r2.thesportsdb.com/images/media/team/badge/rwqrrq1473504808.png',
+  'Paris Saint-Germain': 'https://r2.thesportsdb.com/images/media/team/badge/rwqrrq1473504808.png',
   'Lyon':             'https://r2.thesportsdb.com/images/media/team/badge/blk9771656932845.png',
 
   // ─── Inglaterra ───
@@ -104,6 +105,26 @@ export const TEAM_LOGOS: Record<string, string> = {
   'River Plate':      'https://r2.thesportsdb.com/images/media/team/badge/03dmi31645539717.png',
   'San Lorenzo':      'https://r2.thesportsdb.com/images/media/team/badge/37wke41775741605.png',
   'Córdoba':          'https://r2.thesportsdb.com/images/media/team/badge/0twgzi1517768087.png',
+  'Estudiantes de La Plata': 'https://r2.thesportsdb.com/images/media/team/badge/pf08dq1760634366.png',
+  'Platense':         'https://r2.thesportsdb.com/images/media/team/badge/lbs14n1769317149.png',
+
+  // ─── Libertadores ───
+  'Universidad Católica': 'https://r2.thesportsdb.com/images/media/team/badge/h2pcuc1602188028.png',
+  'Deportes Tolima':  'https://r2.thesportsdb.com/images/media/team/badge/4bscjt1766423328.png',
+  'Independiente del Valle': 'https://r2.thesportsdb.com/images/media/team/badge/qku0lv1737622736.png',
+  'Coquimbo Unido':   'https://r2.thesportsdb.com/images/media/team/badge/b2cnht1602186172.png',
+  'Bolívar':          'https://r2.thesportsdb.com/images/media/team/badge/0o5jrz1579798499.png',
+  'Cerro Porteño':    'https://r2.thesportsdb.com/images/media/team/badge/xkxqtz1652126507.png',
+  'LDU Quito':        'https://r2.thesportsdb.com/images/media/team/badge/5tf5ch1736404372.png',
+  'Atlético Nacional': 'https://r2.thesportsdb.com/images/media/team/badge/efl4o41576157720.png',
+  'Peñarol':          'https://r2.thesportsdb.com/images/media/team/badge/uuwpux1473541171.png',
+  'Alianza Lima':     'https://r2.thesportsdb.com/images/media/team/badge/y5wov41580040189.png',
+  'Universitario':    'https://r2.thesportsdb.com/images/media/team/badge/xt290m1603137966.png',
+  'Sporting Cristal': 'https://r2.thesportsdb.com/images/media/team/badge/ive4ya1766423194.png',
+  'Barcelona SC':     'https://r2.thesportsdb.com/images/media/team/badge/c5yr001653075296.png',
+  'Deportivo Táchira': 'https://r2.thesportsdb.com/images/media/team/badge/bdwm1e1734241932.png',
+  'Carabobo':         'https://r2.thesportsdb.com/images/media/team/badge/yeu8bn1639000596.png',
+  'Melgar':           'https://r2.thesportsdb.com/images/media/team/badge/0puqm41765861529.png',
 
   // ─── EUA — MLS ───
   'Inter Miami':      'https://r2.thesportsdb.com/images/media/team/badge/m4it3e1602103647.png',
@@ -112,14 +133,28 @@ export const TEAM_LOGOS: Record<string, string> = {
   'Chicago Fire':     'https://r2.thesportsdb.com/images/media/team/badge/8xuc781639493166.png',
   'Nashville':        'https://r2.thesportsdb.com/images/media/team/badge/znrwt71602103062.png',
   'New York City':    'https://r2.thesportsdb.com/images/media/team/badge/m9vis71735140655.png',
+  'Seattle Sounders': 'https://r2.thesportsdb.com/images/media/team/badge/2dy5cx1706711036.png',
+  'LA Galaxy':        'https://r2.thesportsdb.com/images/media/team/badge/ysyysr1420227188.png',
+  'Atlanta United':   'https://r2.thesportsdb.com/images/media/team/badge/ej091x1602103070.png',
+  'Portland Timbers': 'https://r2.thesportsdb.com/images/media/team/badge/skm30j1557953559.png',
+  'Orlando City':     'https://r2.thesportsdb.com/images/media/team/badge/qyppxw1423832326.png',
+  'FC Dallas':        'https://r2.thesportsdb.com/images/media/team/badge/vxy8xy1602103187.png',
+  'Houston Dynamo':   'https://r2.thesportsdb.com/images/media/team/badge/yvz9dq1707631352.png',
+  'Charlotte FC':     'https://r2.thesportsdb.com/images/media/team/badge/b6p4uz1595434047.png',
 
   // ─── NBA ───
   'Jazz':             'https://r2.thesportsdb.com/images/media/team/badge/9v9c5p1751703267.png',
+  'Utah Jazz':        'https://r2.thesportsdb.com/images/media/team/badge/9v9c5p1751703267.png',
   'Thunder':          'https://r2.thesportsdb.com/images/media/team/badge/27v8861746610370.png',
+  'Oklahoma City Thunder': 'https://r2.thesportsdb.com/images/media/team/badge/27v8861746610370.png',
   'Knicks':           'https://r2.thesportsdb.com/images/media/team/badge/wyhpuf1511810435.png',
+  'New York Knicks':  'https://r2.thesportsdb.com/images/media/team/badge/wyhpuf1511810435.png',
   'Magic':            'https://r2.thesportsdb.com/images/media/team/badge/sjsv3b1748974231.png',
+  'Orlando Magic':    'https://r2.thesportsdb.com/images/media/team/badge/sjsv3b1748974231.png',
   'Bulls':            'https://r2.thesportsdb.com/images/media/team/badge/yk7swg1547214677.png',
+  'Chicago Bulls':    'https://r2.thesportsdb.com/images/media/team/badge/yk7swg1547214677.png',
   'Heat':             'https://r2.thesportsdb.com/images/media/team/badge/5v67x51547214763.png',
+  'Miami Heat':       'https://r2.thesportsdb.com/images/media/team/badge/5v67x51547214763.png',
   'Warriors':         'https://r2.thesportsdb.com/images/media/team/badge/irobi61565197527.png',
   'Lakers':           'https://r2.thesportsdb.com/images/media/team/badge/d8uoxw1714254511.png',
   'Pistons':          'https://r2.thesportsdb.com/images/media/team/badge/lg7qrc1621594751.png',

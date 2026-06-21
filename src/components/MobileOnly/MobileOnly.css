@@ -52,7 +52,7 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 18px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.87);
+  color: rgb(var(--ds-fill-primary-rgb) / 0.87);
   line-height: 1.6;
   margin: 0 0 32px 0;
 }
@@ -61,5 +61,5 @@
   font-family: 'Red Hat Text', sans-serif;
   font-size: 14px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(var(--ds-fill-primary-rgb) / 0.5);
 }

@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
-import { CaretUpIcon } from '@phosphor-icons/react'
+import { CaretRightIcon, CaretUpIcon } from '@phosphor-icons/react'
 import './BannerCarousel.css'
 import { Toast } from '../Toast'
 import { TeamLogo } from '../TeamLogo'
+import { getTeamLogo } from '../../data/teamLogos'
 import { 
   BottomSheet, 
   MissionObjective, 
@@ -20,7 +21,9 @@ import {
 } from '../../hooks/betslipUtils'
 import { useBetslip } from '../../hooks/useBetslip'
 import { useOddSelection } from '../../hooks/useOddSelection'
-import type { Banner } from '../../types/home'
+import { useSportsDbTeamLogo } from '../../hooks/useSportsDbTeamLogo'
+import type { Banner, MarketBanner, MarketBannerTeam } from '../../types/home'
+import { updateLiveClock } from '../../utils/liveClock'
 
 import iconSuperCombinada from '../../assets/iconSuperCombinada.png'
 import iconAoVivo from '../../assets/iconAoVivo.png'
@@ -29,6 +32,7 @@ import iconSaibaMais from '../../assets/iconSaibaMais.svg'
 import iconBoostWhite from '../../assets/iconBoostWhite.svg'
 import iconAumentada from '../../assets/iconAumentada.png'
 import iconAtivo from '../../assets/iconAtivo.svg'
+import iconVs from '../../assets/iconsDraftaco/vs.svg'
 import imgMissaoRodadaGratis from '../../assets/imgMissaoRodadaGratis.png'
 import pedroProps from '../../assets/pedroProps.png'
 
@@ -40,6 +44,7 @@ interface MissionProgress {
 
 interface BannerCarouselProps {
   banners?: Banner[]
+  disableInteractions?: boolean
   onBannerClick?: (banner: Banner) => void
 }
 
@@ -61,7 +66,58 @@ interface BannerBetslipEntry {
   selection: BetslipSelection
 }
 
+interface MarketTeamEmblemProps {
+  team: MarketBannerTeam
+  sport: MarketBanner['sport']
+  className: string
+}
+
+const getMarketTeamLogo = (team: MarketBannerTeam, sport: MarketBanner['sport']) => {
+  if (team.image) return team.image
+  if (sport === 'tenis') return undefined
+
+  return getTeamLogo(team.imageSourceName ?? team.name)
+}
+
+const MarketTeamEmblem = ({ team, sport, className }: MarketTeamEmblemProps) => {
+  const imageSourceName = team.imageSourceName ?? team.name
+  const fallbackLogo = getMarketTeamLogo(team, sport)
+  const logoUrl = useSportsDbTeamLogo(
+    imageSourceName,
+    team.image,
+    sport,
+    fallbackLogo,
+    { useCurrentLogoFallback: sport === 'tenis' }
+  )
+
+  return (
+    <span className={`banner-market__emblem ${className}`}>
+      {logoUrl && <img src={logoUrl} alt="" />}
+    </span>
+  )
+}
+
 const isBannerBetslipEntry = (entry: BannerBetslipEntry | undefined): entry is BannerBetslipEntry => !!entry
+const hasMarketBanner = (banner: Banner): banner is Banner & { marketBanner: NonNullable<Banner['marketBanner']> } => (
+  banner.type === 'market' && !!banner.marketBanner
+)
+
+const getInitialMarketLiveTimes = (banners: Banner[]) => banners.reduce<Record<number, string>>((times, banner) => {
+  if (hasMarketBanner(banner) && banner.marketBanner.live) {
+    times[banner.id] = banner.marketBanner.liveClock ?? banner.marketBanner.footerLabel
+  }
+
+  return times
+}, {})
+
+const getMarketBulletDistanceClass = (index: number, activeIndex: number) => {
+  const distance = Math.abs(index - activeIndex)
+
+  if (distance === 0) return 'banner-carousel__bullet--active'
+  if (distance === 1) return 'banner-carousel__bullet--near'
+
+  return 'banner-carousel__bullet--far'
+}
 
 const resultMarketGroupIds = new Set(['regular', 'live', 'tennis-live', 'resultado-final', '1x2'])
 
@@ -85,6 +141,13 @@ const getBannerMatchTeamsFromLabel = (label?: string): BannerMatchTeams | null =
 }
 
 const getBannerMatchTeams = (banner: Banner): BannerMatchTeams => {
+  if (hasMarketBanner(banner)) {
+    return {
+      homeTeam: banner.marketBanner.teams[0].name,
+      awayTeam: banner.marketBanner.teams[1].name,
+    }
+  }
+
   if (banner.tennisMatch) {
     return {
       homeTeam: banner.tennisMatch.player1.name,
@@ -111,6 +174,7 @@ const getBannerMatchTeams = (banner: Banner): BannerMatchTeams => {
 }
 
 const getBannerSport = (banner: Banner) => {
+  if (hasMarketBanner(banner)) return banner.marketBanner.sport
   if (banner.tennisMatch) return 'tenis'
   if (banner.liveMatch) return 'basquete'
 
@@ -123,13 +187,18 @@ const getBannerEventName = (banner: Banner, { homeTeam, awayTeam }: BannerMatchT
   return banner.headerRight
 }
 
-const getBannerHomeTeamIcon = (banner: Banner) => (
-  banner.tennisMatch?.player1.flag
-    ?? banner.liveMatch?.homeTeam.badge
-    ?? banner.odds?.find((odd) => odd.team !== 'Empate')?.badge
-)
+const getBannerHomeTeamIcon = (banner: Banner) => {
+  if (hasMarketBanner(banner)) return getMarketTeamLogo(banner.marketBanner.teams[0], banner.marketBanner.sport)
+
+  return (
+    banner.tennisMatch?.player1.flag
+      ?? banner.liveMatch?.homeTeam.badge
+      ?? banner.odds?.find((odd) => odd.team !== 'Empate')?.badge
+  )
+}
 
 const getBannerAwayTeamIcon = (banner: Banner) => {
+  if (hasMarketBanner(banner)) return getMarketTeamLogo(banner.marketBanner.teams[1], banner.marketBanner.sport)
   if (banner.tennisMatch?.player2.flag) return banner.tennisMatch.player2.flag
   if (banner.liveMatch?.awayTeam.badge) return banner.liveMatch.awayTeam.badge
 
@@ -139,6 +208,11 @@ const getBannerAwayTeamIcon = (banner: Banner) => {
 
 const getBannerOutcomeIcon = (banner: Banner, outcomeId: string, label: ReactNode) => {
   const labelText = getReactNodeText(label)
+
+  if (hasMarketBanner(banner)) {
+    if (outcomeId === 'home' || outcomeId === 'player-1') return getMarketTeamLogo(banner.marketBanner.teams[0], banner.marketBanner.sport)
+    if (outcomeId === 'away' || outcomeId === 'player-2') return getMarketTeamLogo(banner.marketBanner.teams[1], banner.marketBanner.sport)
+  }
 
   if (banner.tennisMatch) {
     if (outcomeId === 'player-1' || labelText === banner.tennisMatch.player1.name) {
@@ -163,7 +237,17 @@ const getBannerOutcomeIcon = (banner: Banner, outcomeId: string, label: ReactNod
   return banner.odds?.find((odd) => odd.team === labelText)?.badge
 }
 
-const getBannerLiveTimeLabel = (banner: Banner, liveMatchTime: string) => {
+const getBannerLiveTimeLabel = (
+  banner: Banner,
+  liveMatchTime: string,
+  marketLiveTimes: Record<number, string> = {}
+) => {
+  if (hasMarketBanner(banner)) {
+    if (!banner.marketBanner.live) return banner.marketBanner.footerLabel
+
+    return marketLiveTimes[banner.id] ?? banner.marketBanner.liveClock ?? banner.marketBanner.footerLabel
+  }
+
   if (banner.type === 'aoVivo') return liveMatchTime
   if (banner.type === 'aoVivoTenis') return banner.tennisMatch?.currentSet ?? 'Ao vivo'
 
@@ -171,7 +255,7 @@ const getBannerLiveTimeLabel = (banner: Banner, liveMatchTime: string) => {
 }
 
 const getBannerMarketInfo = (banner: Banner, groupId: string) => {
-  if (resultMarketGroupIds.has(groupId) || banner.type === '1x2') {
+  if (resultMarketGroupIds.has(groupId) || banner.type === '1x2' || banner.type === 'market') {
     return {
       marketId: 'resultado-final',
       marketLabel: 'Resultado Final',
@@ -326,6 +410,15 @@ function updateMatchTime(timeStr: string): string {
 }
 
 const getBannerBetslipEventId = (banner: Banner) => {
+  if (hasMarketBanner(banner)) {
+    return getBetslipEventId({
+      sport: banner.marketBanner.sport,
+      homeTeam: banner.marketBanner.teams[0].name,
+      awayTeam: banner.marketBanner.teams[1].name,
+      fallbackId: `banner-${banner.id}`,
+    })
+  }
+
   if (banner.tennisMatch) {
     return getBetslipEventId({
       sport: 'tenis',
@@ -354,7 +447,12 @@ const getBannerBetslipEventId = (banner: Banner) => {
   })
 }
 
-export function BannerCarousel({ banners = sportsBanners, onBannerClick }: BannerCarouselProps = {}) {
+export function BannerCarousel({
+  banners = sportsBanners,
+  disableInteractions = false,
+  onBannerClick,
+}: BannerCarouselProps = {}) {
+  const isMarketBannerSet = banners.length > 0 && banners.every(hasMarketBanner)
   const [activeIndex, setActiveIndex] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const [activatedMissions, setActivatedMissions] = useState<Record<number, MissionProgress>>({})
@@ -362,6 +460,7 @@ export function BannerCarousel({ banners = sportsBanners, onBannerClick }: Banne
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
   const [selectedBanner, setSelectedBanner] = useState<Banner | null>(null)
   const [liveMatchTime, setLiveMatchTime] = useState("Q2 05:00")
+  const [marketLiveTimes, setMarketLiveTimes] = useState<Record<number, string>>(() => getInitialMarketLiveTimes(banners))
   const getOddButtonProps = useOddSelection('banner-card__odd-btn')
   const { selectedSelectionIdsByGroup, toggleSelections } = useBetslip()
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -449,6 +548,31 @@ export function BannerCarousel({ banners = sportsBanners, onBannerClick }: Banne
 
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    setMarketLiveTimes(getInitialMarketLiveTimes(banners))
+  }, [banners])
+
+  useEffect(() => {
+    if (!banners.some((banner) => hasMarketBanner(banner) && banner.marketBanner.live)) return
+
+    const interval = setInterval(() => {
+      setMarketLiveTimes((prevTimes) => {
+        const nextTimes = { ...prevTimes }
+
+        banners.forEach((banner) => {
+          if (!hasMarketBanner(banner) || !banner.marketBanner.live) return
+
+          const currentTime = prevTimes[banner.id] ?? banner.marketBanner.liveClock ?? banner.marketBanner.footerLabel
+          nextTimes[banner.id] = updateLiveClock(currentTime)
+        })
+
+        return nextTimes
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [banners])
 
   // Pausa o auto-play durante o drag
   const pauseAutoPlay = () => {
@@ -559,18 +683,28 @@ export function BannerCarousel({ banners = sportsBanners, onBannerClick }: Banne
   }
 
   const handleBannerClick = (banner: Banner) => {
+    if (disableInteractions) return
     if (!banner.casinoGameId || Math.abs(dragDistance.current) > 8) return
 
     onBannerClick?.(banner)
   }
 
   const handleBannerKeyDown = (event: KeyboardEvent<HTMLDivElement>, banner: Banner) => {
+    if (disableInteractions) return
     if (!banner.casinoGameId || !onBannerClick) return
     if (event.key !== 'Enter' && event.key !== ' ') return
 
     event.preventDefault()
     onBannerClick(banner)
   }
+
+  const getDisabledButtonProps = (className: string) => ({
+    type: 'button' as const,
+    className,
+    disabled: true,
+    'aria-disabled': true,
+  })
+
   const getBannerOddButtonProps = (
     banner: Banner,
     groupId: string,
@@ -579,16 +713,20 @@ export function BannerCarousel({ banners = sportsBanners, onBannerClick }: Banne
     label: ReactNode,
     value: ReactNode
   ) => {
+    if (disableInteractions) return getDisabledButtonProps(className)
+
     const matchTeams = getBannerMatchTeams(banner)
     const { homeTeam, awayTeam } = matchTeams
-    const isLive = banner.type === 'aoVivo' || banner.type === 'aoVivoTenis'
+    const isLive = banner.type === 'aoVivo'
+      || banner.type === 'aoVivoTenis'
+      || (hasMarketBanner(banner) && Boolean(banner.marketBanner.live))
     const marketInfo = getBannerMarketInfo(banner, groupId)
     const aumentadaDetails = groupId === 'boosted' ? getBannerAumentadaDetails(banner) : null
     const marketId = aumentadaDetails?.marketLabel ?? marketInfo.marketId
     const marketLabel = aumentadaDetails?.marketLabel ?? marketInfo.marketLabel
     const labelText = getReactNodeText(label)
     const selectionLabel = aumentadaDetails?.playerName ?? labelText
-    const eventTimeLabel = getBannerLiveTimeLabel(banner, liveMatchTime)
+    const eventTimeLabel = getBannerLiveTimeLabel(banner, liveMatchTime, marketLiveTimes)
 
     return getOddButtonProps(
       `banner:${banner.id}:${marketId}:${outcomeId}`,
@@ -674,6 +812,8 @@ export function BannerCarousel({ banners = sportsBanners, onBannerClick }: Banne
   }
 
   const getBannerComboOddButtonProps = (banner: Banner) => {
+    if (disableInteractions) return getDisabledButtonProps('banner-card__combinada-btn')
+
     const comboEntries = getBannerComboBetslipEntries(banner)
     const selectedSelectionIds = new Set(Object.values(selectedSelectionIdsByGroup))
     const isSelected = comboEntries.length > 0 && comboEntries.every(({ selection }) => selectedSelectionIds.has(selection.id))
@@ -705,8 +845,132 @@ export function BannerCarousel({ banners = sportsBanners, onBannerClick }: Banne
     </button>
   )
 
+  const renderMarketMatchup = (banner: Banner & { marketBanner: NonNullable<Banner['marketBanner']> }) => {
+    const { marketBanner } = banner
+    const isPreMatch = marketBanner.variant === 'football-pre' || marketBanner.variant === 'basketball-pre'
+
+    return (
+      <div className={`banner-market__matchup${isPreMatch ? ' banner-market__matchup--pre' : ' banner-market__matchup--live'}`}>
+        <MarketTeamEmblem team={marketBanner.teams[0]} sport={marketBanner.sport} className="banner-market__emblem--home" />
+        <span className="banner-market__versus" aria-hidden="true">
+          <span className="banner-market__versus-line banner-market__versus-line--left" />
+          <img src={iconVs} alt="" className="banner-market__versus-icon" />
+          <span className="banner-market__versus-line banner-market__versus-line--right" />
+        </span>
+        <MarketTeamEmblem team={marketBanner.teams[1]} sport={marketBanner.sport} className="banner-market__emblem--away" />
+      </div>
+    )
+  }
+
+  const renderMarketTeams = (banner: Banner & { marketBanner: NonNullable<Banner['marketBanner']> }) => {
+    const { marketBanner } = banner
+
+    if (marketBanner.variant === 'tennis-live') {
+      return (
+        <div className="banner-market__tennis-teams">
+          {marketBanner.teams.map((team, teamIndex) => (
+            <div
+              key={`${banner.id}:team:${teamIndex}`}
+              className={`banner-market__tennis-row${teamIndex === 1 ? ' banner-market__tennis-row--muted' : ''}`}
+            >
+              <span className="banner-market__team-name">{team.name}</span>
+              <span className="banner-market__serve-slot">
+                {team.isServing && <img src={iconTenis} alt="" className="banner-market__serve-icon" />}
+              </span>
+              <span className="banner-market__sets">
+                {team.sets?.map((set, setIndex) => (
+                  <span key={`${banner.id}:team:${teamIndex}:set:${setIndex}`}>{set}</span>
+                ))}
+              </span>
+              <span className="banner-market__current-score">{team.currentScore}</span>
+            </div>
+          ))}
+        </div>
+      )
+    }
+
+    if (marketBanner.variant === 'football-pre' || marketBanner.variant === 'basketball-pre') {
+      return (
+        <div className="banner-market__pre-teams">
+          {marketBanner.teams.map((team, teamIndex) => (
+            <span key={`${banner.id}:team:${teamIndex}`} className="banner-market__team-name">{team.name}</span>
+          ))}
+        </div>
+      )
+    }
+
+    return (
+      <div className="banner-market__scoreboard">
+        {marketBanner.teams.map((team, teamIndex) => (
+          <div key={`${banner.id}:team:${teamIndex}`} className="banner-market__score-row">
+            <span className="banner-market__team-name">{team.name}</span>
+            <span className="banner-market__score">{team.score}</span>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  const renderMarketBanner = (banner: Banner & { marketBanner: NonNullable<Banner['marketBanner']> }) => {
+    const { marketBanner } = banner
+
+    return (
+      <section
+        className={`banner-market banner-market--${marketBanner.variant}`}
+        data-node-id={
+          marketBanner.variant === 'football-live'
+            ? '457:13277'
+            : marketBanner.variant === 'tennis-live'
+              ? '457:13361'
+              : marketBanner.variant === 'football-pre'
+                ? '457:13445'
+                : '457:13528'
+        }
+      >
+        {renderMarketMatchup(banner)}
+
+        <div className="banner-market__box">
+          <div className="banner-market__header">
+            <span className="banner-market__league">{marketBanner.league}</span>
+          </div>
+
+          {renderMarketTeams(banner)}
+
+          <div className="banner-market__odds">
+            {marketBanner.odds.map((odd) => (
+              <button
+                key={`${banner.id}:market:${odd.outcomeId}`}
+                {...getBannerOddButtonProps(banner, '1x2', odd.outcomeId, 'banner-market__odd-btn', odd.label, odd.value)}
+              >
+                <span className="banner-market__odd-label">{odd.label}</span>
+                <span className="banner-market__odd-value">{odd.value}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="banner-market__footer">
+            <div className="banner-market__status">
+              {marketBanner.live && (
+                <span className="banner-market__live-badge">
+                  <span className="banner-market__live-dot" />
+                  AO VIVO
+                </span>
+              )}
+              <span className="banner-market__footer-label">{getBannerLiveTimeLabel(banner, liveMatchTime, marketLiveTimes)}</span>
+            </div>
+
+            <div className="banner-market__more" aria-hidden="true">
+              <span>Ver mais</span>
+              <CaretRightIcon size={14} weight="bold" />
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   return (
-    <div className="banner-carousel">
+    <div className={`banner-carousel${isMarketBannerSet ? ' banner-carousel--market' : ''}`}>
       <div 
         className={`banner-carousel__list ${isDragging ? 'banner-carousel__list--dragging' : ''}`}
         ref={scrollRef}
@@ -719,7 +983,15 @@ export function BannerCarousel({ banners = sportsBanners, onBannerClick }: Banne
         onTouchEnd={handleTouchEnd}
       >
         {banners.map((banner) => {
-          const isClickableBanner = !!banner.casinoGameId && !!onBannerClick
+          const isClickableBanner = !disableInteractions && !!banner.casinoGameId && !!onBannerClick
+
+          if (hasMarketBanner(banner)) {
+            return (
+              <div key={banner.id} className="banner-card banner-card--market">
+                {renderMarketBanner(banner)}
+              </div>
+            )
+          }
 
           return (
           <div
@@ -727,8 +999,8 @@ export function BannerCarousel({ banners = sportsBanners, onBannerClick }: Banne
             className={`banner-card${isClickableBanner ? ' banner-card--clickable' : ''}`}
             role={isClickableBanner ? 'button' : undefined}
             tabIndex={isClickableBanner ? 0 : undefined}
-            onClick={() => handleBannerClick(banner)}
-            onKeyDown={(event) => handleBannerKeyDown(event, banner)}
+            onClick={isClickableBanner ? () => handleBannerClick(banner) : undefined}
+            onKeyDown={isClickableBanner ? (event) => handleBannerKeyDown(event, banner) : undefined}
           >
             {/* Header */}
             <div className="banner-card__header">
@@ -937,8 +1209,10 @@ export function BannerCarousel({ banners = sportsBanners, onBannerClick }: Banne
                     {banner.type === 'missao' && isMissionActivated(banner.id) ? (
                       <button 
                         className="banner-card__btn-activated"
+                        disabled={disableInteractions}
                         onClick={(e) => {
                           e.stopPropagation()
+                          if (disableInteractions) return
                           handleOpenMissionInfo(banner)
                         }}
                       >
@@ -958,8 +1232,10 @@ export function BannerCarousel({ banners = sportsBanners, onBannerClick }: Banne
                       <>
                         <button 
                           className="banner-card__btn"
+                          disabled={disableInteractions}
                           onClick={(e) => {
                             e.stopPropagation()
+                            if (disableInteractions) return
                             if (banner.type === 'missao') {
                               handleActivateMission(banner.id, 100)
                             }
@@ -970,8 +1246,10 @@ export function BannerCarousel({ banners = sportsBanners, onBannerClick }: Banne
                         {banner.showInfoBtn && (
                           <button 
                             className="banner-card__btn banner-card__btn--icon"
+                            disabled={disableInteractions}
                             onClick={(e) => {
                               e.stopPropagation()
+                              if (disableInteractions) return
                               if (banner.type === 'missao') {
                                 handleOpenMissionInfo(banner)
                               }
@@ -1015,9 +1293,9 @@ export function BannerCarousel({ banners = sportsBanners, onBannerClick }: Banne
         {banners.map((_, index) => (
           <span 
             key={index} 
-            className={`banner-carousel__bullet ${index === activeIndex ? 'banner-carousel__bullet--active' : ''}`}
+            className={`banner-carousel__bullet ${isMarketBannerSet ? getMarketBulletDistanceClass(index, activeIndex) : index === activeIndex ? 'banner-carousel__bullet--active' : ''}`}
           >
-            {index === activeIndex && (
+            {!isMarketBannerSet && index === activeIndex && (
               <span 
                 key={activeIndex}
                 className="banner-carousel__bullet-progress" 

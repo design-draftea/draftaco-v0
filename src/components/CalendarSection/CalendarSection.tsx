@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type ReactNode, type RefObject } from 'react'
+import { useState, useRef, useEffect, useMemo, type ReactNode, type RefObject } from 'react'
 import { CaretRightIcon, CaretUpIcon } from '@phosphor-icons/react'
 import '../PreMatchSection/PreMatchSection.css'
 import './CalendarSection.css'
@@ -50,16 +50,11 @@ import escudoInter from '../../assets/escudoInter.png'
 import escudoBragantino from '../../assets/escudoBragantino.png'
 import escudoMirasol from '../../assets/escudoMirasol.png'
 import escudoSaoPaulo from '../../assets/escudoSaoPaulo.png'
-import escudoAtleticoMadrid from '../../assets/escudoAtleticoMadrid.png'
 import escudoInterItalia from '../../assets/escudoInterItalia.png'
 import escudoPalmeiras from '../../assets/escudoPalmeiras.png'
 import escudoFluminense from '../../assets/escudoFluminense.png'
 import escudoReal from '../../assets/escudoReal.png'
 import escudoBarca from '../../assets/escudoBarca.png'
-import escudoLiverpool from '../../assets/escudoLiverpool.png'
-import escudoManchesterCity from '../../assets/escudomanchesterCity.png'
-import escudoBenfica from '../../assets/escudoBenfica.png'
-import escudoAjax from '../../assets/escudoAjax.png'
 import escudoArsenal from '../../assets/escudoArsenal.png'
 import escudoChelsea from '../../assets/escudoChelsea.png'
 import escudoBrighton from '../../assets/escudoBrighton.png'
@@ -80,10 +75,6 @@ import escudoAugsburg from '../../assets/escudoAugsburg.png'
 import escudoHamburger from '../../assets/escudoHamburger.png'
 import escudoAtlMineiro from '../../assets/escudoAtlMineiro.png'
 import escudoSantos from '../../assets/escudoSantos.png'
-import escudoPSG from '../../assets/escudoPSG.png'
-import escudoLyon from '../../assets/escudoLyon.png'
-import escudoNewcastle from '../../assets/escudoNewcastle.png'
-import escudoNapoli from '../../assets/escudoNapoli.png'
 // Escudos Basquete
 import escudoBulls from '../../assets/escudoBullsGde.png'
 import escudoMiami from '../../assets/escudoMiami.png'
@@ -96,6 +87,8 @@ interface MarketChip {
   id: string
   label: string
 }
+
+export type CalendarMarketChip = MarketChip
 
 const footballMarketChips: MarketChip[] = [
   { id: 'resultado-final', label: 'Resultado Final' },
@@ -125,7 +118,8 @@ const tennisMarketChips: MarketChip[] = [
 
 const SHORT_COMPETITION_EVENT_LIMIT = 3
 const liveEventSports = new Set(['futebol', 'basquete'])
-const CALENDAR_PLAYER_PROPS_PER_EVENT = 3
+const CALENDAR_FOOTBALL_PLAYER_PROPS_PER_EVENT = 3
+const CALENDAR_BASKETBALL_PLAYER_PROPS_PER_EVENT = 8
 const CALENDAR_FOOTBALL_FINISHING_MARKET_ID = 'finalizacao-gol'
 const CALENDAR_FOOTBALL_ASSISTS_MARKET_ID = 'assistencias'
 const CALENDAR_BASKETBALL_POINTS_MARKET_ID = 'pontos-jogador'
@@ -133,6 +127,17 @@ const CALENDAR_BASKETBALL_ASSISTS_MARKET_ID = 'assistencias'
 
 const getDefaultMarketId = (sport?: string | null) =>
   sport === 'basquete' || sport === 'tenis' ? 'vencedor' : 'resultado-final'
+
+const getMarketChipsForSport = (sport?: string | null) =>
+  sport === 'basquete'
+    ? basketballMarketChips
+    : sport === 'tenis'
+      ? tennisMarketChips
+      : footballMarketChips
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const getCalendarMarketChipsForSport = (sport?: string | null): CalendarMarketChip[] =>
+  getMarketChipsForSport(sport)
 
 const calendarPlayerPropOptions = (values: Array<[string, string]>): PlayerPropOption[] =>
   values.map(([label, odd], index) => ({ label, odd, active: index === 1 }))
@@ -237,6 +242,11 @@ const calendarFootballFinishingPlayersByTeam: Record<string, TeamPlayerProfile[]
     { name: 'Kvaratskhelia', position: 'ATA' },
     { name: 'Goncalo Ramos', position: 'ATA' },
   ],
+  'Paris Saint-Germain': [
+    { name: 'Dembele', position: 'ATA' },
+    { name: 'Kvaratskhelia', position: 'ATA' },
+    { name: 'Goncalo Ramos', position: 'ATA' },
+  ],
   Lyon: [
     { name: 'Lacazette', position: 'ATA' },
     { name: 'Mikautadze', position: 'ATA' },
@@ -268,6 +278,11 @@ const calendarFootballFinishingPlayersByTeam: Record<string, TeamPlayerProfile[]
     { name: 'Diaz', position: 'ATA' },
   ],
   'Man. City': [
+    { name: 'Haaland', position: 'ATA' },
+    { name: 'Foden', position: 'MEI' },
+    { name: 'De Bruyne', position: 'MEI' },
+  ],
+  'Manchester City': [
     { name: 'Haaland', position: 'ATA' },
     { name: 'Foden', position: 'MEI' },
     { name: 'De Bruyne', position: 'MEI' },
@@ -422,6 +437,96 @@ const calendarFootballFinishingPlayersByTeam: Record<string, TeamPlayerProfile[]
     { name: 'Marcelinho', position: 'ATA' },
     { name: 'Nenê', position: 'MEI' },
   ],
+  'Deportes Tolima': [
+    { name: 'Brayan Gil', position: 'ATA' },
+    { name: 'Kevin Perez', position: 'ATA' },
+    { name: 'Yeison Guzman', position: 'MEI' },
+  ],
+  'Independiente del Valle': [
+    { name: 'Michael Hoyos', position: 'ATA' },
+    { name: 'Junior Sornoza', position: 'MEI' },
+    { name: 'Lautaro Diaz', position: 'ATA' },
+  ],
+  'Universidad Católica': [
+    { name: 'Fernando Zampedri', position: 'ATA' },
+    { name: 'Gonzalo Tapia', position: 'ATA' },
+    { name: 'Clemente Montes', position: 'ATA' },
+  ],
+  'Estudiantes de La Plata': [
+    { name: 'Guido Carrillo', position: 'ATA' },
+    { name: 'Tiago Palacios', position: 'ATA' },
+    { name: 'Pablo Piatti', position: 'MEI' },
+  ],
+  Platense: [
+    { name: 'Ronaldo Martinez', position: 'ATA' },
+    { name: 'Mateo Pellegrino', position: 'ATA' },
+    { name: 'Vicente Taborda', position: 'MEI' },
+  ],
+  'Coquimbo Unido': [
+    { name: 'Nicolas Johansen', position: 'ATA' },
+    { name: 'Andres Chavez', position: 'ATA' },
+    { name: 'Matias Palavecino', position: 'MEI' },
+  ],
+  Bolívar: [
+    { name: 'Francisco da Costa', position: 'ATA' },
+    { name: 'Patricio Rodriguez', position: 'ATA' },
+    { name: 'Ramiro Vaca', position: 'MEI' },
+  ],
+  'Cerro Porteño': [
+    { name: 'Diego Churin', position: 'ATA' },
+    { name: 'Robert Morales', position: 'ATA' },
+    { name: 'Juan Iturbe', position: 'ATA' },
+  ],
+  'LDU Quito': [
+    { name: 'Alex Arce', position: 'ATA' },
+    { name: 'Michael Estrada', position: 'ATA' },
+    { name: 'Lisandro Alzugaray', position: 'MEI' },
+  ],
+  'Atlético Nacional': [
+    { name: 'Alfredo Morelos', position: 'ATA' },
+    { name: 'Kevin Viveros', position: 'ATA' },
+    { name: 'Edwin Cardona', position: 'MEI' },
+  ],
+  Peñarol: [
+    { name: 'Maximiliano Silvera', position: 'ATA' },
+    { name: 'Leonardo Fernandez', position: 'MEI' },
+    { name: 'Jaime Baez', position: 'ATA' },
+  ],
+  'Alianza Lima': [
+    { name: 'Hernan Barcos', position: 'ATA' },
+    { name: 'Paolo Guerrero', position: 'ATA' },
+    { name: 'Kevin Quevedo', position: 'ATA' },
+  ],
+  Universitario: [
+    { name: 'Alex Valera', position: 'ATA' },
+    { name: 'Edison Flores', position: 'ATA' },
+    { name: 'Andy Polo', position: 'MEI' },
+  ],
+  'Sporting Cristal': [
+    { name: 'Martin Cauteruccio', position: 'ATA' },
+    { name: 'Santiago Gonzalez', position: 'ATA' },
+    { name: 'Joao Grimaldo', position: 'ATA' },
+  ],
+  'Barcelona SC': [
+    { name: 'Octavio Rivero', position: 'ATA' },
+    { name: 'Janner Corozo', position: 'ATA' },
+    { name: 'Damián Diaz', position: 'MEI' },
+  ],
+  'Deportivo Táchira': [
+    { name: 'Maurice Cova', position: 'MEI' },
+    { name: 'Anthony Uribe', position: 'ATA' },
+    { name: 'Bryan Castillo', position: 'ATA' },
+  ],
+  Carabobo: [
+    { name: 'Edson Tortolero', position: 'ATA' },
+    { name: 'Jose Balza', position: 'ATA' },
+    { name: 'Gustavo Gonzalez', position: 'MEI' },
+  ],
+  Melgar: [
+    { name: 'Bernardo Cuesta', position: 'ATA' },
+    { name: 'Tomas Martinez', position: 'MEI' },
+    { name: 'Cristian Bordacahar', position: 'ATA' },
+  ],
 }
 
 const calendarFootballAssistPlayersByTeam: Record<string, TeamPlayerProfile[]> = {
@@ -500,6 +605,11 @@ const calendarFootballAssistPlayersByTeam: Record<string, TeamPlayerProfile[]> =
     { name: 'Zaire-Emery', position: 'MEI' },
     { name: 'Fabian Ruiz', position: 'MEI' },
   ],
+  'Paris Saint-Germain': [
+    { name: 'Vitinha', position: 'MEI' },
+    { name: 'Zaire-Emery', position: 'MEI' },
+    { name: 'Fabian Ruiz', position: 'MEI' },
+  ],
   Lyon: [
     { name: 'Cherki', position: 'MEI' },
     { name: 'Tolisso', position: 'MEI' },
@@ -531,6 +641,11 @@ const calendarFootballAssistPlayersByTeam: Record<string, TeamPlayerProfile[]> =
     { name: 'Curtis Jones', position: 'MEI' },
   ],
   'Man. City': [
+    { name: 'De Bruyne', position: 'MEI' },
+    { name: 'Foden', position: 'MEI' },
+    { name: 'Bernardo Silva', position: 'MEI' },
+  ],
+  'Manchester City': [
     { name: 'De Bruyne', position: 'MEI' },
     { name: 'Foden', position: 'MEI' },
     { name: 'Bernardo Silva', position: 'MEI' },
@@ -685,6 +800,96 @@ const calendarFootballAssistPlayersByTeam: Record<string, TeamPlayerProfile[]> =
     { name: 'Jadson', position: 'MEI' },
     { name: 'Jean Carlos', position: 'MEI' },
   ],
+  'Deportes Tolima': [
+    { name: 'Yeison Guzman', position: 'MEI' },
+    { name: 'Juan Pablo Nieto', position: 'MEI' },
+    { name: 'Cristian Trujillo', position: 'MEI' },
+  ],
+  'Independiente del Valle': [
+    { name: 'Junior Sornoza', position: 'MEI' },
+    { name: 'Patrik Mercado', position: 'MEI' },
+    { name: 'Jordy Alcivar', position: 'MEI' },
+  ],
+  'Universidad Católica': [
+    { name: 'Cesar Pinares', position: 'MEI' },
+    { name: 'Cristian Cuevas', position: 'MEI' },
+    { name: 'Jader Gentil', position: 'MEI' },
+  ],
+  'Estudiantes de La Plata': [
+    { name: 'Jose Sosa', position: 'MEI' },
+    { name: 'Santiago Ascacibar', position: 'MEI' },
+    { name: 'Fernando Zuqui', position: 'MEI' },
+  ],
+  Platense: [
+    { name: 'Guido Mainero', position: 'MEI' },
+    { name: 'Franco Baldassarra', position: 'MEI' },
+    { name: 'Lucas Ocampo', position: 'MEI' },
+  ],
+  'Coquimbo Unido': [
+    { name: 'Sebastian Galani', position: 'MEI' },
+    { name: 'Alejandro Camargo', position: 'MEI' },
+    { name: 'Matias Palavecino', position: 'MEI' },
+  ],
+  Bolívar: [
+    { name: 'Ramiro Vaca', position: 'MEI' },
+    { name: 'Leonel Justiniano', position: 'MEI' },
+    { name: 'Fernando Saucedo', position: 'MEI' },
+  ],
+  'Cerro Porteño': [
+    { name: 'Cecilio Dominguez', position: 'MEI' },
+    { name: 'Federico Carrizo', position: 'MEI' },
+    { name: 'Jorge Morel', position: 'MEI' },
+  ],
+  'LDU Quito': [
+    { name: 'Ezequiel Piovi', position: 'MEI' },
+    { name: 'Lisandro Alzugaray', position: 'MEI' },
+    { name: 'Jhojan Julio', position: 'MEI' },
+  ],
+  'Atlético Nacional': [
+    { name: 'Edwin Cardona', position: 'MEI' },
+    { name: 'Sebastian Guzman', position: 'MEI' },
+    { name: 'Juan Manuel Zapata', position: 'MEI' },
+  ],
+  Peñarol: [
+    { name: 'Leonardo Fernandez', position: 'MEI' },
+    { name: 'Eduardo Darias', position: 'MEI' },
+    { name: 'Damián Garcia', position: 'MEI' },
+  ],
+  'Alianza Lima': [
+    { name: 'Sergio Peña', position: 'MEI' },
+    { name: 'Pablo Lavandeira', position: 'MEI' },
+    { name: 'Jesus Castillo', position: 'MEI' },
+  ],
+  Universitario: [
+    { name: 'Rodrigo Ureña', position: 'MEI' },
+    { name: 'Jairo Concha', position: 'MEI' },
+    { name: 'Andy Polo', position: 'MEI' },
+  ],
+  'Sporting Cristal': [
+    { name: 'Yoshimar Yotun', position: 'MEI' },
+    { name: 'Leandro Sosa', position: 'MEI' },
+    { name: 'Gustavo Cazonatti', position: 'MEI' },
+  ],
+  'Barcelona SC': [
+    { name: 'Damián Diaz', position: 'MEI' },
+    { name: 'Fernando Gaibor', position: 'MEI' },
+    { name: 'Leonai Souza', position: 'MEI' },
+  ],
+  'Deportivo Táchira': [
+    { name: 'Maurice Cova', position: 'MEI' },
+    { name: 'Carlos Robles', position: 'MEI' },
+    { name: 'Yerson Chacon', position: 'MEI' },
+  ],
+  Carabobo: [
+    { name: 'Gustavo Gonzalez', position: 'MEI' },
+    { name: 'Carlos Sosa', position: 'MEI' },
+    { name: 'Francisco Flores', position: 'MEI' },
+  ],
+  Melgar: [
+    { name: 'Tomas Martinez', position: 'MEI' },
+    { name: 'Horacio Orzan', position: 'MEI' },
+    { name: 'Cristian Bordacahar', position: 'MEI' },
+  ],
 }
 
 const calendarBasketballPointPlayersByTeam: Record<string, TeamPlayerProfile[]> = {
@@ -692,71 +897,85 @@ const calendarBasketballPointPlayersByTeam: Record<string, TeamPlayerProfile[]> 
     { name: 'Lauri Markkanen', position: 'ALA' },
     { name: 'Keyonte George', position: 'ARM' },
     { name: 'Collin Sexton', position: 'ARM' },
+    { name: 'Walker Kessler', position: 'PIV' },
   ],
   Thunder: [
     { name: 'Shai Gilgeous-Alexander', position: 'ARM' },
     { name: 'Jalen Williams', position: 'ALA' },
     { name: 'Chet Holmgren', position: 'PIV' },
+    { name: 'Luguentz Dort', position: 'ALA' },
   ],
   Knicks: [
     { name: 'Jalen Brunson', position: 'ARM' },
     { name: 'Karl-Anthony Towns', position: 'PIV' },
     { name: 'Mikal Bridges', position: 'ALA' },
+    { name: 'OG Anunoby', position: 'ALA' },
   ],
   Magic: [
     { name: 'Paolo Banchero', position: 'ALA' },
     { name: 'Franz Wagner', position: 'ALA' },
     { name: 'Jalen Suggs', position: 'ARM' },
+    { name: 'Wendell Carter Jr.', position: 'PIV' },
   ],
   Bulls: [
     { name: 'Coby White', position: 'ARM' },
     { name: 'Josh Giddey', position: 'ARM' },
     { name: 'Nikola Vucevic', position: 'PIV' },
+    { name: 'Ayo Dosunmu', position: 'ARM' },
   ],
   Heat: [
     { name: 'Tyler Herro', position: 'ARM' },
     { name: 'Bam Adebayo', position: 'PIV' },
     { name: 'Jaime Jaquez Jr.', position: 'ALA' },
+    { name: 'Andrew Wiggins', position: 'ALA' },
   ],
   '76ers': [
     { name: 'Tyrese Maxey', position: 'ARM' },
     { name: 'Joel Embiid', position: 'PIV' },
     { name: 'Paul George', position: 'ALA' },
+    { name: 'Kelly Oubre Jr.', position: 'ALA' },
   ],
   Celtics: [
     { name: 'Jayson Tatum', position: 'ALA' },
     { name: 'Jaylen Brown', position: 'ALA' },
     { name: 'Derrick White', position: 'ARM' },
+    { name: 'Jrue Holiday', position: 'ARM' },
   ],
   Nuggets: [
     { name: 'Nikola Jokic', position: 'PIV' },
     { name: 'Jamal Murray', position: 'ARM' },
     { name: 'Michael Porter Jr.', position: 'ALA' },
+    { name: 'Aaron Gordon', position: 'ALA' },
   ],
   Suns: [
     { name: 'Devin Booker', position: 'ARM' },
     { name: 'Kevin Durant', position: 'ALA' },
     { name: 'Bradley Beal', position: 'ARM' },
+    { name: 'Tyus Jones', position: 'ARM' },
   ],
   Mavericks: [
     { name: 'Kyrie Irving', position: 'ARM' },
     { name: 'Anthony Davis', position: 'PIV' },
     { name: 'Klay Thompson', position: 'ALA' },
+    { name: 'P.J. Washington', position: 'ALA' },
   ],
   Spurs: [
     { name: 'Victor Wembanyama', position: 'PIV' },
     { name: 'DeAaron Fox', position: 'ARM' },
     { name: 'Devin Vassell', position: 'ALA' },
+    { name: 'Stephon Castle', position: 'ARM' },
   ],
   Clippers: [
     { name: 'Kawhi Leonard', position: 'ALA' },
     { name: 'James Harden', position: 'ARM' },
     { name: 'Norman Powell', position: 'ALA' },
+    { name: 'Ivica Zubac', position: 'PIV' },
   ],
   Kings: [
     { name: 'DeMar DeRozan', position: 'ALA' },
     { name: 'Zach LaVine', position: 'ALA' },
     { name: 'Domantas Sabonis', position: 'PIV' },
+    { name: 'Malik Monk', position: 'ARM' },
   ],
   'Southern Wesleyan': [
     { name: 'Jacob Smith', position: 'ARM' },
@@ -915,66 +1134,85 @@ const calendarBasketballAssistPlayersByTeam: Record<string, TeamPlayerProfile[]>
     { name: 'Keyonte George', position: 'ARM' },
     { name: 'Isaiah Collier', position: 'ARM' },
     { name: 'Collin Sexton', position: 'ARM' },
+    { name: 'Lauri Markkanen', position: 'ALA' },
   ],
   Thunder: [
     { name: 'Shai Gilgeous-Alexander', position: 'ARM' },
     { name: 'Jalen Williams', position: 'ALA' },
     { name: 'Alex Caruso', position: 'ARM' },
+    { name: 'Chet Holmgren', position: 'PIV' },
   ],
   Knicks: [
     { name: 'Jalen Brunson', position: 'ARM' },
     { name: 'Josh Hart', position: 'ALA' },
     { name: 'Miles McBride', position: 'ARM' },
+    { name: 'Karl-Anthony Towns', position: 'PIV' },
   ],
   Magic: [
     { name: 'Paolo Banchero', position: 'ALA' },
     { name: 'Jalen Suggs', position: 'ARM' },
     { name: 'Anthony Black', position: 'ARM' },
+    { name: 'Franz Wagner', position: 'ALA' },
   ],
   Bulls: [
     { name: 'Josh Giddey', position: 'ARM' },
     { name: 'Coby White', position: 'ARM' },
     { name: 'Ayo Dosunmu', position: 'ARM' },
+    { name: 'Nikola Vucevic', position: 'PIV' },
   ],
   Heat: [
     { name: 'Tyler Herro', position: 'ARM' },
     { name: 'Bam Adebayo', position: 'PIV' },
     { name: 'Terry Rozier', position: 'ARM' },
+    { name: 'Jaime Jaquez Jr.', position: 'ALA' },
+  ],
+  '76ers': [
+    { name: 'Tyrese Maxey', position: 'ARM' },
+    { name: 'Paul George', position: 'ALA' },
+    { name: 'Joel Embiid', position: 'PIV' },
+    { name: 'Kelly Oubre Jr.', position: 'ALA' },
   ],
   Celtics: [
     { name: 'Derrick White', position: 'ARM' },
     { name: 'Jrue Holiday', position: 'ARM' },
     { name: 'Jayson Tatum', position: 'ALA' },
+    { name: 'Jaylen Brown', position: 'ALA' },
   ],
   Nuggets: [
     { name: 'Nikola Jokic', position: 'PIV' },
     { name: 'Jamal Murray', position: 'ARM' },
     { name: 'Aaron Gordon', position: 'ALA' },
+    { name: 'Michael Porter Jr.', position: 'ALA' },
   ],
   Suns: [
     { name: 'Devin Booker', position: 'ARM' },
     { name: 'Tyus Jones', position: 'ARM' },
     { name: 'Bradley Beal', position: 'ARM' },
+    { name: 'Kevin Durant', position: 'ALA' },
   ],
   Clippers: [
     { name: 'James Harden', position: 'ARM' },
     { name: 'Kawhi Leonard', position: 'ALA' },
     { name: 'Kris Dunn', position: 'ARM' },
+    { name: 'Norman Powell', position: 'ALA' },
   ],
   Kings: [
     { name: 'Domantas Sabonis', position: 'PIV' },
     { name: 'Malik Monk', position: 'ARM' },
     { name: 'DeMar DeRozan', position: 'ALA' },
+    { name: 'Zach LaVine', position: 'ALA' },
   ],
   Mavericks: [
     { name: 'Kyrie Irving', position: 'ARM' },
     { name: 'Spencer Dinwiddie', position: 'ARM' },
     { name: 'Anthony Davis', position: 'PIV' },
+    { name: 'P.J. Washington', position: 'ALA' },
   ],
   Spurs: [
     { name: 'DeAaron Fox', position: 'ARM' },
     { name: 'Stephon Castle', position: 'ARM' },
     { name: 'Victor Wembanyama', position: 'PIV' },
+    { name: 'Devin Vassell', position: 'ALA' },
   ],
   Lafayette: [
     { name: 'Devin Hines', position: 'ARM' },
@@ -1008,6 +1246,36 @@ const calendarBasketballAssistPlayersByTeam: Record<string, TeamPlayerProfile[]>
   ],
 }
 
+const calendarPlayerTeamAliases: Record<string, string> = {
+  'Utah Jazz': 'Jazz',
+  'Oklahoma City Thunder': 'Thunder',
+  'New York Knicks': 'Knicks',
+  'Orlando Magic': 'Magic',
+  'Chicago Bulls': 'Bulls',
+  'Miami Heat': 'Heat',
+  'Golden State Warriors': 'Warriors',
+  'Los Angeles Lakers': 'Lakers',
+  'Philadelphia 76ers': '76ers',
+  'Boston Celtics': 'Celtics',
+  'Denver Nuggets': 'Nuggets',
+  'Phoenix Suns': 'Suns',
+  'Dallas Mavericks': 'Mavericks',
+  'San Antonio Spurs': 'Spurs',
+  'Los Angeles Clippers': 'Clippers',
+  'LA Clippers': 'Clippers',
+  'Sacramento Kings': 'Kings',
+}
+
+const getCalendarTeamPlayerProfiles = (
+  playersByTeam: Record<string, TeamPlayerProfile[]>,
+  teamName: string
+) => {
+  const trimmedTeamName = teamName.trim()
+  const alias = calendarPlayerTeamAliases[trimmedTeamName]
+
+  return playersByTeam[trimmedTeamName] ?? (alias ? playersByTeam[alias] : undefined) ?? []
+}
+
 const isCalendarFootballPlayerPropsMarket = (marketId: string) =>
   marketId === CALENDAR_FOOTBALL_FINISHING_MARKET_ID ||
   marketId === CALENDAR_FOOTBALL_ASSISTS_MARKET_ID
@@ -1020,6 +1288,9 @@ const isCalendarPlayerPropsMarket = (sport: string, marketId: string) =>
   sport === 'basquete'
     ? isCalendarBasketballPlayerPropsMarket(marketId)
     : sport === 'futebol' && isCalendarFootballPlayerPropsMarket(marketId)
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const isCalendarPlayerPropsMarketForSport = isCalendarPlayerPropsMarket
 
 const getCalendarFootballPlayerProps = (
   event: CompetitionEvent,
@@ -1046,7 +1317,7 @@ const getCalendarFootballPlayerProps = (
   const uniquePlayerNames = new Set<string>()
 
   return orderedPlayers.reduce<MatchPlayerProp[]>((players, player) => {
-    if (players.length >= CALENDAR_PLAYER_PROPS_PER_EVENT || uniquePlayerNames.has(player.name)) return players
+    if (players.length >= CALENDAR_FOOTBALL_PLAYER_PROPS_PER_EVENT || uniquePlayerNames.has(player.name)) return players
 
     uniquePlayerNames.add(player.name)
     players.push({
@@ -1075,23 +1346,31 @@ const getCalendarBasketballPlayerProps = (
     ? calendarBasketballAssistOptionSets
     : calendarBasketballPointOptionSets
   const homePlayers = (isAssistMarket
-    ? calendarBasketballAssistPlayersByTeam[event.homeName]
-    : calendarBasketballPointPlayersByTeam[event.homeName]) ?? calendarBasketballPointPlayersByTeam[event.homeName] ?? []
+    ? getCalendarTeamPlayerProfiles(calendarBasketballAssistPlayersByTeam, event.homeName)
+    : getCalendarTeamPlayerProfiles(calendarBasketballPointPlayersByTeam, event.homeName))
   const awayPlayers = (isAssistMarket
-    ? calendarBasketballAssistPlayersByTeam[event.awayName]
-    : calendarBasketballPointPlayersByTeam[event.awayName]) ?? calendarBasketballPointPlayersByTeam[event.awayName] ?? []
+    ? getCalendarTeamPlayerProfiles(calendarBasketballAssistPlayersByTeam, event.awayName)
+    : getCalendarTeamPlayerProfiles(calendarBasketballPointPlayersByTeam, event.awayName))
+  const homeFallbackPlayers = homePlayers.length > 0
+    ? homePlayers
+    : getCalendarTeamPlayerProfiles(calendarBasketballPointPlayersByTeam, event.homeName)
+  const awayFallbackPlayers = awayPlayers.length > 0
+    ? awayPlayers
+    : getCalendarTeamPlayerProfiles(calendarBasketballPointPlayersByTeam, event.awayName)
   const orderedPlayers = [
-    ...homePlayers.slice(0, 1).map((player) => ({ ...player, teamName: event.homeName, teamIcon: homeIcon, teamSide: 'home' as const })),
-    ...awayPlayers.slice(0, 1).map((player) => ({ ...player, teamName: event.awayName, teamIcon: awayIcon, teamSide: 'away' as const })),
-    ...homePlayers.slice(1, 2).map((player) => ({ ...player, teamName: event.homeName, teamIcon: homeIcon, teamSide: 'home' as const })),
-    ...awayPlayers.slice(1, 2).map((player) => ({ ...player, teamName: event.awayName, teamIcon: awayIcon, teamSide: 'away' as const })),
-    ...homePlayers.slice(2).map((player) => ({ ...player, teamName: event.homeName, teamIcon: homeIcon, teamSide: 'home' as const })),
-    ...awayPlayers.slice(2).map((player) => ({ ...player, teamName: event.awayName, teamIcon: awayIcon, teamSide: 'away' as const })),
+    ...homeFallbackPlayers.slice(0, 1).map((player) => ({ ...player, teamName: event.homeName, teamIcon: homeIcon, teamSide: 'home' as const })),
+    ...awayFallbackPlayers.slice(0, 1).map((player) => ({ ...player, teamName: event.awayName, teamIcon: awayIcon, teamSide: 'away' as const })),
+    ...homeFallbackPlayers.slice(1, 2).map((player) => ({ ...player, teamName: event.homeName, teamIcon: homeIcon, teamSide: 'home' as const })),
+    ...awayFallbackPlayers.slice(1, 2).map((player) => ({ ...player, teamName: event.awayName, teamIcon: awayIcon, teamSide: 'away' as const })),
+    ...homeFallbackPlayers.slice(2, 3).map((player) => ({ ...player, teamName: event.homeName, teamIcon: homeIcon, teamSide: 'home' as const })),
+    ...awayFallbackPlayers.slice(2, 3).map((player) => ({ ...player, teamName: event.awayName, teamIcon: awayIcon, teamSide: 'away' as const })),
+    ...homeFallbackPlayers.slice(3).map((player) => ({ ...player, teamName: event.homeName, teamIcon: homeIcon, teamSide: 'home' as const })),
+    ...awayFallbackPlayers.slice(3).map((player) => ({ ...player, teamName: event.awayName, teamIcon: awayIcon, teamSide: 'away' as const })),
   ]
   const uniquePlayerNames = new Set<string>()
 
   return orderedPlayers.reduce<MatchPlayerProp[]>((players, player) => {
-    if (players.length >= CALENDAR_PLAYER_PROPS_PER_EVENT || uniquePlayerNames.has(player.name)) return players
+    if (players.length >= CALENDAR_BASKETBALL_PLAYER_PROPS_PER_EVENT || uniquePlayerNames.has(player.name)) return players
 
     uniquePlayerNames.add(player.name)
     players.push({
@@ -1119,6 +1398,24 @@ const getCalendarPlayerProps = (
   sport === 'basquete'
     ? getCalendarBasketballPlayerProps(event, marketId, homeIcon, awayIcon)
     : getCalendarFootballPlayerProps(event, marketId, homeIcon, awayIcon)
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const getCalendarPlayerPropsForEvent = (
+  event: CompetitionEvent,
+  sport: string,
+  marketId: string
+): MatchPlayerProp[] => {
+  if (!isCalendarPlayerPropsMarket(sport, marketId)) return []
+
+  const homeIcon = sport === 'tenis'
+    ? getTennisPlayerCountryIcon(event.homeName, event.homeIcon)
+    : getTeamLogo(event.homeName)
+  const awayIcon = sport === 'tenis'
+    ? getTennisPlayerCountryIcon(event.awayName, event.awayIcon)
+    : getTeamLogo(event.awayName)
+
+  return getCalendarPlayerProps(event, sport, marketId, homeIcon, awayIcon)
+}
 
 function getCalendarSportFallbackIcon(sport: string): string {
   if (sport === 'basquete') return iconBasquete
@@ -1564,88 +1861,200 @@ export const championships: Championship[] = [
     ],
   },
   {
+    id: 'libertadores',
+    name: 'Libertadores',
+    flag: getCompetitionBadge('fut-libertadores', flagMundo),
+    sport: 'futebol',
+    events: [
+      {
+        id: 'libertadores-live-1',
+        dateTime: '2T 18:32',
+        isLive: true,
+        earlyPayout: false,
+        homeScore: 1,
+        awayScore: 1,
+        homeName: 'Deportes Tolima',
+        homeIcon: getTeamLogo('Deportes Tolima', iconFutebol),
+        awayName: 'Independiente del Valle',
+        awayIcon: getTeamLogo('Independiente del Valle', iconFutebol),
+        odds: { home: '2.55x', draw: '3.10x', away: '2.75x' },
+        doubleChanceOdds: { homeOrDraw: '1.42x', homeOrAway: '1.35x', awayOrDraw: '1.48x' },
+        bothTeamsScoreOdds: { yes: '1.66x', no: '2.12x' },
+        totalGoalsOdds: { line: 2.5, under: '1.78x', over: '1.98x' },
+        totalCornersOdds: { line: 9.5, under: '1.84x', over: '1.92x' },
+      },
+      {
+        id: 'libertadores-live-2',
+        dateTime: '1T 31:08',
+        isLive: true,
+        earlyPayout: false,
+        homeScore: 2,
+        awayScore: 0,
+        homeName: 'Bolívar',
+        homeIcon: getTeamLogo('Bolívar', iconFutebol),
+        awayName: 'Cerro Porteño',
+        awayIcon: getTeamLogo('Cerro Porteño', iconFutebol),
+        odds: { home: '1.72x', draw: '3.60x', away: '4.40x' },
+        doubleChanceOdds: { homeOrDraw: '1.18x', homeOrAway: '1.22x', awayOrDraw: '2.05x' },
+        bothTeamsScoreOdds: { yes: '1.82x', no: '1.94x' },
+        totalGoalsOdds: { line: 2.5, under: '1.92x', over: '1.84x' },
+        totalCornersOdds: { line: 10.5, under: '1.88x', over: '1.88x' },
+      },
+      {
+        id: 'libertadores-live-3',
+        dateTime: '2T 07:45',
+        isLive: true,
+        earlyPayout: false,
+        homeScore: 0,
+        awayScore: 1,
+        homeName: 'Atlético Nacional',
+        homeIcon: getTeamLogo('Atlético Nacional', iconFutebol),
+        awayName: 'Peñarol',
+        awayIcon: getTeamLogo('Peñarol', iconFutebol),
+        odds: { home: '3.20x', draw: '3.05x', away: '2.25x' },
+        doubleChanceOdds: { homeOrDraw: '1.58x', homeOrAway: '1.32x', awayOrDraw: '1.28x' },
+        bothTeamsScoreOdds: { yes: '1.74x', no: '2.02x' },
+        totalGoalsOdds: { line: 2.5, under: '1.70x', over: '2.08x' },
+        totalCornersOdds: { line: 9.5, under: '1.82x', over: '1.96x' },
+      },
+      {
+        id: 'libertadores-today-1',
+        dateTime: 'Hoje, 21:30',
+        homeName: 'Universidad Católica',
+        homeIcon: getTeamLogo('Universidad Católica', iconFutebol),
+        awayName: 'Estudiantes de La Plata',
+        awayIcon: getTeamLogo('Estudiantes de La Plata', iconFutebol),
+        odds: { home: '2.35x', draw: '3.20x', away: '2.95x' },
+      },
+      {
+        id: 'libertadores-today-2',
+        dateTime: 'Hoje, 22:00',
+        homeName: 'LDU Quito',
+        homeIcon: getTeamLogo('LDU Quito', iconFutebol),
+        awayName: 'Alianza Lima',
+        awayIcon: getTeamLogo('Alianza Lima', iconFutebol),
+        odds: { home: '1.88x', draw: '3.35x', away: '4.10x' },
+      },
+      {
+        id: 'libertadores-today-3',
+        dateTime: 'Hoje, 23:15',
+        homeName: 'Sporting Cristal',
+        homeIcon: getTeamLogo('Sporting Cristal', iconFutebol),
+        awayName: 'Barcelona SC',
+        awayIcon: getTeamLogo('Barcelona SC', iconFutebol),
+        odds: { home: '2.20x', draw: '3.25x', away: '3.15x' },
+      },
+      {
+        id: 'libertadores-tomorrow-1',
+        dateTime: 'Amanhã, 19:00',
+        homeName: 'Platense',
+        homeIcon: getTeamLogo('Platense', iconFutebol),
+        awayName: 'Coquimbo Unido',
+        awayIcon: getTeamLogo('Coquimbo Unido', iconFutebol),
+        odds: { home: '2.05x', draw: '3.30x', away: '3.45x' },
+      },
+      {
+        id: 'libertadores-tomorrow-2',
+        dateTime: 'Amanhã, 21:30',
+        homeName: 'Deportivo Táchira',
+        homeIcon: getTeamLogo('Deportivo Táchira', iconFutebol),
+        awayName: 'Carabobo',
+        awayIcon: getTeamLogo('Carabobo', iconFutebol),
+        odds: { home: '2.45x', draw: '3.10x', away: '2.85x' },
+      },
+      {
+        id: 'libertadores-tomorrow-3',
+        dateTime: 'Amanhã, 22:45',
+        homeName: 'Melgar',
+        homeIcon: getTeamLogo('Melgar', iconFutebol),
+        awayName: 'Universitario',
+        awayIcon: getTeamLogo('Universitario', iconFutebol),
+        odds: { home: '2.30x', draw: '3.20x', away: '3.05x' },
+      },
+    ],
+  },
+  {
     id: 'champions-league',
     name: 'Champions League',
     flag: flagMundo,
     sport: 'futebol',
     events: [
       {
-        id: '3',
-        dateTime: '1T 12:23',
-        isLive: true,
-        earlyPayout: false,
-        homeScore: 0,
-        awayScore: 0,
-        homeName: 'Atlético Madrid',
-        homeIcon: escudoAtleticoMadrid,
-        awayName: 'Inter',
-        awayIcon: escudoInterItalia,
-        odds: { home: '2.35x', draw: '3.20x', away: '2.90x' },
-        doubleChanceOdds: { homeOrDraw: '1.35x', homeOrAway: '1.30x', awayOrDraw: '1.52x' },
-        bothTeamsScoreOdds: { yes: '1.70x', no: '2.05x' },
-        totalGoalsOdds: { line: 2.5, under: '1.90x', over: '1.85x' },
-        totalCornersOdds: { line: 10.5, under: '1.80x', over: '1.95x' },
-      },
-      {
-        id: '4',
-        dateTime: '2T 34:15',
+        id: 'ucl-psg-city-live',
+        dateTime: '1T 34:22',
         isLive: true,
         earlyPayout: false,
         homeScore: 2,
-        awayScore: 2,
-        homeName: 'PSG',
-        homeIcon: escudoPSG,
-        awayName: 'Lyon',
-        awayIcon: escudoLyon,
-        odds: { home: '1.65x', draw: '4.00x', away: '4.75x' },
-        doubleChanceOdds: { homeOrDraw: '1.18x', homeOrAway: '1.22x', awayOrDraw: '2.15x' },
-        bothTeamsScoreOdds: { yes: '1.40x', no: '2.85x' },
-        totalGoalsOdds: { line: 4.5, under: '1.45x', over: '2.70x' },
-        totalCornersOdds: { line: 10.5, under: '1.70x', over: '2.05x' },
+        awayScore: 1,
+        homeName: 'Paris Saint-Germain',
+        homeIcon: getTeamLogo('Paris Saint-Germain', iconFutebol),
+        awayName: 'Manchester City',
+        awayIcon: getTeamLogo('Manchester City', iconFutebol),
+        odds: { home: '1.78x', draw: '3.50x', away: '2.10x' },
+        doubleChanceOdds: { homeOrDraw: '1.24x', homeOrAway: '1.20x', awayOrDraw: '1.78x' },
+        bothTeamsScoreOdds: { yes: '1.52x', no: '2.38x' },
+        totalGoalsOdds: { line: 2.5, under: '1.95x', over: '1.78x' },
+        totalCornersOdds: { line: 9.5, under: '1.88x', over: '1.88x' },
       },
       {
-        id: '12',
-        dateTime: '1T 08:47',
-        isLive: true,
-        earlyPayout: false,
-        homeScore: 0,
-        awayScore: 0,
-        homeName: 'Newcastle',
-        homeIcon: escudoNewcastle,
-        awayName: 'Napoli',
-        awayIcon: escudoNapoli,
-        odds: { home: '2.60x', draw: '3.30x', away: '2.70x' },
-        doubleChanceOdds: { homeOrDraw: '1.45x', homeOrAway: '1.32x', awayOrDraw: '1.48x' },
-        bothTeamsScoreOdds: { yes: '1.75x', no: '2.00x' },
-        totalGoalsOdds: { line: 2.5, under: '1.85x', over: '1.90x' },
-        totalCornersOdds: { line: 10.5, under: '1.88x', over: '1.88x' },
-      },
-      {
-        id: 'cal-f-4',
-        dateTime: 'Hoje, 16:00',
+        id: 'ucl-real-bayern',
+        dateTime: '21/jan (15:00)',
+        earlyPayout: true,
         homeName: 'Real Madrid',
         homeIcon: escudoReal,
-        awayName: 'Barcelona',
-        awayIcon: escudoBarca,
-        odds: { home: '2.20x', draw: '3.40x', away: '3.10x' },
+        awayName: 'Bayern',
+        awayIcon: escudoBayerMunique,
+        odds: { home: '2.15x', draw: '3.40x', away: '3.10x' },
       },
       {
-        id: 'cal-f-5',
-        dateTime: 'Hoje, 16:00',
-        homeName: 'Liverpool',
-        homeIcon: escudoLiverpool,
-        awayName: 'Man. City',
-        awayIcon: escudoManchesterCity,
-        odds: { home: '2.40x', draw: '3.50x', away: '2.80x' },
+        id: 'ucl-barca-inter',
+        dateTime: '21/jan (15:00)',
+        earlyPayout: true,
+        homeName: 'Barcelona',
+        homeIcon: escudoBarca,
+        awayName: 'Inter',
+        awayIcon: escudoInterItalia,
+        odds: { home: '1.95x', draw: '3.55x', away: '3.75x' },
       },
       {
-        id: 'cal-f-6',
-        dateTime: 'Amanhã, 16:00',
+        id: 'ucl-arsenal-liverpool',
+        dateTime: '21/jan (17:30)',
+        earlyPayout: true,
+        homeName: 'Arsenal',
+        homeIcon: getTeamLogo('Arsenal', iconFutebol),
+        awayName: 'Liverpool',
+        awayIcon: getTeamLogo('Liverpool', iconFutebol),
+        odds: { home: '2.25x', draw: '3.35x', away: '2.95x' },
+      },
+      {
+        id: 'ucl-chelsea-napoli',
+        dateTime: '22/jan (15:00)',
+        earlyPayout: true,
+        homeName: 'Chelsea',
+        homeIcon: getTeamLogo('Chelsea', iconFutebol),
+        awayName: 'Napoli',
+        awayIcon: getTeamLogo('Napoli', iconFutebol),
+        odds: { home: '2.35x', draw: '3.25x', away: '2.85x' },
+      },
+      {
+        id: 'ucl-lyon-newcastle',
+        dateTime: '22/jan (17:30)',
+        earlyPayout: true,
+        homeName: 'Lyon',
+        homeIcon: getTeamLogo('Lyon', iconFutebol),
+        awayName: 'Newcastle',
+        awayIcon: getTeamLogo('Newcastle', iconFutebol),
+        odds: { home: '2.80x', draw: '3.40x', away: '2.38x' },
+      },
+      {
+        id: 'ucl-benfica-ajax',
+        dateTime: '22/jan (15:00)',
+        earlyPayout: true,
         homeName: 'Benfica',
-        homeIcon: escudoBenfica,
+        homeIcon: getTeamLogo('Benfica', iconFutebol),
         awayName: 'Ajax',
-        awayIcon: escudoAjax,
-        odds: { home: '2.10x', draw: '3.40x', away: '3.30x' },
+        awayIcon: getTeamLogo('Ajax', iconFutebol),
+        odds: { home: '2.05x', draw: '3.45x', away: '3.20x' },
       },
     ],
   },
@@ -1861,6 +2270,59 @@ export const championships: Championship[] = [
         bothTeamsScoreOdds: { yes: '1.50x', no: '2.45x' },
         totalGoalsOdds: { line: 3.5, under: '1.40x', over: '2.90x' },
         totalCornersOdds: { line: 9.5, under: '1.78x', over: '1.98x' },
+      },
+      {
+        id: 'mls-pre-1',
+        dateTime: 'Hoje, 20:30',
+        homeName: 'Seattle Sounders',
+        homeIcon: getTeamLogo('Seattle Sounders', iconFutebol),
+        awayName: 'LA Galaxy',
+        awayIcon: getTeamLogo('LA Galaxy', iconFutebol),
+        odds: { home: '2.05x', draw: '3.50x', away: '3.35x' },
+        doubleChanceOdds: { homeOrDraw: '1.30x', homeOrAway: '1.28x', awayOrDraw: '1.72x' },
+        bothTeamsScoreOdds: { yes: '1.64x', no: '2.18x' },
+        totalGoalsOdds: { line: 2.5, under: '1.90x', over: '1.84x' },
+        totalCornersOdds: { line: 9.5, under: '1.86x', over: '1.90x' },
+      },
+      {
+        id: 'mls-pre-2',
+        dateTime: 'Hoje, 22:00',
+        homeName: 'Atlanta United',
+        homeIcon: getTeamLogo('Atlanta United', iconFutebol),
+        awayName: 'Portland Timbers',
+        awayIcon: getTeamLogo('Portland Timbers', iconFutebol),
+        odds: { home: '2.22x', draw: '3.45x', away: '3.05x' },
+        doubleChanceOdds: { homeOrDraw: '1.36x', homeOrAway: '1.29x', awayOrDraw: '1.62x' },
+        bothTeamsScoreOdds: { yes: '1.60x', no: '2.25x' },
+        totalGoalsOdds: { line: 2.5, under: '1.88x', over: '1.86x' },
+        totalCornersOdds: { line: 10.5, under: '1.80x', over: '1.96x' },
+      },
+      {
+        id: 'mls-pre-3',
+        dateTime: 'Amanhã, 19:00',
+        earlyPayout: false,
+        homeName: 'Orlando City',
+        homeIcon: getTeamLogo('Orlando City', iconFutebol),
+        awayName: 'FC Dallas',
+        awayIcon: getTeamLogo('FC Dallas', iconFutebol),
+        odds: { home: '1.98x', draw: '3.35x', away: '3.70x' },
+        doubleChanceOdds: { homeOrDraw: '1.26x', homeOrAway: '1.30x', awayOrDraw: '1.78x' },
+        bothTeamsScoreOdds: { yes: '1.74x', no: '2.02x' },
+        totalGoalsOdds: { line: 2.5, under: '1.78x', over: '1.96x' },
+        totalCornersOdds: { line: 9.5, under: '1.88x', over: '1.88x' },
+      },
+      {
+        id: 'mls-pre-4',
+        dateTime: 'Amanhã, 21:30',
+        homeName: 'Houston Dynamo',
+        homeIcon: getTeamLogo('Houston Dynamo', iconFutebol),
+        awayName: 'Charlotte FC',
+        awayIcon: getTeamLogo('Charlotte FC', iconFutebol),
+        odds: { home: '2.28x', draw: '3.30x', away: '3.00x' },
+        doubleChanceOdds: { homeOrDraw: '1.38x', homeOrAway: '1.31x', awayOrDraw: '1.58x' },
+        bothTeamsScoreOdds: { yes: '1.70x', no: '2.08x' },
+        totalGoalsOdds: { line: 2.5, under: '1.80x', over: '1.92x' },
+        totalCornersOdds: { line: 10.5, under: '1.82x', over: '1.94x' },
       },
     ],
   },
@@ -2325,6 +2787,7 @@ export const championships: Championship[] = [
 export const competitionToChampionship: Record<string, string> = {
   'fut-brasileiro': 'brasil-serie-a',
   'fut-brasileirao-a': 'brasil-serie-a',
+  'fut-libertadores': 'libertadores',
   'fut-champions': 'champions-league',
   'fut-premier-league': 'premier-league',
   'fut-laliga': 'la-liga',
@@ -2408,37 +2871,45 @@ export function getCalendarDisplayedEventGroups({
   competitionId,
   liveOnly = false,
   liveFilter = false,
+  upcomingOnly = false,
 }: {
   sportFilter?: string | null
   competitionId?: string | null
   liveOnly?: boolean
   liveFilter?: boolean
+  upcomingOnly?: boolean
 } = {}): {
   mappedCompetitionId: string | null
   groups: DisplayedCompetitionEventGroup[]
 } {
   const { mappedCompetitionId, championships: filtered } = getCalendarChampionships(sportFilter, competitionId)
   const shouldFilterLive = liveOnly || liveFilter
+  const shouldFilterUpcoming = upcomingOnly
+  const shouldFilterByStatus = shouldFilterLive || shouldFilterUpcoming
   const competitionScoped = mappedCompetitionId
     ? filtered.map((league) => getCompetitionPageLeague(league, mappedCompetitionId))
     : filtered
-  const filteredByLive = shouldFilterLive
+  const filteredByStatus = shouldFilterByStatus
     ? competitionScoped
         .map((championship) => ({
           ...championship,
-          events: championship.events.filter((event) => event.isLive),
+          events: championship.events.filter((event) => (
+            shouldFilterLive ? event.isLive : !event.isLive
+          )),
         }))
         .filter((championship) => championship.events.length > 0)
     : competitionScoped
-  const leaguesToDisplay = filteredByLive.slice(0, mappedCompetitionId ? filteredByLive.length : 5)
+  const leaguesToDisplay = filteredByStatus.slice(0, mappedCompetitionId || shouldFilterByStatus ? filteredByStatus.length : 5)
 
   const groups = leaguesToDisplay.map((league) => {
-    const events = shouldFilterLive
-      ? league.events.filter((event) => event.isLive)
+    const events = shouldFilterByStatus
+      ? league.events.filter((event) => (
+          shouldFilterLive ? event.isLive : !event.isLive
+        )).slice(0, 3)
       : mappedCompetitionId
         ? [
             ...league.events.filter((event) => event.isLive).slice(0, 3),
-            ...league.events.filter((event) => !event.isLive).slice(0, 5),
+            ...league.events.filter((event) => !event.isLive).slice(0, 6),
           ]
         : league.events.slice(0, 3)
 
@@ -2454,20 +2925,23 @@ export function getCalendarDisplayedEvents({
   competitionId,
   liveOnly = false,
   liveFilter = false,
+  upcomingOnly = false,
 }: {
   sportFilter?: string | null
   competitionId?: string | null
   liveOnly?: boolean
   liveFilter?: boolean
+  upcomingOnly?: boolean
 } = {}): DisplayedCompetitionEvent[] {
   const { mappedCompetitionId, groups } = getCalendarDisplayedEventGroups({
     sportFilter,
     competitionId,
     liveOnly,
     liveFilter,
+    upcomingOnly,
   })
 
-  if (!mappedCompetitionId || liveOnly || liveFilter) {
+  if (!mappedCompetitionId || liveOnly || liveFilter || upcomingOnly) {
     return groups.flatMap(({ league, events }) => events.map((event) => ({ league, event })))
   }
 
@@ -2505,10 +2979,10 @@ export function getCompetitionPageEvents(
 
   return competitionScoped.flatMap((league) => {
     const eventsToDisplay = liveOnly
-      ? league.events.filter((event) => event.isLive)
+      ? league.events.filter((event) => event.isLive).slice(0, 3)
       : [
           ...league.events.filter((event) => event.isLive).slice(0, 3),
-          ...league.events.filter((event) => !event.isLive).slice(0, 5),
+          ...league.events.filter((event) => !event.isLive).slice(0, 6),
         ]
 
     return eventsToDisplay.map((event) => ({ league, event }))
@@ -2775,6 +3249,13 @@ export function CalendarSection({
   })
   const topFive = displayedEventGroups.map(({ league }) => league)
   const isCompetitionPage = !!mappedCompetitionId
+  const currentSport = topFive[0]?.sport ?? sportFilter
+  const currentMarketChips = useMemo(
+    () => getMarketChipsForSport(currentSport).filter((chip) => (
+      !liveOnly || !isCalendarPlayerPropsMarket(currentSport ?? '', chip.id)
+    )),
+    [currentSport, liveOnly]
+  )
 
   const [openLeagues, setOpenLeagues] = useState<string[]>(
     topFive.map((c) => c.id)
@@ -2790,7 +3271,12 @@ export function CalendarSection({
     if (marketChipsRef.current) {
       marketChipsRef.current.scrollTo({ left: 0, behavior: 'smooth' })
     }
-  }, [sportFilter, competitionId])
+  }, [sportFilter, competitionId, liveOnly])
+
+  useEffect(() => {
+    if (currentMarketChips.some((chip) => chip.id === activeMarket)) return
+    setActiveMarket(currentMarketChips[0]?.id ?? getDefaultMarketId(currentSport))
+  }, [activeMarket, currentMarketChips, currentSport])
 
   const toggleLeague = (id: string) => {
     setOpenLeagues((prev) =>
@@ -2798,12 +3284,6 @@ export function CalendarSection({
     )
   }
 
-  const currentSport = topFive[0]?.sport ?? sportFilter
-  const currentMarketChips = currentSport === 'basquete'
-    ? basketballMarketChips
-    : currentSport === 'tenis'
-      ? tennisMarketChips
-      : footballMarketChips
   const competitionSheetConfig = currentSport ? competicaoConfigBySport[currentSport] : null
   const canOpenCompetitionSheet = !!competitionSheetConfig && !!onOpenCompetition
   const showHeaderCompetitionAction = !isCompetitionPage && canOpenCompetitionSheet
@@ -3232,7 +3712,7 @@ export function CalendarSection({
                       {eventsToDisplay.map((event) => renderEventCard(league, event))}
                     </div>
 
-                    {!isCompetitionPage && (
+                    {!isCompetitionPage && !liveOnly && (
                       <button
                         type="button"
                         className="prematch-section__league-more"

@@ -44,6 +44,483 @@
   cursor: pointer;
 }
 
+.banner-carousel--market .banner-carousel__list {
+  padding-top: 16px;
+}
+
+.banner-card--market {
+  color: var(--ds-fill-primary, var(--tokens-text-text-on-color-white));
+}
+
+.banner-market {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  width: 100%;
+  height: 196px;
+  padding: 12px;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.banner-market::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
+  border-radius: 16px;
+  background:
+    url('../../assets/lightCardHighlight.png') top center / cover no-repeat,
+    var(--ds-background-app, var(--ds-fill-dark, #000));
+  -webkit-backdrop-filter: blur(10.15px);
+  backdrop-filter: blur(10.15px);
+  pointer-events: none;
+}
+
+.banner-market__box {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+
+.banner-market__header {
+  display: flex;
+  align-items: center;
+  height: 24px;
+  min-height: 24px;
+}
+
+.banner-market--football-pre .banner-market__header,
+.banner-market--basketball-pre .banner-market__header {
+  height: 52px;
+  min-height: 52px;
+  padding-top: 36px;
+  box-sizing: border-box;
+}
+
+.banner-market__league,
+.banner-market__footer-label,
+.banner-market__more {
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0;
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
+}
+
+.banner-market__league {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.banner-market--football-live .banner-market__league,
+.banner-market--tennis-live .banner-market__league {
+  padding-left: 142px;
+}
+
+.banner-market--football-pre .banner-market__league,
+.banner-market--basketball-pre .banner-market__league {
+  padding-left: 0;
+  text-align: center;
+}
+
+.banner-market__matchup {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.banner-market__matchup--live {
+  top: -8px;
+  left: 10px;
+  gap: 4px;
+}
+
+.banner-market__matchup--pre {
+  top: -8px;
+  left: 12px;
+  right: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  justify-items: center;
+}
+
+.banner-market__emblem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+}
+
+.banner-market__emblem img {
+  display: block;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.banner-market--tennis-live .banner-market__emblem {
+  position: relative;
+  overflow: visible;
+}
+
+.banner-market--tennis-live .banner-market__emblem img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  object-position: center top;
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    #000 0%,
+    #000 58%,
+    rgb(0 0 0 / 0) 100%
+  );
+  mask-image: linear-gradient(
+    180deg,
+    #000 0%,
+    #000 58%,
+    rgb(0 0 0 / 0) 100%
+  );
+}
+
+.banner-market__matchup--pre .banner-market__emblem {
+  flex: 0 0 48px;
+}
+
+.banner-market__matchup--pre .banner-market__emblem--home {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.banner-market__matchup--pre .banner-market__emblem--away {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.banner-market__versus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.banner-market__matchup--live .banner-market__versus {
+  width: 34px;
+}
+
+.banner-market__matchup--pre .banner-market__versus {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 89px;
+}
+
+.banner-market__versus-line {
+  height: 1px;
+  flex: 1 1 0;
+}
+
+.banner-market__versus-line--left {
+  background: linear-gradient(
+    90deg,
+    var(--ds-fill-opacity-senary, rgb(251 251 251 / 0.06)) 0%,
+    var(--ds-fill-opacity-primary, rgb(251 251 251 / 0.32)) 100%
+  );
+}
+
+.banner-market__versus-line--right {
+  background: linear-gradient(
+    270deg,
+    var(--ds-fill-opacity-senary, rgb(251 251 251 / 0.06)) 0%,
+    var(--ds-fill-opacity-primary, rgb(251 251 251 / 0.32)) 100%
+  );
+}
+
+.banner-market__versus-icon {
+  display: block;
+  width: 15px;
+  height: 8px;
+  flex: 0 0 15px;
+}
+
+.banner-market__scoreboard,
+.banner-market__tennis-teams {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 52px;
+}
+
+.banner-market__score-row,
+.banner-market__tennis-row {
+  align-items: center;
+  min-height: 24px;
+}
+
+.banner-market__score-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16px;
+  column-gap: 12px;
+}
+
+.banner-market__tennis-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 12px 54px 40px;
+  column-gap: 12px;
+}
+
+.banner-market__team-name,
+.banner-market__score,
+.banner-market__sets,
+.banner-market__current-score {
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+  letter-spacing: 0;
+  color: var(--ds-fill-primary, #fbfbfb);
+}
+
+.banner-market__team-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.banner-market__score {
+  justify-self: end;
+  width: 16px;
+  text-align: right;
+}
+
+.banner-market__pre-teams {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 4px;
+  align-items: center;
+  min-height: 24px;
+}
+
+.banner-market__pre-teams .banner-market__team-name {
+  text-align: center;
+}
+
+.banner-market__serve-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+}
+
+.banner-market__serve-icon {
+  width: 12px;
+  height: 12px;
+  object-fit: contain;
+}
+
+.banner-market__sets {
+  display: grid;
+  grid-template-columns: repeat(3, 10px);
+  gap: 12px;
+  justify-self: end;
+  justify-content: end;
+  text-align: center;
+}
+
+.banner-market__sets span {
+  display: block;
+  width: 10px;
+}
+
+.banner-market__tennis-row--muted .banner-market__sets {
+  font-weight: 400;
+  color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
+}
+
+.banner-market__current-score {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: end;
+  width: 40px;
+  height: 24px;
+  border-radius: 8px;
+  background: var(--ds-fill-opacity-quinary, rgb(251 251 251 / 0.08));
+  font-size: 14px;
+  line-height: 21px;
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
+}
+
+.banner-market__odds {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+}
+
+.banner-market__odd-btn {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 58px;
+  height: 44px;
+  padding: 4px 12px;
+  overflow: hidden;
+  border: 1px solid var(--ds-fill-opacity-quinary, rgb(251 251 251 / 0.08));
+  border-radius: 12px;
+  background: var(--ds-action-secondary-default, rgb(251 251 251 / 0.12));
+  box-sizing: border-box;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.banner-market__odd-btn:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.banner-market__odd-label,
+.banner-market__odd-value {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.banner-market__odd-label {
+  font-size: 10px;
+  line-height: 15px;
+  color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
+  text-transform: uppercase;
+}
+
+.banner-market__odd-value {
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--ds-fill-primary, #fbfbfb);
+}
+
+.banner-market__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 16px;
+  gap: 12px;
+}
+
+.banner-market__status,
+.banner-market__more {
+  display: flex;
+  align-items: center;
+}
+
+.banner-market__status {
+  min-width: 0;
+  gap: 4px;
+}
+
+.banner-market__footer-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.banner-market__live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 20px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: var(--ds-live, #f43f5e);
+  box-sizing: border-box;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 15px;
+  letter-spacing: 0;
+  color: var(--ds-fill-primary, #fbfbfb);
+  white-space: nowrap;
+}
+
+.banner-market__live-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ds-fill-primary, #fbfbfb);
+}
+
+.banner-market__more {
+  flex: 0 0 auto;
+  gap: 4px;
+  background: var(--ds-background-app, var(--ds-fill-dark, #000));
+  white-space: nowrap;
+}
+
+.banner-carousel--market .banner-carousel__bullets {
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 6px;
+  padding: 0 12px;
+}
+
+.banner-carousel--market .banner-carousel__bullet {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
+  transition:
+    width 0.2s ease,
+    height 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.banner-carousel--market .banner-carousel__bullet--near {
+  width: 4px;
+  height: 4px;
+}
+
+.banner-carousel--market .banner-carousel__bullet--far {
+  width: 2px;
+  height: 2px;
+}
+
+.banner-carousel--market .banner-carousel__bullet--active {
+  width: 6px;
+  height: 6px;
+  background: var(--ds-fill-primary, #fbfbfb);
+}
+
+.banner-carousel--market .banner-carousel__bullet-progress {
+  display: none;
+}
+
 .banner-card__header {
   display: flex;
   align-items: center;

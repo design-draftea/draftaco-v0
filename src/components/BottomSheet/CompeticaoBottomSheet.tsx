@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { CaretRightIcon, CaretUpIcon, MagnifyingGlassIcon } from '@phosphor-icons/react'
 import { BottomSheet } from './BottomSheet'
 import './CompeticaoBottomSheet.css'
@@ -64,10 +64,25 @@ export function CompeticaoBottomSheet({
       .filter(Boolean) as CompetitionCountry[]
   }, [normalized, countries])
 
+  useEffect(() => {
+    if (!normalized) {
+      setOpenCountries([])
+      return
+    }
+
+    setOpenCountries(filteredCountries.map((country) => country.id))
+  }, [filteredCountries, normalized])
+
   const toggleCountry = (id: string) => {
-    setOpenCountries((prev) =>
-      prev.includes(id) ? prev.filter((cid) => cid !== id) : [...prev, id]
-    )
+    setOpenCountries((prev) => {
+      const isOpen = prev.includes(id)
+
+      if (normalized) {
+        return isOpen ? prev.filter((cid) => cid !== id) : [...prev, id]
+      }
+
+      return isOpen ? [] : [id]
+    })
   }
 
   const handleSelect = (id: string) => {
@@ -146,7 +161,7 @@ export function CompeticaoBottomSheet({
 
       <ul className="competicao-bs__countries">
         {filteredCountries.map((country) => {
-          const isOpenCountry = openCountries.includes(country.id) || !!normalized
+          const isOpenCountry = openCountries.includes(country.id)
           return (
             <li key={country.id} className="competicao-bs__country">
               <button

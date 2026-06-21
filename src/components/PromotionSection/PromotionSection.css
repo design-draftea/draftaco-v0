@@ -10,7 +10,7 @@
   display: flex;
   align-items: center;
   padding: 0 12px;
-  height: 20px;
+  height: 24px;
 }
 
 .promotion-section__title {
@@ -18,10 +18,10 @@
   align-items: center;
   gap: 8px;
   font-family: 'Red Hat Text', sans-serif;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: var(--Typography-font-size-16, 16px);
+  font-weight: var(--Typography-font-weight-bold, 700);
   color: var(--tokens-text-text-01);
-  line-height: 1.4;
+  line-height: 24px;
 }
 
 .promotion-section__arrow {
@@ -48,6 +48,175 @@
 .promotion-section__list--dragging {
   cursor: grabbing;
   scroll-behavior: auto;
+}
+
+.promotion-section--highlight {
+  gap: 0;
+  padding: 0 0 4px;
+  border-bottom: 0;
+}
+
+.promotion-section--highlight .promotion-section__list {
+  gap: 8px;
+  padding: 0 12px;
+}
+
+.promotion-section--highlight-wide .promo-highlight-card {
+  width: 336px;
+  min-height: 100px;
+  height: auto;
+  flex-basis: 336px;
+  background:
+    var(--promo-card-background-image) center 0px / 100% auto no-repeat,
+    var(--ds-background-app, var(--ds-fill-dark, #000));
+}
+
+.promotion-section--highlight-wide .promo-highlight-card__content {
+  flex: 0 0 auto;
+}
+
+.promotion-section--highlight-wide .promo-highlight-card__title {
+  flex: 0 0 auto;
+}
+
+.promotion-section--highlight-wide .promo-highlight-card__title span {
+  margin-bottom: 0;
+}
+
+.promo-highlight-card {
+  position: relative;
+  display: flex;
+  width: 164px;
+  height: 164px;
+  flex: 0 0 164px;
+  padding: 12px;
+  overflow: hidden;
+  border: 1px solid var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
+  border-radius: 16px;
+  background:
+    var(--promo-card-background-image) center 0px / cover no-repeat,
+    var(--ds-background-app, var(--ds-fill-dark, #000));
+  box-sizing: border-box;
+  -webkit-backdrop-filter: blur(10.15px);
+  backdrop-filter: blur(10.15px);
+}
+
+.promo-highlight-card__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.promo-highlight-card__headline {
+  margin: 0;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 12px;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--ds-fill-primary, #fbfbfb);
+  text-transform: uppercase;
+}
+
+.promo-highlight-card__title {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  font-family: var(--font-forma-djr-display, 'Forma DJR Display', 'Red Hat Display', system-ui, sans-serif);
+  font-size: 24px;
+  font-style: italic;
+  font-weight: 900;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.promo-highlight-card__title span {
+  display: block;
+  width: 100%;
+  margin-bottom: -4px;
+  overflow: hidden;
+  background: var(--promo-highlight-title-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  white-space: nowrap;
+}
+
+.promo-highlight-card__title span:last-child {
+  margin-bottom: 0;
+}
+
+.promo-highlight-card--mint {
+  --promo-highlight-title-gradient: radial-gradient(
+    700% 145% at 50% 50%,
+    rgb(210 255 114) 0%,
+    rgb(179 247 144 / 0.95) 25%,
+    rgb(148 239 174 / 0.9) 50%,
+    rgb(117 230 204 / 0.85) 75%,
+    rgb(86 222 234 / 0.8) 100%
+  );
+}
+
+.promo-highlight-card--gold {
+  --promo-highlight-title-gradient: radial-gradient(
+    700% 145% at 50% 50%,
+    rgb(253 224 71) 0%,
+    rgb(253 224 71 / 0.5) 100%
+  );
+}
+
+.promo-highlight-card--cyan {
+  --promo-highlight-title-gradient: radial-gradient(
+    700% 145% at 50% 50%,
+    rgb(103 232 249) 0%,
+    rgb(103 232 249 / 0.5) 100%
+  );
+}
+
+.promo-highlight-card__footer {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+}
+
+.promo-highlight-card__countdown {
+  display: inline-flex;
+  align-items: center;
+  min-height: 17px;
+  padding: 1px 6px;
+  border-radius: 24px;
+  background: var(--ds-background-opacity-primary, rgb(251 251 251 / 0.12));
+  box-shadow: 0 1px 1px rgb(0 0 0 / 0.25);
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 12px;
+  font-style: italic;
+  font-weight: 900;
+  line-height: 15.6px;
+  color: var(--ds-fill-primary, #fbfbfb);
+  white-space: nowrap;
+}
+
+.promo-highlight-card__rules {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--ds-fill-primary, #fbfbfb);
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Card Styles */
@@ -128,8 +297,9 @@
 
 .vantagem-section__title {
   font-family: 'Red Hat Text', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--Typography-font-size-16, 16px);
+  font-weight: var(--Typography-font-weight-bold, 700);
+  line-height: 24px;
   color: var(--tokens-text-text-01);
   margin: 0 0 16px 0;
 }

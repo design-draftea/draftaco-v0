@@ -6,6 +6,7 @@ import type { CasinoCategoryId, CasinoRailItem } from '../../types/home'
 
 interface CasinoRailProps {
   activeCategory: CasinoCategoryId
+  disableInteractions?: boolean
   onCategoryChange?: (categoryId: CasinoCategoryId) => void
 }
 
@@ -13,6 +14,7 @@ const liveCasinoCategoryIds = new Set<CasinoCategoryId>(['ao-vivo', 'roletas', '
 
 export function CasinoRail({
   activeCategory,
+  disableInteractions = false,
   onCategoryChange,
 }: CasinoRailProps) {
   const [isMoreCasinoOpen, setIsMoreCasinoOpen] = useState(false)
@@ -32,9 +34,10 @@ export function CasinoRail({
     <ProductRail
       sections={casinoRailSections}
       activeItemId={activeItemId}
+      disableInteractions={disableInteractions}
       hasLiveIndicator={(item) => liveCasinoCategoryIds.has(item.categoryId)}
-      onSelectItem={handleSelectItem}
-      renderAfter={(
+      onSelectItem={disableInteractions ? undefined : handleSelectItem}
+      renderAfter={disableInteractions ? null : (
         <MoreCasinoBottomSheet
           isOpen={isMoreCasinoOpen}
           onClose={() => setIsMoreCasinoOpen(false)}

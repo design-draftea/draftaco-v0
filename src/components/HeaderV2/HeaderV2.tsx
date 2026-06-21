@@ -1,12 +1,13 @@
 import { useLayoutEffect, useRef, useState, type MouseEvent, type PointerEvent, type ReactNode } from 'react'
 import { flushSync } from 'react-dom'
-import { ListIcon } from '@phosphor-icons/react'
 import './HeaderV2.css'
+import logoDraftea from '../../assets/logoDraftea.svg'
 import logoReidoPitaco from '../../assets/logoReidoPitaco.svg'
 import logoReidoPitacoLight from '../../assets/logoReidoPitacoLight.svg'
 import { NavigationMenuBottomSheet } from '../NavigationMenuBottomSheet'
 import type { ProductMode } from '../../types/home'
-import { productLabels } from '../../data/homeProducts'
+import { useFeatureFlags } from '../../hooks/useFeatureFlags'
+import { getProductLabelForBrand } from '../../i18n/brandLocalization'
 
 interface HeaderV2Props {
   activeProduct?: ProductMode
@@ -14,7 +15,10 @@ interface HeaderV2Props {
   rail?: ReactNode
   showMenuButton?: boolean
   changeProductOnPointerDown?: boolean
+  disableProductToggle?: boolean
+  disableMenuButton?: boolean
   onProductChange?: (product: ProductMode) => void
+  onLogoClick?: () => void
   onLogoDoubleClick?: () => void
   onDepositOpen?: () => void
   children?: ReactNode
@@ -34,12 +38,20 @@ export function HeaderV2({
   rail,
   showMenuButton = true,
   changeProductOnPointerDown = true,
+  disableProductToggle = false,
+  disableMenuButton = false,
   onProductChange,
+  onLogoClick,
   onLogoDoubleClick,
   onDepositOpen,
   children,
 }: HeaderV2Props = {}) {
+  const { brandMode } = useFeatureFlags()
   const isSportPage = !!activeSport && activeSport !== 'destaques'
+  const isDrafteaBrand = brandMode === 'draftea'
+  const logoAlt = isDrafteaBrand ? 'Draftea' : 'Rei do Pitaco'
+  const logoDark = isDrafteaBrand ? logoDraftea : logoReidoPitaco
+  const logoLight = isDrafteaBrand ? logoDraftea : logoReidoPitacoLight
   const [balanceDisplayValue, setBalanceDisplayValue] = useState(balanceDisplayOptions[0])
   const [accountActionsWidth, setAccountActionsWidth] = useState(() => showMenuButton ? 124 : 72)
   const [isLogoCompact, setIsLogoCompact] = useState(false)
@@ -113,7 +125,10 @@ export function HeaderV2({
     })
   }
 
+  const getProductLabel = (product: ProductMode) => getProductLabelForBrand(product, brandMode)
+
   const handleTogglePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
+    if (disableProductToggle) return
     if (!changeProductOnPointerDown) return
     if (event.pointerType === 'mouse' && event.button !== 0) return
 
@@ -130,6 +145,8 @@ export function HeaderV2({
   }
 
   const handleToggleClick = () => {
+    if (disableProductToggle) return
+
     if (pointerProductChangeRef.current !== null) {
       pointerProductChangeRef.current = null
       clearPointerProductChangeResetTimer()
@@ -167,13 +184,23 @@ export function HeaderV2({
   }
 
   const handleLogoClick = (event: MouseEvent<HTMLButtonElement>) => {
-    if (!onLogoDoubleClick) return
-    if (event.detail >= 2) {
+    const currentTime = Date.now()
+
+    if (currentTime - lastLogoActivationTimeRef.current <= headerLogoActivationCooldown) return
+
+    if (event.detail >= 2 && onLogoDoubleClick) {
       openFeatureFlagsFromLogo()
       return
     }
 
-    const currentTime = Date.now()
+    if (onLogoClick) {
+      lastLogoTapTimeRef.current = currentTime
+      onLogoClick()
+      return
+    }
+
+    if (!onLogoDoubleClick) return
+
     const elapsedTime = currentTime - lastLogoTapTimeRef.current
 
     if (elapsedTime > 0 && elapsedTime <= headerLogoDoubleTapDelay) {
@@ -309,17 +336,13 @@ export function HeaderV2({
         .filter(Boolean)
         .join(' ')}
     >
-      <div className="header__bg-light" />
-      <div className="header__bg-dark" />
-      <div className="header__bg-gradient" />
-
       <div className="header__top" ref={headerTopRef}>
-        {onLogoDoubleClick ? (
+        {onLogoDoubleClick || onLogoClick ? (
           <button
             type="button"
             className="header__logo header__logo-button"
-            aria-label="Abrir feature flags"
-            aria-haspopup="dialog"
+            aria-label={onLogoClick ? 'Voltar para destaques' : 'Abrir feature flags'}
+            aria-haspopup={onLogoDoubleClick ? 'dialog' : undefined}
             onPointerDown={handleLogoPointerDown}
             onPointerUp={handleLogoPointerEnd}
             onPointerCancel={handleLogoPointerEnd}
@@ -328,13 +351,45 @@ export function HeaderV2({
             onDoubleClick={openFeatureFlagsFromLogo}
             onContextMenu={(event) => event.preventDefault()}
           >
-            <img src={logoReidoPitaco} alt="Rei do Pitaco" className="header__logo-img header__logo-img--dark" />
-            <img src={logoReidoPitacoLight} alt="Rei do Pitaco" className="header__logo-img header__logo-img--light" />
+            <img
+              src={logoDark}
+              alt={logoAlt}
+              className={[
+                'header__logo-img',
+                'header__logo-img--dark',
+                isDrafteaBrand ? 'header__logo-img--draftea' : '',
+              ].filter(Boolean).join(' ')}
+            />
+            <img
+              src={logoLight}
+              alt={logoAlt}
+              className={[
+                'header__logo-img',
+                'header__logo-img--light',
+                isDrafteaBrand ? 'header__logo-img--draftea' : '',
+              ].filter(Boolean).join(' ')}
+            />
           </button>
         ) : (
           <div className="header__logo">
-            <img src={logoReidoPitaco} alt="Rei do Pitaco" className="header__logo-img header__logo-img--dark" />
-            <img src={logoReidoPitacoLight} alt="Rei do Pitaco" className="header__logo-img header__logo-img--light" />
+            <img
+              src={logoDark}
+              alt={logoAlt}
+              className={[
+                'header__logo-img',
+                'header__logo-img--dark',
+                isDrafteaBrand ? 'header__logo-img--draftea' : '',
+              ].filter(Boolean).join(' ')}
+            />
+            <img
+              src={logoLight}
+              alt={logoAlt}
+              className={[
+                'header__logo-img',
+                'header__logo-img--light',
+                isDrafteaBrand ? 'header__logo-img--draftea' : '',
+              ].filter(Boolean).join(' ')}
+            />
           </div>
         )}
 
@@ -348,21 +403,23 @@ export function HeaderV2({
           ]
             .filter(Boolean)
             .join(' ')}
-          aria-label={`Alternar para ${productLabels[displayProduct === 'apostas' ? 'cassino' : 'apostas'].toLowerCase()}`}
+          aria-label={`Alternar para ${getProductLabel(displayProduct === 'apostas' ? 'cassino' : 'apostas').toLowerCase()}`}
           aria-pressed={displayProduct === 'cassino'}
-          onPointerDown={handleTogglePointerDown}
-          onClick={handleToggleClick}
+          aria-disabled={disableProductToggle}
+          disabled={disableProductToggle}
+          onPointerDown={disableProductToggle ? undefined : handleTogglePointerDown}
+          onClick={disableProductToggle ? undefined : handleToggleClick}
         >
           <span className="header__toggle-indicator" aria-hidden="true" />
           <span
             className={`header__toggle-btn${displayProduct === 'apostas' ? ' header__toggle-btn--active' : ''}`}
           >
-            {productLabels.apostas}
+            {getProductLabel('apostas')}
           </span>
           <span
             className={`header__toggle-btn${displayProduct === 'cassino' ? ' header__toggle-btn--active' : ''}`}
           >
-            {productLabels.cassino}
+            {getProductLabel('cassino')}
           </span>
         </button>
 
@@ -378,8 +435,8 @@ export function HeaderV2({
             ref={balanceRef}
             onClick={onDepositOpen}
           >
-            <span className="header__balance-label" ref={balanceLabelRef}>Saldo</span>
             <span className="header__balance-value" ref={balanceValueRef}>{balanceDisplayValue}</span>
+            <span className="header__balance-label" ref={balanceLabelRef}>SALDO</span>
             <span className="header__balance-measure" aria-hidden="true">
               {balanceDisplayOptions.map((option, index) => (
                 <span
@@ -398,9 +455,11 @@ export function HeaderV2({
               className="header__menu-btn"
               aria-label="Abrir menu"
               aria-expanded={isNavigationMenuOpen}
-              onClick={() => setIsNavigationMenuOpen(true)}
+              aria-disabled={disableMenuButton}
+              disabled={disableMenuButton}
+              onClick={disableMenuButton ? undefined : () => setIsNavigationMenuOpen(true)}
             >
-              <ListIcon aria-hidden="true" className="header__menu-icon" weight="bold" />
+              <span aria-hidden="true" className="header__menu-icon" />
             </button>
           )}
         </div>

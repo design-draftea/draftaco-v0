@@ -10,6 +10,11 @@ const competitionLinkTargetsByLeagueId: Record<string, CompetitionLinkTarget> = 
     name: 'Brasileirão Série A',
     sport: 'futebol',
   },
+  libertadores: {
+    id: 'fut-libertadores',
+    name: 'Libertadores',
+    sport: 'futebol',
+  },
   'champions-league': {
     id: 'fut-champions',
     name: 'Champions League',

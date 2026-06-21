@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { CaretUpIcon, XIcon } from '@phosphor-icons/react'
+import { CaretUpIcon } from '@phosphor-icons/react'
+import closeBS from '../../assets/iconsDraftaco/closeBS.svg'
 import './BottomSheet.css'
 
 interface BottomSheetProps {
@@ -8,6 +9,7 @@ interface BottomSheetProps {
   onClose: () => void
   title?: string
   titleIcon?: string
+  leadingContent?: ReactNode
   children: ReactNode
   footerContent?: ReactNode
   blurBackdrop?: boolean
@@ -21,6 +23,7 @@ export function BottomSheet({
   onClose,
   title,
   titleIcon,
+  leadingContent,
   children,
   footerContent,
   blurBackdrop = false,
@@ -131,6 +134,11 @@ export function BottomSheet({
       >
         {/* Header - Fixed */}
         <div className={`bottom-sheet__header ${!title ? 'bottom-sheet__header--no-title' : ''}`}>
+          {leadingContent && (
+            <div className="bottom-sheet__leading">
+              {leadingContent}
+            </div>
+          )}
           {title ? (
             <div className="bottom-sheet__title">
               {titleIcon && (
@@ -142,7 +150,7 @@ export function BottomSheet({
             <span className="bottom-sheet__title-spacer" />
           )}
           <button type="button" className="bottom-sheet__close" onClick={handleClose} aria-label="Fechar">
-            <XIcon aria-hidden="true" className="bottom-sheet__close-icon" weight="bold" />
+            <img src={closeBS} alt="" className="bottom-sheet__close-icon" />
           </button>
         </div>
 

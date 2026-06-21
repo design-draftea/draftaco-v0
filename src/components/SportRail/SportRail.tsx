@@ -5,12 +5,15 @@ import './SportRail.css'
 import iconAoVivo from '../../assets/iconAoVivo.png'
 import iconDestaque from '../../assets/iconSports/fire.png'
 import iconBasquete from '../../assets/iconSports/basketball.png'
-import iconBrasileiraoRailLight from '../../assets/iconSports/brasileirao-rail-text-333.png'
+import iconBrasileirao from '../../assets/iconSports/brasileirao.png'
 import iconBundesligaRailLight from '../../assets/iconSports/bundesliga-rail-text-333.png'
+import iconChampions from '../../assets/iconSports/champions.png'
 import iconCsgo from '../../assets/iconSports/csgo.png'
 import iconEsoccer from '../../assets/iconSports/e-soccer.png'
 import iconFutebol from '../../assets/iconSports/soccer.png'
+import iconLibertadores from '../../assets/iconSports/libertadores.png'
 import iconMore from '../../assets/iconSports/more.png'
+import iconPremier from '../../assets/iconSports/premier.png'
 import iconTenis from '../../assets/iconSports/tennis.png'
 import { getCompetitionRailBadge } from '../../data/competitionBadges'
 import type { ProductRailBaseItem, ProductRailSection } from '../../types/home'
@@ -45,6 +48,9 @@ interface SportRailProps {
   selectedCompetitionId?: string | null
   selectedCompetitionName?: string | null
   extraCompetitions?: CompetitionLinkTarget[]
+  disableInteractions?: boolean
+  allowHighlightsInteraction?: boolean
+  allowCompetitionInteraction?: boolean
   onSportChange?: (sportId: string) => void
   onOpenCompetition?: (target: CompetitionLinkTarget) => void
 }
@@ -53,6 +59,9 @@ interface ProductRailProps<TItem extends ProductRailBaseItem> {
   sections: ProductRailSection<TItem>[]
   activeItemId: string
   isSportPage?: boolean
+  disableInteractions?: boolean
+  allowMoreItemInteraction?: boolean
+  allowDisabledItemInteraction?: (item: TItem) => boolean
   renderAfter?: ReactNode
   getScrollAnchorId?: (item: TItem | undefined) => string | null
   hasLiveIndicator?: (item: TItem) => boolean
@@ -92,8 +101,7 @@ const competitionRailSections: ProductRailSection<SportRailItem>[] = [
         sportId: 'futebol',
         competitionId: 'fut-brasileiro',
         competitionName: 'Brasileirão Série A',
-        icon: getCompetitionRailBadge('fut-brasileiro', iconFutebol),
-        lightIcon: iconBrasileiraoRailLight,
+        icon: iconBrasileirao,
         label: 'Brasileirão',
         clickable: true,
       },
@@ -103,7 +111,7 @@ const competitionRailSections: ProductRailSection<SportRailItem>[] = [
         sportId: 'futebol',
         competitionId: 'fut-champions',
         competitionName: 'Champions League',
-        icon: getCompetitionRailBadge('fut-champions', iconFutebol),
+        icon: iconChampions,
         label: 'Champions',
         clickable: true,
       },
@@ -113,18 +121,18 @@ const competitionRailSections: ProductRailSection<SportRailItem>[] = [
         sportId: 'futebol',
         competitionId: 'fut-premier-league',
         competitionName: 'Premier League',
-        icon: getCompetitionRailBadge('fut-premier-league', iconFutebol),
+        icon: iconPremier,
         label: 'Premier',
         clickable: true,
       },
       {
-        id: 'competition:fut-laliga',
+        id: 'competition:fut-libertadores',
         type: 'competition',
         sportId: 'futebol',
-        competitionId: 'fut-laliga',
-        competitionName: 'LaLiga',
-        icon: getCompetitionRailBadge('fut-laliga', iconFutebol),
-        label: 'La Liga',
+        competitionId: 'fut-libertadores',
+        competitionName: 'Libertadores',
+        icon: iconLibertadores,
+        label: 'Libertadores',
         clickable: true,
       },
       {
@@ -239,6 +247,7 @@ const liveCompetitionIds = new Set([
   'fut-brasileirao-a',
   'fut-champions',
   'fut-premier-league',
+  'fut-libertadores',
   'fut-laliga',
   'fut-mls',
   'fut-bundesliga',
@@ -292,19 +301,9 @@ const getDefaultProductRailScrollAnchorId = <TItem extends ProductRailBaseItem>(
   item: TItem | undefined
 ) => item?.id ?? null
 
-const productRailItemWidth = 56
-const productRailPaddingLeft = 12
-const productRailFullVisibleItems = 5
-const productRailVisibleItems = productRailFullVisibleItems + 0.5
+const productRailGap = 12
 
-const getProductRailGap = (viewportWidth: number) => Math.max(
-  0,
-  (
-    viewportWidth -
-    productRailPaddingLeft -
-    productRailVisibleItems * productRailItemWidth
-  ) / productRailFullVisibleItems
-)
+const getProductRailGap = () => productRailGap
 
 const getSportRailScrollAnchorId = (item: SportRailItem | undefined) => {
   if (!item) return null
@@ -340,14 +339,15 @@ export function ProductRail<TItem extends ProductRailBaseItem>({
   sections,
   activeItemId,
   isSportPage = false,
+  disableInteractions = false,
+  allowMoreItemInteraction = false,
+  allowDisabledItemInteraction,
   renderAfter,
   getScrollAnchorId = getDefaultProductRailScrollAnchorId,
   hasLiveIndicator,
   onSelectItem,
 }: ProductRailProps<TItem>) {
-  const [gap, setGap] = useState(() => getProductRailGap(
-    typeof window === 'undefined' ? 390 : window.innerWidth
-  ))
+  const [gap, setGap] = useState(() => getProductRailGap())
   const [hasMoreItemsLeft, setHasMoreItemsLeft] = useState(false)
   const [hasMoreItemsRight, setHasMoreItemsRight] = useState(false)
   const [hasUserScrolledRail, setHasUserScrolledRail] = useState(false)
@@ -384,9 +384,7 @@ export function ProductRail<TItem extends ProductRailBaseItem>({
 
   useLayoutEffect(() => {
     const calculateGap = () => {
-      const viewportWidth = listRef.current?.parentElement?.clientWidth || window.innerWidth
-
-      setGap(getProductRailGap(viewportWidth))
+      setGap(getProductRailGap())
     }
 
     calculateGap()
@@ -552,6 +550,11 @@ export function ProductRail<TItem extends ProductRailBaseItem>({
 
     if (isActive) return
 
+    if (item.isMore) {
+      onSelectItem?.(item)
+      return
+    }
+
     resetRailUserScrollHint()
     scrollRailItemToStartById(getScrollAnchorId(item))
     onSelectItem?.(item)
@@ -584,7 +587,12 @@ export function ProductRail<TItem extends ProductRailBaseItem>({
   const renderItem = (item: TItem) => {
     const itemIndex = getRailItemIndex(item)
     const isActive = activeRailItemIndex === itemIndex
-    const isClickable = item.isMore || item.clickable !== false
+    const canBypassDisabledInteraction = allowDisabledItemInteraction?.(item) ?? false
+    const isClickable = !!onSelectItem && (
+      item.isMore
+        ? !disableInteractions || allowMoreItemInteraction
+        : (!disableInteractions || canBypassDisabledInteraction) && item.clickable !== false
+    )
     const isStatic = !isClickable || isActive
     const className = [
       'sport-rail__item',
@@ -689,6 +697,9 @@ export function SportRail({
   selectedCompetitionId,
   selectedCompetitionName,
   extraCompetitions = [],
+  disableInteractions = false,
+  allowHighlightsInteraction = false,
+  allowCompetitionInteraction = false,
   onSportChange,
   onOpenCompetition,
 }: SportRailProps = {}) {
@@ -787,6 +798,12 @@ export function SportRail({
       sections={railSections}
       activeItemId={activeRailItemId}
       isSportPage={isSportPage}
+      disableInteractions={disableInteractions}
+      allowMoreItemInteraction
+      allowDisabledItemInteraction={(item) => (
+        (allowHighlightsInteraction && item.id === 'destaques') ||
+        (allowCompetitionInteraction && item.type === 'competition' && item.clickable !== false)
+      )}
       getScrollAnchorId={getSportRailScrollAnchorId}
       hasLiveIndicator={hasSportRailLiveIndicator}
       onSelectItem={handleSelectItem}
@@ -795,7 +812,8 @@ export function SportRail({
           isOpen={isMoreSportsOpen}
           onClose={() => setIsMoreSportsOpen(false)}
           activeSport={activeSport}
-          onSelectSport={onSportChange}
+          onSelectSport={disableInteractions ? undefined : onSportChange}
+          onSelectCompetition={disableInteractions ? undefined : onOpenCompetition}
         />
       )}
     />

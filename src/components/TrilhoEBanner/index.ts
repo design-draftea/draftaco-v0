@@ -1,2 +1,0 @@
-export { TrilhoEBanner } from './TrilhoEBanner'
-

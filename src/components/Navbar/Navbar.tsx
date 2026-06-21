@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import './Navbar.css'
 
 import { productNavbarConfigs } from '../../data/homeProducts'
@@ -7,14 +7,19 @@ import type { ProductMode } from '../../types/home'
 interface NavbarProps {
   activeProduct?: ProductMode
   activeItemId?: string
+  disabledItemIds?: string[]
   onItemSelect?: (itemId: string) => void
 }
 
 const navbarActiveMotionMs = 520
+const getNavbarIconStyle = (icon: string) => ({
+  '--navbar-icon-mask': `url(${icon})`,
+}) as CSSProperties
 
 export function Navbar({
   activeProduct = 'apostas',
   activeItemId: controlledActiveItemId,
+  disabledItemIds = [],
   onItemSelect,
 }: NavbarProps = {}) {
   const navbarConfig = productNavbarConfigs[activeProduct]
@@ -44,6 +49,7 @@ export function Navbar({
   const panelClassName = ['navbar__panel', 'navbar__panel--liquid-v2']
     .filter(Boolean)
     .join(' ')
+  const isItemDisabled = (itemId: string) => disabledItemIds.includes(itemId)
 
   const clearPointerItemSelectionResetTimer = useCallback(() => {
     if (pointerItemSelectionResetTimerRef.current === null) return
@@ -53,6 +59,8 @@ export function Navbar({
   }, [])
 
   const selectNavbarItem = useCallback((itemId: string) => {
+    if (disabledItemIds.includes(itemId)) return
+
     if (itemId !== activeItemId) {
       previousActiveRectRef.current = itemRefs.current[activeItemId]?.getBoundingClientRect() ?? null
     }
@@ -61,13 +69,14 @@ export function Navbar({
       setSelectedItemId(itemId)
     }
     onItemSelect?.(itemId)
-  }, [activeItemId, isControlledActiveItem, onItemSelect])
+  }, [activeItemId, disabledItemIds, isControlledActiveItem, onItemSelect])
 
   useEffect(() => {
     setSelectedItemId(configuredActiveItemId)
   }, [configuredActiveItemId])
 
   const handleItemPointerDown = (itemId: string) => (event: PointerEvent<HTMLButtonElement>) => {
+    if (isItemDisabled(itemId)) return
     if (event.pointerType === 'mouse' && event.button !== 0) return
 
     pointerItemSelectionRef.current = itemId
@@ -81,6 +90,8 @@ export function Navbar({
   }
 
   const handleItemClick = (itemId: string) => () => {
+    if (isItemDisabled(itemId)) return
+
     if (pointerItemSelectionRef.current === itemId) {
       pointerItemSelectionRef.current = null
       clearPointerItemSelectionResetTimer()
@@ -131,6 +142,7 @@ export function Navbar({
           <div className="navbar__items">
             {navbarConfig.mainItems.map((item) => {
               const isActive = activeItemId === item.id
+              const isDisabled = isItemDisabled(item.id)
 
               return (
                 <button
@@ -145,9 +157,10 @@ export function Navbar({
                   ]
                     .filter(Boolean)
                     .join(' ')}
-                  onPointerDown={handleItemPointerDown(item.id)}
-                  onClick={handleItemClick(item.id)}
+                  onPointerDown={isDisabled ? undefined : handleItemPointerDown(item.id)}
+                  onClick={isDisabled ? undefined : handleItemClick(item.id)}
                   aria-current={isActive ? 'page' : undefined}
+                  aria-disabled={isDisabled}
                   aria-label={item.label}
                   data-navbar-item-id={item.id}
                 >
@@ -159,10 +172,10 @@ export function Navbar({
                     />
                   ) : null}
                   <span className="navbar__icon-slot">
-                    <img
-                      src={item.icon}
-                      alt=""
+                    <span
+                      aria-hidden="true"
                       className="navbar__icon"
+                      style={getNavbarIconStyle(item.icon)}
                     />
                   </span>
                   <span className="navbar__label">{item.label}</span>
@@ -185,9 +198,10 @@ export function Navbar({
             ]
               .filter(Boolean)
               .join(' ')}
-            onPointerDown={handleItemPointerDown(navbarConfig.searchItem.id)}
-            onClick={handleItemClick(navbarConfig.searchItem.id)}
+            onPointerDown={isItemDisabled(navbarConfig.searchItem.id) ? undefined : handleItemPointerDown(navbarConfig.searchItem.id)}
+            onClick={isItemDisabled(navbarConfig.searchItem.id) ? undefined : handleItemClick(navbarConfig.searchItem.id)}
             aria-current={activeItemId === navbarConfig.searchItem.id ? 'page' : undefined}
+            aria-disabled={isItemDisabled(navbarConfig.searchItem.id)}
             aria-label="Buscar"
             data-navbar-item-id={navbarConfig.searchItem.id}
           >
@@ -199,9 +213,12 @@ export function Navbar({
               />
             ) : null}
             <span className="navbar__icon-slot">
-              <img src={navbarConfig.searchItem.icon} alt="" className="navbar__icon" />
+              <span
+                aria-hidden="true"
+                className="navbar__icon"
+                style={getNavbarIconStyle(navbarConfig.searchItem.icon)}
+              />
             </span>
-            <span className="navbar__label">{navbarConfig.searchItem.label}</span>
           </button>
         </div>
       </div>

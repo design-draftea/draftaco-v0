@@ -210,6 +210,7 @@ interface League {
 }
 
 interface PreMatchSectionProps {
+  disableInteractions?: boolean
   onOpenCompetition?: (target: CompetitionLinkTarget) => void
   onMatchClick?: (payload: LiveEventOpenPayload) => void
 }
@@ -826,9 +827,9 @@ const footballFinishingPlayersByTeam: Record<string, TeamPlayerProfile[]> = {
     { name: 'Taremi', position: 'ATA' },
   ],
   PSG: [
-    { name: 'Dembele', position: 'ATA' },
+    { name: 'Dembélé', position: 'ATA' },
     { name: 'Kvaratskhelia', position: 'ATA' },
-    { name: 'Goncalo Ramos', position: 'ATA' },
+    { name: 'Gonçalo Ramos', position: 'ATA' },
   ],
   Lyon: [
     { name: 'Lacazette', position: 'ATA' },
@@ -938,6 +939,26 @@ const footballFinishingPlayersByTeam: Record<string, TeamPlayerProfile[]> = {
 }
 
 const basketballPlayersByTeam: Record<string, TeamPlayerProfile[]> = {
+  Jazz: [
+    { name: 'Lauri Markkanen', position: 'ALA' },
+    { name: 'Keyonte George', position: 'ARM' },
+    { name: 'Collin Sexton', position: 'ARM' },
+  ],
+  Thunder: [
+    { name: 'Shai Gilgeous-Alexander', position: 'ARM' },
+    { name: 'Jalen Williams', position: 'ALA' },
+    { name: 'Chet Holmgren', position: 'PIV' },
+  ],
+  Knicks: [
+    { name: 'Jalen Brunson', position: 'ARM' },
+    { name: 'Karl-Anthony Towns', position: 'PIV' },
+    { name: 'Mikal Bridges', position: 'ALA' },
+  ],
+  Magic: [
+    { name: 'Paolo Banchero', position: 'ALA' },
+    { name: 'Franz Wagner', position: 'ALA' },
+    { name: 'Jalen Suggs', position: 'ARM' },
+  ],
   Bulls: [
     { name: 'Coby White', position: 'ARM' },
     { name: 'Josh Giddey', position: 'ARM' },
@@ -1122,10 +1143,42 @@ const getPlayerPropOptionSets = (sport: string, marketId: string) => {
   return marketId === FOOTBALL_ASSISTS_MARKET_ID ? footballAssistPropOptionSets : footballPlayerPropOptionSets
 }
 
+const playerProfileTeamAliases: Record<string, string> = {
+  'Paris Saint-Germain': 'PSG',
+  'Manchester City': 'Man. City',
+  'Utah Jazz': 'Jazz',
+  'Oklahoma City Thunder': 'Thunder',
+  'New York Knicks': 'Knicks',
+  'Orlando Magic': 'Magic',
+  'Chicago Bulls': 'Bulls',
+  'Miami Heat': 'Heat',
+  'Golden State Warriors': 'Warriors',
+  'Los Angeles Lakers': 'Lakers',
+  'Philadelphia 76ers': '76ers',
+  'Boston Celtics': 'Celtics',
+  'Denver Nuggets': 'Nuggets',
+  'Phoenix Suns': 'Suns',
+  'Dallas Mavericks': 'Mavericks',
+  'San Antonio Spurs': 'Spurs',
+  'Los Angeles Clippers': 'Clippers',
+  'LA Clippers': 'Clippers',
+  'Sacramento Kings': 'Kings',
+}
+
+const getTeamPlayerProfilesFrom = (
+  playersByTeam: Record<string, TeamPlayerProfile[]>,
+  teamName: string
+) => {
+  const trimmedTeamName = teamName.trim()
+  const alias = playerProfileTeamAliases[trimmedTeamName]
+
+  return playersByTeam[trimmedTeamName] ?? (alias ? playersByTeam[alias] : undefined) ?? []
+}
+
 const getTeamPlayerProfiles = (teamName: string, sport: string, marketId: string) => {
-  if (sport === 'basquete') return basketballPlayersByTeam[teamName] ?? []
-  if (marketId === FOOTBALL_ASSISTS_MARKET_ID) return footballAssistPlayersByTeam[teamName] ?? []
-  return footballFinishingPlayersByTeam[teamName] ?? []
+  if (sport === 'basquete') return getTeamPlayerProfilesFrom(basketballPlayersByTeam, teamName)
+  if (marketId === FOOTBALL_ASSISTS_MARKET_ID) return getTeamPlayerProfilesFrom(footballAssistPlayersByTeam, teamName)
+  return getTeamPlayerProfilesFrom(footballFinishingPlayersByTeam, teamName)
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -1176,7 +1229,15 @@ const getPlayerPropBetslipOutcomeId = (player: MatchPlayerProp, optionIndex: num
   `${player.teamSide}:${player.playerName}:option-${optionIndex}`
 )
 
-export function PreMatchPlayerPropCard({ player }: { player: MatchPlayerProp }) {
+interface PreMatchPlayerPropCardProps {
+  player: MatchPlayerProp
+  disableInteractions?: boolean
+}
+
+export function PreMatchPlayerPropCard({
+  player,
+  disableInteractions = false,
+}: PreMatchPlayerPropCardProps) {
   const fallbackTeamIcon = getPreMatchSportFallbackIcon(player.sport)
   const resolvedTeamIcon = useSportsDbTeamLogo(player.teamName, player.teamIcon, player.sport, fallbackTeamIcon || undefined, {
     useCurrentLogoFallback: false,
@@ -1605,37 +1666,44 @@ export function PreMatchPlayerPropCard({ player }: { player: MatchPlayerProp }) 
               ? getBetslipMarketGroupId({ eventId: player.eventId!, marketId: player.marketId! })
               : player.id
             const outcomeId = getPlayerPropBetslipOutcomeId(player, index)
-            const oddProps = getPlayerPropOddButtonProps(
-              `${groupId}:${outcomeId}`,
-              groupId,
-              'prematch-section__player-prop-option',
-              hasBetslipContext
-                ? createBetslipSelection({
-                  eventId: player.eventId!,
-                  marketId: player.marketId!,
-                  outcomeId,
-                  label: option.label,
-                  odd: option.odd,
-                  marketLabel: player.marketLabel,
-                  eventStatus: player.eventStatus ?? 'prematch',
-                  selectionType: 'player',
-                  sport: player.sport,
-                  leagueId: player.leagueId,
-                  leagueName: player.leagueName,
-                  homeTeam: player.homeTeam,
-                  awayTeam: player.awayTeam,
-                  eventTimeLabel: player.eventTimeLabel,
-                  liveClock: player.liveClock,
-                  homeScore: player.homeScore,
-                  awayScore: player.awayScore,
-                  playerName: player.playerName,
-                  selectionIcon: resolvedTeamIcon || player.teamIcon,
-                  playerImage: player.image,
-                  badgeType: 'substitution',
-                })
-                : undefined
-            )
-            const isSelected = oddProps['aria-pressed'] === true
+            const oddProps = disableInteractions
+              ? {
+                  type: 'button' as const,
+                  className: 'prematch-section__player-prop-option',
+                  disabled: true,
+                  'aria-disabled': true,
+                }
+              : getPlayerPropOddButtonProps(
+                  `${groupId}:${outcomeId}`,
+                  groupId,
+                  'prematch-section__player-prop-option',
+                  hasBetslipContext
+                    ? createBetslipSelection({
+                      eventId: player.eventId!,
+                      marketId: player.marketId!,
+                      outcomeId,
+                      label: option.label,
+                      odd: option.odd,
+                      marketLabel: player.marketLabel,
+                      eventStatus: player.eventStatus ?? 'prematch',
+                      selectionType: 'player',
+                      sport: player.sport,
+                      leagueId: player.leagueId,
+                      leagueName: player.leagueName,
+                      homeTeam: player.homeTeam,
+                      awayTeam: player.awayTeam,
+                      eventTimeLabel: player.eventTimeLabel,
+                      liveClock: player.liveClock,
+                      homeScore: player.homeScore,
+                      awayScore: player.awayScore,
+                      playerName: player.playerName,
+                      selectionIcon: resolvedTeamIcon || player.teamIcon,
+                      playerImage: player.image,
+                      badgeType: 'substitution',
+                    })
+                    : undefined
+                )
+            const isSelected = 'aria-pressed' in oddProps && oddProps['aria-pressed'] === true
             const selectionRenderState = isSelected ? 'selected' : 'idle'
 
             return (
@@ -1646,13 +1714,14 @@ export function PreMatchPlayerPropCard({ player }: { player: MatchPlayerProp }) 
                 className={`${oddProps.className}${isSelected ? ' prematch-section__player-prop-option--active' : ''}`}
                 onClick={(event) => {
                   event.stopPropagation()
+                  if (disableInteractions) return
                   if (suppressOptionClick.current) {
                     suppressOptionClick.current = false
                     event.preventDefault()
                     return
                   }
                   centerOption(index)
-                  oddProps.onClick?.(event)
+                  if ('onClick' in oddProps) oddProps.onClick?.(event)
                 }}
               >
                 <span>{option.label}</span>
@@ -2080,7 +2149,11 @@ const leagues: League[] = [
   },
   ]
 
-export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSectionProps = {}) {
+export function PreMatchSection({
+  disableInteractions = false,
+  onOpenCompetition,
+  onMatchClick,
+}: PreMatchSectionProps = {}) {
   const [activeSport, setActiveSport] = useState('futebol')
   const [activeMarket, setActiveMarket] = useState('resultado-final')
   const [openLeagues, setOpenLeagues] = useState<string[]>(
@@ -2204,6 +2277,8 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
   })
 
   const openCompetitionFromLeague = (leagueId: string) => {
+    if (disableInteractions) return
+
     const target = getCompetitionLinkTarget(leagueId)
     if (!target) return
     onOpenCompetition?.(target)
@@ -2240,6 +2315,8 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
   })
 
   const openPreMatchEvent = (league: League, selectedIndex: number) => {
+    if (disableInteractions) return
+
     const selectedMatch = league.matches[selectedIndex]
     if (!selectedMatch) return
 
@@ -2273,6 +2350,13 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
     )
   }
 
+  const getDisabledOddButtonProps = () => ({
+    type: 'button' as const,
+    className: 'prematch-section__odd-btn',
+    disabled: true,
+    'aria-disabled': true,
+  })
+
   return (
     <section id="section-breve" className="prematch-section" ref={sectionRef}>
       {/* Header */}
@@ -2292,6 +2376,7 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
             ref={(el) => { sportChipRefs.current[index] = el }}
             className={`prematch-section__chip sliding-chip ${activeSport === chip.id ? 'prematch-section__chip--active' : ''} ${chip.disabled ? 'prematch-section__chip--disabled' : ''}`}
             onClick={() => {
+              if (disableInteractions) return
               if (chip.disabled) return
               setActiveSport(chip.id)
               setActiveMarket(chip.id === 'basquete' ? 'vencedor' : 'resultado-final')
@@ -2311,7 +2396,8 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
                 }
               }
             }}
-            disabled={chip.disabled}
+            disabled={disableInteractions || chip.disabled}
+            aria-disabled={disableInteractions || chip.disabled}
           >
             <img src={chip.icon} alt="" className="prematch-section__chip-icon" />
             <span data-text={chip.label}>{chip.label}</span>
@@ -2328,6 +2414,8 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
             ref={(el) => { marketChipRefs.current[index] = el }}
             className={`prematch-section__chip prematch-section__chip--market sliding-chip ${activeMarket === chip.id ? 'prematch-section__chip--active' : ''}`}
             onClick={() => {
+              if (disableInteractions) return
+
               if (chip.id !== activeMarket) {
                 marketScrollAnchorRef.current = getMarketScrollAnchor()
               }
@@ -2348,6 +2436,8 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
                 }
               }
             }}
+            disabled={disableInteractions}
+            aria-disabled={disableInteractions}
           >
             <span data-text={chip.label}>{chip.label}</span>
           </button>
@@ -2403,27 +2493,29 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
                       const oddGroupId = getBetslipMarketGroupId({ eventId, marketId: activeMarket })
                       const renderOddButton = (outcomeId: string, label: ReactNode, value: ReactNode) => (
                         <button
-                          {...getOddButtonProps(
-                            `${oddGroupId}:${outcomeId}`,
-                            oddGroupId,
-                            'prematch-section__odd-btn',
-                            createBetslipSelection({
-                              eventId,
-                              marketId: activeMarket,
-                              outcomeId,
-                              label,
-                              odd: value,
-                              marketLabel,
-                              eventStatus: 'prematch',
-                              sport: league.sport,
-                              leagueId: league.id,
-                              leagueName: league.name,
-                              homeTeam: match.homeTeam.name,
-                              awayTeam: match.awayTeam.name,
-                              eventTimeLabel: match.dateTime,
-                              badgeType: 'boost',
-                            })
-                          )}
+                          {...(disableInteractions
+                            ? getDisabledOddButtonProps()
+                            : getOddButtonProps(
+                                `${oddGroupId}:${outcomeId}`,
+                                oddGroupId,
+                                'prematch-section__odd-btn',
+                                createBetslipSelection({
+                                  eventId,
+                                  marketId: activeMarket,
+                                  outcomeId,
+                                  label,
+                                  odd: value,
+                                  marketLabel,
+                                  eventStatus: 'prematch',
+                                  sport: league.sport,
+                                  leagueId: league.id,
+                                  leagueName: league.name,
+                                  homeTeam: match.homeTeam.name,
+                                  awayTeam: match.awayTeam.name,
+                                  eventTimeLabel: match.dateTime,
+                                  badgeType: 'boost',
+                                })
+                              ))}
                         >
                           <span className="prematch-section__odd-team">{label}</span>
                           <span className="prematch-section__odd-value">{value}</span>
@@ -2434,8 +2526,8 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
                       <div
                         key={match.id}
                         data-prematch-match-key={`${league.id}:${match.id}`}
-                        className={`prematch-section__match${onMatchClick ? ' prematch-section__match--clickable' : ''}${isPlayerPropsMarket(league.sport, activeMarket) ? ' prematch-section__match--player-props' : ''}`}
-                        onClick={onMatchClick ? () => openPreMatchEvent(league, matchIndex) : undefined}
+                        className={`prematch-section__match${!disableInteractions && onMatchClick ? ' prematch-section__match--clickable' : ''}${isPlayerPropsMarket(league.sport, activeMarket) ? ' prematch-section__match--player-props' : ''}`}
+                        onClick={!disableInteractions && onMatchClick ? () => openPreMatchEvent(league, matchIndex) : undefined}
                       >
                         {/* Match Header */}
                         <div className="prematch-section__match-header">
@@ -2464,6 +2556,7 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
                               <button 
                                 type="button"
                                 className="prematch-section__match-info-content prematch-section__match-info-content--clickable"
+                                disabled={disableInteractions}
                                 onClick={(e) => { e.stopPropagation(); openReiAntecipaSheet(league.sport as 'futebol' | 'basquete'); }}
                               >
                                 <div className="prematch-section__pag-antecipado">
@@ -2494,7 +2587,7 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
                             onClick={(event) => event.stopPropagation()}
                           >
                             {matchPlayerProps.map((player) => (
-                              <PreMatchPlayerPropCard key={player.id} player={player} />
+                              <PreMatchPlayerPropCard key={player.id} player={player} disableInteractions={disableInteractions} />
                             ))}
                           </div>
                         ) : (
@@ -2568,6 +2661,7 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
                   <button
                     type="button"
                     className="prematch-section__league-more"
+                    disabled={disableInteractions}
                     onClick={() => openCompetitionFromLeague(league.id)}
                   >
                     <span>Veja mais {league.name}</span>
@@ -2582,7 +2676,7 @@ export function PreMatchSection({ onOpenCompetition, onMatchClick }: PreMatchSec
 
       {/* More Button */}
       <div className="prematch-section__more">
-        <button className="prematch-section__more-btn">
+        <button className="prematch-section__more-btn" disabled={disableInteractions}>
           <span>Mais {activeSport === 'basquete' ? 'Basquete' : 'Futebol'}</span>
           <CaretRightIcon aria-hidden="true" className="prematch-section__more-icon" weight="bold" />
         </button>

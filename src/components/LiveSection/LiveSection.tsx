@@ -514,11 +514,12 @@ const leagues: League[] = [
 ]
 
 interface LiveSectionProps {
+  disableInteractions?: boolean
   onMatchClick?: (payload: LiveEventOpenPayload) => void
   onOpenCompetition?: (target: CompetitionLinkTarget) => void
 }
 
-export function LiveSection({ onMatchClick, onOpenCompetition }: LiveSectionProps = {}) {
+export function LiveSection({ disableInteractions = false, onMatchClick, onOpenCompetition }: LiveSectionProps = {}) {
   const [activeSport, setActiveSport] = useState('futebol')
   const [activeMarket, setActiveMarket] = useState('resultado-final')
   const [openLeagues, setOpenLeagues] = useState<string[]>(
@@ -560,6 +561,8 @@ export function LiveSection({ onMatchClick, onOpenCompetition }: LiveSectionProp
   })
 
   const openCompetitionFromLeague = (leagueId: string) => {
+    if (disableInteractions) return
+
     const target = getCompetitionLinkTarget(leagueId)
     if (!target) return
     onOpenCompetition?.(target)
@@ -629,6 +632,7 @@ export function LiveSection({ onMatchClick, onOpenCompetition }: LiveSectionProp
   })
 
   const openLiveEvent = (league: League, selectedIndex: number) => {
+    if (disableInteractions) return
     if (!liveEventSports.has(league.sport)) return
     const selectedMatch = league.matches[selectedIndex]
     if (!selectedMatch) return
@@ -674,6 +678,7 @@ export function LiveSection({ onMatchClick, onOpenCompetition }: LiveSectionProp
             ref={(el) => { sportChipRefs.current[index] = el }}
             className={`live-section__chip sliding-chip ${activeSport === chip.id ? 'live-section__chip--active' : ''} ${chip.disabled ? 'live-section__chip--disabled' : ''}`}
             onClick={() => {
+              if (disableInteractions) return
               if (chip.disabled) return
               setActiveSport(chip.id)
               setActiveMarket(chip.id === 'basquete' ? 'vencedor' : 'resultado-final')
@@ -693,7 +698,8 @@ export function LiveSection({ onMatchClick, onOpenCompetition }: LiveSectionProp
                 }
               }
             }}
-            disabled={chip.disabled}
+            disabled={disableInteractions || chip.disabled}
+            aria-disabled={disableInteractions || chip.disabled}
           >
             <img src={chip.icon} alt="" className="live-section__chip-icon" />
             <span>{chip.label}</span>
@@ -710,6 +716,8 @@ export function LiveSection({ onMatchClick, onOpenCompetition }: LiveSectionProp
             ref={(el) => { marketChipRefs.current[index] = el }}
             className={`live-section__chip live-section__chip--market sliding-chip ${activeMarket === chip.id ? 'live-section__chip--active' : ''}`}
             onClick={() => {
+              if (disableInteractions) return
+
               setActiveMarket(chip.id)
               // Scroll to make chip visible
               const chipEl = marketChipRefs.current[index]
@@ -727,6 +735,8 @@ export function LiveSection({ onMatchClick, onOpenCompetition }: LiveSectionProp
                 }
               }
             }}
+            disabled={disableInteractions}
+            aria-disabled={disableInteractions}
           >
             <span>{chip.label}</span>
           </button>
@@ -773,13 +783,15 @@ export function LiveSection({ onMatchClick, onOpenCompetition }: LiveSectionProp
                         sport={league.sport}
                         activeMarket={activeMarket}
                         currentTime={getMatchTime(match.id, match.time)}
-                        onClick={liveEventSports.has(league.sport) ? () => openLiveEvent(league, matchIndex) : undefined}
+                        disableInteractions={disableInteractions}
+                        onClick={!disableInteractions && liveEventSports.has(league.sport) ? () => openLiveEvent(league, matchIndex) : undefined}
                       />
                     ))}
                   </div>
                   <button
                     type="button"
                     className="live-section__league-more"
+                    disabled={disableInteractions}
                     onClick={() => openCompetitionFromLeague(league.id)}
                   >
                     <span>Veja mais {league.name}</span>
@@ -794,7 +806,7 @@ export function LiveSection({ onMatchClick, onOpenCompetition }: LiveSectionProp
 
       {/* More Button */}
       <div className="live-section__more">
-        <button className="live-section__more-btn">
+        <button className="live-section__more-btn" disabled={disableInteractions}>
           <span>Mais {activeSport === 'basquete' ? 'Basquete' : 'Futebol'} Ao Vivo</span>
           <CaretRightIcon aria-hidden="true" className="live-section__more-icon" weight="bold" />
         </button>

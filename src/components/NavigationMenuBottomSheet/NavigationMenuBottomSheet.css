@@ -11,7 +11,7 @@
 .navigation-menu-bs__overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.76);
+  background: rgb(var(--ds-fill-dark-rgb) / 0.76);
   opacity: 0;
   pointer-events: auto;
   transition: opacity 200ms ease-out;

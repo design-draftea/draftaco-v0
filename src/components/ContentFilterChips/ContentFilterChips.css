@@ -1,0 +1,122 @@
+.content-filter-chips {
+  --content-filter-chips-background-rgb: var(--ds-background-app-rgb, var(--tokens-background-background-rgb, 19 19 19));
+  --content-filter-chips-fade-height: 16px;
+  --content-filter-chips-padding-y: 8px;
+  --content-filter-chips-sticky-top: 0px;
+
+  display: flex;
+  width: 100%;
+  padding: var(--content-filter-chips-padding-y) 0;
+  position: sticky;
+  top: var(--content-filter-chips-sticky-top);
+  z-index: 20;
+  background: linear-gradient(
+    180deg,
+    rgb(var(--content-filter-chips-background-rgb) / 1) 0%,
+    rgb(var(--content-filter-chips-background-rgb) / 1) calc(100% - var(--content-filter-chips-fade-height)),
+    rgb(var(--content-filter-chips-background-rgb) / 0) 100%
+  );
+}
+
+.home > .content-filter-chips.content-filter-chips {
+  position: sticky;
+  top: var(--content-filter-chips-sticky-top);
+  z-index: 20;
+}
+
+.home--novo-trilho:not(.home--sport-active):not(.home--casino-active):not(.home--content-event-rail-active):not(.home--competition-active)
+  > .content-filter-chips.content-filter-chips {
+  --content-filter-chips-sticky-top: calc(var(--content-filter-chips-padding-y) * -1);
+}
+
+.home--novo-trilho.home--sport-active:not(.home--competition-active)
+  > .content-filter-chips--sport-markets.content-filter-chips {
+  --content-filter-chips-padding-y: 8px;
+  --content-filter-chips-sticky-top: -16px;
+}
+
+.home--novo-trilho.home--competition-active
+  > .content-filter-chips--competition-markets.content-filter-chips {
+  --content-filter-chips-padding-y: 8px;
+  --content-filter-chips-sticky-top: -16px;
+}
+
+.content-filter-chips--sport-markets .content-filter-chips__item,
+.content-filter-chips--competition-markets .content-filter-chips__item {
+  text-transform: uppercase;
+}
+
+.content-filter-chips__list {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 0 12px;
+  background: var(--ds-background-app, var(--tokens-background-background));
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.home--v2 .content-filter-chips__list .sliding-chip-indicator,
+.content-filter-chips__list .sliding-chip-indicator {
+  --sliding-chip-v2-active-start: var(--ds-action-primary-default-start, #4b20ff);
+  --sliding-chip-v2-active-start-rgb: var(--ds-action-primary-default-start-rgb, 75 32 255);
+  --sliding-chip-v2-active-end: var(--ds-action-primary-default-end, #9730ff);
+  --sliding-chip-v2-active-end-rgb: var(--ds-action-primary-default-end-rgb, 151 48 255);
+  --sliding-chip-v2-active-fill-start-rgb: var(--ds-action-primary-default-start-rgb, 75 32 255);
+  --sliding-chip-v2-active-fill-end-rgb: var(--ds-action-primary-default-end-rgb, 151 48 255);
+  --sliding-chip-v2-active-fill-opacity: 0.24;
+  --sliding-chip-v2-active-border-width: 1px;
+  --sliding-chip-v2-active-inset: var(--sliding-chip-v2-active-border-width);
+  --sliding-chip-v2-active-base: var(--ds-background-app, var(--tokens-background-background));
+  border-radius: 56px;
+  background: linear-gradient(
+    90deg,
+    var(--sliding-chip-v2-active-start) 0%,
+    var(--sliding-chip-v2-active-end) 100%
+  );
+}
+
+.content-filter-chips__list::-webkit-scrollbar {
+  display: none;
+}
+
+.content-filter-chips__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
+  border-radius: 56px;
+  background: var(--ds-action-transparency-default, rgb(251 251 251 / 0.08));
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  letter-spacing: 0;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.content-filter-chips__item span {
+  position: relative;
+  z-index: 1;
+}
+
+.content-filter-chips__item--active {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ds-fill-primary, #fbfbfb);
+}
+
+.content-filter-chips__item:disabled {
+  cursor: default;
+}

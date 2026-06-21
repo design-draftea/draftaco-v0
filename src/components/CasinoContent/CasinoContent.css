@@ -24,9 +24,9 @@
   margin: 0;
   color: var(--tokens-text-text-01);
   font-family: 'Red Hat Text', sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.4;
+  font-size: var(--Typography-font-size-16, 16px);
+  font-weight: var(--Typography-font-weight-bold, 700);
+  line-height: 24px;
 }
 
 .casino-crash-page__grid {
@@ -60,7 +60,7 @@
 .casino-games-section__header {
   display: flex;
   align-items: center;
-  height: 20px;
+  height: 24px;
   padding: 0 12px;
 }
 
@@ -70,9 +70,9 @@
   gap: 8px;
   color: var(--tokens-text-text-01);
   font-family: 'Red Hat Text', sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.4;
+  font-size: var(--Typography-font-size-16, 16px);
+  font-weight: var(--Typography-font-weight-bold, 700);
+  line-height: 24px;
 }
 
 .casino-games-section__arrow {
@@ -308,7 +308,7 @@
 }
 
 .casino-game-card__provider {
-  color: rgba(255, 255, 255, 0.56);
+  color: rgb(var(--ds-fill-primary-rgb) / 0.56);
   font-family: 'Red Hat Text', sans-serif;
   font-size: 11px;
   font-weight: 500;

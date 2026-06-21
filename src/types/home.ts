@@ -63,9 +63,36 @@ export interface ComboStat {
   label: string
 }
 
+export interface MarketBannerTeam {
+  name: string
+  image?: string
+  imageSourceName?: string
+  score?: string
+  sets?: string[]
+  currentScore?: string
+  isServing?: boolean
+}
+
+export interface MarketBannerOdd {
+  label: string
+  value: string
+  outcomeId: string
+}
+
+export interface MarketBanner {
+  variant: 'football-live' | 'tennis-live' | 'football-pre' | 'basketball-pre'
+  sport: 'futebol' | 'tenis' | 'basquete'
+  league: string
+  teams: [MarketBannerTeam, MarketBannerTeam]
+  odds: MarketBannerOdd[]
+  footerLabel: string
+  live?: boolean
+  liveClock?: string
+}
+
 export interface Banner {
   id: number
-  type: 'missao' | '1x2' | 'torneio' | 'aumentada' | 'virtuais' | 'aoVivo' | 'aoVivoTenis' | 'longoPrazo' | 'combinada'
+  type: 'missao' | '1x2' | 'torneio' | 'aumentada' | 'virtuais' | 'aoVivo' | 'aoVivoTenis' | 'longoPrazo' | 'combinada' | 'market'
   headerLeft: string
   headerRight: string
   showTimer?: boolean
@@ -82,6 +109,7 @@ export interface Banner {
   liveMatch?: LiveMatch
   tennisMatch?: TennisMatch
   comboStats?: ComboStat[]
+  marketBanner?: MarketBanner
 }
 
 export interface Promotion {
@@ -93,6 +121,146 @@ export interface Promotion {
   title: string
   description: string
   image: string
+  headline?: string
+  titleLines?: string[]
+  countdownLabel?: string
+  countdownMinutes?: number
+  rulesLabel?: string
+  glowImage?: string
+  accent?: 'mint' | 'gold' | 'cyan'
+}
+
+export interface HomeCompetitionOdd {
+  label: string
+  value: string
+}
+
+export interface HomeCompetitionMarketColumn {
+  label: string
+  tag?: string
+  homeOdd: HomeCompetitionOdd
+  awayOdd: HomeCompetitionOdd
+}
+
+export interface HomeCompetitionMarketChip {
+  id: string
+  label: string
+}
+
+export interface HomeCompetitionMatch {
+  id: string
+  homeTeam: string
+  awayTeam: string
+  sport: 'futebol' | 'basquete'
+  homeScore?: string
+  awayScore?: string
+  marketLabel: string
+  tags: string[]
+  footerLabel: string
+  live?: boolean
+  liveClock?: string
+  marketColumns?: HomeCompetitionMarketColumn[]
+  doubleChanceOdds?: {
+    homeOrDraw: string
+    homeOrAway: string
+    awayOrDraw: string
+  }
+  bothTeamsScoreOdds?: {
+    yes: string
+    no: string
+  }
+  totalGoalsOdds?: {
+    line: number
+    under: string
+    over: string
+  }
+  totalCornersOdds?: {
+    line: number
+    under: string
+    over: string
+  }
+  totalPointsOdds?: {
+    line: number
+    under: string
+    over: string
+  }
+  handicapOdds?: {
+    line: number
+    home: string
+    away: string
+  }
+  q3TotalOdds?: {
+    line: number
+    under: string
+    over: string
+  }
+  q4TotalOdds?: {
+    line: number
+    under: string
+    over: string
+  }
+  q3ResultOdds?: {
+    home: string
+    away: string
+  }
+  odds: [HomeCompetitionOdd, HomeCompetitionOdd, HomeCompetitionOdd]
+}
+
+export interface HomeCompetitionPlayerProp {
+  id: string
+  marketId?: string
+  playerName: string
+  position: string
+  marketLabel: string
+  matchLabel: string
+  timeLabel: string
+  teamName: string
+  teamAbbreviation: string
+  sport: 'futebol' | 'basquete'
+  odds: [HomeCompetitionOdd, HomeCompetitionOdd, HomeCompetitionOdd]
+}
+
+export interface HomeCompetitionHighlight {
+  title: string
+  sportLabel: string
+  marketChips?: HomeCompetitionMarketChip[]
+  matches: HomeCompetitionMatch[]
+  playerProps: HomeCompetitionPlayerProp[]
+}
+
+export interface HomeOfferLeg {
+  id: string
+  icon?: 'total-goals'
+  image?: string
+  label: string
+  detail?: string
+}
+
+export interface HomeOfferCarouselItem {
+  id: string
+  title: string
+  badge: string
+  badgeTone: 'combinada' | 'super-combinada' | 'super-aumentada' | 'aumentada' | 'garantida'
+  matchup: string
+  dateLabel: string
+  background: string
+  odd: string
+  oldOdd?: string
+  restrictions?: string[]
+  footerAction?: {
+    label: string
+  }
+  player?: {
+    name: string
+    teamName: string
+    image: string
+  }
+  boost?: {
+    from: string
+    to: string
+    marketLabel: string
+  }
+  legs?: HomeOfferLeg[]
 }
 
 export type CasinoCategoryId =

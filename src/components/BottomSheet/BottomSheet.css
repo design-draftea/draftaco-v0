@@ -19,7 +19,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgb(var(--ds-fill-dark-rgb) / 0.8);
   animation: fadeIn 0.2s ease-out;
   pointer-events: auto;
 }
@@ -109,6 +109,13 @@
   flex: 1;
 }
 
+.bottom-sheet__leading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
 .bottom-sheet__title {
   display: flex;
   align-items: center;
@@ -132,8 +139,8 @@
 }
 
 .bottom-sheet__close {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -145,8 +152,9 @@
 }
 
 .bottom-sheet__close-icon {
-  width: 20px;
-  height: 20px;
+  display: block;
+  width: 40px;
+  height: 40px;
 }
 
 /* Body - Scrollable */

@@ -11,7 +11,7 @@
   display: flex;
   align-items: center;
   padding: 0 12px;
-  height: 20px;
+  height: 24px;
 }
 
 .offers-section__title {
@@ -19,10 +19,10 @@
   align-items: center;
   gap: 8px;
   font-family: 'Red Hat Text', sans-serif;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: var(--Typography-font-size-16, 16px);
+  font-weight: var(--Typography-font-weight-bold, 700);
   color: var(--tokens-text-text-01);
-  line-height: 1.4;
+  line-height: 24px;
 }
 
 .offers-section__arrow {
@@ -149,8 +149,8 @@
   padding: 1px;
   background: linear-gradient(to top right, var(--tokens-background-background) 0%, var(--tokens-background-background) 64%, var(--primitives-red-red-500) 100%);
   -webkit-mask: 
-    linear-gradient(#fff 0 0) content-box, 
-    linear-gradient(#fff 0 0);
+    linear-gradient(var(--ds-fill-primary, #FBFBFB) 0 0) content-box,
+    linear-gradient(var(--ds-fill-primary, #FBFBFB) 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
@@ -644,7 +644,7 @@
 }
 
 .offer-card__player-event-old-value {
-  color: rgba(255, 255, 255, 0.56);
+  color: rgb(var(--ds-fill-primary-rgb) / 0.56);
   text-decoration: line-through;
 }
 

@@ -38,6 +38,7 @@ const TEAM_SEARCH_ALIASES: Record<string, string> = {
   'Man. City': 'Manchester City',
   Newcastle: 'Newcastle United',
   PSG: 'Paris SG',
+  'Paris Saint-Germain': 'Paris SG',
   Tottenham: 'Tottenham Hotspur',
   '76ers': 'Philadelphia 76ers',
   Bulls: 'Chicago Bulls',

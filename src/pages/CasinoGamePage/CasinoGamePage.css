@@ -28,7 +28,7 @@
   position: absolute;
   inset: 0;
   z-index: 0;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgb(var(--ds-fill-dark-rgb) / 0.8);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   animation: casino-game-page__overlay-in 0.2s ease-out;
@@ -501,8 +501,8 @@
   );
   filter: blur(var(--casino-game-header-gradient-blur));
   opacity: var(--casino-game-header-gradient-opacity);
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 56%, rgba(0, 0, 0, 0.68) 78%, rgba(0, 0, 0, 0) 100%);
-  mask-image: linear-gradient(180deg, #000 0%, #000 56%, rgba(0, 0, 0, 0.68) 78%, rgba(0, 0, 0, 0) 100%);
+  -webkit-mask-image: linear-gradient(180deg, var(--ds-fill-dark, #000000) 0%, var(--ds-fill-dark, #000000) 56%, rgb(var(--ds-fill-dark-rgb) / 0.68) 78%, rgb(var(--ds-fill-dark-rgb) / 0) 100%);
+  mask-image: linear-gradient(180deg, var(--ds-fill-dark, #000000) 0%, var(--ds-fill-dark, #000000) 56%, rgb(var(--ds-fill-dark-rgb) / 0.68) 78%, rgb(var(--ds-fill-dark-rgb) / 0) 100%);
   z-index: 0;
   pointer-events: none;
 }

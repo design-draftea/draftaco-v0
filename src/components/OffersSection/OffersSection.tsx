@@ -1410,9 +1410,14 @@ const allOffers: OfferCard[] = [
 interface OffersSectionProps {
   sportFilter?: string | null
   liveOnly?: boolean
+  disableInteractions?: boolean
 }
 
-export function OffersSection({ sportFilter, liveOnly = false }: OffersSectionProps = {}) {
+export function OffersSection({
+  sportFilter,
+  liveOnly = false,
+  disableInteractions = false,
+}: OffersSectionProps = {}) {
   const [isDragging, setIsDragging] = useState(false)
   const [activeFilter, setActiveFilter] = useState('melhores')
   const [liveOfferDetailsByMatch, setLiveOfferDetailsByMatch] = useState<Record<string, LiveOfferDetails>>(buildLiveOfferDetails)
@@ -1462,7 +1467,16 @@ export function OffersSection({ sportFilter, liveOnly = false }: OffersSectionPr
     return liveOfferDetailsByMatch[offer.subtitle]
   }
 
+  const getDisabledOfferButtonProps = (offer: OfferCard) => ({
+    type: 'button' as const,
+    className: `offer-card__button${offer.type === 'pechincha' ? ' offer-card__button--pechincha' : ''}`,
+    disabled: true,
+    'aria-disabled': true,
+  })
+
   const getOfferOddButtonProps = (offer: OfferCard) => {
+    if (disableInteractions) return getDisabledOfferButtonProps(offer)
+
     const liveDetails = getOfferLiveDetails(offer)
     const liveTime = liveDetails?.time
     const comboEntries = getOfferComboBetslipEntries(offer, liveOfferDetailsByMatch)
@@ -1642,7 +1656,11 @@ export function OffersSection({ sportFilter, liveOnly = false }: OffersSectionPr
             key={chip.id}
             ref={(el) => { chipRefs.current[index] = el }}
             className={`offers-section__chip sliding-chip ${selectedFilter === chip.id ? 'offers-section__chip--active' : ''}`}
+            disabled={disableInteractions}
+            aria-disabled={disableInteractions}
             onClick={() => {
+              if (disableInteractions) return
+
               setActiveFilter(chip.id)
               // Scroll para deixar o chip selecionado visível
               const chipEl = chipRefs.current[index]
@@ -1853,7 +1871,7 @@ export function OffersSection({ sportFilter, liveOnly = false }: OffersSectionPr
             {/* Card Footer */}
             <div className={footerClassName}>
               {offer.showViewAll && (
-                <button className="offer-card__viewall">
+                <button className="offer-card__viewall" disabled={disableInteractions}>
                   <span>Ver todos ({offer.showViewAll})</span>
                   <CaretDownIcon aria-hidden="true" className="offer-card__viewall-icon" weight="bold" />
                 </button>

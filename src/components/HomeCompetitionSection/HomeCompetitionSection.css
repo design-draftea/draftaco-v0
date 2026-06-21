@@ -1,0 +1,1001 @@
+.home-competition {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 0 12px 12px;
+  box-sizing: border-box;
+  color: var(--ds-fill-primary, #fbfbfb);
+}
+
+.home-competition__title-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-height: 32px;
+}
+
+.home-competition__title-row:not(.home-competition__title-row--with-markets) {
+  justify-content: center;
+  height: 32px;
+}
+
+.home-competition__title-main {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  height: 32px;
+  min-width: 0;
+}
+
+.home-competition__title-main h2 {
+  margin: 0;
+  overflow: hidden;
+  font-family: 'Red Hat Text', system-ui, sans-serif;
+  font-size: var(--Typography-font-size-16, 16px);
+  font-weight: var(--Typography-font-weight-bold, 700);
+  line-height: 24px;
+  letter-spacing: 0;
+  color: var(--ds-fill-primary, #fbfbfb);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-competition__chevron {
+  display: block;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+.home-competition__chevron--secondary {
+  opacity: var(--ds-fill-secondary-alpha, 0.7);
+}
+
+.home-competition__title-main > span {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-forma-djr-display, 'Forma DJR Display', 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif);
+  font-size: 10px;
+  font-style: italic;
+  font-weight: 700;
+  line-height: 15px;
+  letter-spacing: 0;
+  color: var(--ds-fill-primary, #fbfbfb);
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-competition__markets {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  height: 32px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.home-competition__markets::-webkit-scrollbar {
+  display: none;
+}
+
+.home-competition__market-tab {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+  letter-spacing: 0;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.home-competition__market-tab--active {
+  color: var(--ds-fill-primary, #fbfbfb);
+}
+
+.home-competition__market-tab--active::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 16px;
+  height: 3px;
+  border-radius: 56px;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+
+.home-competition__content,
+.home-competition__matches {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.home-competition__match-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.home-competition__match-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.home-competition__match-group-title {
+  margin: 0;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+  letter-spacing: 0;
+  color: var(--ds-fill-primary, #fbfbfb);
+}
+
+.home-competition--without-title .home-competition__match-group-title {
+  font-size: var(--Typography-font-size-16, 16px);
+  line-height: 24px;
+}
+
+.home-competition__match-card {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 123px;
+  padding: 10px;
+  overflow: hidden;
+  border: 1px solid var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
+  border-radius: 16px;
+  background:
+    url('../../assets/shineCardDefault.png') 0px center / 100% 100% no-repeat,
+    var(--ds-background-app, #000);
+  box-sizing: border-box;
+  -webkit-backdrop-filter: blur(10.15px);
+  backdrop-filter: blur(10.15px);
+}
+
+.home-competition__match-card--clickable {
+  cursor: pointer;
+}
+
+.home-competition__match-card--clickable:focus-visible {
+  outline: 2px solid var(--ds-fill-primary, #fbfbfb);
+  outline-offset: 2px;
+}
+
+.home-competition__match-card--clickable .home-competition__odd {
+  pointer-events: none;
+}
+
+.home-competition__match-card--basketball {
+  height: 183px;
+}
+
+.home-competition__match-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  width: 100%;
+  min-height: 19px;
+  padding-bottom: 4px;
+  box-sizing: border-box;
+}
+
+.home-competition__market {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  max-width: 100%;
+}
+
+.home-competition__market-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.home-competition__market-content,
+.home-competition__odds,
+.home-competition__basketball-market-headings,
+.home-competition__basketball-markets {
+  animation: home-competition-market-enter 180ms ease-out both;
+}
+
+.home-competition__market-label {
+  overflow: hidden;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 15px;
+  letter-spacing: 0;
+  color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
+  text-align: center;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.home-competition__tags {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.home-competition__tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
+  box-sizing: border-box;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 15px;
+  letter-spacing: 0;
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
+  white-space: nowrap;
+}
+
+.home-competition__match-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+}
+
+.home-competition__basketball-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 19px;
+  padding-bottom: 4px;
+  box-sizing: border-box;
+}
+
+.home-competition__basketball-header-spacer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.home-competition__basketball-market-headings,
+.home-competition__basketball-markets {
+  display: flex;
+  flex: 0 0 200px;
+  gap: 4px;
+}
+
+.home-competition__basketball-market-headings--compact,
+.home-competition__basketball-markets--compact {
+  flex: 0 0 auto;
+}
+
+.home-competition__basketball-market-heading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 64px;
+  height: 15px;
+  overflow: hidden;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 15px;
+  letter-spacing: 0;
+  color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
+  text-align: center;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.home-competition__basketball-market-heading small {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
+  box-sizing: border-box;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 15px;
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
+}
+
+.home-competition__basketball-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 116px;
+}
+
+.home-competition__basketball-main .home-competition__teams {
+  height: 116px;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.home-competition__basketball-main .home-competition__team-row {
+  gap: 6px;
+  min-height: 56px;
+}
+
+.home-competition__basketball-main .home-competition__score {
+  flex: 0 0 24px;
+  width: 24px;
+  text-align: right;
+}
+
+.home-competition__basketball-market-column {
+  display: flex;
+  flex: 0 0 64px;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.home-competition__odd--basketball {
+  flex: 0 0 56px;
+  height: 56px;
+  min-height: 56px;
+  max-height: 56px;
+}
+
+.home-competition__odd--basketball span {
+  font-size: 9px;
+  line-height: 13px;
+}
+
+.home-competition__teams {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.home-competition__team-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 21px;
+}
+
+.home-competition__team-info {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.home-competition__team-logo,
+.home-competition__team-logo-placeholder {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+}
+
+.home-competition__team-logo {
+  object-fit: contain;
+}
+
+.home-competition__team-logo--fallback {
+  opacity: 0.5;
+}
+
+.home-competition__team-logo-placeholder {
+  display: block;
+  border-radius: 50%;
+  background: var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
+}
+
+.home-competition__team-name,
+.home-competition__score {
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 21px;
+  letter-spacing: 0;
+  color: var(--ds-fill-primary, #fbfbfb);
+}
+
+.home-competition__team-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-competition__basketball-main .home-competition__team-name,
+.home-competition__match-card--futebol .home-competition__team-name {
+  display: -webkit-box;
+  font-size: 14px;
+  line-height: 21px;
+  text-overflow: clip;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.home-competition__score {
+  flex: 0 0 10px;
+  width: 10px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.home-competition__odds {
+  display: flex;
+  flex: 0 0 200px;
+  gap: 4px;
+}
+
+.home-competition__odd {
+  display: flex;
+  flex: 0 0 64px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 56px;
+  padding: 4px;
+  overflow: hidden;
+  border: 1px solid var(--ds-fill-opacity-quinary, rgb(251 251 251 / 0.08));
+  border-radius: 12px;
+  background: var(--ds-action-secondary-default, rgb(251 251 251 / 0.12));
+  box-sizing: border-box;
+  box-shadow: none;
+  cursor: default;
+}
+
+.home-competition__odds--two .home-competition__odd {
+  flex-basis: 98px;
+  width: 98px;
+}
+
+.home-competition__odd span,
+.home-competition__odd strong {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-competition__odd span {
+  font-size: 10px;
+  line-height: 15px;
+  color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
+  text-transform: uppercase;
+}
+
+.home-competition__odd strong {
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--ds-fill-primary, #fbfbfb);
+}
+
+.home-competition__odd:disabled {
+  opacity: 1;
+}
+
+.home-competition__match-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  height: 28px;
+  padding-top: 10px;
+  box-sizing: border-box;
+}
+
+.home-competition__status,
+.home-competition__more {
+  display: flex;
+  align-items: center;
+}
+
+.home-competition__status {
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 4px;
+}
+
+.home-competition__live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 20px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: var(--ds-live, #f43f5e);
+  box-sizing: border-box;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 15px;
+  letter-spacing: 0;
+  color: var(--ds-fill-primary, #fbfbfb);
+  white-space: nowrap;
+}
+
+.home-competition__live-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.home-competition__footer-label,
+.home-competition__more {
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0;
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
+  white-space: nowrap;
+}
+
+.home-competition__footer-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-competition__more {
+  flex: 0 0 auto;
+  gap: 4px;
+  background: var(--ds-background-app, #000);
+  text-align: right;
+}
+
+.home-competition__players {
+  display: flex;
+  gap: 8px;
+  width: calc(100% + 24px);
+  margin: 0 -12px;
+  padding: 0 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.home-competition__player-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.home-competition__players::-webkit-scrollbar {
+  display: none;
+}
+
+.home-competition__players--grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+}
+
+.home-competition__players--accordion {
+  transition: height 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: height;
+}
+
+.home-competition__player-card {
+  position: relative;
+  isolation: isolate;
+  flex: 0 0 164px;
+  width: 164px;
+  height: 175px;
+  padding: 10px;
+  overflow: hidden;
+  border: 1px solid var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
+  border-radius: 16px;
+  background:
+    url('../../assets/shineCardPlayerDefault.png') 0px center / 100% 100% no-repeat,
+    var(--ds-background-app, #000);
+  box-sizing: border-box;
+}
+
+.home-competition__players--grid .home-competition__player-card {
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.home-competition__player-card--entering {
+  animation: home-competition-player-card-enter 480ms cubic-bezier(0.16, 1, 0.3, 1) 220ms both;
+}
+
+.home-competition__stat-icon {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 4px;
+  border-radius: 6px;
+  background: var(--ds-action-secondary-default, rgb(251 251 251 / 0.12));
+  box-sizing: border-box;
+}
+
+.home-competition__stat-icon img {
+  display: block;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+}
+
+.home-competition__player-meta {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  width: 64px;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 15px;
+  letter-spacing: 0;
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.home-competition__player-meta > span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-competition__player-match-label strong {
+  font-weight: 700;
+  color: var(--ds-fill-primary, #fbfbfb);
+}
+
+.home-competition__player-photo {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 122px;
+  height: 64px;
+  overflow: hidden;
+  transform: translateX(-50%);
+}
+
+.home-competition__player-photo::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 24px;
+  background: linear-gradient(180deg, transparent 0%, var(--ds-background-app, #000) 100%);
+  pointer-events: none;
+}
+
+.home-competition__player-photo img {
+  display: block;
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+}
+
+.home-competition__player-info {
+  position: absolute;
+  top: 72px;
+  left: 10px;
+  right: 10px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+.home-competition__player-info p {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  line-height: 18px;
+  letter-spacing: 0;
+  color: var(--ds-fill-primary, #fbfbfb);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.home-competition__player-info strong {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+}
+
+.home-competition__player-info span {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
+}
+
+.home-competition__player-info small {
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 14px;
+  letter-spacing: 0;
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-competition__player-odds-frame {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  width: 144px;
+  height: 44px;
+  overflow: hidden;
+}
+
+.home-competition__players--grid .home-competition__player-odds-frame {
+  width: auto;
+}
+
+.home-competition__players--grid + .home-competition__load-more {
+  margin-top: -8px;
+}
+
+.home-competition__player-groups + .home-competition__load-more {
+  margin-top: -8px;
+}
+
+.home-competition__player-odds-frame::before,
+.home-competition__player-odds-frame::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+.home-competition__player-odds-frame::before {
+  left: 0;
+  background: linear-gradient(90deg, var(--ds-fill-dark, #000) 0%, rgb(var(--ds-fill-dark-rgb, 0 0 0) / 0) 100%);
+}
+
+.home-competition__player-odds-frame::after {
+  right: 0;
+  background: linear-gradient(270deg, var(--ds-fill-dark, #000) 0%, rgb(var(--ds-fill-dark-rgb, 0 0 0) / 0) 100%);
+}
+
+.home-competition__player-odds-frame--fade-left::before,
+.home-competition__player-odds-frame--fade-right::after {
+  opacity: 0.72;
+}
+
+.home-competition__player-odds {
+  --home-competition-player-odd-width: 58px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 100%;
+  height: 44px;
+  padding: 0 calc((100% - var(--home-competition-player-odd-width)) / 2);
+  overflow-x: auto;
+  overflow-y: hidden;
+  box-sizing: border-box;
+  scroll-behavior: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+
+.home-competition__player-odds--dragging {
+  cursor: grabbing;
+  scroll-behavior: auto;
+  scroll-snap-type: none;
+}
+
+.home-competition__player-odds::-webkit-scrollbar {
+  display: none;
+}
+
+.home-competition__player-odds .home-competition__odd {
+  flex: 0 0 var(--home-competition-player-odd-width);
+  width: var(--home-competition-player-odd-width);
+  height: 44px;
+  padding: 4px 8px;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+.home-competition__player-odds .home-competition__odd--center {
+  opacity: 1;
+}
+
+.home-competition__player-odds .home-competition__odd:not(.home-competition__odd--center) {
+  opacity: 0.42;
+}
+
+.home-competition__player-odds .home-competition__odd span {
+  color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
+}
+
+.home-competition__load-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-bottom: 1px solid var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
+  background: transparent;
+  box-sizing: border-box;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+  letter-spacing: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.home-competition__load-more-icon {
+  display: block;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  filter: brightness(0) invert(1);
+}
+
+@keyframes home-competition-player-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes home-competition-market-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-competition__market-content,
+  .home-competition__odds,
+  .home-competition__basketball-market-headings,
+  .home-competition__basketball-markets {
+    animation: none;
+  }
+
+  .home-competition__players--accordion {
+    transition-duration: 560ms;
+  }
+
+  .home-competition__player-card--entering {
+    animation-name: home-competition-player-card-enter-reduced;
+    animation-duration: 440ms;
+    animation-delay: 260ms;
+  }
+}
+
+@keyframes home-competition-player-card-enter-reduced {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

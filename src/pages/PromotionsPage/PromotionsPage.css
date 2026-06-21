@@ -9,7 +9,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--tokens-background-background);
+  background: var(--ds-background-app, var(--tokens-background-background));
   padding-top: 192px;
   padding-bottom: var(--navbar-page-bottom-padding);
   scrollbar-width: none;
@@ -127,7 +127,7 @@
 }
 
 .promotions-page__tab:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.68);
+  outline: 2px solid rgb(var(--ds-fill-primary-rgb) / 0.68);
   outline-offset: -2px;
 }
 
@@ -235,7 +235,7 @@
 }
 
 .promotions-page__filter-chip:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.68);
+  outline: 2px solid rgb(var(--ds-fill-primary-rgb) / 0.68);
   outline-offset: 2px;
 }
 
@@ -251,7 +251,7 @@
 .promotions-page__content {
   display: flex;
   flex-direction: column;
-  background: var(--tokens-background-background);
+  background: var(--ds-background-app, var(--tokens-background-background));
 }
 
 .promotions-missions-section {
@@ -274,7 +274,7 @@
 .promotions-missions-section__header {
   display: flex;
   align-items: center;
-  height: 20px;
+  height: 24px;
   padding: 0 12px;
 }
 
@@ -282,9 +282,9 @@
   margin: 0;
   color: var(--tokens-text-text-01);
   font-family: 'Red Hat Text', sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.4;
+  font-size: var(--Typography-font-size-16, 16px);
+  font-weight: var(--Typography-font-weight-bold, 700);
+  line-height: 24px;
   letter-spacing: 0;
 }
 

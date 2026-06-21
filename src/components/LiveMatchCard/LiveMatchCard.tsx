@@ -94,6 +94,7 @@ interface LiveMatchCardProps {
   sport: string
   activeMarket: string
   currentTime: string
+  disableInteractions?: boolean
   onClick?: () => void
 }
 
@@ -205,9 +206,14 @@ const liveFootballFinishingPlayersByTeam: Record<string, TeamPlayerProfile[]> = 
     { name: 'Taremi', position: 'ATA' },
   ],
   PSG: [
-    { name: 'Dembele', position: 'ATA' },
+    { name: 'Dembélé', position: 'ATA' },
     { name: 'Kvaratskhelia', position: 'ATA' },
-    { name: 'Goncalo Ramos', position: 'ATA' },
+    { name: 'Gonçalo Ramos', position: 'ATA' },
+  ],
+  'Manchester City': [
+    { name: 'Haaland', position: 'ATA' },
+    { name: 'Foden', position: 'MEI' },
+    { name: 'De Bruyne', position: 'MEI' },
   ],
   Lyon: [
     { name: 'Lacazette', position: 'ATA' },
@@ -391,6 +397,11 @@ const liveFootballAssistPlayersByTeam: Record<string, TeamPlayerProfile[]> = {
     { name: 'Vitinha', position: 'MEI' },
     { name: 'Zaïre-Emery', position: 'MEI' },
     { name: 'Fabian Ruiz', position: 'MEI' },
+  ],
+  'Manchester City': [
+    { name: 'De Bruyne', position: 'MEI' },
+    { name: 'Foden', position: 'MEI' },
+    { name: 'Bernardo Silva', position: 'MEI' },
   ],
   Lyon: [
     { name: 'Cherki', position: 'MEI' },
@@ -629,6 +640,38 @@ const liveMarketLabels: Record<string, string> = {
   [LIVE_BASKETBALL_PLAYER_POINTS_MARKET_ID]: 'Pontos do Jogador',
 }
 
+const livePlayerTeamAliases: Record<string, string> = {
+  'Paris Saint-Germain': 'PSG',
+  'Man. City': 'Manchester City',
+  'Utah Jazz': 'Jazz',
+  'Oklahoma City Thunder': 'Thunder',
+  'New York Knicks': 'Knicks',
+  'Orlando Magic': 'Magic',
+  'Chicago Bulls': 'Bulls',
+  'Miami Heat': 'Heat',
+  'Golden State Warriors': 'Warriors',
+  'Los Angeles Lakers': 'Lakers',
+  'Philadelphia 76ers': '76ers',
+  'Boston Celtics': 'Celtics',
+  'Denver Nuggets': 'Nuggets',
+  'Phoenix Suns': 'Suns',
+  'Dallas Mavericks': 'Mavericks',
+  'San Antonio Spurs': 'Spurs',
+  'Los Angeles Clippers': 'Clippers',
+  'LA Clippers': 'Clippers',
+  'Sacramento Kings': 'Kings',
+}
+
+const getLiveTeamPlayerProfiles = (
+  playersByTeam: Record<string, TeamPlayerProfile[]>,
+  teamName: string
+) => {
+  const trimmedTeamName = teamName.trim()
+  const alias = livePlayerTeamAliases[trimmedTeamName]
+
+  return playersByTeam[trimmedTeamName] ?? (alias ? playersByTeam[alias] : undefined) ?? []
+}
+
 // eslint-disable-next-line react-refresh/only-export-components
 export const getLivePlayerProps = (
   match: LiveMatchCardMatch,
@@ -648,8 +691,8 @@ export const getLivePlayerProps = (
     : marketId === LIVE_FOOTBALL_ASSISTS_MARKET_ID
       ? liveFootballAssistPlayersByTeam
       : liveFootballFinishingPlayersByTeam
-  const homePlayers = playersByTeam[match.homeTeam.name] ?? []
-  const awayPlayers = playersByTeam[match.awayTeam.name] ?? []
+  const homePlayers = getLiveTeamPlayerProfiles(playersByTeam, match.homeTeam.name)
+  const awayPlayers = getLiveTeamPlayerProfiles(playersByTeam, match.awayTeam.name)
   const orderedPlayers = [
     ...homePlayers.slice(0, 1).map((player) => ({ ...player, teamName: match.homeTeam.name, teamIcon: match.homeTeam.icon, teamSide: 'home' as const })),
     ...awayPlayers.slice(0, 1).map((player) => ({ ...player, teamName: match.awayTeam.name, teamIcon: match.awayTeam.icon, teamSide: 'away' as const })),
@@ -679,7 +722,14 @@ export const getLivePlayerProps = (
   }, [])
 }
 
-export function LiveMatchCard({ match, sport, activeMarket, currentTime, onClick }: LiveMatchCardProps) {
+export function LiveMatchCard({
+  match,
+  sport,
+  activeMarket,
+  currentTime,
+  disableInteractions = false,
+  onClick,
+}: LiveMatchCardProps) {
   const isBasketball = sport === 'basquete'
   const isTennis = sport === 'tenis'
   const isPlayerProps = isLivePlayerPropsMarket(sport, activeMarket)
@@ -727,8 +777,17 @@ export function LiveMatchCard({ match, sport, activeMarket, currentTime, onClick
 
     return homeTeamIcon || awayTeamIcon
   }
-  const getMatchOddButtonProps = (outcomeId: string, label: ReactNode, value: ReactNode) => (
-    getOddButtonProps(
+  const getMatchOddButtonProps = (outcomeId: string, label: ReactNode, value: ReactNode) => {
+    if (disableInteractions) {
+      return {
+        type: 'button' as const,
+        className: 'live-section__odd-btn',
+        disabled: true,
+        'aria-disabled': true,
+      }
+    }
+
+    return getOddButtonProps(
       `${oddGroupId}:${outcomeId}`,
       oddGroupId,
       'live-section__odd-btn',
@@ -754,7 +813,7 @@ export function LiveMatchCard({ match, sport, activeMarket, currentTime, onClick
         selectionIcon: getMatchSelectionIcon(outcomeId, label),
       })
     )
-  )
+  }
   const renderOddButton = (outcomeId: string, label: ReactNode, value: ReactNode) => (
     <button {...getMatchOddButtonProps(outcomeId, label, value)}>
       <span className="live-section__odd-team">{label}</span>
@@ -845,7 +904,7 @@ export function LiveMatchCard({ match, sport, activeMarket, currentTime, onClick
           onClick={(event) => event.stopPropagation()}
         >
           {matchPlayerProps.map((player) => (
-            <PreMatchPlayerPropCard key={player.id} player={player} />
+            <PreMatchPlayerPropCard key={player.id} player={player} disableInteractions={disableInteractions} />
           ))}
         </div>
       ) : (
