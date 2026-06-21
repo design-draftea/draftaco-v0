@@ -2,7 +2,9 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProp
 import './Navbar.css'
 
 import { productNavbarConfigs } from '../../data/homeProducts'
+import { useFeatureFlags } from '../../hooks/useFeatureFlags'
 import type { ProductMode } from '../../types/home'
+import navClubDraftea from '../../assets/navClubDraftea.svg'
 
 interface NavbarProps {
   activeProduct?: ProductMode
@@ -13,7 +15,7 @@ interface NavbarProps {
 
 const navbarActiveMotionMs = 520
 const getNavbarIconStyle = (icon: string) => ({
-  '--navbar-icon-mask': `url(${icon})`,
+  '--navbar-icon-mask': `url("${icon}")`,
 }) as CSSProperties
 
 export function Navbar({
@@ -22,7 +24,16 @@ export function Navbar({
   disabledItemIds = [],
   onItemSelect,
 }: NavbarProps = {}) {
-  const navbarConfig = productNavbarConfigs[activeProduct]
+  const { brandMode } = useFeatureFlags()
+  const baseNavbarConfig = productNavbarConfigs[activeProduct]
+  const navbarConfig = brandMode === 'draftea'
+    ? {
+        ...baseNavbarConfig,
+        mainItems: baseNavbarConfig.mainItems.map((item) =>
+          item.id === 'promocoes' ? { ...item, icon: navClubDraftea } : item
+        ),
+      }
+    : baseNavbarConfig
   const isControlledActiveItem = controlledActiveItemId !== undefined
   const configuredActiveItemId = controlledActiveItemId ?? navbarConfig.activeItemId
   const [selectedItemId, setSelectedItemId] = useState(configuredActiveItemId)

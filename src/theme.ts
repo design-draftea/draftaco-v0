@@ -1,7 +1,7 @@
 export type AppTheme = 'dark' | 'light'
 export type AppThemePreference = AppTheme | 'system'
 
-const appThemeStorageKey = 'pitaquinho-theme'
+const appThemeStorageKey = 'draftaco-theme'
 const appThemePreferenceStorageKey = 'pitaco-theme-preference'
 export const appThemePreferenceChangeEvent = 'pitaco-theme-preference-change'
 const defaultAppThemePreference: AppThemePreference = 'dark'

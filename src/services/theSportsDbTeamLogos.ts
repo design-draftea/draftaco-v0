@@ -14,7 +14,7 @@ const API_BASE_URL = import.meta.env.DEV
   ? `/sportsdb/api/v1/json/${API_KEY}`
   : `https://www.thesportsdb.com/api/v1/json/${API_KEY}`
 const REQUEST_TIMEOUT_MS = 5000
-const STORAGE_PREFIX = 'pitaquinho:sportsdb-team-logo:v1'
+const STORAGE_PREFIX = 'draftaco:sportsdb-team-logo:v1'
 
 const SPORTS_DB_SPORT_BY_APP_SPORT: Record<string, string> = {
   futebol: 'Soccer',

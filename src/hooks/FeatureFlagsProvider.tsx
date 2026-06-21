@@ -14,8 +14,8 @@ interface FeatureFlagsProviderProps {
   children: ReactNode
 }
 
-const featureFlagsStorageKey = 'pitaquinho:feature-flags'
-const brandModeStorageKey = 'pitaquinho:brand-mode'
+const featureFlagsStorageKey = 'draftaco:feature-flags'
+const brandModeStorageKey = 'draftaco:brand-mode'
 const defaultBrandMode: BrandMode = 'pitaco'
 
 const getDefaultFeatureFlags = () => (
