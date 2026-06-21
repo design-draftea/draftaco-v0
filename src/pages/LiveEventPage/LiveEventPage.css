@@ -2455,9 +2455,9 @@
   width: 32px;
   height: 32px;
   padding: 0;
-  border: none;
+  border: 1px solid var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
   border-radius: 50%;
-  background: var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
+  background: transparent;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
