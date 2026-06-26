@@ -8,6 +8,7 @@ import {
   type ButtonHTMLAttributes,
   type KeyboardEvent,
   type MouseEvent,
+  type PointerEvent,
   type ReactNode,
   type WheelEvent,
 } from 'react'
@@ -45,6 +46,24 @@ const PLAYER_PROPS_GRID_LOAD_STEP = 2
 const PLAYER_PROPS_GRID_MAX_COUNT = 8
 const PLAYER_PROP_ODD_WIDTH = 58
 const PLAYER_PROP_ODD_GAP = 4
+const PLAYER_ODD_MOUSE_SENSITIVITY = 1
+const PLAYER_ODD_TOUCH_SENSITIVITY = 0.92
+const PLAYER_ODD_DRAG_INTENT_THRESHOLD = 8
+const PLAYER_ODD_DRAG_AXIS_RATIO = 1.15
+
+const getVerticalScrollContainer = (element: HTMLElement | null) => {
+  let current = element?.parentElement ?? null
+
+  while (current && current !== document.body) {
+    const style = window.getComputedStyle(current)
+    if (/(auto|scroll)/.test(style.overflowY) && current.scrollHeight > current.clientHeight) {
+      return current
+    }
+    current = current.parentElement
+  }
+
+  return (document.scrollingElement ?? document.documentElement) as HTMLElement
+}
 const PLAYER_PROPS_ACCORDION_DURATION_MS = 900
 const playerPropsMarketIds = new Set(['finalizacao-gol', 'gols', 'pontos-jogador', 'assistencias'])
 const basketballQuarterChipIds = new Set(['q1', 'q2', 'q3', 'q4'])
@@ -526,10 +545,16 @@ function PlayerPropOddSlider({
   const initialOddIndex = getInitialOddIndex(prop.odds)
   const dragRef = useRef<{
     startX: number
+    startY: number
     scrollLeft: number
     startIndex: number
     moved: boolean
+    direction: 'pending' | 'horizontal' | 'vertical'
+    lastY: number
+    pointerId: number
+    sensitivity: number
   } | null>(null)
+  const suppressClickRef = useRef(false)
   const [activeOddIndex, setActiveOddIndex] = useState(initialOddIndex)
   const [isDragging, setIsDragging] = useState(false)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
@@ -627,49 +652,129 @@ function PlayerPropOddSlider({
     const initialIndex = startIndex ?? activeOddIndex
     let targetIndex = nearestIndex >= 0 ? nearestIndex : initialIndex
 
-    if (Math.abs(dragDelta) > 24 && targetIndex === initialIndex) {
+    if (Math.abs(dragDelta) > 12 && targetIndex === initialIndex) {
       targetIndex = initialIndex + (dragDelta > 0 ? 1 : -1)
     }
 
     centerOdd(targetIndex)
   }, [activeOddIndex, centerOdd, getCenteredOddIndex])
 
-  const handleMouseDown = (event: MouseEvent<HTMLDivElement>) => {
-    if (event.button !== 0) return
-
-    const containerEl = oddsRef.current
-    if (!containerEl) return
-
-    setIsDragging(true)
-    dragRef.current = {
-      startX: event.pageX - containerEl.offsetLeft,
-      scrollLeft: containerEl.scrollLeft,
-      startIndex: activeOddIndex,
-      moved: false,
-    }
-  }
-
-  const handleMouseMove = (event: MouseEvent<HTMLDivElement>) => {
+  const applyVerticalScroll = (event: PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current
     const containerEl = oddsRef.current
     if (!drag || !containerEl) return
 
-    event.preventDefault()
-    const x = event.pageX - containerEl.offsetLeft
-    const walk = (x - drag.startX) * 1.5
+    const verticalEl = getVerticalScrollContainer(containerEl)
+    verticalEl.scrollTop += drag.lastY - event.clientY
+    drag.lastY = event.clientY
+  }
+
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+
+    const containerEl = oddsRef.current
+    if (!containerEl) return
+
+    containerEl.setPointerCapture?.(event.pointerId)
+    if (event.pointerType === 'mouse') setIsDragging(true)
+
+    dragRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      scrollLeft: containerEl.scrollLeft,
+      startIndex: activeOddIndex,
+      moved: false,
+      direction: event.pointerType === 'mouse' ? 'horizontal' : 'pending',
+      lastY: event.clientY,
+      pointerId: event.pointerId,
+      sensitivity: event.pointerType === 'touch'
+        ? PLAYER_ODD_TOUCH_SENSITIVITY
+        : PLAYER_ODD_MOUSE_SENSITIVITY,
+    }
+  }
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current
+    const containerEl = oddsRef.current
+    if (!drag || !containerEl) return
+
+    const deltaX = event.clientX - drag.startX
+    const deltaY = event.clientY - drag.startY
+    const absX = Math.abs(deltaX)
+    const absY = Math.abs(deltaY)
+
+    // Lock to one axis once intent is clear: horizontal scrolls the odds, vertical
+    // scrolls the page (touch-action is none here, so the page can't scroll itself).
+    if (drag.direction === 'pending') {
+      if (absY >= PLAYER_ODD_DRAG_INTENT_THRESHOLD && absY > absX * PLAYER_ODD_DRAG_AXIS_RATIO) {
+        drag.direction = 'vertical'
+        applyVerticalScroll(event)
+        return
+      }
+
+      if (absX < PLAYER_ODD_DRAG_INTENT_THRESHOLD || absX <= absY * PLAYER_ODD_DRAG_AXIS_RATIO) {
+        return
+      }
+
+      drag.direction = 'horizontal'
+      setIsDragging(true)
+    }
+
+    if (event.cancelable) event.preventDefault()
+
+    if (drag.direction === 'vertical') {
+      applyVerticalScroll(event)
+      return
+    }
+
+    if (drag.direction !== 'horizontal') return
+
+    const walk = deltaX * drag.sensitivity
     drag.moved = drag.moved || Math.abs(walk) > 4
     containerEl.scrollLeft = drag.scrollLeft - walk
   }
 
-  const finishDrag = () => {
+  const releaseOddsPointer = (pointerId: number) => {
+    const containerEl = oddsRef.current
+    if (containerEl?.hasPointerCapture?.(pointerId)) {
+      containerEl.releasePointerCapture(pointerId)
+    }
+  }
+
+  const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current
     const containerEl = oddsRef.current
+    releaseOddsPointer(event.pointerId)
     if (!drag) return
 
-    const dragDelta = containerEl ? containerEl.scrollLeft - drag.scrollLeft : 0
+    const wasHorizontal = drag.direction === 'horizontal'
+    const dragDelta = containerEl && wasHorizontal ? containerEl.scrollLeft - drag.scrollLeft : 0
+    const { startIndex, moved } = drag
     dragRef.current = null
     setIsDragging(false)
-    snapToNearestOdd(dragDelta, drag.startIndex)
+
+    // Swallow the click that follows a real swipe so it never toggles a bet.
+    if (wasHorizontal && moved) {
+      suppressClickRef.current = true
+      window.setTimeout(() => {
+        suppressClickRef.current = false
+      }, 0)
+    }
+
+    if (wasHorizontal) snapToNearestOdd(dragDelta, startIndex)
+  }
+
+  const handlePointerCancel = (event: PointerEvent<HTMLDivElement>) => {
+    releaseOddsPointer(event.pointerId)
+    dragRef.current = null
+    setIsDragging(false)
+  }
+
+  const handleOddsClickCapture = (event: MouseEvent<HTMLDivElement>) => {
+    if (!suppressClickRef.current) return
+    suppressClickRef.current = false
+    event.preventDefault()
+    event.stopPropagation()
   }
 
   const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
@@ -700,10 +805,11 @@ function PlayerPropOddSlider({
         ref={setOddsElement}
         className={`home-competition__player-odds ${isDragging ? 'home-competition__player-odds--dragging' : ''}`}
         onScroll={handleOddsScroll}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={finishDrag}
-        onMouseLeave={finishDrag}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onClickCapture={handleOddsClickCapture}
       >
         {prop.odds.map((odd, index) => {
           const className = index === activeOddIndex ? 'home-competition__odd--center' : ''
