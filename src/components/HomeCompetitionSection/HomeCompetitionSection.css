@@ -950,6 +950,7 @@
   scroll-snap-align: center;
   scroll-snap-stop: always;
   pointer-events: none;
+  touch-action: none;
   transition: opacity 160ms ease;
 }
 

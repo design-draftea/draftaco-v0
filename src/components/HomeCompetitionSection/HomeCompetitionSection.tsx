@@ -64,6 +64,20 @@ const getVerticalScrollContainer = (element: HTMLElement | null) => {
 
   return (document.scrollingElement ?? document.documentElement) as HTMLElement
 }
+
+const getHorizontalScrollAncestor = (element: HTMLElement | null) => {
+  let current = element?.parentElement ?? null
+
+  while (current && current !== document.body) {
+    const style = window.getComputedStyle(current)
+    if (/(auto|scroll)/.test(style.overflowX) && current.scrollWidth > current.clientWidth) {
+      return current
+    }
+    current = current.parentElement
+  }
+
+  return null
+}
 const PLAYER_PROPS_ACCORDION_DURATION_MS = 900
 const playerPropsMarketIds = new Set(['finalizacao-gol', 'gols', 'pontos-jogador', 'assistencias'])
 const basketballQuarterChipIds = new Set(['q1', 'q2', 'q3', 'q4'])
@@ -555,8 +569,8 @@ function PlayerPropOddSlider({
     sensitivity: number
   } | null>(null)
   const suppressClickRef = useRef(false)
+  const lockedParentRef = useRef<HTMLElement | null>(null)
   const [activeOddIndex, setActiveOddIndex] = useState(initialOddIndex)
-  const [isDragging, setIsDragging] = useState(false)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(false)
 
@@ -616,6 +630,10 @@ function PlayerPropOddSlider({
 
   useEffect(() => () => {
     if (scrollRafRef.current !== null) window.cancelAnimationFrame(scrollRafRef.current)
+    if (lockedParentRef.current) {
+      lockedParentRef.current.style.overflowX = ''
+      lockedParentRef.current = null
+    }
   }, [])
 
   const scrollOddIntoCenter = useCallback((index: number, behavior: ScrollBehavior = 'smooth') => {
@@ -659,6 +677,28 @@ function PlayerPropOddSlider({
     centerOdd(targetIndex)
   }, [activeOddIndex, centerOdd, getCenteredOddIndex])
 
+  // Toggle the snap-disabling drag class SYNCHRONOUSLY (not via React state). The class
+  // sets scroll-snap-type:none, and it must be active the instant we start writing
+  // scrollLeft — otherwise mandatory snap yanks the content back on every move
+  // ("vai um pouco e volta"). React state would apply it a render too late.
+  const setDraggingClass = (active: boolean) => {
+    oddsRef.current?.classList.toggle('home-competition__player-odds--dragging', active)
+
+    // The player cards live in their OWN horizontal carousel, so the odds carousel is a
+    // horizontal scroller nested inside another one. While dragging the odds, lock the
+    // outer carousel — otherwise it steals the gesture and the odds barely move.
+    if (active) {
+      const parent = getHorizontalScrollAncestor(oddsRef.current)
+      if (parent) {
+        lockedParentRef.current = parent
+        parent.style.overflowX = 'hidden'
+      }
+    } else if (lockedParentRef.current) {
+      lockedParentRef.current.style.overflowX = ''
+      lockedParentRef.current = null
+    }
+  }
+
   const applyVerticalScroll = (event: PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current
     const containerEl = oddsRef.current
@@ -676,7 +716,7 @@ function PlayerPropOddSlider({
     if (!containerEl) return
 
     containerEl.setPointerCapture?.(event.pointerId)
-    if (event.pointerType === 'mouse') setIsDragging(true)
+    if (event.pointerType === 'mouse') setDraggingClass(true)
 
     dragRef.current = {
       startX: event.clientX,
@@ -717,7 +757,7 @@ function PlayerPropOddSlider({
       }
 
       drag.direction = 'horizontal'
-      setIsDragging(true)
+      setDraggingClass(true)
     }
 
     if (event.cancelable) event.preventDefault()
@@ -751,7 +791,7 @@ function PlayerPropOddSlider({
     const dragDelta = containerEl && wasHorizontal ? containerEl.scrollLeft - drag.scrollLeft : 0
     const { startIndex, moved } = drag
     dragRef.current = null
-    setIsDragging(false)
+    setDraggingClass(false)
 
     // Swallow the click that follows a real swipe so it never toggles a bet.
     if (wasHorizontal && moved) {
@@ -767,7 +807,7 @@ function PlayerPropOddSlider({
   const handlePointerCancel = (event: PointerEvent<HTMLDivElement>) => {
     releaseOddsPointer(event.pointerId)
     dragRef.current = null
-    setIsDragging(false)
+    setDraggingClass(false)
   }
 
   const handleOddsClickCapture = (event: MouseEvent<HTMLDivElement>) => {
@@ -803,7 +843,7 @@ function PlayerPropOddSlider({
     >
       <div
         ref={setOddsElement}
-        className={`home-competition__player-odds ${isDragging ? 'home-competition__player-odds--dragging' : ''}`}
+        className="home-competition__player-odds"
         onScroll={handleOddsScroll}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
