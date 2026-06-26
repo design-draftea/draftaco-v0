@@ -522,6 +522,7 @@ function PlayerPropOddSlider({
   renderOddButton?: HomeCompetitionPlayerPropOddRenderer
 }) {
   const oddsRef = useRef<HTMLDivElement | null>(null)
+  const scrollRafRef = useRef<number | null>(null)
   const initialOddIndex = getInitialOddIndex(prop.odds)
   const dragRef = useRef<{
     startX: number
@@ -576,6 +577,21 @@ function PlayerPropOddSlider({
     setCanScrollLeft(containerEl.scrollLeft > 1)
     setCanScrollRight(containerEl.scrollLeft < maxScrollLeft - 1)
   }, [getCenteredOddIndex])
+
+  // Coalesce scroll work to one run per frame. iOS fires scroll events faster than it
+  // paints during momentum, and measuring the centered odd forces a synchronous layout
+  // each time — running it per-event is what made this carousel stutter on iOS.
+  const handleOddsScroll = useCallback(() => {
+    if (scrollRafRef.current !== null) return
+    scrollRafRef.current = window.requestAnimationFrame(() => {
+      scrollRafRef.current = null
+      updateScrollState()
+    })
+  }, [updateScrollState])
+
+  useEffect(() => () => {
+    if (scrollRafRef.current !== null) window.cancelAnimationFrame(scrollRafRef.current)
+  }, [])
 
   const scrollOddIntoCenter = useCallback((index: number, behavior: ScrollBehavior = 'smooth') => {
     const containerEl = oddsRef.current
@@ -683,12 +699,11 @@ function PlayerPropOddSlider({
       <div
         ref={setOddsElement}
         className={`home-competition__player-odds ${isDragging ? 'home-competition__player-odds--dragging' : ''}`}
-        onScroll={updateScrollState}
+        onScroll={handleOddsScroll}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={finishDrag}
         onMouseLeave={finishDrag}
-        onTouchEnd={() => window.setTimeout(() => snapToNearestOdd(), 120)}
       >
         {prop.odds.map((odd, index) => {
           const className = index === activeOddIndex ? 'home-competition__odd--center' : ''
