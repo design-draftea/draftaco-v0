@@ -1,21 +1,10 @@
-import { Fragment, useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
+import { Fragment, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import { homeOfferCarouselItems } from '../../data/homeProducts'
 import arrowDuplo from '../../assets/iconsDraftaco/arrowDuplo.svg'
 import chevronDown from '../../assets/iconsDraftaco/chevronDown.svg'
 import iconTotalGols from '../../assets/iconsDraftaco/iconTotalGols.png'
 import type { HomeOfferCarouselItem, HomeOfferLeg } from '../../types/home'
 import './HomeOfferCarousel.css'
-
-const MINUTE_IN_MS = 60_000
-const DEFAULT_COUNTDOWN_MINUTES = 2 * 60 + 44
-
-const formatCountdown = (totalMinutes: number) => {
-  const safeMinutes = Math.max(0, totalMinutes)
-  const hours = Math.floor(safeMinutes / 60)
-  const minutes = safeMinutes % 60
-
-  return `${hours}h:${minutes.toString().padStart(2, '0')}m`
-}
 
 function OfferLeg({ leg, isLast }: { leg: HomeOfferLeg; isLast: boolean }) {
   const iconClassName = [
@@ -118,29 +107,14 @@ function HomeOfferCard({ offer }: { offer: HomeOfferCarouselItem }) {
 
 interface HomeOfferCarouselProps {
   offers?: HomeOfferCarouselItem[]
-  countdownMinutes?: number
 }
 
 export function HomeOfferCarousel({
   offers = homeOfferCarouselItems,
-  countdownMinutes = DEFAULT_COUNTDOWN_MINUTES,
 }: HomeOfferCarouselProps = {}) {
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const dragRef = useRef<{ startX: number; scrollLeft: number } | null>(null)
-  const [countdownStartedAt] = useState(() => Date.now())
-  const [currentTime, setCurrentTime] = useState(countdownStartedAt)
   const [isDragging, setIsDragging] = useState(false)
-
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setCurrentTime(Date.now())
-    }, 1000)
-
-    return () => window.clearInterval(intervalId)
-  }, [])
-
-  const countdownEndsAt = countdownStartedAt + countdownMinutes * MINUTE_IN_MS
-  const remainingMinutes = Math.ceil(Math.max(0, countdownEndsAt - currentTime) / MINUTE_IN_MS)
 
   const handleMouseDown = (event: MouseEvent<HTMLDivElement>) => {
     if (event.button !== 0 || !scrollRef.current) return
@@ -170,10 +144,6 @@ export function HomeOfferCarousel({
 
   return (
     <section className="home-offer-carousel" aria-label="Ofertas">
-      <div className="home-offer-carousel__title">
-        <h2>Ofertas</h2>
-        <span>Termina {formatCountdown(remainingMinutes)}</span>
-      </div>
       <div
         className={`home-offer-carousel__list${isDragging ? ' home-offer-carousel__list--dragging' : ''}`}
         ref={scrollRef}

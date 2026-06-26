@@ -22,26 +22,13 @@
 }
 
 .betslip__surface {
-  --betslip-surface-gradient-01-rgb: 174 24 255;
-  --betslip-surface-gradient-02-rgb: 82 40 255;
-  --betslip-surface-gradient-opacity: 0.32;
   position: relative;
   z-index: 2;
   width: 100%;
   height: 100%;
   overflow: visible;
   border-radius: var(--spacing-56);
-  background:
-    linear-gradient(
-      8.953deg,
-      rgb(var(--betslip-surface-gradient-02-rgb) / var(--betslip-surface-gradient-opacity)) 0.621%,
-      rgb(var(--betslip-surface-gradient-01-rgb) / var(--betslip-surface-gradient-opacity)) 100%
-    ),
-    linear-gradient(
-      90deg,
-      var(--tokens-background-background) 0%,
-      var(--tokens-background-background) 100%
-    );
+  background: var(--ds-component-colors-gradient-betslip);
   box-shadow: none;
   transform: translate3d(0, var(--betslip-hidden-translate), 0);
   transition: transform 260ms cubic-bezier(0.32, 0, 0.2, 1);
@@ -159,11 +146,7 @@
   inset: 0;
   padding: 1px;
   border-radius: inherit;
-  background: linear-gradient(
-    8.953deg,
-    rgb(var(--betslip-surface-gradient-02-rgb)) 0.621%,
-    rgb(var(--betslip-surface-gradient-01-rgb)) 100%
-  );
+  background: var(--ds-action-colors-action-primary-default);
   pointer-events: none;
   -webkit-mask:
     linear-gradient(var(--ds-fill-primary, #FBFBFB) 0 0) content-box,
@@ -175,11 +158,18 @@
   mask-composite: exclude;
 }
 
-:root[data-theme="light"] .betslip__surface {
-  --betslip-surface-gradient-opacity: 0.24;
-}
-
 .betslip__compact {
+  --betslip-compact-text-color: var(--ds-fill-primary);
+  --betslip-compact-text-font-family: 'Red Hat Text', system-ui, sans-serif;
+  --betslip-compact-text-font-size: var(--typography-font-size-14);
+  --betslip-compact-text-font-weight: var(--typography-font-weight-bold);
+  --betslip-compact-text-line-height: 16px;
+  --betslip-compact-rolling-font-weight: 900;
+  --betslip-compact-rolling-line-height: 21px;
+  --betslip-compact-secondary-color: var(--ds-fill-tertiary);
+  --betslip-compact-secondary-font-size: var(--typography-font-size-12);
+  --betslip-compact-secondary-font-weight: var(--typography-font-weight-medium);
+  --betslip-compact-secondary-line-height: 16px;
   display: flex;
   align-items: center;
   width: 100%;
@@ -188,7 +178,7 @@
   border: 0;
   background: transparent;
   color: var(--tokens-text-text-01);
-  cursor: pointer;
+  cursor: default;
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
@@ -223,11 +213,6 @@
   transition-timing-function: ease-out;
 }
 
-.betslip__compact:focus-visible {
-  outline: 2px solid rgb(var(--tokens-text-text-01-rgb) / 0.64);
-  outline-offset: -4px;
-}
-
 .betslip__metrics {
   display: flex;
   flex: 1 1 0;
@@ -245,7 +230,7 @@
   align-items: flex-start;
   justify-content: center;
   min-width: 0;
-  color: var(--tokens-text-text-01);
+  color: var(--betslip-compact-text-color);
   text-align: left;
   white-space: nowrap;
 }
@@ -264,29 +249,29 @@
   display: block;
   max-width: 100%;
   overflow: hidden;
-  color: var(--tokens-text-text-01);
+  color: var(--betslip-compact-text-color);
+  font-family: var(--betslip-compact-text-font-family);
+  font-size: var(--betslip-compact-text-font-size);
+  font-weight: var(--betslip-compact-text-font-weight);
+  line-height: var(--betslip-compact-text-line-height);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.betslip__label,
-.betslip__payout-label {
-  font-family: 'Red Hat Text', system-ui, sans-serif;
-  font-size: var(--typography-font-size-12);
-  font-weight: var(--typography-font-weight-medium);
-  height: 16px;
-  line-height: 16px;
+.betslip__label {
+  height: var(--betslip-compact-secondary-line-height);
+  color: var(--betslip-compact-secondary-color);
+  font-size: var(--betslip-compact-secondary-font-size);
+  font-weight: var(--betslip-compact-secondary-font-weight);
+  line-height: var(--betslip-compact-secondary-line-height);
+  opacity: 1;
 }
 
-.betslip__label {
-  opacity: 0.56;
+.betslip__payout-label {
+  height: var(--betslip-compact-text-line-height);
 }
 
 .betslip__value {
-  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
-  font-size: var(--typography-font-size-14);
-  font-weight: var(--typography-font-weight-extrabold);
-  line-height: 1.3;
   font-variant-numeric: tabular-nums;
 }
 
@@ -296,8 +281,8 @@
   align-items: center;
   justify-content: flex-start;
   min-width: 0;
-  min-height: calc(var(--typography-font-size-14) * 1.3);
-  line-height: 1.3;
+  min-height: var(--betslip-compact-text-line-height);
+  line-height: var(--betslip-compact-text-line-height);
   overflow: visible;
   isolation: isolate;
 }
@@ -314,7 +299,7 @@
   position: relative;
   z-index: 3;
   display: block;
-  line-height: 1.3;
+  line-height: var(--betslip-compact-text-line-height);
 }
 
 .betslip__count-number--add {
@@ -364,7 +349,17 @@
 }
 
 .betslip__value--rolling {
+  font-weight: var(--betslip-compact-rolling-font-weight);
+  line-height: var(--betslip-compact-rolling-line-height);
   text-shadow: none;
+}
+
+.betslip__value--rolling.betslip__count-value {
+  min-height: var(--betslip-compact-rolling-line-height);
+}
+
+.betslip__value--rolling .betslip__count-number {
+  line-height: var(--betslip-compact-rolling-line-height);
 }
 
 .betslip__turbo-tag {
@@ -445,19 +440,15 @@
   padding: 0 14px;
   overflow: hidden;
   border-radius: 100px;
-  background: linear-gradient(
-    55deg,
-    var(--tokens-layer-layer-gradient-02) 0%,
-    var(--tokens-layer-layer-gradient-01) 100%
-  );
+  background: var(--ds-action-colors-action-primary-default);
   box-shadow: inset 0 0 12px rgb(var(--ds-fill-dark-rgb) / 0.24);
-  color: var(--tokens-text-text-on-color-white);
+  color: var(--betslip-compact-text-color);
 }
 
 .betslip__value--potential-win {
   width: 100%;
   min-width: 0;
-  color: var(--tokens-text-text-on-color-white);
+  color: var(--betslip-compact-text-color);
   text-align: center;
 }
 
@@ -468,7 +459,10 @@
   width: 100%;
   min-width: 0;
   padding-left: calc(var(--spacing-12) / 2);
-  color: var(--tokens-text-text-on-color-white);
+  color: var(--betslip-compact-text-color);
+  font-size: var(--typography-font-size-12);
+  font-weight: var(--typography-font-weight-medium);
+  line-height: 18px;
 }
 
 .betslip__payout-label--turbo {
@@ -491,7 +485,7 @@
   flex: 0 0 14px;
   width: 14px;
   height: 14px;
-  color: var(--tokens-text-text-on-color-white);
+  color: var(--betslip-compact-text-color);
 }
 
 @keyframes betslipCountOrbAddScale {

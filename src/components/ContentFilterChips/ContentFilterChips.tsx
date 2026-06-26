@@ -12,6 +12,7 @@ const contentFilters = [
 const CONTENT_FILTER_STICKY_LOCK_OVERSCROLL = 8
 
 export type ContentFilterId = typeof contentFilters[number]['id']
+type ContentFilterScrollMode = 'sticky-lock' | 'top'
 
 export interface ContentFilterChipOption<TId extends string = ContentFilterId> {
   id: TId
@@ -25,6 +26,7 @@ interface ContentFilterChipsProps<TId extends string = ContentFilterId> {
   ariaLabel?: string
   className?: string
   disabled?: boolean
+  scrollMode?: ContentFilterScrollMode
 }
 
 export function ContentFilterChips<TId extends string = ContentFilterId>({
@@ -34,6 +36,7 @@ export function ContentFilterChips<TId extends string = ContentFilterId>({
   ariaLabel = 'Filtros de conteúdo',
   className,
   disabled = false,
+  scrollMode = 'sticky-lock',
 }: ContentFilterChipsProps<TId> = {}) {
   const filterItems = (filters ?? contentFilters) as readonly ContentFilterChipOption<TId>[]
   const chipsRef = useRef<HTMLElement | null>(null)
@@ -107,6 +110,23 @@ export function ContentFilterChips<TId extends string = ContentFilterId>({
     window.setTimeout(applyStickyScroll, 120)
   }
 
+  const scrollToPageTop = () => {
+    const applyTopScroll = () => {
+      const chipsEl = chipsRef.current
+      const homeEl = chipsEl?.closest<HTMLElement>('.home')
+
+      homeEl?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    }
+
+    applyTopScroll()
+    window.requestAnimationFrame(() => {
+      applyTopScroll()
+      window.requestAnimationFrame(applyTopScroll)
+    })
+    window.setTimeout(applyTopScroll, 120)
+  }
+
   const handleFilterChange = (filterId: TId) => {
     if (disabled) return
 
@@ -116,7 +136,11 @@ export function ContentFilterChips<TId extends string = ContentFilterId>({
       setInternalActiveFilter(filterId)
     }
     onFilterChange?.(filterId, { shouldLockScroll })
-    if (shouldLockScroll) scrollToStickyLock()
+    if (scrollMode === 'top') {
+      scrollToPageTop()
+    } else if (shouldLockScroll) {
+      scrollToStickyLock()
+    }
   }
 
   return (

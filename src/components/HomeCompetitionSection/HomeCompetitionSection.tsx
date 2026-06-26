@@ -13,6 +13,14 @@ import {
 } from 'react'
 import { homeCompetitionHighlight } from '../../data/homeProducts'
 import { getTeamLogo } from '../../data/teamLogos'
+import {
+  createBetslipSelection,
+  getBetslipEventId,
+  getBetslipMarketGroupId,
+  getPlayerPropBetslipKey,
+  normalizeBetslipIdPart,
+} from '../../hooks/betslipUtils'
+import { useOddSelection } from '../../hooks/useOddSelection'
 import { updateLiveClock } from '../../utils/liveClock'
 import { TeamLogo } from '../TeamLogo'
 import chevronDown from '../../assets/iconsDraftaco/chevronDown.svg'
@@ -38,7 +46,7 @@ const PLAYER_PROPS_GRID_MAX_COUNT = 8
 const PLAYER_PROP_ODD_WIDTH = 58
 const PLAYER_PROP_ODD_GAP = 4
 const PLAYER_PROPS_ACCORDION_DURATION_MS = 900
-const playerPropsMarketIds = new Set(['finalizacao-gol', 'pontos-jogador', 'assistencias'])
+const playerPropsMarketIds = new Set(['finalizacao-gol', 'gols', 'pontos-jogador', 'assistencias'])
 const basketballQuarterChipIds = new Set(['q1', 'q2', 'q3', 'q4'])
 
 type HomeCompetitionOddDisplay = {
@@ -60,6 +68,17 @@ export type HomeCompetitionPlayerPropOddRenderer = (
   }
 ) => ReactNode
 
+type HomeCompetitionMatchOddRenderer = (
+  odd: HomeCompetitionOddDisplay,
+  context: {
+    match: HomeCompetitionMatch
+    index: number
+    marketId: string
+    marketLabel: string
+    outcomeId: string
+  }
+) => ReactNode
+
 const teamLogoAliases: Record<string, string> = {
   'Paris Saint-Germain': 'PSG',
 }
@@ -71,6 +90,19 @@ const getPlayerPropAvatar = (sport: HomeCompetitionPlayerProp['sport']) => (
 )
 
 const getInitialOddIndex = (odds: HomeCompetitionOdd[]) => Math.floor(odds.length / 2)
+
+const getReactNodeText = (node: ReactNode): string => {
+  if (typeof node === 'string' || typeof node === 'number') return String(node)
+  if (Array.isArray(node)) return node.map(getReactNodeText).join('')
+
+  return ''
+}
+
+const getOddOutcomeId = (label: ReactNode, index: number, prefix?: string) => (
+  [prefix, index, normalizeBetslipIdPart(getReactNodeText(label))]
+    .filter(Boolean)
+    .join('-')
+)
 
 const getInitialLiveTimes = (matches: HomeCompetitionMatch[]) =>
   matches.reduce<Record<string, string>>((times, match) => {
@@ -140,9 +172,9 @@ const getMatchMarketOdds = (
 
   if (activeMarket === 'dupla-chance' && match.doubleChanceOdds) {
     return [
-      { label: `${labels.home}/EMP`, value: match.doubleChanceOdds.homeOrDraw },
-      { label: `${labels.home}/${labels.away}`, value: match.doubleChanceOdds.homeOrAway },
-      { label: `${labels.away}/EMP`, value: match.doubleChanceOdds.awayOrDraw },
+      { label: '1X', value: match.doubleChanceOdds.homeOrDraw },
+      { label: '12', value: match.doubleChanceOdds.homeOrAway },
+      { label: 'X2', value: match.doubleChanceOdds.awayOrDraw },
     ]
   }
 
@@ -353,6 +385,51 @@ function renderPlayerPropMatchLabel(prop: HomeCompetitionPlayerProp) {
   ))
 }
 
+const getPlayerPropTimeParts = (timeLabel: string) => {
+  const normalizedTimeLabel = timeLabel.trim()
+
+  if (/^AO VIVO$/i.test(normalizedTimeLabel)) {
+    return { date: normalizedTimeLabel.toUpperCase(), time: '' }
+  }
+
+  const parentheticalTimeMatch = normalizedTimeLabel.match(/^(.+?)\s*\(([^)]+)\)$/)
+  if (parentheticalTimeMatch) {
+    return {
+      date: parentheticalTimeMatch[1].trim().toUpperCase(),
+      time: parentheticalTimeMatch[2].trim(),
+    }
+  }
+
+  const commaTimeMatch = normalizedTimeLabel.match(/^(.+?),\s*(.+)$/)
+  if (commaTimeMatch) {
+    return {
+      date: commaTimeMatch[1].trim().toUpperCase(),
+      time: commaTimeMatch[2].trim(),
+    }
+  }
+
+  const compactTimeMatch = normalizedTimeLabel.match(/^(.+?)\s+(\d{1,2}:\d{2})$/)
+  if (compactTimeMatch) {
+    return {
+      date: compactTimeMatch[1].trim().toUpperCase(),
+      time: compactTimeMatch[2].trim(),
+    }
+  }
+
+  return { date: normalizedTimeLabel.toUpperCase(), time: '' }
+}
+
+const renderPlayerPropTimeLabel = (label: string) => {
+  const { date, time } = getPlayerPropTimeParts(label)
+
+  return (
+    <span className="home-competition__player-time-label">
+      <span>{date}</span>
+      {time && <span>{time}</span>}
+    </span>
+  )
+}
+
 const getPlayerPropGroupTitle = (prop: HomeCompetitionPlayerProp) => {
   const timeLabel = prop.timeLabel.trim()
 
@@ -418,16 +495,18 @@ export function HomeCompetitionOddButton({
   odd,
   className = '',
   type = 'button',
-  disabled = true,
+  disabled,
   ...buttonProps
 }: HomeCompetitionOddButtonProps) {
+  const isDisabled = disabled ?? !buttonProps.onClick
+
   return (
     <button
       {...buttonProps}
       className={['home-competition__odd', className].filter(Boolean).join(' ')}
       type={type}
-      disabled={disabled}
-      aria-disabled={disabled ? 'true' : undefined}
+      disabled={isDisabled}
+      aria-disabled={isDisabled ? 'true' : undefined}
     >
       <span>{odd.label}</span>
       <strong>{odd.value}</strong>
@@ -647,8 +726,12 @@ interface HomeCompetitionSectionProps {
   hideMarketChips?: boolean
   hideMatches?: boolean
   hideTitleRow?: boolean
+  hideTitleChevron?: boolean
   matchGroups?: HomeCompetitionMatchGroup[]
   playerPropsLayout?: 'carousel' | 'grid'
+  showPlayerPropsWithMatches?: boolean
+  titleVariant?: 'default' | 'compact'
+  className?: string
   onMatchClick?: (
     match: HomeCompetitionMatch,
     competition: HomeCompetitionHighlight,
@@ -707,18 +790,22 @@ function BasketballMatchCard({
   match,
   liveTime,
   activeMarket,
+  renderOddButton,
   onClick,
 }: {
   match: HomeCompetitionMatch
   liveTime?: string
   activeMarket?: string
+  renderOddButton?: HomeCompetitionMatchOddRenderer
   onClick?: () => void
 }) {
   const footerLabel = match.live ? liveTime ?? match.liveClock ?? match.footerLabel : match.footerLabel
   const marketColumns = getBasketballActiveMarketColumns(match, activeMarket)
   const isCompactMarketLayout = marketColumns.length < 3
   const marketStateKey = activeMarket ?? 'default'
+  const baseMarketId = activeMarket ?? normalizeBetslipIdPart(match.marketLabel)
   const isClickable = !!onClick
+  const leagueLabel = match.leagueLabel?.toUpperCase()
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (!onClick || (event.key !== 'Enter' && event.key !== ' ')) return
     event.preventDefault()
@@ -738,7 +825,7 @@ function BasketballMatchCard({
       onKeyDown={handleKeyDown}
     >
       <div className="home-competition__basketball-header">
-        <div className="home-competition__basketball-header-spacer" />
+        <span className="home-competition__league-label">{leagueLabel}</span>
         <div
           key={`${match.id}-${marketStateKey}-basketball-headings`}
           className={`home-competition__basketball-market-headings${isCompactMarketLayout ? ' home-competition__basketball-market-headings--compact' : ''}`}
@@ -762,12 +849,38 @@ function BasketballMatchCard({
           className={`home-competition__basketball-markets${isCompactMarketLayout ? ' home-competition__basketball-markets--compact' : ''}`}
           aria-label={`Mercados de ${match.homeTeam} contra ${match.awayTeam}`}
         >
-          {marketColumns.map((column) => (
-            <div className="home-competition__basketball-market-column" key={`${match.id}-${marketStateKey}-${column.label}`}>
-              <BasketballMarketButton odd={column.homeOdd} />
-              <BasketballMarketButton odd={column.awayOdd} />
-            </div>
-          ))}
+          {marketColumns.map((column, columnIndex) => {
+            const columnMarketId = `${baseMarketId}-${normalizeBetslipIdPart(column.label)}`
+            const columnOdds = [
+              { odd: column.homeOdd, prefix: 'home' },
+              { odd: column.awayOdd, prefix: 'away' },
+            ]
+
+            return (
+              <div className="home-competition__basketball-market-column" key={`${match.id}-${marketStateKey}-${column.label}`}>
+                {columnOdds.map(({ odd, prefix }, oddIndex) => {
+                  const index = columnIndex * 2 + oddIndex
+                  const oddKey = `${match.id}-${columnMarketId}-${prefix}-${String(odd.label)}`
+
+                  if (renderOddButton) {
+                    return (
+                      <Fragment key={oddKey}>
+                        {renderOddButton(odd, {
+                          match,
+                          index,
+                          marketId: columnMarketId,
+                          marketLabel: column.label,
+                          outcomeId: getOddOutcomeId(odd.label, index, prefix),
+                        })}
+                      </Fragment>
+                    )
+                  }
+
+                  return <BasketballMarketButton odd={odd} key={oddKey} />
+                })}
+              </div>
+            )
+          })}
         </div>
       </div>
       <div className="home-competition__match-footer">
@@ -794,18 +907,23 @@ function MatchCard({
   liveTime,
   activeMarket,
   activeMarketLabel,
+  renderOddButton,
   onClick,
 }: {
   match: HomeCompetitionMatch
   liveTime?: string
   activeMarket?: string
   activeMarketLabel?: string
+  renderOddButton?: HomeCompetitionMatchOddRenderer
   onClick?: () => void
 }) {
   const footerLabel = match.live ? liveTime ?? match.liveClock ?? match.footerLabel : match.footerLabel
   const marketOdds = getMatchMarketOdds(match, activeMarket)
   const marketStateKey = activeMarket ?? match.marketLabel
+  const marketId = activeMarket ?? normalizeBetslipIdPart(match.marketLabel)
+  const marketLabel = activeMarketLabel ?? match.marketLabel
   const isClickable = !!onClick
+  const leagueLabel = match.leagueLabel?.toUpperCase()
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (!onClick || (event.key !== 'Enter' && event.key !== ' ')) return
     event.preventDefault()
@@ -813,7 +931,15 @@ function MatchCard({
   }
 
   if (match.sport === 'basquete' && match.marketColumns) {
-    return <BasketballMatchCard match={match} liveTime={liveTime} activeMarket={activeMarket} onClick={onClick} />
+    return (
+      <BasketballMatchCard
+        match={match}
+        liveTime={liveTime}
+        activeMarket={activeMarket}
+        renderOddButton={renderOddButton}
+        onClick={onClick}
+      />
+    )
   }
 
   return (
@@ -829,6 +955,7 @@ function MatchCard({
       onKeyDown={handleKeyDown}
     >
       <div className="home-competition__match-header">
+        <span className="home-competition__league-label">{leagueLabel}</span>
         <div className="home-competition__market">
           <div className="home-competition__market-content" key={`${match.id}-${marketStateKey}-market`}>
             <span className="home-competition__market-label">{getMatchMarketLabel(match, activeMarketLabel)}</span>
@@ -852,9 +979,25 @@ function MatchCard({
           className={`home-competition__odds${marketOdds.length === 2 ? ' home-competition__odds--two' : ''}`}
           aria-label={`Odds de ${match.homeTeam} contra ${match.awayTeam}`}
         >
-          {marketOdds.map((odd, index) => (
-            <HomeCompetitionOddButton odd={odd} key={`${match.id}-${activeMarket ?? match.marketLabel}-${odd.label}-${index}`} />
-          ))}
+          {marketOdds.map((odd, index) => {
+            const oddKey = `${match.id}-${marketId}-${odd.label}-${index}`
+
+            if (renderOddButton) {
+              return (
+                <Fragment key={oddKey}>
+                  {renderOddButton(odd, {
+                    match,
+                    index,
+                    marketId,
+                    marketLabel,
+                    outcomeId: getOddOutcomeId(odd.label, index),
+                  })}
+                </Fragment>
+              )
+            }
+
+            return <HomeCompetitionOddButton odd={odd} key={oddKey} />
+          })}
         </div>
       </div>
       <div className="home-competition__match-footer">
@@ -893,6 +1036,11 @@ export function HomeCompetitionPlayerPropCard({
   showMarketLabel?: boolean
   renderOddButton?: HomeCompetitionPlayerPropOddRenderer
 }) {
+  const resolvedTimeLabel = timeLabel ?? prop.timeLabel
+  const playerTimeLabel = typeof resolvedTimeLabel === 'string'
+    ? renderPlayerPropTimeLabel(resolvedTimeLabel)
+    : <span>{resolvedTimeLabel}</span>
+
   return (
     <article className={`home-competition__player-card${className ? ` ${className}` : ''}`}>
       <span className="home-competition__stat-icon" aria-hidden="true">
@@ -900,7 +1048,7 @@ export function HomeCompetitionPlayerPropCard({
       </span>
       <div className="home-competition__player-meta">
         <span className="home-competition__player-match-label">{matchLabel ?? renderPlayerPropMatchLabel(prop)}</span>
-        {showTimeLabel && <span>{timeLabel ?? prop.timeLabel}</span>}
+        {showTimeLabel && playerTimeLabel}
       </div>
       <div className="home-competition__player-photo">
         <img src={getPlayerPropAvatar(prop.sport)} alt="" />
@@ -923,12 +1071,17 @@ export function HomeCompetitionSection({
   hideMarketChips = false,
   hideMatches = false,
   hideTitleRow = false,
+  hideTitleChevron = false,
   matchGroups,
   playerPropsLayout = 'carousel',
+  showPlayerPropsWithMatches = false,
+  titleVariant = 'default',
+  className = '',
   onMatchClick,
 }: HomeCompetitionSectionProps = {}) {
   const sectionTitleId = `home-competition-title-${competition.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
   const marketChips = competition.marketChips ?? emptyMarketChips
+  const getOddButtonProps = useOddSelection('')
   const playerPropsGridRef = useRef<HTMLDivElement | null>(null)
   const playerPropsAnimationRef = useRef<{ fromHeight: number } | null>(null)
   const playerPropsAnimationStartTimerRef = useRef<number | null>(null)
@@ -985,7 +1138,12 @@ export function HomeCompetitionSection({
   const shouldShowMarketChips = !hideTitleRow && !hideMarketChips && hasAvailableMarketChips
   const shouldShowMatches = hasMatches && !isPlayerPropsMarket
   const hasPlayerProps = activePlayerProps.length > 0
-  const shouldShowPlayerProps = hasPlayerProps && (!hasAvailableMarketChips || isPlayerPropsMarket || !hasMatches)
+  const shouldShowPlayerProps = hasPlayerProps && (
+    !hasAvailableMarketChips ||
+    isPlayerPropsMarket ||
+    !hasMatches ||
+    (showPlayerPropsWithMatches && shouldShowMatches)
+  )
   const playerPropGroups = shouldGroupPlayerProps ? getPlayerPropGroups(activePlayerProps) : []
   const getPlayerPropGroupVisibleCount = (groupId: string) => (
     visiblePlayerPropGroupCountsState.key === playerPropsStateKey
@@ -1134,12 +1292,126 @@ export function HomeCompetitionSection({
     clearPlayerPropsAnimation()
   }, [clearPlayerPropsAnimation])
 
+  const renderMatchOddButton: HomeCompetitionMatchOddRenderer = (odd, {
+    match,
+    index,
+    marketId,
+    marketLabel,
+    outcomeId,
+  }) => {
+    const eventId = getBetslipEventId({
+      sport: match.sport,
+      homeTeam: match.homeTeam,
+      awayTeam: match.awayTeam,
+      fallbackId: match.id,
+    })
+    const oddGroupId = getBetslipMarketGroupId({ eventId, marketId })
+    const eventTimeLabel = match.live
+      ? liveTimes[match.id] ?? match.liveClock ?? match.footerLabel
+      : match.footerLabel
+    const homeTeamIcon = getLogoSource(match.homeTeam)
+    const awayTeamIcon = getLogoSource(match.awayTeam)
+    const leagueName = match.leagueLabel ?? competition.title
+    const selectionIcon = index === 0
+      ? homeTeamIcon
+      : index === 2
+        ? awayTeamIcon
+        : undefined
+    const marketKey = normalizeBetslipIdPart(marketId)
+    const marketLabelKey = normalizeBetslipIdPart(marketLabel)
+    const isEarlyPayoutResultMarket = match.tags.some((tag) => normalizeBetslipIdPart(tag) === 'pa')
+      && (
+        ['resultado-final', 'vencedor', '1x2'].includes(marketKey)
+        || ['resultado-final', 'vencedor', '1x2'].includes(marketLabelKey)
+      )
+
+    return (
+      <HomeCompetitionOddButton
+        odd={odd}
+        {...getOddButtonProps(
+          `${oddGroupId}:${outcomeId}`,
+          oddGroupId,
+          '',
+          createBetslipSelection({
+            eventId,
+            marketId,
+            outcomeId,
+            label: odd.label,
+            odd: odd.value,
+            marketLabel,
+            eventStatus: match.live ? 'live' : 'prematch',
+            sport: match.sport,
+            leagueId: normalizeBetslipIdPart(leagueName),
+            leagueName,
+            homeTeam: match.homeTeam,
+            awayTeam: match.awayTeam,
+            eventName: `${match.homeTeam} x ${match.awayTeam}`,
+            eventTimeLabel,
+            liveClock: match.live ? eventTimeLabel : undefined,
+            homeScore: match.homeScore,
+            awayScore: match.awayScore,
+            homeTeamIcon,
+            awayTeamIcon,
+            selectionIcon,
+            badgeType: isEarlyPayoutResultMarket ? 'boost' : undefined,
+          })
+        )}
+      />
+    )
+  }
+
+  const renderPlayerPropOddButton: HomeCompetitionPlayerPropOddRenderer = (odd, {
+    prop,
+    className,
+  }) => {
+    // Canonical key shared with the competition screen and the event (see
+    // getPlayerPropBetslipKey) so the SAME bet correlates across every surface.
+    const { eventId, marketId, outcomeId, groupId: oddGroupId } = getPlayerPropBetslipKey({
+      sport: prop.sport,
+      homeTeam: prop.homeTeam,
+      awayTeam: prop.awayTeam,
+      marketId: prop.marketId ?? prop.marketLabel,
+      playerName: prop.playerName || prop.id,
+      lineLabel: odd.label,
+    })
+
+    return (
+      <HomeCompetitionOddButton
+        odd={odd}
+        {...getOddButtonProps(
+          `${oddGroupId}:${outcomeId}`,
+          oddGroupId,
+          className,
+          createBetslipSelection({
+            eventId,
+            marketId,
+            outcomeId,
+            label: odd.label,
+            odd: odd.value,
+            marketLabel: prop.marketLabel,
+            eventStatus: /ao vivo/i.test(prop.timeLabel) ? 'live' : 'prematch',
+            selectionType: 'player',
+            sport: prop.sport,
+            leagueId: normalizeBetslipIdPart(competition.title),
+            leagueName: competition.title,
+            eventName: prop.matchLabel,
+            eventTimeLabel: prop.timeLabel,
+            playerName: prop.playerName,
+            selectionTeamName: prop.teamAbbreviation || prop.teamName,
+            selectionLabel: prop.playerName,
+          })
+        )}
+      />
+    )
+  }
+
   const renderMatchCard = (match: HomeCompetitionMatch) => (
     <MatchCard
       match={match}
       liveTime={liveTimes[match.id]}
       activeMarket={activeMarketChip?.id}
       activeMarketLabel={activeMarketChip?.label}
+      renderOddButton={renderMatchOddButton}
       onClick={onMatchClick ? () => onMatchClick(match, competition, liveTimes) : undefined}
       key={match.id}
     />
@@ -1148,20 +1420,26 @@ export function HomeCompetitionSection({
     <HomeCompetitionPlayerPropCard
       prop={prop}
       className={enteringPlayerPropIds.has(prop.id) ? 'home-competition__player-card--entering' : ''}
+      renderOddButton={renderPlayerPropOddButton}
       key={prop.id}
     />
   )
 
   return (
     <section
-      className={`home-competition${hideTitleRow ? ' home-competition--without-title' : ''}`}
+      className={[
+        'home-competition',
+        hideTitleRow ? 'home-competition--without-title' : '',
+        titleVariant === 'compact' ? 'home-competition--compact-title' : '',
+        className,
+      ].filter(Boolean).join(' ')}
       {...(hideTitleRow ? { 'aria-label': competition.title } : { 'aria-labelledby': sectionTitleId })}
     >
       {!hideTitleRow && (
         <div className={`home-competition__title-row${shouldShowMarketChips ? ' home-competition__title-row--with-markets' : ''}`}>
           <div className="home-competition__title-main">
             <h2 id={sectionTitleId}>{competition.title}</h2>
-            <img src={chevronRight} alt="" className="home-competition__chevron" />
+            {!hideTitleChevron && <img src={chevronRight} alt="" className="home-competition__chevron" />}
             {competition.sportLabel && <span>{competition.sportLabel}</span>}
           </div>
           {shouldShowMarketChips && (

@@ -1,7 +1,7 @@
 .home-competition {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
   padding: 0 12px 12px;
   box-sizing: border-box;
@@ -33,14 +33,25 @@
 .home-competition__title-main h2 {
   margin: 0;
   overflow: hidden;
-  font-family: 'Red Hat Text', system-ui, sans-serif;
-  font-size: var(--Typography-font-size-16, 16px);
-  font-weight: var(--Typography-font-weight-bold, 700);
-  line-height: 24px;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 21px;
   letter-spacing: 0;
   color: var(--ds-fill-primary, #fbfbfb);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.home-competition--compact-title .home-competition__title-main h2 {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 21px;
+}
+
+.home-competition--competition-match-list {
+  padding-top: 12px;
 }
 
 .home-competition__chevron {
@@ -152,14 +163,17 @@
   font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
   font-size: 14px;
   font-weight: 700;
-  line-height: 20px;
+  line-height: 21px;
   letter-spacing: 0;
   color: var(--ds-fill-primary, #fbfbfb);
 }
 
 .home-competition--without-title .home-competition__match-group-title {
-  font-size: var(--Typography-font-size-16, 16px);
-  line-height: 24px;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 21px;
 }
 
 .home-competition__match-card {
@@ -194,6 +208,10 @@
   pointer-events: none;
 }
 
+.home-competition__match-card--clickable .home-competition__odd:not(:disabled) {
+  pointer-events: auto;
+}
+
 .home-competition__match-card--basketball {
   height: 183px;
 }
@@ -201,11 +219,27 @@
 .home-competition__match-header {
   display: flex;
   align-items: flex-start;
-  justify-content: flex-end;
+  justify-content: space-between;
+  gap: 8px;
   width: 100%;
   min-height: 19px;
   padding-bottom: 4px;
   box-sizing: border-box;
+}
+
+.home-competition__league-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 15px;
+  letter-spacing: 0;
+  color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .home-competition__market {
@@ -291,11 +325,6 @@
   box-sizing: border-box;
 }
 
-.home-competition__basketball-header-spacer {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
 .home-competition__basketball-market-headings,
 .home-competition__basketball-markets {
   display: flex;
@@ -374,13 +403,6 @@
   flex: 0 0 64px;
   flex-direction: column;
   gap: 4px;
-}
-
-.home-competition__odd--basketball {
-  flex: 0 0 56px;
-  height: 56px;
-  min-height: 56px;
-  max-height: 56px;
 }
 
 .home-competition__odd--basketball span {
@@ -494,9 +516,20 @@
   cursor: default;
 }
 
+.home-competition__odd:not(:disabled) {
+  cursor: pointer;
+}
+
 .home-competition__odds--two .home-competition__odd {
   flex-basis: 98px;
   width: 98px;
+}
+
+.home-competition__basketball-market-column .home-competition__odd {
+  flex: 0 0 56px;
+  height: 56px;
+  min-height: 56px;
+  max-height: 56px;
 }
 
 .home-competition__odd span,
@@ -714,6 +747,23 @@
   white-space: nowrap;
 }
 
+.home-competition__player-time-label {
+  display: flex;
+  max-width: 100%;
+  flex-direction: column;
+  align-items: flex-end;
+  overflow: visible;
+  line-height: 15px;
+  white-space: normal;
+}
+
+.home-competition__player-time-label span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .home-competition__player-match-label strong {
   font-weight: 700;
   color: var(--ds-fill-primary, #fbfbfb);
@@ -901,6 +951,10 @@
   scroll-snap-stop: always;
   pointer-events: none;
   transition: opacity 160ms ease;
+}
+
+.home-competition__player-odds .home-competition__odd:not(:disabled) {
+  pointer-events: auto;
 }
 
 .home-competition__player-odds .home-competition__odd--center {

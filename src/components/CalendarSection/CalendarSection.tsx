@@ -121,6 +121,7 @@ const liveEventSports = new Set(['futebol', 'basquete'])
 const CALENDAR_FOOTBALL_PLAYER_PROPS_PER_EVENT = 3
 const CALENDAR_BASKETBALL_PLAYER_PROPS_PER_EVENT = 8
 const CALENDAR_FOOTBALL_FINISHING_MARKET_ID = 'finalizacao-gol'
+const CALENDAR_FOOTBALL_GOALS_MARKET_ID = 'gols'
 const CALENDAR_FOOTBALL_ASSISTS_MARKET_ID = 'assistencias'
 const CALENDAR_BASKETBALL_POINTS_MARKET_ID = 'pontos-jogador'
 const CALENDAR_BASKETBALL_ASSISTS_MARKET_ID = 'assistencias'
@@ -146,6 +147,12 @@ const calendarFootballFinishingOptionSets = [
   calendarPlayerPropOptions([['3.0+', '1.78x'], ['4.0+', '1.78x'], ['5.0+', '1.78x']]),
   calendarPlayerPropOptions([['2.0+', '1.55x'], ['3.0+', '1.92x'], ['4.0+', '2.70x']]),
   calendarPlayerPropOptions([['1.0+', '1.48x'], ['2.0+', '2.05x'], ['3.0+', '3.60x']]),
+]
+
+const calendarFootballGoalOptionSets = [
+  calendarPlayerPropOptions([['1.0+', '2.35x'], ['2.0+', '7.50x'], ['3.0+', '26.00x']]),
+  calendarPlayerPropOptions([['1.0+', '3.10x'], ['2.0+', '11.00x'], ['3.0+', '41.00x']]),
+  calendarPlayerPropOptions([['1.0+', '2.55x'], ['2.0+', '8.75x'], ['3.0+', '31.00x']]),
 ]
 
 const calendarFootballAssistOptionSets = [
@@ -1278,6 +1285,7 @@ const getCalendarTeamPlayerProfiles = (
 
 const isCalendarFootballPlayerPropsMarket = (marketId: string) =>
   marketId === CALENDAR_FOOTBALL_FINISHING_MARKET_ID ||
+  marketId === CALENDAR_FOOTBALL_GOALS_MARKET_ID ||
   marketId === CALENDAR_FOOTBALL_ASSISTS_MARKET_ID
 
 const isCalendarBasketballPlayerPropsMarket = (marketId: string) =>
@@ -1300,6 +1308,8 @@ const getCalendarFootballPlayerProps = (
 ): MatchPlayerProp[] => {
   const optionSets = marketId === CALENDAR_FOOTBALL_ASSISTS_MARKET_ID
     ? calendarFootballAssistOptionSets
+    : marketId === CALENDAR_FOOTBALL_GOALS_MARKET_ID
+      ? calendarFootballGoalOptionSets
     : calendarFootballFinishingOptionSets
   const playersByTeam = marketId === CALENDAR_FOOTBALL_ASSISTS_MARKET_ID
     ? calendarFootballAssistPlayersByTeam

@@ -3,7 +3,7 @@ import { CaretRightIcon, CaretUpIcon } from '@phosphor-icons/react'
 import './PreMatchSection.css'
 import { getTeamLogo } from '../../data/teamLogos'
 import { useHomeMarketStickyState } from '../../hooks/useHomeMarketStickyVisible'
-import { createBetslipSelection, getBetslipEventId, getBetslipMarketGroupId } from '../../hooks/betslipUtils'
+import { createBetslipSelection, getBetslipEventId, getBetslipMarketGroupId, getPlayerPropBetslipKey } from '../../hooks/betslipUtils'
 import { useOddSelection } from '../../hooks/useOddSelection'
 import { useSportsDbTeamLogo } from '../../hooks/useSportsDbTeamLogo'
 import { useSlidingActiveIndicator } from '../../hooks/useSlidingActiveIndicator'
@@ -1225,10 +1225,6 @@ const getInitialPlayerPropOptionIndex = (options: PlayerPropOption[]) => {
   return activeIndex >= 0 ? activeIndex : Math.floor(options.length / 2)
 }
 
-const getPlayerPropBetslipOutcomeId = (player: MatchPlayerProp, optionIndex: number) => (
-  `${player.teamSide}:${player.playerName}:option-${optionIndex}`
-)
-
 interface PreMatchPlayerPropCardProps {
   player: MatchPlayerProp
   disableInteractions?: boolean
@@ -1662,10 +1658,20 @@ export function PreMatchPlayerPropCard({
         >
           {player.options.map((option, index) => {
             const hasBetslipContext = !!player.eventId && !!player.marketId
-            const groupId = hasBetslipContext
-              ? getBetslipMarketGroupId({ eventId: player.eventId!, marketId: player.marketId! })
-              : player.id
-            const outcomeId = getPlayerPropBetslipOutcomeId(player, index)
+            // Canonical key shared with the sport and competition screens so the SAME
+            // bet correlates everywhere; the per-player market id enables multi-select.
+            const propKey = hasBetslipContext
+              ? getPlayerPropBetslipKey({
+                sport: player.sport,
+                homeTeam: player.homeTeam,
+                awayTeam: player.awayTeam,
+                marketId: player.marketId!,
+                playerName: player.playerName,
+                lineLabel: option.label,
+              })
+              : null
+            const groupId = propKey?.groupId ?? player.id
+            const outcomeId = propKey?.outcomeId ?? `${player.teamSide}:${player.playerName}:option-${index}`
             const oddProps = disableInteractions
               ? {
                   type: 'button' as const,
@@ -1679,8 +1685,8 @@ export function PreMatchPlayerPropCard({
                   'prematch-section__player-prop-option',
                   hasBetslipContext
                     ? createBetslipSelection({
-                      eventId: player.eventId!,
-                      marketId: player.marketId!,
+                      eventId: propKey!.eventId,
+                      marketId: propKey!.marketId,
                       outcomeId,
                       label: option.label,
                       odd: option.odd,
@@ -1697,6 +1703,7 @@ export function PreMatchPlayerPropCard({
                       homeScore: player.homeScore,
                       awayScore: player.awayScore,
                       playerName: player.playerName,
+                      selectionTeamName: player.teamName,
                       selectionIcon: resolvedTeamIcon || player.teamIcon,
                       playerImage: player.image,
                       badgeType: 'substitution',

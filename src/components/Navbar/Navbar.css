@@ -364,6 +364,19 @@
   filter: none;
 }
 
+.navbar .navbar__icon.navbar__icon--image,
+.navbar .navbar__item:hover .navbar__icon.navbar__icon--image,
+.navbar .navbar__item:focus-visible .navbar__icon.navbar__icon--image,
+.navbar .navbar__item--active .navbar__icon.navbar__icon--image {
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  object-fit: contain;
+  opacity: 1;
+  -webkit-mask: none;
+  mask: none;
+}
+
 :root[data-theme="light"] .navbar .navbar__icon,
 :root[data-theme="light"] .navbar--liquid-v2.navbar--liquid-v2-casino .navbar__icon,
 :root[data-theme="light"] .navbar .navbar__item:hover .navbar__icon,

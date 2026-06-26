@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, type CSSProperties, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode, type TouchEvent, type WheelEvent } from 'react'
 import { CaretRightIcon, CaretUpIcon } from '@phosphor-icons/react'
 import './BannerCarousel.css'
 import { Toast } from '../Toast'
@@ -22,8 +22,9 @@ import {
 import { useBetslip } from '../../hooks/useBetslip'
 import { useOddSelection } from '../../hooks/useOddSelection'
 import { useSportsDbTeamLogo } from '../../hooks/useSportsDbTeamLogo'
-import type { Banner, MarketBanner, MarketBannerTeam } from '../../types/home'
+import type { Banner, MarketBanner, MarketBannerPlayerProp, MarketBannerTeam } from '../../types/home'
 import { updateLiveClock } from '../../utils/liveClock'
+import { getTeamAbbreviation } from '../../utils/teamAbbreviations'
 
 import iconSuperCombinada from '../../assets/iconSuperCombinada.png'
 import iconAoVivo from '../../assets/iconAoVivo.png'
@@ -33,6 +34,10 @@ import iconBoostWhite from '../../assets/iconBoostWhite.svg'
 import iconAumentada from '../../assets/iconAumentada.png'
 import iconAtivo from '../../assets/iconAtivo.svg'
 import iconVs from '../../assets/iconsDraftaco/vs.svg'
+import iconEscanteios from '../../assets/iconsDraftaco/escanteios.svg'
+import iconRedCard from '../../assets/iconsDraftaco/cartaoVermelho.svg'
+import iconYellowCard from '../../assets/iconsDraftaco/cartaoAmarelo.svg'
+import iconTotalGols from '../../assets/iconsDraftaco/iconTotalGols.png'
 import imgMissaoRodadaGratis from '../../assets/imgMissaoRodadaGratis.png'
 import pedroProps from '../../assets/pedroProps.png'
 
@@ -49,6 +54,13 @@ interface BannerCarouselProps {
 }
 
 const AUTO_PLAY_INTERVAL = 10000 // 10 segundos
+const LIVE_PROP_OPTION_MOUSE_SENSITIVITY = 1
+const LIVE_PROP_OPTION_TOUCH_SENSITIVITY = 0.92
+const LIVE_PROP_OPTION_INTENT_THRESHOLD = 8
+const LIVE_PROP_OPTION_AXIS_RATIO = 1.15
+const LIVE_PROP_OPTION_SWIPE_THRESHOLD = 12
+const LIVE_PROP_OPTION_PROGRAMMATIC_MS = 220
+const LIVE_PROP_OPTION_WHEEL_LOCK_MS = 220
 
 interface BannerAutoPlayRefs {
   autoPlayRef: { current: ReturnType<typeof setInterval> | null }
@@ -66,10 +78,25 @@ interface BannerBetslipEntry {
   selection: BetslipSelection
 }
 
+interface BannerOddSelectionContext {
+  marketId?: string
+  marketLabel?: string
+  selectionLabel?: string
+  selectionType?: BetslipSelection['selectionType']
+  playerName?: string
+  selectionTeamName?: string
+  selectionIcon?: string
+}
+
 interface MarketTeamEmblemProps {
   team: MarketBannerTeam
   sport: MarketBanner['sport']
   className: string
+}
+
+type BannerHighlightGlowStyle = CSSProperties & {
+  '--banner-live-home-glow': string
+  '--banner-live-away-glow': string
 }
 
 const getMarketTeamLogo = (team: MarketBannerTeam, sport: MarketBanner['sport']) => {
@@ -97,6 +124,409 @@ const MarketTeamEmblem = ({ team, sport, className }: MarketTeamEmblemProps) => 
   )
 }
 
+interface FootballLivePropOddsSliderProps {
+  playerName: string
+  odds: MarketBannerPlayerProp['odds']
+  renderOddButton: (
+    odd: MarketBannerPlayerProp['odds'][number],
+    className: string,
+    index: number
+  ) => ReactNode
+}
+
+const getInitialFootballLivePropOptionIndex = (odds: MarketBannerPlayerProp['odds']) => (
+  Math.floor(odds.length / 2)
+)
+
+const FootballLivePropOddsSlider = ({
+  playerName,
+  odds,
+  renderOddButton,
+}: FootballLivePropOddsSliderProps) => {
+  const [activeOptionIndex, setActiveOptionIndex] = useState(() => getInitialFootballLivePropOptionIndex(odds))
+  const [isDraggingOptions, setIsDraggingOptions] = useState(false)
+  const activeOptionIndexRef = useRef(activeOptionIndex)
+  const optionsScrollRef = useRef<HTMLDivElement | null>(null)
+  const optionDrag = useRef<{
+    startX: number
+    startY?: number
+    scrollLeft: number
+    startIndex: number
+    moved: boolean
+    direction: 'pending' | 'horizontal' | 'vertical'
+    lastY: number
+    pointerId?: number
+    sensitivity: number
+  } | null>(null)
+  const suppressOptionClick = useRef(false)
+  const wheelLock = useRef(0)
+  const programmaticOptionTarget = useRef<number | null>(null)
+  const programmaticOptionTimeout = useRef<number | null>(null)
+
+  const clearProgrammaticOptionTarget = useCallback(() => {
+    if (programmaticOptionTimeout.current) {
+      window.clearTimeout(programmaticOptionTimeout.current)
+      programmaticOptionTimeout.current = null
+    }
+
+    programmaticOptionTarget.current = null
+  }, [])
+
+  const scrollOptionIntoCenter = useCallback((index: number, behavior: ScrollBehavior = 'smooth') => {
+    const containerEl = optionsScrollRef.current
+    const optionEl = containerEl?.querySelectorAll<HTMLElement>('.banner-live-highlight__prop-odd-item').item(index)
+    if (!containerEl || !optionEl) return
+
+    const optionCenter = optionEl.offsetLeft + optionEl.offsetWidth / 2
+    const targetScroll = Math.max(0, optionCenter - containerEl.clientWidth / 2)
+
+    if (behavior === 'auto') {
+      containerEl.scrollLeft = targetScroll
+      return
+    }
+
+    containerEl.scrollTo({ left: targetScroll, behavior })
+  }, [])
+
+  const getCenteredOptionIndex = useCallback(() => {
+    const containerEl = optionsScrollRef.current
+    const optionEls = Array.from(containerEl?.querySelectorAll<HTMLElement>('.banner-live-highlight__prop-odd-item') ?? [])
+    if (!containerEl || optionEls.length === 0) return -1
+
+    const containerCenter = containerEl.scrollLeft + containerEl.clientWidth / 2
+    let nearestIndex = 0
+    let nearestDistance = Number.POSITIVE_INFINITY
+
+    optionEls.forEach((optionEl, index) => {
+      const optionCenter = optionEl.offsetLeft + optionEl.offsetWidth / 2
+      const distance = Math.abs(optionCenter - containerCenter)
+
+      if (distance < nearestDistance) {
+        nearestIndex = index
+        nearestDistance = distance
+      }
+    })
+
+    return nearestIndex
+  }, [])
+
+  const clampOptionScroll = useCallback(() => {
+    const containerEl = optionsScrollRef.current
+    if (!containerEl) return
+
+    const maxScroll = Math.max(0, containerEl.scrollWidth - containerEl.clientWidth)
+    const nextScroll = Math.min(maxScroll, Math.max(0, containerEl.scrollLeft))
+
+    if (Math.abs(containerEl.scrollLeft - nextScroll) > 0.5) {
+      containerEl.scrollLeft = nextScroll
+    }
+  }, [])
+
+  const setActiveOption = useCallback((index: number) => {
+    if (activeOptionIndexRef.current === index) return
+
+    activeOptionIndexRef.current = index
+    setActiveOptionIndex(index)
+  }, [])
+
+  const centerOption = useCallback((index: number, behavior: ScrollBehavior = 'smooth') => {
+    const lastIndex = odds.length - 1
+    const targetIndex = Math.max(0, Math.min(lastIndex, index))
+
+    clearProgrammaticOptionTarget()
+    programmaticOptionTarget.current = targetIndex
+    setActiveOption(targetIndex)
+    window.requestAnimationFrame(() => scrollOptionIntoCenter(targetIndex, behavior))
+
+    if (behavior === 'auto') {
+      programmaticOptionTarget.current = null
+      return
+    }
+
+    programmaticOptionTimeout.current = window.setTimeout(() => {
+      programmaticOptionTarget.current = null
+      programmaticOptionTimeout.current = null
+    }, LIVE_PROP_OPTION_PROGRAMMATIC_MS)
+  }, [clearProgrammaticOptionTarget, odds.length, scrollOptionIntoCenter, setActiveOption])
+
+  const stepOption = useCallback((direction: number) => {
+    const currentIndex = activeOptionIndexRef.current ?? Math.max(0, getCenteredOptionIndex())
+    const nextIndex = Math.min(odds.length - 1, Math.max(0, currentIndex + direction))
+
+    if (currentIndex !== nextIndex) {
+      centerOption(nextIndex)
+    }
+  }, [centerOption, getCenteredOptionIndex, odds.length])
+
+  const updateCenteredOption = useCallback(() => {
+    clampOptionScroll()
+
+    if (programmaticOptionTarget.current !== null) return
+
+    const centeredIndex = getCenteredOptionIndex()
+    if (centeredIndex < 0) return
+    setActiveOption(centeredIndex)
+  }, [clampOptionScroll, getCenteredOptionIndex, setActiveOption])
+
+  const snapToNearestOption = useCallback((dragDelta = 0, startIndex?: number) => {
+    const containerEl = optionsScrollRef.current
+    if (!containerEl) return
+
+    const nearestIndex = getCenteredOptionIndex()
+    const lastIndex = odds.length - 1
+    const initialIndex = startIndex ?? activeOptionIndexRef.current ?? nearestIndex
+    let targetIndex = nearestIndex
+
+    if (Math.abs(dragDelta) > LIVE_PROP_OPTION_SWIPE_THRESHOLD && nearestIndex === initialIndex) {
+      targetIndex = initialIndex + (dragDelta > 0 ? 1 : -1)
+    }
+
+    centerOption(Math.max(0, Math.min(lastIndex, targetIndex)))
+  }, [centerOption, getCenteredOptionIndex, odds.length])
+
+  const getVerticalScrollContainer = (element: HTMLElement | null) => {
+    let currentElement = element?.parentElement ?? null
+
+    while (currentElement && currentElement !== document.body) {
+      const style = window.getComputedStyle(currentElement)
+      const canScrollY = /(auto|scroll)/.test(style.overflowY)
+
+      if (canScrollY && currentElement.scrollHeight > currentElement.clientHeight) {
+        return currentElement
+      }
+
+      currentElement = currentElement.parentElement
+    }
+
+    return (document.scrollingElement ?? document.documentElement) as HTMLElement
+  }
+
+  const applyVerticalPointerScroll = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = optionDrag.current
+    const containerEl = optionsScrollRef.current
+    if (!drag || !containerEl) return
+
+    const verticalScrollEl = getVerticalScrollContainer(containerEl)
+    verticalScrollEl.scrollTop += drag.lastY - event.clientY
+    drag.lastY = event.clientY
+  }
+
+  const stopNestedCarouselEvent = (event: MouseEvent<HTMLDivElement> | TouchEvent<HTMLDivElement>) => {
+    event.stopPropagation()
+  }
+
+  const captureOptionPointer = (containerEl: HTMLDivElement, pointerId: number) => {
+    if (containerEl.hasPointerCapture?.(pointerId)) return
+    containerEl.setPointerCapture?.(pointerId)
+  }
+
+  const handleOptionPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+
+    const containerEl = optionsScrollRef.current
+    if (!containerEl) return
+
+    event.stopPropagation()
+    clearProgrammaticOptionTarget()
+    setIsDraggingOptions(false)
+
+    optionDrag.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      scrollLeft: containerEl.scrollLeft,
+      startIndex: activeOptionIndexRef.current ?? getCenteredOptionIndex(),
+      moved: false,
+      direction: 'pending',
+      lastY: event.clientY,
+      pointerId: event.pointerId,
+      sensitivity: event.pointerType === 'touch'
+        ? LIVE_PROP_OPTION_TOUCH_SENSITIVITY
+        : LIVE_PROP_OPTION_MOUSE_SENSITIVITY,
+    }
+  }
+
+  const handleOptionPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = optionDrag.current
+    const containerEl = optionsScrollRef.current
+    if (!drag || !containerEl) return
+
+    const deltaX = event.clientX - drag.startX
+    const deltaY = event.clientY - (drag.startY ?? event.clientY)
+    const absX = Math.abs(deltaX)
+    const absY = Math.abs(deltaY)
+
+    if (drag.direction === 'pending') {
+      if (absY >= LIVE_PROP_OPTION_INTENT_THRESHOLD && absY > absX * LIVE_PROP_OPTION_AXIS_RATIO) {
+        drag.direction = 'vertical'
+        setIsDraggingOptions(false)
+        applyVerticalPointerScroll(event)
+        return
+      }
+
+      if (absX < LIVE_PROP_OPTION_INTENT_THRESHOLD || absX <= absY * LIVE_PROP_OPTION_AXIS_RATIO) {
+        return
+      }
+
+      drag.direction = 'horizontal'
+      captureOptionPointer(containerEl, event.pointerId)
+      setIsDraggingOptions(true)
+      containerEl.classList.add('banner-live-highlight__prop-odds-scroll--dragging')
+    }
+
+    event.stopPropagation()
+    if (event.cancelable) event.preventDefault()
+
+    if (drag.direction === 'vertical') {
+      applyVerticalPointerScroll(event)
+      return
+    }
+
+    if (drag.direction !== 'horizontal') return
+
+    const walk = deltaX * drag.sensitivity
+    drag.moved = drag.moved || Math.abs(walk) > 4
+    containerEl.scrollLeft = drag.scrollLeft - walk
+    clampOptionScroll()
+  }
+
+  const clearOptionDrag = () => {
+    const drag = optionDrag.current
+    const containerEl = optionsScrollRef.current
+
+    if (containerEl && drag?.pointerId !== undefined && containerEl.hasPointerCapture?.(drag.pointerId)) {
+      containerEl.releasePointerCapture(drag.pointerId)
+    }
+
+    optionDrag.current = null
+    setIsDraggingOptions(false)
+    containerEl?.classList.remove('banner-live-highlight__prop-odds-scroll--dragging')
+  }
+
+  const finishOptionDrag = () => {
+    const drag = optionDrag.current
+    const containerEl = optionsScrollRef.current
+    if (!drag) return
+
+    if (drag.direction !== 'horizontal') {
+      clearOptionDrag()
+      return
+    }
+
+    const dragDelta = containerEl ? containerEl.scrollLeft - drag.scrollLeft : 0
+
+    if (containerEl && drag.pointerId !== undefined && containerEl.hasPointerCapture?.(drag.pointerId)) {
+      containerEl.releasePointerCapture(drag.pointerId)
+    }
+
+    optionDrag.current = null
+    setIsDraggingOptions(false)
+    containerEl?.classList.remove('banner-live-highlight__prop-odds-scroll--dragging')
+
+    if (drag.moved) {
+      suppressOptionClick.current = true
+      window.setTimeout(() => {
+        suppressOptionClick.current = false
+      }, 0)
+    }
+
+    if (containerEl) snapToNearestOption(dragDelta, drag.startIndex)
+  }
+
+  const handleOptionPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    event.stopPropagation()
+    if (optionDrag.current?.direction === 'horizontal') {
+      finishOptionDrag()
+      return
+    }
+
+    clearOptionDrag()
+  }
+
+  const handleOptionPointerCancel = (event: PointerEvent<HTMLDivElement>) => {
+    event.stopPropagation()
+    clearOptionDrag()
+  }
+
+  const handleOptionWheel = (event: WheelEvent<HTMLDivElement>) => {
+    event.stopPropagation()
+    const movement = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY
+    if (Math.abs(movement) < 12) return
+
+    event.preventDefault()
+
+    const now = event.timeStamp
+    if (now - wheelLock.current < LIVE_PROP_OPTION_WHEEL_LOCK_MS) return
+    wheelLock.current = now
+
+    stepOption(movement > 0 ? 1 : -1)
+  }
+
+  useEffect(() => {
+    activeOptionIndexRef.current = activeOptionIndex
+  }, [activeOptionIndex])
+
+  useLayoutEffect(() => {
+    const initialIndex = getInitialFootballLivePropOptionIndex(odds)
+    activeOptionIndexRef.current = initialIndex
+    setActiveOptionIndex(initialIndex)
+    scrollOptionIntoCenter(initialIndex, 'auto')
+  }, [odds, scrollOptionIntoCenter])
+
+  useEffect(() => () => {
+    if (programmaticOptionTimeout.current) {
+      window.clearTimeout(programmaticOptionTimeout.current)
+    }
+  }, [])
+
+  return (
+    <div className="banner-live-highlight__prop-odds" aria-label={`Odds de ${playerName}`} onWheel={handleOptionWheel}>
+      <div
+        ref={optionsScrollRef}
+        className={`banner-live-highlight__prop-odds-scroll${isDraggingOptions ? ' banner-live-highlight__prop-odds-scroll--dragging' : ''}`}
+        onScroll={updateCenteredOption}
+        onPointerDown={handleOptionPointerDown}
+        onPointerMove={handleOptionPointerMove}
+        onPointerUp={handleOptionPointerUp}
+        onPointerCancel={handleOptionPointerCancel}
+        onLostPointerCapture={() => finishOptionDrag()}
+        onMouseDown={stopNestedCarouselEvent}
+        onMouseMove={stopNestedCarouselEvent}
+        onMouseUp={stopNestedCarouselEvent}
+        onMouseLeave={stopNestedCarouselEvent}
+        onTouchStart={stopNestedCarouselEvent}
+        onTouchMove={stopNestedCarouselEvent}
+        onTouchEnd={stopNestedCarouselEvent}
+        onTouchCancel={stopNestedCarouselEvent}
+      >
+        {odds.map((odd, index) => {
+          const isActive = index === activeOptionIndex
+          const className = [
+            'banner-live-highlight__odd-btn',
+            'banner-live-highlight__odd-btn--prop',
+            isActive ? 'banner-live-highlight__odd-btn--prop-active' : 'banner-live-highlight__odd-btn--prop-muted',
+          ].join(' ')
+
+          return (
+            <span
+              className="banner-live-highlight__prop-odd-item"
+              key={`${odd.outcomeId}:${index}`}
+              onClickCapture={(event) => {
+                if (!suppressOptionClick.current) return
+                suppressOptionClick.current = false
+                event.preventDefault()
+                event.stopPropagation()
+              }}
+              onClick={() => centerOption(index)}
+            >
+              {renderOddButton(odd, className, index)}
+            </span>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 const isBannerBetslipEntry = (entry: BannerBetslipEntry | undefined): entry is BannerBetslipEntry => !!entry
 const hasMarketBanner = (banner: Banner): banner is Banner & { marketBanner: NonNullable<Banner['marketBanner']> } => (
   banner.type === 'market' && !!banner.marketBanner
@@ -120,6 +550,12 @@ const getMarketBulletDistanceClass = (index: number, activeIndex: number) => {
 }
 
 const resultMarketGroupIds = new Set(['regular', 'live', 'tennis-live', 'resultado-final', '1x2'])
+const marketStatIcons = {
+  corner: iconEscanteios,
+  'red-card': iconRedCard,
+  'yellow-card': iconYellowCard,
+  goal: iconTotalGols,
+} satisfies Record<string, string>
 
 const getReactNodeText = (node: ReactNode): string => {
   if (typeof node === 'string' || typeof node === 'number') return String(node)
@@ -255,10 +691,31 @@ const getBannerLiveTimeLabel = (
 }
 
 const getBannerMarketInfo = (banner: Banner, groupId: string) => {
-  if (resultMarketGroupIds.has(groupId) || banner.type === '1x2' || banner.type === 'market') {
+  if (resultMarketGroupIds.has(groupId) || banner.type === '1x2') {
     return {
       marketId: 'resultado-final',
       marketLabel: 'Resultado Final',
+    }
+  }
+
+  if (groupId === 'total-escanteios') {
+    return {
+      marketId: groupId,
+      marketLabel: 'Total de Escanteios',
+    }
+  }
+
+  if (groupId === 'total-gols') {
+    return {
+      marketId: groupId,
+      marketLabel: 'Total de Gols',
+    }
+  }
+
+  if (groupId === 'finalizacoes-ao-gol') {
+    return {
+      marketId: groupId,
+      marketLabel: 'Finalizações ao Gol',
     }
   }
 
@@ -291,13 +748,26 @@ const getBannerAumentadaDetails = (banner: Banner) => {
 }
 
 const getBannerTeamCode = (teamName?: string) => (
-  teamName
-    ?.normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z]/gi, '')
-    .slice(0, 3)
-    .toUpperCase()
+  teamName ? getTeamAbbreviation(teamName) : undefined
 )
+
+const getBannerShortLiveTime = (timeLabel: string) => timeLabel.replace(/^\d+T\s+/, '')
+
+const getBannerLeagueShortLabel = (league: string) => league.split(/\s+/)[0] ?? league
+
+const getFootballLivePropTeam = (marketBanner: MarketBanner, teamName: string) => (
+  marketBanner.teams.find((team) => (
+    team.name === teamName || team.imageSourceName === teamName
+  )) ?? marketBanner.teams[0]
+)
+
+const getBannerHighlightGlowStyle = (
+  homeTeam: MarketBannerTeam,
+  awayTeam: MarketBannerTeam
+): BannerHighlightGlowStyle => ({
+  '--banner-live-home-glow': homeTeam.glowColor ?? '37 68 134',
+  '--banner-live-away-glow': awayTeam.glowColor ?? '98 134 99',
+})
 
 const expandBannerComboStatValue = (
   value: string,
@@ -453,6 +923,13 @@ export function BannerCarousel({
   onBannerClick,
 }: BannerCarouselProps = {}) {
   const isMarketBannerSet = banners.length > 0 && banners.every(hasMarketBanner)
+  const isFootballLiveHighlightSet = banners.length > 0 && banners.every((banner) => (
+    hasMarketBanner(banner) && (
+      banner.marketBanner.variant === 'football-live'
+      || banner.marketBanner.variant === 'football-pre'
+      || banner.marketBanner.variant === 'basketball-pre'
+    )
+  ))
   const [activeIndex, setActiveIndex] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const [activatedMissions, setActivatedMissions] = useState<Record<number, MissionProgress>>({})
@@ -711,7 +1188,8 @@ export function BannerCarousel({
     outcomeId: string,
     className: string,
     label: ReactNode,
-    value: ReactNode
+    value: ReactNode,
+    selectionContext: BannerOddSelectionContext = {}
   ) => {
     if (disableInteractions) return getDisabledButtonProps(className)
 
@@ -722,11 +1200,16 @@ export function BannerCarousel({
       || (hasMarketBanner(banner) && Boolean(banner.marketBanner.live))
     const marketInfo = getBannerMarketInfo(banner, groupId)
     const aumentadaDetails = groupId === 'boosted' ? getBannerAumentadaDetails(banner) : null
-    const marketId = aumentadaDetails?.marketLabel ?? marketInfo.marketId
-    const marketLabel = aumentadaDetails?.marketLabel ?? marketInfo.marketLabel
+    const marketId = selectionContext.marketId ?? aumentadaDetails?.marketLabel ?? marketInfo.marketId
+    const marketLabel = selectionContext.marketLabel ?? aumentadaDetails?.marketLabel ?? marketInfo.marketLabel
     const labelText = getReactNodeText(label)
-    const selectionLabel = aumentadaDetails?.playerName ?? labelText
+    const playerName = selectionContext.playerName ?? aumentadaDetails?.playerName
+    const selectionLabel = selectionContext.selectionLabel ?? playerName ?? labelText
     const eventTimeLabel = getBannerLiveTimeLabel(banner, liveMatchTime, marketLiveTimes)
+    const selectionType = selectionContext.selectionType
+      ?? (aumentadaDetails
+        ? 'player'
+        : selectionLabel === homeTeam || selectionLabel === awayTeam ? 'team' : 'market')
 
     return getOddButtonProps(
       `banner:${banner.id}:${marketId}:${outcomeId}`,
@@ -741,9 +1224,7 @@ export function BannerCarousel({
         odd: value,
         marketLabel,
         eventStatus: isLive ? 'live' : 'prematch',
-        selectionType: aumentadaDetails
-          ? 'player'
-          : selectionLabel === homeTeam || selectionLabel === awayTeam ? 'team' : 'market',
+        selectionType,
         sport: getBannerSport(banner),
         homeTeam,
         awayTeam,
@@ -754,9 +1235,10 @@ export function BannerCarousel({
         awayScore: banner.tennisMatch?.player2.games ?? banner.liveMatch?.awayTeam.score,
         homeTeamIcon: getBannerHomeTeamIcon(banner),
         awayTeamIcon: getBannerAwayTeamIcon(banner),
-        selectionIcon: aumentadaDetails ? undefined : getBannerOutcomeIcon(banner, outcomeId, label),
-        playerName: aumentadaDetails?.playerName,
-        playerImage: aumentadaDetails?.playerName === 'Pedro' ? pedroProps : undefined,
+        selectionIcon: selectionContext.selectionIcon ?? (aumentadaDetails ? undefined : getBannerOutcomeIcon(banner, outcomeId, label)),
+        playerName,
+        selectionTeamName: selectionContext.selectionTeamName,
+        playerImage: playerName === 'Pedro' ? pedroProps : undefined,
         badgeType: 'boost',
       })
     )
@@ -911,20 +1393,199 @@ export function BannerCarousel({
     )
   }
 
+  const renderFootballLiveStat = (
+    stat: NonNullable<MarketBannerTeam['stats']>[number],
+    teamIndex: number,
+    statIndex: number
+  ) => (
+    <span className="banner-live-highlight__team-stat" key={`${teamIndex}:stat:${statIndex}`}>
+      <img src={marketStatIcons[stat.icon]} alt="" />
+      <span>{stat.value}</span>
+    </span>
+  )
+
+  const renderFootballLiveTeamSummary = (
+    team: MarketBannerTeam,
+    teamIndex: number,
+    options: { showStats?: boolean } = {}
+  ) => (
+    <div
+      className="banner-live-highlight__team-summary"
+      key={`${team.name}:${teamIndex}`}
+    >
+      <span className="banner-live-highlight__team-name">{team.name}</span>
+      {options.showStats !== false && (
+        <span className="banner-live-highlight__team-stats">
+          {team.stats?.map((stat, statIndex) => renderFootballLiveStat(stat, teamIndex, statIndex))}
+        </span>
+      )}
+    </div>
+  )
+
+  const renderFootballLiveOddButton = (
+    banner: Banner & { marketBanner: NonNullable<Banner['marketBanner']> },
+    groupId: string,
+    odd: NonNullable<MarketBanner['odds']>[number],
+    className = 'banner-live-highlight__odd-btn',
+    selectionContext?: BannerOddSelectionContext
+  ) => (
+    <button
+      key={`${banner.id}:${groupId}:${odd.outcomeId}`}
+      {...getBannerOddButtonProps(banner, groupId, odd.outcomeId, className, odd.label, odd.value, selectionContext)}
+    >
+      <span className="banner-live-highlight__odd-label">
+        {odd.trend && <span className={`banner-live-highlight__trend banner-live-highlight__trend--${odd.trend}`}>{odd.trend === 'up' ? '↑' : '↓'}</span>}
+        {odd.label}
+      </span>
+      <span className="banner-live-highlight__odd-value">{odd.value}</span>
+    </button>
+  )
+
+  const renderFootballLiveBanner = (banner: Banner & { marketBanner: NonNullable<Banner['marketBanner']> }) => {
+    const { marketBanner } = banner
+    const isPreMatch = marketBanner.variant === 'football-pre' || marketBanner.variant === 'basketball-pre'
+    const liveTimeLabel = getBannerLiveTimeLabel(banner, liveMatchTime, marketLiveTimes)
+    const homeTeam = marketBanner.teams[0]
+    const awayTeam = marketBanner.teams[1]
+    const playerProps = marketBanner.playerProps ?? []
+    const glowStyle = getBannerHighlightGlowStyle(homeTeam, awayTeam)
+
+    return (
+      <section
+        className={`banner-live-highlight${isPreMatch ? ' banner-live-highlight--prematch' : ''}`}
+        data-node-id={isPreMatch ? '757:11849' : '727:30801'}
+        style={glowStyle}
+      >
+        <div className="banner-live-highlight__floating">
+          <MarketTeamEmblem team={homeTeam} sport={marketBanner.sport} className="banner-live-highlight__floating-emblem banner-live-highlight__floating-emblem--home" />
+          <div className="banner-live-highlight__score-time">
+            <div className={`banner-live-highlight__scoreline${isPreMatch ? ' banner-live-highlight__scoreline--versus' : ''}`}>
+              {isPreMatch ? (
+                <img src={iconVs} alt="vs" />
+              ) : (
+                <>
+                  <strong>{homeTeam.score ?? 0}</strong>
+                  <span>:</span>
+                  <strong>{awayTeam.score ?? 0}</strong>
+                </>
+              )}
+            </div>
+            <div className="banner-live-highlight__live-time">
+              {!isPreMatch && <span className="banner-live-highlight__live-dot" />}
+              <span>{isPreMatch ? liveTimeLabel : getBannerShortLiveTime(liveTimeLabel)}</span>
+            </div>
+          </div>
+          <MarketTeamEmblem team={awayTeam} sport={marketBanner.sport} className="banner-live-highlight__floating-emblem banner-live-highlight__floating-emblem--away" />
+        </div>
+
+        <div className="banner-live-highlight__match">
+          <div className="banner-live-highlight__header">
+            {renderFootballLiveTeamSummary(homeTeam, 0, { showStats: !isPreMatch })}
+
+            <span
+              className="banner-live-highlight__header-spacer"
+              aria-label={isPreMatch ? `${homeTeam.name} vs ${awayTeam.name}` : `${homeTeam.name} ${homeTeam.score ?? 0}, ${awayTeam.name} ${awayTeam.score ?? 0}`}
+            />
+
+            {renderFootballLiveTeamSummary(awayTeam, 1, { showStats: !isPreMatch })}
+          </div>
+
+          <div className="banner-live-highlight__moneyline" aria-label="Resultado final">
+            {marketBanner.odds.map((odd) => renderFootballLiveOddButton(banner, '1x2', odd))}
+          </div>
+
+          {marketBanner.alternativeMarkets && (
+            <div className="banner-live-highlight__alternatives">
+              {marketBanner.alternativeMarkets.map((market) => (
+                <div className="banner-live-highlight__alternative" key={market.id}>
+                  <span className="banner-live-highlight__alternative-title">{market.label}</span>
+                  <div className="banner-live-highlight__alternative-odds">
+                    {market.odds.map((odd) => renderFootballLiveOddButton(banner, market.id, odd, 'banner-live-highlight__odd-btn banner-live-highlight__odd-btn--small'))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {playerProps.length > 0 && (
+          <div className="banner-live-highlight__props" aria-label="Player props em destaque">
+            {playerProps.map((prop) => (
+              <div className="banner-live-highlight__prop" key={prop.id}>
+                <span className="banner-live-highlight__prop-avatar-shell" aria-hidden="true">
+                  <span className={`banner-live-highlight__prop-avatar banner-live-highlight__prop-avatar--${marketBanner.sport === 'basquete' ? 'basketball' : 'football'}`} />
+                  <span className="banner-live-highlight__prop-stat-icon" />
+                  <MarketTeamEmblem
+                    team={getFootballLivePropTeam(marketBanner, prop.teamName)}
+                    sport={marketBanner.sport}
+                    className="banner-live-highlight__prop-team-emblem"
+                  />
+                </span>
+
+                <div className="banner-live-highlight__prop-body">
+                  <span className="banner-live-highlight__prop-copy">
+                    <span className="banner-live-highlight__prop-name-row">
+                      <strong>{prop.playerName}</strong>
+                      {prop.position && <em>{prop.position}</em>}
+                    </span>
+                    <small>{prop.subtitle}</small>
+                  </span>
+
+                  <FootballLivePropOddsSlider
+                    playerName={prop.playerName}
+                    odds={prop.odds}
+                    renderOddButton={(odd, className) => (
+                      renderFootballLiveOddButton(
+                        banner,
+                        `player-prop:${prop.id}`,
+                        odd,
+                        className,
+                        {
+                          marketId: `${prop.subtitle}-${prop.id}`,
+                          marketLabel: prop.subtitle,
+                          selectionLabel: prop.playerName,
+                          selectionType: 'player',
+                          playerName: prop.playerName,
+                          selectionTeamName: prop.teamName,
+                          selectionIcon: getMarketTeamLogo(getFootballLivePropTeam(marketBanner, prop.teamName), marketBanner.sport),
+                        }
+                      )
+                    )}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="banner-live-highlight__footer">
+          <span className="banner-live-highlight__league-link">
+            {getBannerLeagueShortLabel(marketBanner.league)}
+            <CaretRightIcon size={12} weight="bold" />
+          </span>
+          <span className="banner-live-highlight__more">
+            Ver mais
+            <CaretRightIcon size={14} weight="bold" />
+          </span>
+        </div>
+      </section>
+    )
+  }
+
   const renderMarketBanner = (banner: Banner & { marketBanner: NonNullable<Banner['marketBanner']> }) => {
     const { marketBanner } = banner
+
+    if (marketBanner.variant === 'football-live' || marketBanner.variant === 'football-pre' || marketBanner.variant === 'basketball-pre') {
+      return renderFootballLiveBanner(banner)
+    }
 
     return (
       <section
         className={`banner-market banner-market--${marketBanner.variant}`}
         data-node-id={
-          marketBanner.variant === 'football-live'
-            ? '457:13277'
-            : marketBanner.variant === 'tennis-live'
-              ? '457:13361'
-              : marketBanner.variant === 'football-pre'
-                ? '457:13445'
-                : '457:13528'
+          marketBanner.variant === 'tennis-live'
+            ? '457:13361'
+            : '457:13528'
         }
       >
         {renderMarketMatchup(banner)}
@@ -970,7 +1631,13 @@ export function BannerCarousel({
   }
 
   return (
-    <div className={`banner-carousel${isMarketBannerSet ? ' banner-carousel--market' : ''}`}>
+    <div
+      className={[
+        'banner-carousel',
+        isMarketBannerSet ? 'banner-carousel--market' : '',
+        isFootballLiveHighlightSet ? 'banner-carousel--football-live-highlight' : '',
+      ].filter(Boolean).join(' ')}
+    >
       <div 
         className={`banner-carousel__list ${isDragging ? 'banner-carousel__list--dragging' : ''}`}
         ref={scrollRef}
@@ -987,7 +1654,10 @@ export function BannerCarousel({
 
           if (hasMarketBanner(banner)) {
             return (
-              <div key={banner.id} className="banner-card banner-card--market">
+              <div
+                key={banner.id}
+                className={`banner-card banner-card--market${banner.marketBanner.variant === 'football-live' || banner.marketBanner.variant === 'football-pre' || banner.marketBanner.variant === 'basketball-pre' ? ' banner-card--football-live-highlight' : ''}`}
+              >
                 {renderMarketBanner(banner)}
               </div>
             )

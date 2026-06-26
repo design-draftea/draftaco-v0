@@ -4,6 +4,7 @@ import { BannerHighlight } from '../../components/BannerHighlight'
 import { ContentFilterChips, type ContentFilterId } from '../../components/ContentFilterChips'
 import { HomeCompetitionSection } from '../../components/HomeCompetitionSection'
 import { HomeOfferCarousel } from '../../components/HomeOfferCarousel'
+import { PromoDraftaco } from '../../components/PromoDraftaco'
 import { PromotionSection } from '../../components/PromotionSection'
 import {
   getCalendarMarketChipsForSport,
@@ -11,21 +12,25 @@ import {
   getCalendarDisplayedEvents,
   getCalendarPlayerPropsForEvent,
   getCompetitionLiveEventOpenPayload,
+  getCompetitionPageEvents,
   isCalendarPlayerPropsMarketForSport,
+  updateCompetitionMatchTime,
   type CalendarMarketChip,
+  type DisplayedCompetitionEvent,
   type DisplayedCompetitionEventGroup,
 } from '../../components/CalendarSection'
 import { SportsMatchCarousel } from '../../components/SportsMatchCarousel'
-import { CompetitionPage } from '../../components/CompetitionPage'
+import { CompetitionPage, useCompetitionMarketSelection } from '../../components/CompetitionPage'
 import { SportRail } from '../../components/SportRail'
 import { CasinoRail } from '../../components/CasinoRail'
 import { CasinoContent, casinoCarouselSections } from '../../components/CasinoContent'
-import { casinoBanners, casinoPromotions, championsLeagueEventMatches, drafteaHomeOfferCarouselItems, drafteaSportHomeOfferCarouselItemsBySport, drafteaSportsPromotions, homeCompetitionHighlights, homeOfferCarouselItems, sportHomeOfferCarouselItemsBySport, sportsPromotions } from '../../data/homeProducts'
+import { casinoBanners, casinoPromotions, championsLeagueEventMatches, drafteaSportHomeOfferCarouselItemsBySport, homeCompetitionHighlights, sportHomeOfferCarouselItemsBySport } from '../../data/homeProducts'
 import { getTeamLogo } from '../../data/teamLogos'
 import { useFeatureFlags } from '../../hooks/useFeatureFlags'
 import type { LiveEventMatch, LiveEventOpenPayload } from '../LiveEventPage'
 import type { CasinoGameOpenPayload } from '../../components/CasinoContent'
 import type { Banner, CasinoCategoryId, HomeCompetitionHighlight, HomeCompetitionMatch, HomeCompetitionOdd, HomeCompetitionPlayerProp, ProductMode } from '../../types/home'
+import { getTeamAbbreviation } from '../../utils/teamAbbreviations'
 import type { CompetitionLinkTarget } from '../../utils/competitionNavigation'
 import './Home.css'
 
@@ -43,10 +48,12 @@ const HEADER_SNAP_IDLE_MS = 160
 const HEADER_SNAP_SETTLE_MS = 420
 const HEADER_CONTENT_GAP = 24
 const HEADER_CONTENT_GAP_NOVO_TRILHO_HOME = 8
-const HEADER_CONTENT_GAP_NOVO_TRILHO_SPORT = 16
+const HEADER_CONTENT_GAP_NOVO_TRILHO_SPORT = 0
 const HEADER_CONTENT_GAP_INLINE_EVENT = 0
 const EVENT_RAIL_HEIGHT = 112
 const EVENT_RAIL_PADDING_BOTTOM = 24
+const COMPETITION_EVENT_RAIL_HEIGHT = 48
+const COMPETITION_SPORT_RAIL_COLLAPSE_PROGRESS_END = 0.52
 const EVENT_RAIL_COLLAPSE_TRANSLATE_Y = -28
 const EVENT_RAIL_VISUAL_COLLAPSE_SCROLL_END = 72
 const EVENT_RAIL_DISABLE_INTERACTION_PROGRESS = 0.9
@@ -75,6 +82,13 @@ const interpolate = (from: number, to: number, progress: number) => from + (to -
 const getInlineEventHeaderContentOffset = (homeEl: HTMLElement, headerEl: HTMLElement) => {
   if (!homeEl.classList.contains('home--event-inline-active')) return null
 
+  const headerStackEl = headerEl.querySelector<HTMLElement>('.live-event-inline__header-stack')
+  if (headerStackEl) {
+    return headerStackEl.getBoundingClientRect().bottom -
+      homeEl.getBoundingClientRect().top +
+      getHeaderContentGap(homeEl)
+  }
+
   const headerTopEl = headerEl.querySelector<HTMLElement>('.header__top')
   const sportRailShellEl = headerEl.querySelector<HTMLElement>('.sport-rail-shell')
   const eventRailEl = headerEl.querySelector<HTMLElement>('.live-event-inline__event-rail')
@@ -97,6 +111,15 @@ const getInlineEventHeaderContentOffset = (homeEl: HTMLElement, headerEl: HTMLEl
 const getHeaderContentGap = (homeEl: HTMLElement) => {
   if (homeEl.classList.contains('home--event-inline-active')) {
     return HEADER_CONTENT_GAP_INLINE_EVENT
+  }
+
+  if (
+    homeEl.classList.contains('home--novo-trilho') &&
+    homeEl.classList.contains('home--competition-active') &&
+    homeEl.classList.contains('home--content-event-rail-active') &&
+    !homeEl.classList.contains('home--casino-active')
+  ) {
+    return HEADER_CONTENT_GAP_NOVO_TRILHO_SPORT
   }
 
   if (
@@ -134,11 +157,7 @@ const ENABLE_HOME_MENU_BUTTON = false
 const ENABLE_HOME_RAIL_LINKS = true
 const ENABLE_HOME_RAIL_COMPETITION_LINKS = true
 const ENABLE_HOME_TIP_CLICKS = false
-const HOME_LIVE_MATCHES_PER_COMPETITION = 3
-const HOME_UPCOMING_MATCHES_PER_COMPETITION = 3
 const SPORT_FEATURED_PLAYER_PROPS_PER_MARKET = 12
-const CONTENT_FILTER_STICKY_LOCK_OVERSCROLL = 8
-const hiddenHomeLiveCompetitionIds = new Set(['brasil-serie-a', 'premier-league'])
 const supportedSportFeaturedIds = new Set(['futebol', 'basquete'])
 const supportedSportFeaturedMarketIds = new Set([
   'resultado-final',
@@ -163,19 +182,6 @@ const championshipToRailCompetitionId: Record<string, string> = {
   bundesliga: 'fut-bundesliga',
   nba: 'bsq-nba',
 }
-const footballHomeCompetitionMarketChips = [
-  { id: 'resultado-final', label: 'Resultado Final' },
-  { id: 'dupla-chance', label: 'Dupla Chance' },
-  { id: 'ambos-marcam', label: 'Ambos Marcam' },
-  { id: 'total-gols', label: 'Total de Gols' },
-]
-const basketballHomeCompetitionMarketChips = [
-  { id: 'principais', label: 'Principais' },
-  { id: 'q1', label: '1º Quarto' },
-  { id: 'q2', label: '2º Quarto' },
-  { id: 'q3', label: '3º Quarto' },
-  { id: 'q4', label: '4º Quarto' },
-]
 const basketballSportFeaturedMarketChips: CalendarMarketChip[] = [
   { id: 'principais', label: 'Principais' },
   { id: 'pontos-jogador', label: 'Pontos de jogador' },
@@ -184,26 +190,227 @@ const basketballSportFeaturedMarketChips: CalendarMarketChip[] = [
   { id: 'assistencias', label: 'Assistências' },
 ]
 
-const getSportLabel = (sport: string) => (
-  sport === 'basquete' ? 'Basquete' : 'Futebol'
-)
-
 const getRailCompetitionId = (championshipId?: string) => (
   championshipId ? championshipToRailCompetitionId[championshipId] ?? championshipId : undefined
 )
 
-const getHomeCompetitionMarketChips = (sport: string) => (
-  sport === 'basquete' ? basketballHomeCompetitionMarketChips : footballHomeCompetitionMarketChips
-)
+const getTeamOddLabel = getTeamAbbreviation
 
-const getTeamOddLabel = (teamName: string) => {
-  const words = teamName.split(/\s+/).filter(Boolean)
-  const baseLabel = words.length > 1
-    ? words.map((word) => word[0]).join('')
-    : teamName
+const getCompetitionEventRailKey = (events: DisplayedCompetitionEvent[]) =>
+  events.map(({ league, event }) => `${league.id}:${event.id}:${event.dateTime}`).join('|')
 
-  return baseLabel.replace(/[^a-z0-9]/gi, '').slice(0, 3).toUpperCase() ||
-    teamName.slice(0, 3).toUpperCase()
+const getInitialCompetitionEventRailTimes = (events: DisplayedCompetitionEvent[]) =>
+  events.reduce<Record<string, string>>((times, { event }) => {
+    if (event.isLive) times[event.id] = event.dateTime
+    return times
+  }, {})
+
+const getCompetitionEventRailLiveClockLabel = (time: string) => {
+  const clockMatch = time.match(/(?:\dT|Q\d)\s+(\d{1,2}:\d{2})/)
+  return clockMatch?.[1] ?? time
+}
+
+const getCompetitionEventRailPreMatchLabel = (dateTime: string) => {
+  const [datePart, timePart] = dateTime.split(',').map((part) => part.trim())
+  if (!timePart) return datePart
+  return `${datePart} (${timePart})`
+}
+
+interface CompetitionEventRailProps {
+  events: DisplayedCompetitionEvent[]
+  selectedIndex: number | null
+  resetKey: string
+  onSelectedIndexChange: (index: number | null) => void
+  onEventClick?: (index: number, liveTimes: Record<string, string>) => void
+}
+
+function CompetitionEventRail({
+  events,
+  selectedIndex,
+  resetKey,
+  onSelectedIndexChange,
+  onEventClick,
+}: CompetitionEventRailProps) {
+  const railRef = useRef<HTMLDivElement>(null)
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const eventsKey = useMemo(() => getCompetitionEventRailKey(events), [events])
+  const initialLiveTimes = useMemo(() => getInitialCompetitionEventRailTimes(events), [events])
+  const [liveTimesState, setLiveTimesState] = useState(() => ({
+    key: eventsKey,
+    times: initialLiveTimes,
+  }))
+  const liveTimes = liveTimesState.key === eventsKey ? liveTimesState.times : initialLiveTimes
+  const activeIndex = selectedIndex === null
+    ? -1
+    : Math.min(Math.max(selectedIndex, 0), Math.max(events.length - 1, 0))
+  const [railFade, setRailFade] = useState({ left: false, right: false })
+  const updateRailFadeState = useCallback(() => {
+    const railEl = railRef.current
+    if (!railEl) {
+      setRailFade((current) => (current.left || current.right ? { left: false, right: false } : current))
+      return
+    }
+
+    const maxScrollLeft = Math.max(0, railEl.scrollWidth - railEl.clientWidth)
+    const next = {
+      left: railEl.scrollLeft > 1,
+      right: railEl.scrollLeft < maxScrollLeft - 1,
+    }
+
+    setRailFade((current) => (
+      current.left === next.left && current.right === next.right ? current : next
+    ))
+  }, [])
+
+  useEffect(() => {
+    if (events.length === 0) return
+
+    const interval = window.setInterval(() => {
+      setLiveTimesState((current) => {
+        const sourceTimes = current.key === eventsKey ? current.times : initialLiveTimes
+        const next: Record<string, string> = {}
+
+        events.forEach(({ event }) => {
+          if (event.isLive) {
+            next[event.id] = updateCompetitionMatchTime(sourceTimes[event.id] ?? event.dateTime)
+          }
+        })
+
+        return { key: eventsKey, times: next }
+      })
+    }, 1000)
+
+    return () => window.clearInterval(interval)
+  }, [events, eventsKey, initialLiveTimes])
+
+  useLayoutEffect(() => {
+    onSelectedIndexChange(null)
+    railRef.current?.scrollTo({ left: 0, top: 0, behavior: 'auto' })
+    window.requestAnimationFrame(updateRailFadeState)
+  }, [onSelectedIndexChange, resetKey, updateRailFadeState])
+
+  useLayoutEffect(() => {
+    if (events.length === 0 || activeIndex < 0) return
+
+    const railEl = railRef.current
+    const itemEl = itemRefs.current[activeIndex]
+    if (!railEl || !itemEl) return
+
+    const maxScrollLeft = Math.max(0, railEl.scrollWidth - railEl.clientWidth)
+    const centeredLeft = itemEl.offsetLeft - (railEl.clientWidth - itemEl.offsetWidth) / 2
+    const targetLeft = activeIndex === 0
+      ? 0
+      : activeIndex === events.length - 1
+        ? maxScrollLeft
+        : Math.min(maxScrollLeft, Math.max(0, centeredLeft))
+
+    railEl.scrollTo({ left: targetLeft, top: 0, behavior: 'smooth' })
+    window.requestAnimationFrame(updateRailFadeState)
+    window.setTimeout(updateRailFadeState, 260)
+  }, [activeIndex, events.length, updateRailFadeState])
+
+  useLayoutEffect(() => {
+    updateRailFadeState()
+  }, [events.length, updateRailFadeState])
+
+  useEffect(() => {
+    const railEl = railRef.current
+    if (!railEl) return undefined
+
+    let animationFrame = 0
+    const scheduleRailFadeUpdate = () => {
+      if (animationFrame) window.cancelAnimationFrame(animationFrame)
+      animationFrame = window.requestAnimationFrame(updateRailFadeState)
+    }
+
+    railEl.addEventListener('scroll', scheduleRailFadeUpdate, { passive: true })
+    window.addEventListener('resize', scheduleRailFadeUpdate)
+    updateRailFadeState()
+
+    return () => {
+      if (animationFrame) window.cancelAnimationFrame(animationFrame)
+      railEl.removeEventListener('scroll', scheduleRailFadeUpdate)
+      window.removeEventListener('resize', scheduleRailFadeUpdate)
+    }
+  }, [eventsKey, updateRailFadeState])
+
+  if (events.length === 0) return null
+
+  return (
+    <div className="competition-event-rail">
+      <button
+        type="button"
+        className={[
+          'competition-event-rail__all',
+          selectedIndex === null ? 'competition-event-rail__all--active' : '',
+        ].filter(Boolean).join(' ')}
+        onClick={() => onSelectedIndexChange(null)}
+        aria-pressed={selectedIndex === null}
+      >
+        <span className="competition-event-rail__all-label">TODOS</span>
+      </button>
+      <div
+        className={[
+          'competition-event-rail__scroll',
+          railFade.left ? 'competition-event-rail__scroll--fade-left' : '',
+          railFade.right ? 'competition-event-rail__scroll--fade-right' : '',
+        ].filter(Boolean).join(' ')}
+        ref={railRef}
+        aria-label="Jogos do campeonato"
+      >
+        <div className="competition-event-rail__track">
+          {events.map(({ event }, index) => {
+            const isActive = index === activeIndex
+            const matchup = `${getTeamOddLabel(event.homeName)} vs ${getTeamOddLabel(event.awayName)}`
+            const displayTime = liveTimes[event.id] ?? event.dateTime
+
+            return (
+              <button
+                key={event.id}
+                ref={(element) => { itemRefs.current[index] = element }}
+                type="button"
+                className={[
+                  'competition-event-rail__item',
+                  event.isLive ? 'competition-event-rail__item--live' : 'competition-event-rail__item--prematch',
+                  isActive ? 'competition-event-rail__item--active' : '',
+                ].filter(Boolean).join(' ')}
+                aria-label={`${event.homeName} contra ${event.awayName}`}
+                aria-pressed={isActive}
+                onClick={() => {
+                  onSelectedIndexChange(index)
+                  onEventClick?.(index, liveTimes)
+                }}
+              >
+                <span className="competition-event-rail__label">{matchup}</span>
+                {event.isLive ? (
+                  <span
+                    className={[
+                      'competition-event-rail__meta',
+                      isActive ? 'competition-event-rail__meta--active' : '',
+                      isActive ? 'competition-event-rail__meta--active-live' : 'competition-event-rail__meta--live',
+                    ].filter(Boolean).join(' ')}
+                  >
+                    <span className="competition-event-rail__live-dot" aria-hidden="true" />
+                    {isActive ? 'Ao Vivo' : getCompetitionEventRailLiveClockLabel(displayTime)}
+                  </span>
+                ) : (
+                  <span
+                    className={[
+                      'competition-event-rail__meta',
+                      'competition-event-rail__meta--prematch',
+                      isActive ? 'competition-event-rail__meta--active competition-event-rail__meta--active-prematch' : '',
+                    ].filter(Boolean).join(' ')}
+                  >
+                    {getCompetitionEventRailPreMatchLabel(event.dateTime)}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 const getBasketballMarketColumns = (
@@ -313,57 +520,48 @@ const getHomeCompetitionMatchFromCalendarEvent = (
   }
 }
 
-const getHomeCompetitionMatchFromLiveEvent = (
-  eventGroup: DisplayedCompetitionEventGroup,
-  event: DisplayedCompetitionEventGroup['events'][number]
-) => getHomeCompetitionMatchFromCalendarEvent(eventGroup, event, true)
+const highlightedMatchIds = new Set(['ucl-psg-city-live'])
 
-const getHomeCompetitionMatchFromUpcomingEvent = (
-  eventGroup: DisplayedCompetitionEventGroup,
-  event: DisplayedCompetitionEventGroup['events'][number]
-) => getHomeCompetitionMatchFromCalendarEvent(eventGroup, event, false)
+const getFlamengoCruzeiroFeaturedMatch = (): HomeCompetitionMatch | null => {
+  const { groups } = getCalendarDisplayedEventGroups({ sportFilter: 'futebol' })
+  const brasilSerieAGroup = groups.find(({ league }) => league.id === 'brasil-serie-a')
+  const flamengoCruzeiroEvent = brasilSerieAGroup?.events.find((event) => (
+    event.homeName === 'Flamengo' && event.awayName === 'Cruzeiro' && event.isLive
+  ))
+  if (!brasilSerieAGroup || !flamengoCruzeiroEvent) return null
 
-const getHomeLiveCompetitionHighlights = (): HomeCompetitionHighlight[] => {
-  const { groups } = getCalendarDisplayedEventGroups({ liveOnly: true })
+  const match = getHomeCompetitionMatchFromCalendarEvent(brasilSerieAGroup, flamengoCruzeiroEvent, true)
 
-  return groups.flatMap((eventGroup) => {
-    if (hiddenHomeLiveCompetitionIds.has(eventGroup.league.id)) return []
-
-    const matches = eventGroup.events
-      .slice(0, HOME_LIVE_MATCHES_PER_COMPETITION)
-      .map((event) => getHomeCompetitionMatchFromLiveEvent(eventGroup, event))
-      .filter((match): match is HomeCompetitionMatch => !!match)
-
-    if (matches.length === 0) return []
-
-    return [{
-      title: eventGroup.league.name,
-      sportLabel: getSportLabel(eventGroup.league.sport),
-      marketChips: getHomeCompetitionMarketChips(eventGroup.league.sport),
-      matches,
-      playerProps: [],
-    }]
-  })
+  return match
+    ? {
+      ...match,
+      leagueLabel: brasilSerieAGroup.league.name,
+    }
+    : null
 }
 
-const getHomeUpcomingCompetitionHighlights = (): HomeCompetitionHighlight[] => {
-  const { groups } = getCalendarDisplayedEventGroups({ upcomingOnly: true })
+const getHomeFeaturedCompetitionMatches = (): HomeCompetitionMatch[] => {
+  const existingMatches = homeCompetitionHighlights
+    .flatMap((competition) => (
+      competition.matches.slice(0, 3).map((match) => ({
+        ...match,
+        leagueLabel: competition.title,
+      }))
+    ))
+    .filter((match) => !highlightedMatchIds.has(match.id))
+  const flamengoCruzeiroMatch = getFlamengoCruzeiroFeaturedMatch()
 
-  return groups.flatMap((eventGroup) => {
-    const matches = eventGroup.events
-      .slice(0, HOME_UPCOMING_MATCHES_PER_COMPETITION)
-      .map((event) => getHomeCompetitionMatchFromUpcomingEvent(eventGroup, event))
-      .filter((match): match is HomeCompetitionMatch => !!match)
+  return [
+    ...(flamengoCruzeiroMatch ? [flamengoCruzeiroMatch] : []),
+    ...existingMatches,
+  ].slice(0, 9)
+}
 
-    if (matches.length === 0) return []
-
-    return [{
-      title: eventGroup.league.name,
-      sportLabel: getSportLabel(eventGroup.league.sport),
-      matches,
-      playerProps: [],
-    }]
-  })
+const homeFeaturedCompetitionHighlight: HomeCompetitionHighlight = {
+  title: 'Outras partidas em destaque',
+  sportLabel: '',
+  matches: getHomeFeaturedCompetitionMatches(),
+  playerProps: [],
 }
 
 const getSportFeaturedMarketChips = (sport: string): CalendarMarketChip[] => {
@@ -404,6 +602,8 @@ const getSportFeaturedPlayerProps = (
         getCalendarPlayerPropsForEvent(event, sport, marketChip.id).map((player) => ({
           id: `featured:${marketChip.id}:${player.id}`,
           marketId: marketChip.id,
+          homeTeam: event.homeName,
+          awayTeam: event.awayName,
           playerName: player.playerName,
           position: player.position,
           marketLabel: marketChip.label,
@@ -623,13 +823,13 @@ export function Home({
   const [isSportsMatchCarouselCollapsed, setIsSportsMatchCarouselCollapsed] = useState(false)
   const [contentResetKey, setContentResetKey] = useState(0)
   const [selectedCompetition, setSelectedCompetition] = useState<{ id: string; name: string } | null>(null)
+  const [competitionRailSelectedIndex, setCompetitionRailSelectedIndex] = useState<number | null>(null)
   const [extraRailCompetitions, setExtraRailCompetitions] = useState<CompetitionLinkTarget[]>([])
   const [loadedEventContext, setLoadedEventContext] = useState<LoadedEventContext | null>(null)
   const [isInlineEventCompact, setIsInlineEventCompact] = useState(false)
   const [selectedCasinoGame, setSelectedCasinoGame] = useState<CasinoGameOpenPayload | null>(null)
   const [activeContentFilter, setActiveContentFilter] = useState<ContentFilterId>('populares')
   const [activeSportMarket, setActiveSportMarket] = useState<string | undefined>()
-  const [contentFilterScrollSignal, setContentFilterScrollSignal] = useState(0)
   const screenStateRef = useRef<Omit<LoadedEventReturnState, 'scrollTop'>>({
     activeSport,
     selectedCompetition,
@@ -642,9 +842,6 @@ export function Home({
   const isInlineEventMode = isBetsProduct && !!loadedEventContext
   const shouldHideInlineEventHeaderRail = isInlineEventMode && isInlineEventCompact
   const displayActiveSport = isBetsProduct ? activeSport : null
-  const isLiveContentFilter = isBetsProduct && !displayActiveSport && activeContentFilter === 'ao-vivo'
-  const isUpcomingContentFilter = isBetsProduct && !displayActiveSport && activeContentFilter === 'em-breve'
-  const isPlayersContentFilter = isBetsProduct && !displayActiveSport && activeContentFilter === 'jogadores'
   const sportsCarouselEvents = useMemo(
     () => isBetsProduct && activeSport
       ? getCalendarDisplayedEvents({
@@ -656,21 +853,28 @@ export function Home({
   )
   const sportsCarouselResetKey = `${activeSport ?? 'destaques'}:${selectedCompetition?.id ?? 'todas'}`
   const isCompetitionMode = isBetsProduct && !!selectedCompetition
-  const hasSportsCarouselEvents = isBetsProduct && !!activeSport && sportsCarouselEvents.length > 0
-  const shouldRenderTopGamesRail = SHOW_TOP_GAMES_RAIL && hasSportsCarouselEvents
+  const competitionRailEvents = useMemo(
+    () => isCompetitionMode && activeSport && selectedCompetition
+      ? getCompetitionPageEvents(activeSport, selectedCompetition.id)
+      : [],
+    [activeSport, isCompetitionMode, selectedCompetition]
+  )
+  const topGamesRailEvents = isCompetitionMode ? competitionRailEvents : sportsCarouselEvents
+  const hasSportsCarouselEvents = isBetsProduct && !!activeSport && topGamesRailEvents.length > 0
+  const shouldRenderCompetitionEventRail = isCompetitionMode && hasSportsCarouselEvents
+  const shouldRenderTopGamesRail = (SHOW_TOP_GAMES_RAIL || shouldRenderCompetitionEventRail) && hasSportsCarouselEvents
   const usesContentEventRail = shouldRenderTopGamesRail
   const usesHeaderEventRail = shouldRenderTopGamesRail && !usesContentEventRail
+  // Competition renders its rail + market chips as a header stack inside the
+  // header (mirroring the live-event inline header), instead of the content rail.
+  const competitionMarketSelection = useCompetitionMarketSelection({
+    sport: displayActiveSport ?? '',
+    competitionId: selectedCompetition?.id ?? '',
+    liveOnly: false,
+  })
+  const usesCompetitionHeaderStack = isCompetitionMode
+    && (hasSportsCarouselEvents || competitionMarketSelection.marketFilters.length > 0)
   const shouldHideBetsBanner = isBetsProduct && (!!displayActiveSport || isInlineEventMode)
-  const highlightPromotions = brandMode === 'draftea' ? drafteaSportsPromotions : sportsPromotions
-  const highlightOfferCarouselItems = brandMode === 'draftea'
-    ? drafteaHomeOfferCarouselItems
-    : homeOfferCarouselItems
-  const liveCompetitionHighlights = useMemo(() => getHomeLiveCompetitionHighlights(), [])
-  const upcomingCompetitionHighlights = useMemo(() => getHomeUpcomingCompetitionHighlights(), [])
-  const playerPropsCompetitionHighlights = useMemo(
-    () => homeCompetitionHighlights.filter((competition) => competition.playerProps.length > 0),
-    []
-  )
   const sportFeaturedCompetitionHighlights = useMemo(
     () => displayActiveSport ? getSportFeaturedCompetitionHighlights(displayActiveSport) : [],
     [displayActiveSport]
@@ -762,6 +966,11 @@ export function Home({
     homeEl.style.removeProperty('--sports-carousel-teams-gap')
     homeEl.style.removeProperty('--sports-carousel-teams-min-height')
     homeEl.style.removeProperty('--sports-carousel-team-row-height')
+    homeEl.style.removeProperty('--home-competition-header-rail-visible-height')
+    homeEl.style.removeProperty('--home-competition-header-rail-opacity')
+    homeEl.style.removeProperty('--home-competition-header-rail-translate-y')
+    homeEl.style.removeProperty('--home-competition-event-rail-sticky-top')
+    homeEl.style.removeProperty('--home-competition-market-chips-sticky-top')
     syncCurrentHeaderContentPaddingTop()
   }, [syncCurrentHeaderContentPaddingTop])
 
@@ -824,7 +1033,8 @@ export function Home({
     liveTimes: Record<string, string>
   ) => {
     const { groups } = getCalendarDisplayedEventGroups({ sportFilter: match.sport })
-    const eventGroup = getHomeCompetitionEventGroup(groups, competition.title)
+    const competitionTitle = match.leagueLabel ?? competition.title
+    const eventGroup = getHomeCompetitionEventGroup(groups, competitionTitle)
     const eventMatches = getHomeCompetitionEventMatches(competition)
     const selectedCalendarEvent = eventGroup
       ? getCalendarEventForHomeCompetitionMatch(eventGroup, match)
@@ -838,7 +1048,7 @@ export function Home({
       : null
 
     if (calendarPayload) {
-      handleLiveMatchClick(applyHomeCompetitionTitleToEventPayload(calendarPayload, competition.title))
+      handleLiveMatchClick(applyHomeCompetitionTitleToEventPayload(calendarPayload, competitionTitle))
       return
     }
 
@@ -858,7 +1068,7 @@ export function Home({
         currentTime: currentTimes[competitionMatch.id],
       })),
       selectedIndex,
-      leagueName: competition.title,
+      leagueName: competitionTitle,
       leagueFlag: eventGroup?.league.flag,
       sport: match.sport,
       currentTimes,
@@ -866,6 +1076,22 @@ export function Home({
 
     handleLiveMatchClick(payload)
   }, [handleLiveMatchClick])
+
+  const handleCompetitionRailEventClick = useCallback((
+    index: number,
+    liveTimes: Record<string, string>
+  ) => {
+    const displayedEvent = topGamesRailEvents[index]
+    if (!displayedEvent) return
+
+    const payload = getCompetitionLiveEventOpenPayload({
+      league: displayedEvent.league,
+      selectedEventId: displayedEvent.event.id,
+      matchTimes: liveTimes,
+    })
+
+    if (payload) handleLiveMatchClick(payload)
+  }, [handleLiveMatchClick, topGamesRailEvents])
 
   const handleInlineMatchSelect = useCallback((index: number) => {
     setLoadedEventContext((currentContext) => {
@@ -881,9 +1107,25 @@ export function Home({
   }, [scrollToTop])
 
   const handleCloseInlineEvent = useCallback(() => {
-    const returnState = loadedEventContext?.returnState
+    const currentContext = loadedEventContext
+    const returnState = currentContext?.returnState
     setIsInlineEventCompact(false)
     setLoadedEventContext(null)
+
+    if (currentContext?.competitionId) {
+      const railCompetitionId = getRailCompetitionId(currentContext.competitionId)
+
+      setActiveSport(currentContext.payload.sport)
+      setSelectedCompetition(railCompetitionId
+        ? { id: railCompetitionId, name: currentContext.competitionName }
+        : null
+      )
+      setCompetitionRailSelectedIndex(null)
+      setActiveContentFilter(returnState?.selectedCompetition ? returnState.activeContentFilter : 'populares')
+      setActiveSportMarket(returnState?.selectedCompetition ? returnState.activeSportMarket : undefined)
+      scrollToTop()
+      return
+    }
 
     if (!returnState) {
       scrollToTop()
@@ -892,6 +1134,7 @@ export function Home({
 
     setActiveSport(returnState.activeSport)
     setSelectedCompetition(returnState.selectedCompetition)
+    if (returnState.selectedCompetition) setCompetitionRailSelectedIndex(null)
     setActiveContentFilter(returnState.activeContentFilter)
     setActiveSportMarket(returnState.activeSportMarket)
     // Restaura a posição de scroll após a lista voltar a renderizar (ver useLayoutEffect abaixo).
@@ -909,49 +1152,6 @@ export function Home({
     window.scrollTo({ top: targetScrollTop, left: 0, behavior: 'auto' })
     syncCurrentHeaderContentPaddingTop()
   }, [isInlineEventMode, syncCurrentHeaderContentPaddingTop])
-
-  const scrollToContentFilterStickyTop = useCallback(() => {
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        const homeEl = homeRef.current
-        const targetEl = contentFilterStickyTopRef.current
-
-        if (!homeEl || !targetEl) return
-
-        const stickyChipsEl = homeEl.querySelector<HTMLElement>('.content-filter-chips')
-        const stickyChipsRect = stickyChipsEl?.getBoundingClientRect()
-        const homeStyle = window.getComputedStyle(homeEl)
-        const stickyTop = stickyChipsEl ? parseFloat(window.getComputedStyle(stickyChipsEl).top) || 0 : 0
-        const usesHomeScroll = (
-          homeStyle.position === 'fixed' &&
-          (homeStyle.overflowY === 'auto' || homeStyle.overflowY === 'scroll')
-        )
-        const homePaddingTop = usesHomeScroll ? parseFloat(homeStyle.paddingTop) || 0 : 0
-        const stickyLockTop = homePaddingTop + Math.max(stickyTop, 0)
-        const targetRect = targetEl.getBoundingClientRect()
-        const homeRect = homeEl.getBoundingClientRect()
-        const targetTop = stickyLockTop - CONTENT_FILTER_STICKY_LOCK_OVERSCROLL
-        const homeTargetTop = homeEl.scrollTop + targetRect.top - homeRect.top - targetTop
-        const windowTargetTop = window.scrollY + targetRect.top - (
-          usesHomeScroll
-            ? targetTop + homeRect.top
-            : Math.max(stickyTop, 0) - CONTENT_FILTER_STICKY_LOCK_OVERSCROLL
-        )
-
-        if (!stickyChipsRect) return
-
-        homeEl.scrollTo({ top: Math.max(homeTargetTop, 0), left: 0, behavior: 'auto' })
-        window.scrollTo({ top: Math.max(windowTargetTop, 0), left: 0, behavior: 'auto' })
-      })
-    })
-  }, [])
-
-  useLayoutEffect(() => {
-    if (contentFilterScrollSignal === 0) return
-    if (!isBetsProduct || displayActiveSport) return
-
-    scrollToContentFilterStickyTop()
-  }, [contentFilterScrollSignal, displayActiveSport, isBetsProduct, scrollToContentFilterStickyTop])
 
   useEffect(() => {
     if (isInlineEventMode) return
@@ -1028,7 +1228,7 @@ export function Home({
     const hasEventRailHeader = () => !!displayActiveSport && shouldRenderTopGamesRail && !usesContentEventRail
     const canSnapHeaderMorph = () => {
       if (!displayActiveSport) return false
-      if (usesContentEventRail) return true
+      if (usesContentEventRail) return false
       return hasEventRailHeader()
     }
     const getHeaderMorphScrollStart = () => {
@@ -1199,6 +1399,56 @@ export function Home({
       )
     }
 
+    const syncContentEventRailHeader = (morphProgress: number) => {
+      if (!usesContentEventRail || !isCompetitionMode || !headerEl) return false
+
+      const homeTop = homeEl.getBoundingClientRect().top
+      const headerTopEl = headerEl.querySelector<HTMLElement>('.header__top')
+      const sportRailShellEl = headerEl.querySelector<HTMLElement>('.sport-rail-shell')
+      const headerTopBottom = headerTopEl
+        ? headerTopEl.getBoundingClientRect().bottom - homeTop
+        : 56
+      const sportRailExpandedHeight = sportRailShellEl
+        ? Math.max(
+            sportRailShellEl.scrollHeight,
+            sportRailShellEl.getBoundingClientRect().height
+          )
+        : 0
+      const sportRailCollapseProgress = smoothStep(
+        clamp(morphProgress / COMPETITION_SPORT_RAIL_COLLAPSE_PROGRESS_END, 0, 1)
+      )
+      const sportRailVisibleHeight = sportRailExpandedHeight * (1 - sportRailCollapseProgress)
+      const eventRailStickyTop = -sportRailVisibleHeight
+      const marketChipsStickyTop = COMPETITION_EVENT_RAIL_HEIGHT - sportRailVisibleHeight
+
+      homeEl.style.setProperty(
+        '--home-header-content-padding-top',
+        `${roundCssNumber(headerTopBottom + sportRailVisibleHeight)}px`
+      )
+      homeEl.style.setProperty(
+        '--home-competition-header-rail-visible-height',
+        `${roundCssNumber(sportRailVisibleHeight)}px`
+      )
+      homeEl.style.setProperty(
+        '--home-competition-header-rail-opacity',
+        `${roundCssNumber(1 - sportRailCollapseProgress)}`
+      )
+      homeEl.style.setProperty(
+        '--home-competition-header-rail-translate-y',
+        `${roundCssNumber(interpolate(0, -8, sportRailCollapseProgress))}px`
+      )
+      homeEl.style.setProperty(
+        '--home-competition-event-rail-sticky-top',
+        `${roundCssNumber(eventRailStickyTop)}px`
+      )
+      homeEl.style.setProperty(
+        '--home-competition-market-chips-sticky-top',
+        `${roundCssNumber(marketChipsStickyTop)}px`
+      )
+
+      return true
+    }
+
     const syncHomeHeaderContentPaddingTop = ({
       eventRailMaxHeight = 0,
       eventRailPaddingBottom = 0,
@@ -1360,6 +1610,10 @@ export function Home({
         homeEl.style.setProperty('--sports-carousel-collapse-opacity', '1')
         homeEl.style.setProperty('--sports-carousel-collapse-translate-y', '0px')
         homeEl.removeAttribute('data-market-sticky-rail-clipped')
+        if (!isInlineEventMode && !usesCompetitionHeaderStack && syncContentEventRailHeader(morphProgress)) {
+          return
+        }
+
         syncHomeHeaderContentPaddingTop({ hasEventRail: hasHeaderEventRail })
       }
 
@@ -1376,6 +1630,11 @@ export function Home({
       syncHeaderMorph(scrollTop)
 
       setIsSportHeaderCompact((isCompact) => {
+        if (usesContentEventRail && isCompetitionMode) {
+          const shouldBeCompact = scrollTop >= getHeaderMorphScrollEnd()
+          return isCompact === shouldBeCompact ? isCompact : shouldBeCompact
+        }
+
         if (!isCompact && scrollTop > HEADER_COMPACT_SCROLL_TOP) return true
         if (isCompact && scrollTop < HEADER_EXPAND_SCROLL_TOP) return false
         return isCompact
@@ -1409,6 +1668,11 @@ export function Home({
       clearHeaderSnapSettleTimer()
       homeEl.removeAttribute('data-market-sticky-rail-clipped')
       homeEl.removeAttribute('data-header-morph-complete')
+      homeEl.style.removeProperty('--home-competition-header-rail-visible-height')
+      homeEl.style.removeProperty('--home-competition-header-rail-opacity')
+      homeEl.style.removeProperty('--home-competition-header-rail-translate-y')
+      homeEl.style.removeProperty('--home-competition-event-rail-sticky-top')
+      homeEl.style.removeProperty('--home-competition-market-chips-sticky-top')
       homeEl.removeEventListener('scroll', handleScroll)
       window.removeEventListener('scroll', handleScroll)
       window.removeEventListener('resize', scheduleUpdate)
@@ -1422,13 +1686,15 @@ export function Home({
     sportHeaderCompactBgHeight,
     sportHeaderExpandedBgHeight,
     shouldRenderTopGamesRail,
-    sportsCarouselEvents.length,
+    topGamesRailEvents.length,
     usesContentEventRail,
+    usesCompetitionHeaderStack,
   ])
 
   const handleSportChange = (sportId: string) => {
     setContentResetKey((current) => current + 1)
     setSelectedCompetition(null)
+    setCompetitionRailSelectedIndex(null)
     setLoadedEventContext(null)
     setIsInlineEventCompact(false)
     setActiveContentFilter('populares')
@@ -1445,16 +1711,6 @@ export function Home({
 
   const handleReturnToHighlights = () => {
     handleSportChange('destaques')
-  }
-
-  const handleContentFilterChange = (
-    filterId: ContentFilterId,
-    meta?: { shouldLockScroll?: boolean }
-  ) => {
-    setActiveContentFilter(filterId)
-    if (meta?.shouldLockScroll) {
-      setContentFilterScrollSignal((currentSignal) => currentSignal + 1)
-    }
   }
 
   const handleSportMarketChange = (filterId: string) => {
@@ -1480,6 +1736,7 @@ export function Home({
     })
     setActiveSport(target.sport)
     setSelectedCompetition({ id: target.id, name: target.name })
+    setCompetitionRailSelectedIndex(null)
     setLoadedEventContext(null)
     setIsInlineEventCompact(false)
     setActiveSportMarket(undefined)
@@ -1533,6 +1790,7 @@ export function Home({
     usesHeaderEventRail ? 'home--event-rail-active' : '',
     usesContentEventRail ? 'home--content-event-rail-active' : '',
     isCompetitionMode ? 'home--competition-active' : '',
+    usesCompetitionHeaderStack ? 'home--competition-header-active' : '',
     isSportHeaderCompact ? 'home--header-compact' : '',
   ]
     .filter(Boolean)
@@ -1555,7 +1813,7 @@ export function Home({
           <>
             {!usesContentEventRail && (
               <SportsMatchCarousel
-                events={sportsCarouselEvents}
+                events={topGamesRailEvents}
                 resetKey={sportsCarouselResetKey}
                 competitionMode={isCompetitionMode}
                 isCollapsed={isSportsMatchCarouselCollapsed}
@@ -1578,14 +1836,36 @@ export function Home({
               onSelectedIndexChange={handleInlineMatchSelect}
               onLayoutReady={syncCurrentHeaderContentPaddingTop}
               onClose={handleCloseInlineEvent}
+              closeControl="all"
             />
           </Suspense>
         )}
+        {usesCompetitionHeaderStack && !isInlineEventMode && (
+          <div className="live-event-inline__header-stack home__competition-header-stack">
+            <CompetitionEventRail
+              events={topGamesRailEvents}
+              selectedIndex={competitionRailSelectedIndex}
+              resetKey={sportsCarouselResetKey}
+              onSelectedIndexChange={setCompetitionRailSelectedIndex}
+              onEventClick={handleCompetitionRailEventClick}
+            />
+            {competitionMarketSelection.marketFilters.length > 0 && (
+              <ContentFilterChips
+                filters={competitionMarketSelection.marketFilters}
+                activeFilter={competitionMarketSelection.selectedMarketId}
+                ariaLabel="Mercados da competição"
+                className="content-filter-chips--competition-markets"
+                onFilterChange={competitionMarketSelection.handleMarketChange}
+                scrollMode="top"
+              />
+            )}
+          </div>
+        )}
       </HeaderComponent>
-      {shouldRenderTopGamesRail && usesContentEventRail && !isInlineEventMode && (
+      {shouldRenderTopGamesRail && usesContentEventRail && !isInlineEventMode && !usesCompetitionHeaderStack && (
         <div className="home__content-event-rail">
           <SportsMatchCarousel
-            events={sportsCarouselEvents}
+            events={topGamesRailEvents}
             resetKey={sportsCarouselResetKey}
             competitionMode={isCompetitionMode}
             isCollapsed={false}
@@ -1593,65 +1873,27 @@ export function Home({
           />
         </div>
       )}
+      {isBetsProduct && !displayActiveSport && !isInlineEventMode && (
+        <PromoDraftaco />
+      )}
       <BannerHighlight
         hideBanner={shouldHideBetsBanner || isCasinoCrashPage}
         banners={isBetsProduct ? undefined : casinoBanners}
-        disableInteractions={!ENABLE_HOME_TIP_CLICKS}
+        disableInteractions={!isBetsProduct && !ENABLE_HOME_TIP_CLICKS}
         onBannerClick={!ENABLE_HOME_TIP_CLICKS || isBetsProduct ? undefined : handleCasinoBannerClick}
       />
-      {isBetsProduct && !displayActiveSport && !isInlineEventMode && (
-        <PromotionSection
-          promotions={highlightPromotions}
-          variant="highlight"
-          highlightCardSize={brandMode === 'draftea' ? 'wide' : 'default'}
-        />
-      )}
       {isBetsProduct && !displayActiveSport && !isInlineEventMode && (
         <div className="home__content-filter-anchor" ref={contentFilterStickyTopRef} aria-hidden="true" />
       )}
       {isBetsProduct && !displayActiveSport && !isInlineEventMode && (
-        <ContentFilterChips
-          activeFilter={activeContentFilter}
-          onFilterChange={handleContentFilterChange}
-        />
-      )}
-      {isBetsProduct && !displayActiveSport && !isInlineEventMode && (
-        isLiveContentFilter || isUpcomingContentFilter ? (
-          <div className="home__content-filter-content" ref={contentFilterContentTopRef}>
-            {(isLiveContentFilter ? liveCompetitionHighlights : upcomingCompetitionHighlights).map((competition) => (
-              <HomeCompetitionSection
-                competition={competition}
-                key={competition.title}
-                onMatchClick={handleHomeCompetitionMatchClick}
-              />
-            ))}
-          </div>
-        ) : isPlayersContentFilter ? (
-          <div className="home__content-filter-content" ref={contentFilterContentTopRef}>
-            {playerPropsCompetitionHighlights.map((competition) => (
-              <HomeCompetitionSection
-                competition={competition}
-                hideMatches
-                key={`${competition.title}-players`}
-                playerPropsLayout="grid"
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="home__content-filter-content" ref={contentFilterContentTopRef}>
-            {homeCompetitionHighlights.map((competition) => (
-              <Fragment key={competition.title}>
-                <HomeCompetitionSection
-                  competition={competition}
-                  onMatchClick={handleHomeCompetitionMatchClick}
-                />
-                {competition.title === 'Champions League' && highlightOfferCarouselItems.length > 0 && (
-                  <HomeOfferCarousel offers={highlightOfferCarouselItems} />
-                )}
-              </Fragment>
-            ))}
-          </div>
-        )
+        <div className="home__content-filter-content" ref={contentFilterContentTopRef}>
+          <HomeCompetitionSection
+            competition={homeFeaturedCompetitionHighlight}
+            hideTitleChevron
+            titleVariant="compact"
+            onMatchClick={handleHomeCompetitionMatchClick}
+          />
+        </div>
       )}
       {!isBetsProduct ? (
         <Fragment key={`casino-${activeCasinoCategory}-${contentResetKey}`}>
@@ -1681,6 +1923,7 @@ export function Home({
             <CompetitionPage
               sport={displayActiveSport}
               competitionId={selectedCompetition.id}
+              marketSelection={competitionMarketSelection}
               onLiveMatchClick={handleLiveMatchClick}
               onOpenCompetition={ENABLE_HOME_RAIL_LINKS ? handleOpenCompetition : undefined}
             />
@@ -1708,6 +1951,7 @@ export function Home({
                       activeMarketId={activeSportMarketId}
                       competition={competition}
                       hideMarketChips
+                      showPlayerPropsWithMatches
                       onMatchClick={handleHomeCompetitionMatchClick}
                       key={competition.title}
                     />

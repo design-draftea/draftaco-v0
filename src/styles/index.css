@@ -183,47 +183,27 @@ button {
 }
 
 :root {
-  --odd-selected-surface-default: var(--tokens-button-button-odds-02);
-  --odd-selected-surface-banner: var(--tokens-button-button-odds-01);
-  --odd-selected-highlight: linear-gradient(
+  --odd-selected-fill-accent-background-16: var(--ds-action-fill-accent-background-16, linear-gradient(
     180deg,
-    rgb(var(--tokens-button-button-odds-selected-01-rgb) / 0.16) 0%,
-    rgb(var(--tokens-button-button-odds-selected-02-rgb) / 0.16) 100%
-  );
-  --odd-selected-border-gradient: var(--tokens-gradient-odds-selected);
-  --odd-selected-shadow-ring: rgb(var(--tokens-button-button-odds-selected-01-rgb) / 0.12);
-  --odd-selected-shadow-glow: rgb(var(--tokens-button-button-odds-selected-02-rgb) / 0.16);
+    rgb(210 255 114 / 0.16) 0%,
+    rgb(86 222 234 / 0.16) 100%
+  ));
+  --odd-selected-background: var(--odd-selected-fill-accent-background-16);
+  --odd-selected-border-gradient: var(--ds-action-fill-accent, linear-gradient(180deg, #D2FF72 0%, #56DEEA 100%));
+  --odd-selected-shadow-ring: rgb(var(--ds-action-fill-accent-start-rgb, 210 255 114) / 0.12);
+  --odd-selected-shadow-glow: rgb(var(--ds-action-fill-accent-end-rgb, 86 222 234) / 0.16);
 }
 
 :root[data-theme="light"] {
-  --odd-selected-surface-default: var(--primitives-lightdark-lightdark-700);
-  --odd-selected-surface-banner: var(--primitives-lightdark-lightdark-800);
-  --odd-selected-highlight: linear-gradient(
+  --odd-selected-fill-accent-background-16: var(--ds-action-fill-accent-background-16, linear-gradient(
     180deg,
-    rgb(var(--tokens-button-button-odds-selected-01-rgb) / 0.56) 0%,
-    rgb(var(--tokens-button-button-odds-selected-02-rgb) / 0.56) 100%
-  );
-  --odd-selected-border-gradient: var(--tokens-gradient-odds-selected);
-  --odd-selected-shadow-ring: rgb(var(--tokens-button-button-odds-selected-01-rgb) / 0.12);
-  --odd-selected-shadow-glow: rgb(var(--tokens-button-button-odds-selected-02-rgb) / 0.16);
-}
-
-.live-section__odd-btn.odd-button--selected,
-.prematch-section__odd-btn.odd-button--selected,
-.live-event-page__odd-btn.odd-button--selected,
-.live-event-page__market-odd.odd-button--selected,
-.live-event-page__player-odd.odd-button--selected,
-.home-competition__odd.odd-button--selected,
-.offer-card__button.odd-button--selected,
-.prematch-section__player-prop-option.odd-button--selected {
-  --odd-selected-surface: var(--odd-selected-surface-default);
-}
-
-.banner-card__odd-btn.odd-button--selected,
-.banner-card__live-odd-btn.odd-button--selected,
-.banner-card__boosted-btn.odd-button--selected,
-.banner-card__combinada-btn.odd-button--selected {
-  --odd-selected-surface: var(--odd-selected-surface-banner);
+    rgb(210 255 114 / 0.16) 0%,
+    rgb(86 222 234 / 0.16) 100%
+  ));
+  --odd-selected-background: var(--odd-selected-fill-accent-background-16);
+  --odd-selected-border-gradient: var(--ds-action-fill-accent, linear-gradient(180deg, #D2FF72 0%, #56DEEA 100%));
+  --odd-selected-shadow-ring: rgb(var(--ds-action-fill-accent-start-rgb, 210 255 114) / 0.12);
+  --odd-selected-shadow-glow: rgb(var(--ds-action-fill-accent-end-rgb, 86 222 234) / 0.16);
 }
 
 :is(
@@ -236,6 +216,8 @@ button {
   .banner-card__odd-btn,
   .banner-card__live-odd-btn,
   .banner-card__boosted-btn,
+  .banner-live-highlight__odd-btn,
+  .banner-market__odd-btn,
   .banner-card__combinada-btn,
   .offer-card__button,
   .prematch-section__player-prop-option
@@ -255,17 +237,16 @@ button {
 .banner-card__odd-btn.odd-button--selected,
 .banner-card__live-odd-btn.odd-button--selected,
 .banner-card__boosted-btn.odd-button--selected,
+.banner-live-highlight__odd-btn.odd-button--selected,
+.banner-market__odd-btn.odd-button--selected,
 .banner-card__combinada-btn.odd-button--selected,
 .offer-card__button.odd-button--selected,
 .prematch-section__player-prop-option.odd-button--selected {
-  background:
-    var(--odd-selected-highlight) padding-box,
-    linear-gradient(180deg, var(--odd-selected-surface) 0%, var(--odd-selected-surface) 100%) padding-box,
-    var(--odd-selected-border-gradient) border-box;
+  position: relative;
+  isolation: isolate;
+  background: var(--odd-selected-background) padding-box;
   border: 1px solid transparent;
-  box-shadow:
-    0 0 0 1px var(--odd-selected-shadow-ring),
-    0 0 18px var(--odd-selected-shadow-glow);
+  box-shadow: none;
   opacity: 1;
   animation: odd-selected-fade 140ms ease-out;
 }
@@ -280,6 +261,62 @@ button {
   .banner-card__odd-btn,
   .banner-card__live-odd-btn,
   .banner-card__boosted-btn,
+  .banner-live-highlight__odd-btn,
+  .banner-market__odd-btn,
+  .banner-card__combinada-btn,
+  .offer-card__button,
+  .prematch-section__player-prop-option
+).odd-button--selected::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--odd-selected-border-gradient);
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+:is(
+  .live-section__odd-btn,
+  .prematch-section__odd-btn,
+  .live-event-page__odd-btn,
+  .live-event-page__market-odd,
+  .live-event-page__player-odd,
+  .home-competition__odd,
+  .banner-card__odd-btn,
+  .banner-card__live-odd-btn,
+  .banner-card__boosted-btn,
+  .banner-live-highlight__odd-btn,
+  .banner-market__odd-btn,
+  .banner-card__combinada-btn,
+  .offer-card__button,
+  .prematch-section__player-prop-option
+).odd-button--selected > * {
+  position: relative;
+  z-index: 1;
+}
+
+:is(
+  .live-section__odd-btn,
+  .prematch-section__odd-btn,
+  .live-event-page__odd-btn,
+  .live-event-page__market-odd,
+  .live-event-page__player-odd,
+  .home-competition__odd,
+  .banner-card__odd-btn,
+  .banner-card__live-odd-btn,
+  .banner-card__boosted-btn,
+  .banner-live-highlight__odd-btn,
+  .banner-market__odd-btn,
   .banner-card__combinada-btn,
   .offer-card__button,
   .prematch-section__player-prop-option
@@ -294,6 +331,8 @@ button {
   .banner-card__odd-btn,
   .banner-card__live-odd-btn,
   .banner-card__boosted-btn,
+  .banner-live-highlight__odd-btn,
+  .banner-market__odd-btn,
   .banner-card__combinada-btn,
   .offer-card__button,
   .prematch-section__player-prop-option
@@ -311,6 +350,8 @@ button {
   .banner-card__odd-btn,
   .banner-card__live-odd-btn,
   .banner-card__boosted-btn,
+  .banner-live-highlight__odd-btn,
+  .banner-market__odd-btn,
   .banner-card__combinada-btn,
   .offer-card__button,
   .prematch-section__player-prop-option
@@ -325,6 +366,8 @@ button {
   .banner-card__odd-btn,
   .banner-card__live-odd-btn,
   .banner-card__boosted-btn,
+  .banner-live-highlight__odd-btn,
+  .banner-market__odd-btn,
   .banner-card__combinada-btn,
   .offer-card__button,
   .prematch-section__player-prop-option
@@ -343,6 +386,8 @@ button {
   .banner-card__odd-btn,
   .banner-card__live-odd-btn,
   .banner-card__boosted-btn,
+  .banner-live-highlight__odd-btn,
+  .banner-market__odd-btn,
   .banner-card__combinada-btn,
   .offer-card__button,
   .prematch-section__player-prop-option
@@ -360,6 +405,8 @@ button {
   .banner-card__odd-btn,
   .banner-card__live-odd-btn,
   .banner-card__boosted-btn,
+  .banner-live-highlight__odd-btn,
+  .banner-market__odd-btn,
   .banner-card__combinada-btn,
   .offer-card__button,
   .prematch-section__player-prop-option
@@ -374,6 +421,7 @@ button {
   .banner-card__odd-btn,
   .banner-card__live-odd-btn,
   .banner-card__boosted-btn,
+  .banner-live-highlight__odd-btn,
   .banner-card__combinada-btn,
   .offer-card__button,
   .prematch-section__player-prop-option

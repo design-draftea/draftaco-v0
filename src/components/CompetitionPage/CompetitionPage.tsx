@@ -1,17 +1,25 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type UIEvent } from 'react'
+import { CaretRightIcon } from '@phosphor-icons/react'
 import {
   CalendarSection,
   getCalendarDisplayedEventGroups,
-  getCalendarMarketChipsForSport,
   getCalendarPlayerPropsForEvent,
   getCompetitionLiveEventMatch,
   getCompetitionLiveEventOpenPayload,
   isCalendarPlayerPropsMarketForSport,
+  updateCompetitionMatchTime,
   type CompetitionEvent,
   type DisplayedCompetitionEventGroup,
 } from '../CalendarSection'
-import { HomeCompetitionSection, type HomeCompetitionMatchGroup } from '../HomeCompetitionSection'
-import { ContentFilterChips } from '../ContentFilterChips'
+import {
+  HomeCompetitionSection,
+  HomeCompetitionOddButton,
+  HomeCompetitionPlayerPropCard,
+  type HomeCompetitionMatchGroup,
+  type HomeCompetitionPlayerPropOddRenderer,
+} from '../HomeCompetitionSection'
+import { BasePromo } from '../BasePromo'
+import { TeamLogo } from '../TeamLogo'
 import type { LiveEventOpenPayload } from '../../pages/LiveEventPage'
 import type {
   HomeCompetitionHighlight,
@@ -21,16 +29,41 @@ import type {
   HomeCompetitionPlayerProp,
 } from '../../types/home'
 import type { CompetitionLinkTarget } from '../../utils/competitionNavigation'
+import { getTeamAbbreviation } from '../../utils/teamAbbreviations'
+import {
+  createBetslipSelection,
+  getBetslipEventId,
+  getBetslipMarketGroupId,
+  getPlayerPropBetslipKey,
+  normalizeBetslipIdPart,
+} from '../../hooks/betslipUtils'
+import { useOddSelection } from '../../hooks/useOddSelection'
+import chevronRight from '../../assets/iconsDraftaco/chevronRight.svg'
+import chevronDown from '../../assets/iconsDraftaco/chevronDown.svg'
+import './CompetitionPage.css'
 
 interface CompetitionPageProps {
   sport: string
   competitionId: string
   liveOnly?: boolean
+  marketSelection: CompetitionMarketSelection
   onLiveMatchClick?: (payload: LiveEventOpenPayload) => void
   onOpenCompetition?: (target: CompetitionLinkTarget) => void
 }
 
 type SupportedCompetitionSport = HomeCompetitionMatch['sport']
+
+type CompetitionCarouselMarket = {
+  id: string
+  label: string
+  odds: HomeCompetitionOdd[]
+}
+
+type CompetitionPlayerPropMarketGroup = {
+  id: string
+  title: string
+  props: HomeCompetitionPlayerProp[]
+}
 
 interface CompetitionHighlightView {
   competition: HomeCompetitionHighlight
@@ -38,6 +71,13 @@ interface CompetitionHighlightView {
 }
 
 const supportedCompetitionSports = new Set<string>(['futebol', 'basquete'])
+const COMPETITION_PLAYER_PROPS_INITIAL_COUNT = 4
+const COMPETITION_PLAYER_PROPS_MAX_COUNT = 8
+const COMPETITION_PLAYER_PROPS_LOAD_STEP = 2
+const COMPETITION_PLAYER_PROPS_ACCORDION_DURATION_MS = 900
+const COMPETITION_MATCH_CAROUSEL_MAX_BULLETS = 5
+const COMPETITION_MATCHES_MARKET_ID = 'resultado-final'
+const COMPETITION_MATCH_LIST_MARKET_IDS = new Set([COMPETITION_MATCHES_MARKET_ID, 'dupla-chance'])
 
 const isSupportedCompetitionSport = (sport?: string | null): sport is SupportedCompetitionSport => (
   !!sport && supportedCompetitionSports.has(sport)
@@ -47,15 +87,177 @@ const getSportLabel = (sport: SupportedCompetitionSport) => (
   sport === 'basquete' ? 'Basquete' : 'Futebol'
 )
 
-const getTeamOddLabel = (teamName: string) => {
-  const words = teamName.split(/\s+/).filter(Boolean)
-  const baseLabel = words.length > 1
-    ? words.map((word) => word[0]).join('')
-    : teamName
+const getTeamOddLabel = getTeamAbbreviation
 
-  return baseLabel.replace(/[^a-z0-9]/gi, '').slice(0, 3).toUpperCase() ||
-    teamName.slice(0, 3).toUpperCase()
+const getCompetitionOddOutcomeId = (label: HomeCompetitionOdd['label'], index: number) => (
+  `${index}-${normalizeBetslipIdPart(String(label))}`
+)
+
+const formatCompetitionLine = (line: number) => Number.isInteger(line) ? String(line) : line.toFixed(1)
+
+const getCompetitionLiveFooterClock = (clock: string) => (
+  clock.match(/(?:\dT|Q\d)\s+(\d{1,2}:\d{2})/)?.[1] ?? clock
+)
+
+const getFootballCarouselMarket = (
+  match: HomeCompetitionMatch,
+  marketId?: string,
+  marketLabel = 'Resultado Final'
+): CompetitionCarouselMarket => {
+  if (marketId === 'dupla-chance' && match.doubleChanceOdds) {
+    return {
+      id: marketId,
+      label: marketLabel,
+      odds: [
+        { label: '1X', value: match.doubleChanceOdds.homeOrDraw },
+        { label: '12', value: match.doubleChanceOdds.homeOrAway },
+        { label: 'X2', value: match.doubleChanceOdds.awayOrDraw },
+      ],
+    }
+  }
+
+  if (marketId === 'ambos-marcam' && match.bothTeamsScoreOdds) {
+    return {
+      id: marketId,
+      label: marketLabel,
+      odds: [
+        { label: 'SIM', value: match.bothTeamsScoreOdds.yes },
+        { label: 'NÃO', value: match.bothTeamsScoreOdds.no },
+      ],
+    }
+  }
+
+  if (marketId === 'total-gols' && match.totalGoalsOdds) {
+    const line = formatCompetitionLine(match.totalGoalsOdds.line)
+
+    return {
+      id: marketId,
+      label: marketLabel,
+      odds: [
+        { label: `↑ ${line}`, value: match.totalGoalsOdds.over },
+        { label: `↓ ${line}`, value: match.totalGoalsOdds.under },
+      ],
+    }
+  }
+
+  if (marketId === 'total-escanteios' && match.totalCornersOdds) {
+    const line = formatCompetitionLine(match.totalCornersOdds.line)
+
+    return {
+      id: marketId,
+      label: marketLabel,
+      odds: [
+        { label: `↑ ${line}`, value: match.totalCornersOdds.over },
+        { label: `↓ ${line}`, value: match.totalCornersOdds.under },
+      ],
+    }
+  }
+
+  return {
+    id: COMPETITION_MATCHES_MARKET_ID,
+    label: 'Resultado Final',
+    odds: match.odds,
+  }
 }
+
+const getBasketballCarouselMarket = (
+  match: HomeCompetitionMatch,
+  marketId?: string,
+  marketLabel = 'Vencer'
+): CompetitionCarouselMarket => {
+  if ((marketId === 'handicap' || marketLabel.toLowerCase() === 'handicap') && match.handicapOdds) {
+    const homeLabel = getTeamOddLabel(match.homeTeam)
+    const awayLabel = getTeamOddLabel(match.awayTeam)
+    const line = formatCompetitionLine(Math.abs(match.handicapOdds.line))
+
+    return {
+      id: 'handicap',
+      label: marketLabel,
+      odds: [
+        { label: `${homeLabel} +${line}`, value: match.handicapOdds.home },
+        { label: `${awayLabel} -${line}`, value: match.handicapOdds.away },
+      ],
+    }
+  }
+
+  if ((marketId === 'total-pontos' || marketLabel.toLowerCase().includes('total')) && match.totalPointsOdds) {
+    const line = formatCompetitionLine(match.totalPointsOdds.line)
+
+    return {
+      id: 'total-pontos',
+      label: marketLabel,
+      odds: [
+        { label: `↑ ${line}`, value: match.totalPointsOdds.over },
+        { label: `↓ ${line}`, value: match.totalPointsOdds.under },
+      ],
+    }
+  }
+
+  const marketColumn = match.marketColumns?.[0]
+
+  return {
+    id: 'principais',
+    label: marketColumn?.label ?? 'Vencer',
+    odds: marketColumn ? [marketColumn.homeOdd, marketColumn.awayOdd] : match.odds.slice(0, 2),
+  }
+}
+
+const getCompetitionCarouselMarket = (
+  match: HomeCompetitionMatch,
+  marketId?: string,
+  marketLabel?: string
+) => (
+  match.sport === 'basquete'
+    ? getBasketballCarouselMarket(match, marketId, marketLabel)
+    : getFootballCarouselMarket(match, marketId, marketLabel)
+)
+
+const getCompetitionPlayerPropMarketGroups = (
+  competition: HomeCompetitionHighlight,
+  activeMarketId?: string
+): CompetitionPlayerPropMarketGroup[] => {
+  const marketChips = competition.marketChips ?? []
+  const marketOrder = new Map(marketChips.map((chip, index) => [chip.id, index]))
+  const marketLabels = new Map(marketChips.map((chip) => [chip.id, chip.label]))
+  const groupsById = new Map<string, CompetitionPlayerPropMarketGroup>()
+  const playerPropMarketTitles = new Map<string, string>([
+    ['finalizacao-gol', 'Finalizações ao Gol'],
+    ['gols', 'Gols'],
+    ['assistencias', 'Assistências'],
+    ['pontos-jogador', 'Pontos de jogador'],
+  ])
+
+  competition.playerProps.forEach((prop) => {
+    const marketId = prop.marketId ?? normalizeBetslipIdPart(prop.marketLabel)
+    if (activeMarketId && marketId !== activeMarketId) return
+
+    const existingGroup = groupsById.get(marketId)
+    if (existingGroup) {
+      existingGroup.props.push(prop)
+      return
+    }
+
+    groupsById.set(marketId, {
+      id: marketId,
+      title: playerPropMarketTitles.get(marketId) ?? marketLabels.get(marketId) ?? prop.marketLabel,
+      props: [prop],
+    })
+  })
+
+  return Array.from(groupsById.values()).sort((first, second) => (
+    (marketOrder.get(first.id) ?? Number.MAX_SAFE_INTEGER) -
+    (marketOrder.get(second.id) ?? Number.MAX_SAFE_INTEGER)
+  ))
+}
+
+const footballCompetitionMarketChips: HomeCompetitionMarketChip[] = [
+  { id: 'populares', label: 'POPULARES' },
+  { id: 'resultado-final', label: 'PARTIDAS' },
+  { id: 'gols', label: 'GOLS' },
+  { id: 'dupla-chance', label: 'DUPLA CHANCE' },
+  { id: 'finalizacao-gol', label: 'FINALIZAÇÕES AO GOL' },
+  { id: 'assistencias', label: 'ASSISTÊNCIAS' },
+]
 
 const basketballCompetitionMarketChips: HomeCompetitionMarketChip[] = [
   { id: 'principais', label: 'Principais' },
@@ -71,7 +273,7 @@ const getCompetitionMarketChips = (
 ): HomeCompetitionMarketChip[] => {
   const sourceChips = sport === 'basquete'
     ? basketballCompetitionMarketChips
-    : getCalendarMarketChipsForSport(sport)
+    : footballCompetitionMarketChips
 
   return sourceChips
     .filter((chip) => !liveOnly || !isCalendarPlayerPropsMarketForSport(sport, chip.id))
@@ -212,6 +414,8 @@ const getCompetitionPlayerProps = (
         getCalendarPlayerPropsForEvent(event, sport, marketChip.id).map((player) => ({
           id: `competition:${marketChip.id}:${player.id}`,
           marketId: marketChip.id,
+          homeTeam: event.homeName,
+          awayTeam: event.awayName,
           playerName: player.playerName,
           position: player.position,
           marketLabel: marketChip.label,
@@ -248,6 +452,11 @@ const getMatchGroupId = (title: string) => (
 const getCompetitionMatchGroups = (matches: HomeCompetitionMatch[]): HomeCompetitionMatchGroup[] => {
   const groups: HomeCompetitionMatchGroup[] = []
   const groupsByTitle = new Map<string, HomeCompetitionMatchGroup>()
+  const groupOrder = new Map([
+    ['Ao vivo', 0],
+    ['Hoje', 1],
+    ['Amanhã', 2],
+  ])
 
   matches.forEach((match) => {
     const title = getMatchDateGroupTitle(match)
@@ -269,9 +478,10 @@ const getCompetitionMatchGroups = (matches: HomeCompetitionMatch[]): HomeCompeti
   })
 
   return groups.sort((first, second) => {
-    if (first.title === 'Ao vivo') return -1
-    if (second.title === 'Ao vivo') return 1
-    return 0
+    const firstOrder = groupOrder.get(first.title) ?? Number.MAX_SAFE_INTEGER
+    const secondOrder = groupOrder.get(second.title) ?? Number.MAX_SAFE_INTEGER
+
+    return firstOrder - secondOrder
   })
 }
 
@@ -304,21 +514,519 @@ const getCompetitionHighlight = (
   }
 }
 
-export function CompetitionPage({
+function CompetitionMatchCarousel({
+  competition,
+  activeMarketId,
+  activeMarketLabel,
+  onMatchClick,
+}: {
+  competition: HomeCompetitionHighlight
+  activeMarketId?: string
+  activeMarketLabel?: string
+  onMatchClick?: (match: HomeCompetitionMatch, liveTimes: Record<string, string>) => void
+}) {
+  const trackRef = useRef<HTMLDivElement | null>(null)
+  const getOddButtonProps = useOddSelection('')
+  const [activeIndex, setActiveIndex] = useState(0)
+  const matches = competition.matches
+  const [liveTimes, setLiveTimes] = useState<Record<string, string>>(() => (
+    matches.reduce<Record<string, string>>((times, match) => {
+      if (match.live) times[match.id] = match.liveClock ?? match.footerLabel
+      return times
+    }, {})
+  ))
+
+  useEffect(() => {
+    setLiveTimes(matches.reduce<Record<string, string>>((times, match) => {
+      if (match.live) times[match.id] = match.liveClock ?? match.footerLabel
+      return times
+    }, {}))
+  }, [matches])
+
+  useEffect(() => {
+    if (!matches.some((match) => match.live)) return
+
+    const interval = window.setInterval(() => {
+      setLiveTimes((currentTimes) => {
+        const nextTimes = { ...currentTimes }
+
+        matches.forEach((match) => {
+          if (!match.live) return
+
+          const currentTime = currentTimes[match.id] ?? match.liveClock ?? match.footerLabel
+          nextTimes[match.id] = updateCompetitionMatchTime(currentTime)
+        })
+
+        return nextTimes
+      })
+    }, 1000)
+
+    return () => window.clearInterval(interval)
+  }, [matches])
+
+  const getBulletClassName = (index: number) => {
+    const distance = Math.abs(index - activeIndex)
+
+    if (distance === 0) return 'competition-match-carousel__bullet--active'
+    if (distance === 1) return 'competition-match-carousel__bullet--near'
+
+    return 'competition-match-carousel__bullet--far'
+  }
+
+  const handleScroll = (event: UIEvent<HTMLDivElement>) => {
+    const trackEl = event.currentTarget
+    const firstCard = trackEl.querySelector<HTMLElement>('.competition-match-carousel__card')
+    if (!firstCard) return
+
+    const gap = 12
+    const cardStep = firstCard.offsetWidth + gap
+    if (cardStep <= 0) return
+
+    setActiveIndex(Math.max(0, Math.min(matches.length - 1, Math.round(trackEl.scrollLeft / cardStep))))
+  }
+
+  const renderOddButton = (
+    match: HomeCompetitionMatch,
+    market: CompetitionCarouselMarket,
+    odd: HomeCompetitionOdd,
+    index: number
+  ) => {
+    const eventId = getBetslipEventId({
+      sport: match.sport,
+      homeTeam: match.homeTeam,
+      awayTeam: match.awayTeam,
+      fallbackId: match.id,
+    })
+    const groupId = getBetslipMarketGroupId({ eventId, marketId: market.id })
+    const outcomeId = getCompetitionOddOutcomeId(odd.label, index)
+    const eventTimeLabel = match.live ? liveTimes[match.id] ?? match.liveClock ?? match.footerLabel : match.footerLabel
+
+    return (
+      <HomeCompetitionOddButton
+        odd={odd}
+        {...getOddButtonProps(
+          `${groupId}:${outcomeId}`,
+          groupId,
+          'competition-match-carousel__odd',
+          createBetslipSelection({
+            eventId,
+            marketId: market.id,
+            outcomeId,
+            label: odd.label,
+            odd: odd.value,
+            marketLabel: market.label,
+            eventStatus: match.live ? 'live' : 'prematch',
+            sport: match.sport,
+            leagueId: normalizeBetslipIdPart(competition.title),
+            leagueName: competition.title,
+            homeTeam: match.homeTeam,
+            awayTeam: match.awayTeam,
+            eventName: `${match.homeTeam} x ${match.awayTeam}`,
+            eventTimeLabel,
+            liveClock: match.live ? eventTimeLabel : undefined,
+            homeScore: match.homeScore,
+            awayScore: match.awayScore,
+            selectionLabel: String(odd.label),
+          })
+        )}
+        key={`${match.id}-${market.id}-${outcomeId}`}
+      />
+    )
+  }
+
+  if (matches.length === 0) return null
+
+  const firstVisibleBulletIndex = matches.length > COMPETITION_MATCH_CAROUSEL_MAX_BULLETS
+    ? Math.min(
+        Math.max(activeIndex - Math.floor(COMPETITION_MATCH_CAROUSEL_MAX_BULLETS / 2), 0),
+        matches.length - COMPETITION_MATCH_CAROUSEL_MAX_BULLETS
+      )
+    : 0
+  const visibleBulletIndexes = Array.from(
+    { length: Math.min(matches.length, COMPETITION_MATCH_CAROUSEL_MAX_BULLETS) },
+    (_, index) => firstVisibleBulletIndex + index
+  )
+
+  return (
+    <section className="competition-match-carousel" aria-label={`Jogos em destaque de ${competition.title}`}>
+      <div
+        ref={trackRef}
+        className="competition-match-carousel__track"
+        onScroll={handleScroll}
+      >
+        {matches.map((match) => {
+          const market = getCompetitionCarouselMarket(match, activeMarketId, activeMarketLabel)
+          const isClickable = !!onMatchClick
+
+          return (
+            <article
+              className={[
+                'competition-match-carousel__card',
+                isClickable ? 'competition-match-carousel__card--clickable' : '',
+              ].filter(Boolean).join(' ')}
+              role={isClickable ? 'button' : undefined}
+              tabIndex={isClickable ? 0 : undefined}
+              onClick={isClickable ? () => onMatchClick(match, liveTimes) : undefined}
+              onKeyDown={isClickable ? (event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return
+                event.preventDefault()
+                onMatchClick(match, liveTimes)
+              } : undefined}
+              key={match.id}
+            >
+              <div className="competition-match-carousel__header">
+                <span className="competition-match-carousel__league">{competition.title.toUpperCase()}</span>
+                <div className="competition-match-carousel__market">
+                  <span>{market.label}</span>
+                  {match.tags.map((tag) => (
+                    <strong key={`${match.id}-${tag}`}>{tag}</strong>
+                  ))}
+                </div>
+              </div>
+              <div className="competition-match-carousel__body">
+                <div className="competition-match-carousel__teams">
+                  {[{
+                    name: match.homeTeam,
+                    score: match.homeScore,
+                  }, {
+                    name: match.awayTeam,
+                    score: match.awayScore,
+                  }].map((team) => (
+                    <div className="competition-match-carousel__team-row" key={`${match.id}-${team.name}`}>
+                      <span className="competition-match-carousel__team-info">
+                        <TeamLogo
+                          teamName={team.name}
+                          sport={match.sport}
+                          className="competition-match-carousel__team-logo"
+                          fallbackClassName="competition-match-carousel__team-logo--fallback"
+                          placeholderClassName="competition-match-carousel__team-logo-placeholder"
+                        />
+                        <span className="competition-match-carousel__team-name">{team.name}</span>
+                      </span>
+                      {team.score !== undefined && (
+                        <span className="competition-match-carousel__score">{team.score}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div
+                  className={`competition-match-carousel__odds${market.odds.length === 2 ? ' competition-match-carousel__odds--two' : ''}`}
+                  aria-label={`Odds de ${match.homeTeam} contra ${match.awayTeam}`}
+                >
+                  {market.odds.map((odd, index) => renderOddButton(match, market, odd, index))}
+                </div>
+              </div>
+              <div className="competition-match-carousel__footer">
+                {match.live ? (
+                  <span className="competition-match-carousel__live-summary">
+                    <span className="competition-match-carousel__live-primary">
+                      <span className="competition-match-carousel__live-badge">
+                        <span className="competition-match-carousel__live-dot" />
+                        AO VIVO
+                      </span>
+                      <span className="competition-match-carousel__live-time">
+                        {getCompetitionLiveFooterClock(liveTimes[match.id] ?? match.liveClock ?? match.footerLabel)}
+                      </span>
+                    </span>
+                  </span>
+                ) : (
+                  <span className="competition-match-carousel__time">
+                    {match.live ? getCompetitionLiveFooterClock(liveTimes[match.id] ?? match.liveClock ?? match.footerLabel) : match.footerLabel}
+                  </span>
+                )}
+                <span className="competition-match-carousel__more">
+                  Ver mais
+                  <img src={chevronRight} alt="" />
+                </span>
+              </div>
+            </article>
+          )
+        })}
+      </div>
+      {matches.length > 1 && (
+        <div className="competition-match-carousel__bullets" aria-hidden="true">
+          {visibleBulletIndexes.map((matchIndex) => (
+            <span
+              className={`competition-match-carousel__bullet ${getBulletClassName(matchIndex)}`}
+              key={`${matches[matchIndex].id}-bullet`}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function CompetitionPlayerPropMarketSection({
+  competition,
+  group,
+}: {
+  competition: HomeCompetitionHighlight
+  group: CompetitionPlayerPropMarketGroup
+}) {
+  const getOddButtonProps = useOddSelection('')
+  const gridRef = useRef<HTMLDivElement | null>(null)
+  const animationRef = useRef<{ fromHeight: number } | null>(null)
+  const animationStartTimerRef = useRef<number | null>(null)
+  const animationTimerRef = useRef<number | null>(null)
+  const [isOpen, setIsOpen] = useState(true)
+  const [visibleCount, setVisibleCount] = useState(COMPETITION_PLAYER_PROPS_INITIAL_COUNT)
+  const [enteringPropIds, setEnteringPropIds] = useState<Set<string>>(() => new Set())
+  const visibleMaxCount = Math.min(COMPETITION_PLAYER_PROPS_MAX_COUNT, group.props.length)
+  const visibleProps = group.props.slice(0, Math.min(visibleCount, visibleMaxCount))
+  const canLoadMore = visibleProps.length < visibleMaxCount
+
+  const clearAnimation = useCallback(() => {
+    if (animationStartTimerRef.current !== null) {
+      window.clearTimeout(animationStartTimerRef.current)
+      animationStartTimerRef.current = null
+    }
+
+    if (animationTimerRef.current !== null) {
+      window.clearTimeout(animationTimerRef.current)
+      animationTimerRef.current = null
+    }
+  }, [])
+
+  const handleLoadMore = useCallback(() => {
+    const currentCount = Math.min(visibleCount, visibleMaxCount)
+    const nextCount = Math.min(
+      currentCount + COMPETITION_PLAYER_PROPS_LOAD_STEP,
+      visibleMaxCount
+    )
+
+    if (nextCount <= currentCount) return
+
+    const gridEl = gridRef.current
+    if (gridEl) {
+      clearAnimation()
+      animationRef.current = { fromHeight: gridEl.getBoundingClientRect().height }
+      gridEl.classList.add('home-competition__players--accordion')
+      gridEl.style.height = `${animationRef.current.fromHeight}px`
+      gridEl.style.overflow = 'hidden'
+    }
+
+    setEnteringPropIds(new Set(
+      group.props.slice(currentCount, nextCount).map((prop) => prop.id)
+    ))
+    setVisibleCount(nextCount)
+  }, [clearAnimation, group.props, visibleCount, visibleMaxCount])
+
+  useLayoutEffect(() => {
+    const animation = animationRef.current
+    const gridEl = gridRef.current
+
+    if (!animation || !gridEl) return
+
+    animationRef.current = null
+    const fromHeight = animation.fromHeight
+    gridEl.classList.remove('home-competition__players--accordion')
+    gridEl.style.height = `${fromHeight}px`
+    gridEl.style.overflow = 'hidden'
+    void gridEl.offsetHeight
+
+    const toHeight = gridEl.scrollHeight
+
+    if (Math.abs(toHeight - fromHeight) < 1) {
+      gridEl.style.height = ''
+      gridEl.style.overflow = ''
+      animationStartTimerRef.current = window.setTimeout(() => {
+        animationStartTimerRef.current = null
+        setEnteringPropIds(new Set())
+      }, 0)
+      return
+    }
+
+    gridEl.classList.add('home-competition__players--accordion')
+    animationStartTimerRef.current = window.setTimeout(() => {
+      animationStartTimerRef.current = null
+      gridEl.style.height = `${toHeight}px`
+
+      animationTimerRef.current = window.setTimeout(() => {
+        gridEl.style.height = ''
+        gridEl.style.overflow = ''
+        gridEl.classList.remove('home-competition__players--accordion')
+        setEnteringPropIds(new Set())
+        animationTimerRef.current = null
+      }, COMPETITION_PLAYER_PROPS_ACCORDION_DURATION_MS)
+    }, 24)
+
+    return clearAnimation
+  }, [clearAnimation, visibleProps.length])
+
+  useEffect(() => () => {
+    clearAnimation()
+  }, [clearAnimation])
+
+  const renderPlayerPropOddButton: HomeCompetitionPlayerPropOddRenderer = (odd, {
+    prop,
+    className,
+  }) => {
+    // Canonical key shared with the sport screen and the event so the SAME bet
+    // (match + player + line) yields the SAME betslip id on every screen. A per-player
+    // market id keeps players independent (multi-select); the line is the outcome.
+    const { eventId, marketId, outcomeId, groupId: oddGroupId } = getPlayerPropBetslipKey({
+      sport: prop.sport,
+      homeTeam: prop.homeTeam,
+      awayTeam: prop.awayTeam,
+      marketId: prop.marketId ?? prop.marketLabel,
+      playerName: prop.playerName || prop.id,
+      lineLabel: odd.label,
+    })
+
+    return (
+      <HomeCompetitionOddButton
+        odd={odd}
+        {...getOddButtonProps(
+          `${oddGroupId}:${outcomeId}`,
+          oddGroupId,
+          className,
+          createBetslipSelection({
+            eventId,
+            marketId,
+            outcomeId,
+            label: odd.label,
+            odd: odd.value,
+            marketLabel: prop.marketLabel,
+            eventStatus: /ao vivo/i.test(prop.timeLabel) ? 'live' : 'prematch',
+            selectionType: 'player',
+            sport: prop.sport,
+            leagueId: normalizeBetslipIdPart(competition.title),
+            leagueName: competition.title,
+            eventName: prop.matchLabel,
+            eventTimeLabel: prop.timeLabel,
+            playerName: prop.playerName,
+            selectionTeamName: prop.teamName,
+            selectionLabel: `${prop.playerName} ${odd.label}`,
+          })
+        )}
+      />
+    )
+  }
+
+  return (
+    <section
+      className={[
+        'competition-player-props__market',
+        isOpen ? '' : 'competition-player-props__market--collapsed',
+      ].filter(Boolean).join(' ')}
+      aria-label={group.title}
+    >
+      <header className="competition-player-props__market-header">
+        <h3>{group.title}</h3>
+        <button
+          type="button"
+          className="competition-player-props__market-toggle"
+          aria-expanded={isOpen}
+          aria-label={`${isOpen ? 'Recolher' : 'Expandir'} ${group.title}`}
+          onClick={() => setIsOpen((current) => !current)}
+        >
+          <CaretRightIcon aria-hidden="true" className="competition-player-props__market-chevron" weight="bold" />
+        </button>
+      </header>
+      <div className="competition-player-props__market-body" aria-hidden={!isOpen}>
+        <div className="competition-player-props__market-body-inner">
+          <div
+            ref={gridRef}
+            className="home-competition__players home-competition__players--grid competition-player-props__grid"
+            aria-label={`Cards de ${group.title}`}
+          >
+            {visibleProps.map((prop) => (
+              <HomeCompetitionPlayerPropCard
+                prop={prop}
+                className={enteringPropIds.has(prop.id) ? 'home-competition__player-card--entering' : ''}
+                showMarketLabel={false}
+                renderOddButton={renderPlayerPropOddButton}
+                key={prop.id}
+              />
+            ))}
+          </div>
+          {canLoadMore && (
+            <button
+              type="button"
+              className="home-competition__load-more competition-player-props__load-more"
+              onClick={handleLoadMore}
+            >
+              <span>Carregar mais</span>
+              <img src={chevronDown} alt="" className="home-competition__load-more-icon" />
+            </button>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function CompetitionPlayerPropsMarkets({
+  competition,
+  activeMarketId,
+  noTopPadding = false,
+}: {
+  competition: HomeCompetitionHighlight
+  activeMarketId?: string
+  noTopPadding?: boolean
+}) {
+  const marketGroups = useMemo(() => (
+    getCompetitionPlayerPropMarketGroups(competition, activeMarketId)
+  ), [activeMarketId, competition])
+
+  if (marketGroups.length === 0) return null
+
+  return (
+    <section
+      className={[
+        'competition-player-props',
+        noTopPadding ? 'competition-player-props--no-top-padding' : '',
+      ].filter(Boolean).join(' ')}
+      aria-label="Player props"
+    >
+      {marketGroups.map((group) => (
+        <CompetitionPlayerPropMarketSection
+          competition={competition}
+          group={group}
+          key={group.id}
+        />
+      ))}
+    </section>
+  )
+}
+
+export interface CompetitionMarketSelection {
+  competitionView: CompetitionHighlightView | null
+  groups: DisplayedCompetitionEventGroup[]
+  marketFilters: { id: string; label: string }[]
+  selectedMarketId?: string
+  selectedMarketLabel?: string
+  handleMarketChange: (marketId: string) => void
+  isSelectedPlayerPropsMarket: boolean
+  shouldShowMatchList: boolean
+  carouselMarketId?: string
+  carouselMarketLabel?: string
+  activePlayerPropMarketId?: string
+  shouldShowPlayerPropsOnly: boolean
+  basePromoVariant?: 'garantida' | 'super-aumentada'
+  matchListCompetition?: HomeCompetitionHighlight
+}
+
+export function useCompetitionMarketSelection({
   sport,
   competitionId,
   liveOnly = false,
-  onLiveMatchClick,
-  onOpenCompetition,
-}: CompetitionPageProps) {
+}: {
+  sport: string
+  competitionId: string
+  liveOnly?: boolean
+}): CompetitionMarketSelection {
   const marketScopeKey = `${sport}:${competitionId}:${liveOnly ? 'live' : 'all'}`
   const [activeMarketState, setActiveMarketState] = useState<{ scopeKey: string; marketId?: string }>()
   const { groups } = useMemo(() => (
-    getCalendarDisplayedEventGroups({
-      sportFilter: sport,
-      competitionId,
-      liveOnly,
-    })
+    competitionId
+      ? getCalendarDisplayedEventGroups({
+          sportFilter: sport,
+          competitionId,
+          liveOnly,
+        })
+      : { groups: [] as DisplayedCompetitionEventGroup[] }
   ), [competitionId, liveOnly, sport])
   const competitionView = useMemo(() => (
     getCompetitionHighlight(groups, liveOnly)
@@ -336,9 +1044,79 @@ export function CompetitionPage({
   const selectedMarketId = activeMarketId && marketFilters.some((filter) => filter.id === activeMarketId)
     ? activeMarketId
     : defaultMarketId
+  const isSelectedPlayerPropsMarket = selectedMarketId
+    ? isCalendarPlayerPropsMarketForSport(sport, selectedMarketId)
+    : false
+  const shouldShowMatchList = selectedMarketId
+    ? COMPETITION_MATCH_LIST_MARKET_IDS.has(selectedMarketId)
+    : false
+  const selectedMarketLabel = marketFilters.find((filter) => filter.id === selectedMarketId)?.label
+  const carouselMarketId = selectedMarketId && !isSelectedPlayerPropsMarket
+    ? selectedMarketId
+    : defaultMarketId
+  const carouselMarketLabel = marketFilters.find((filter) => filter.id === carouselMarketId)?.label
+  const activePlayerPropMarketId = selectedMarketId && isSelectedPlayerPropsMarket
+    ? selectedMarketId
+    : undefined
+  const shouldShowPlayerPropsOnly = !!activePlayerPropMarketId
   const handleMarketChange = useCallback((marketId: string) => {
     setActiveMarketState({ scopeKey: marketScopeKey, marketId })
   }, [marketScopeKey])
+  const basePromoVariant = competitionView?.competition.title === 'Champions League'
+    ? 'garantida'
+    : competitionView?.competition.title === 'NBA'
+      ? 'super-aumentada'
+      : undefined
+  const matchListCompetition = competitionView && shouldShowMatchList
+    ? {
+        ...competitionView.competition,
+        marketChips: competitionView.competition.marketChips?.map((chip) => (
+          chip.id === COMPETITION_MATCHES_MARKET_ID
+            ? { ...chip, label: 'Resultado Final' }
+            : chip
+        )),
+      }
+    : competitionView?.competition
+
+  return {
+    competitionView,
+    groups,
+    marketFilters,
+    selectedMarketId,
+    selectedMarketLabel,
+    handleMarketChange,
+    isSelectedPlayerPropsMarket,
+    shouldShowMatchList,
+    carouselMarketId,
+    carouselMarketLabel,
+    activePlayerPropMarketId,
+    shouldShowPlayerPropsOnly,
+    basePromoVariant,
+    matchListCompetition,
+  }
+}
+
+export function CompetitionPage({
+  sport,
+  competitionId,
+  liveOnly = false,
+  marketSelection,
+  onLiveMatchClick,
+  onOpenCompetition,
+}: CompetitionPageProps) {
+  const {
+    competitionView,
+    groups,
+    selectedMarketId,
+    selectedMarketLabel,
+    shouldShowMatchList,
+    shouldShowPlayerPropsOnly,
+    carouselMarketId,
+    carouselMarketLabel,
+    activePlayerPropMarketId,
+    basePromoVariant,
+    matchListCompetition,
+  } = marketSelection
   const handleMatchClick = useCallback((
     match: HomeCompetitionMatch,
     _competition: HomeCompetitionHighlight,
@@ -363,27 +1141,39 @@ export function CompetitionPage({
   if (competitionView) {
     return (
       <>
-        {marketFilters.length > 0 && (
+        {shouldShowMatchList && matchListCompetition ? (
+          <HomeCompetitionSection
+            activeMarketId={selectedMarketId}
+            className="home-competition--competition-match-list"
+            competition={matchListCompetition}
+            hideMarketChips
+            hideTitleRow
+            matchGroups={competitionView.matchGroups}
+            onMatchClick={onLiveMatchClick ? (match, _competition, liveTimes) => (
+              handleMatchClick(match, competitionView.competition, liveTimes)
+            ) : undefined}
+          />
+        ) : shouldShowPlayerPropsOnly ? (
+          <CompetitionPlayerPropsMarkets
+            activeMarketId={activePlayerPropMarketId}
+            competition={competitionView.competition}
+          />
+        ) : (
           <>
-            <div className="home__content-filter-anchor home__competition-market-anchor" aria-hidden="true" />
-            <ContentFilterChips
-              filters={marketFilters}
-              activeFilter={selectedMarketId}
-              ariaLabel={`Mercados de ${competitionView.competition.title}`}
-              className="content-filter-chips--competition-markets"
-              onFilterChange={handleMarketChange}
+            <CompetitionMatchCarousel
+              competition={competitionView.competition}
+              activeMarketId={carouselMarketId}
+              activeMarketLabel={carouselMarketLabel ?? selectedMarketLabel}
+              onMatchClick={onLiveMatchClick ? (match, liveTimes) => handleMatchClick(match, competitionView.competition, liveTimes) : undefined}
+            />
+            {basePromoVariant && <BasePromo key={basePromoVariant} variant={basePromoVariant} />}
+            <CompetitionPlayerPropsMarkets
+              activeMarketId={activePlayerPropMarketId}
+              competition={competitionView.competition}
+              noTopPadding={!basePromoVariant}
             />
           </>
         )}
-        <HomeCompetitionSection
-          activeMarketId={selectedMarketId}
-          competition={competitionView.competition}
-          hideMarketChips
-          hideTitleRow
-          matchGroups={competitionView.matchGroups}
-          playerPropsLayout="grid"
-          onMatchClick={onLiveMatchClick ? handleMatchClick : undefined}
-        />
       </>
     )
   }

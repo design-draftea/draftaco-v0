@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-const basePath = '/draftaco'
+const basePath = '/draftaco-v0'
 
 export default defineConfig(({ command }) => ({
   base: command === 'serve' ? '/' : `${basePath}/`,

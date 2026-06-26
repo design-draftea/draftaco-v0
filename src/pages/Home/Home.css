@@ -158,6 +158,10 @@
   padding-top: 0;
 }
 
+.home--novo-trilho.home--competition-active > .home-competition.home-competition--competition-match-list {
+  padding-top: 12px;
+}
+
 .home--event-inline-active,
 .home--header-morph-active.home--event-inline-active,
 .home--novo-trilho.home--event-inline-active,
@@ -169,8 +173,57 @@
 }
 
 .home--event-inline-active .header--v2 {
+  --header-v2-background-size: 100% 220px;
+
+  background-color: transparent;
+  background-position: center top, center top;
+  background-size: var(--header-v2-background-size), 100% 100%;
+  background-repeat: no-repeat, no-repeat;
+}
+
+.home--novo-trilho.home--competition-active.home--content-event-rail-active:not(.home--event-inline-active) .header--v2 {
+  --header-v2-background-size: 100% 220px;
+
+  background-color: var(--ds-background-app, var(--tokens-background-background));
+  background-position: center top, center top;
+  background-size: var(--header-v2-background-size), 100% 100%;
+  background-repeat: no-repeat, no-repeat;
+  background-attachment: fixed;
+}
+
+/* In competition header-stack mode the rail + chips live in the header. The
+   header is short (and shorter still when collapsed), so the fixed-height
+   lightHeader image covers the background's fade tail and the content hard-cuts
+   under the chips ("barra seca"). Render the header background on a masked
+   ::before so it fades out at the bottom — letting content scroll under softly
+   like the live-event header — without fading the rail/chips themselves. */
+.home--novo-trilho.home--competition-active.home--competition-header-active.home--content-event-rail-active:not(.home--event-inline-active) .header--v2 {
+  background: transparent;
+}
+
+.home--novo-trilho.home--competition-active.home--competition-header-active.home--content-event-rail-active:not(.home--event-inline-active) .header--v2::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-color: var(--ds-background-app, var(--tokens-background-background));
+  background-image: url('../../assets/lightHeader.png');
   background-position: center top;
-  background-size: 100% 220px;
+  background-size: var(--header-v2-background-size, 100% 220px);
+  background-repeat: no-repeat;
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    #000 0%,
+    #000 calc(100% - var(--header-v2-background-fade-height, 16px)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    180deg,
+    #000 0%,
+    #000 calc(100% - var(--header-v2-background-fade-height, 16px)),
+    transparent 100%
+  );
+  pointer-events: none;
 }
 
 .home--event-inline-active .header .sport-rail-shell {
@@ -186,7 +239,8 @@
     visibility 0s linear 0s;
 }
 
-.home--event-inline-compact .header .sport-rail-shell {
+.home--event-inline-compact .header .sport-rail-shell,
+.home--event-inline-active.home--header-compact .header .sport-rail-shell {
   position: absolute;
   top: 56px;
   left: 0;
@@ -203,11 +257,84 @@
     visibility 0s linear 180ms;
 }
 
-.home--event-inline-compact .header .sport-rail {
+.home--novo-trilho.home--competition-active.home--header-compact .header .sport-rail-shell {
+  position: absolute;
+  top: 56px;
+  left: 0;
+  right: 0;
+  max-height: 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition:
+    max-height 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 160ms ease,
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0s linear 180ms;
+}
+
+.home--novo-trilho.home--competition-active.home--content-event-rail-active:not(.home--event-inline-active) .header .sport-rail-shell {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  max-height: var(--home-competition-header-rail-visible-height, 112px);
+  overflow: hidden;
+  opacity: var(--home-competition-header-rail-opacity, 1);
+  visibility: visible;
+  transform: translateY(var(--home-competition-header-rail-translate-y, 0px));
+  pointer-events: auto;
+  transition: none;
+}
+
+.home--novo-trilho.home--competition-active.home--content-event-rail-active:not(.home--event-inline-active)[data-header-morph-complete] .header .sport-rail-shell {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Competition header-stack mode: when the header collapses on scroll, drop the
+   sport rail out of flow (like the live-event header) so the event rail + chips
+   slide up under the logo instead of staying put over an invisible gap. Higher
+   specificity than the content-event-rail rule above so it wins while compact. */
+.home--novo-trilho.home--competition-header-active.home--content-event-rail-active.home--header-compact:not(.home--event-inline-active) .header .sport-rail-shell {
+  position: absolute;
+  top: 56px;
+  left: 0;
+  right: 0;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition:
+    max-height 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 160ms ease,
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0s linear 180ms;
+}
+
+.home--event-inline-compact .header .sport-rail,
+.home--event-inline-active.home--header-compact .header .sport-rail {
   padding-bottom: 0;
 }
 
-.home--event-inline-compact .header .sport-rail__scroll-arrow {
+.home--novo-trilho.home--competition-active.home--header-compact .header .sport-rail {
+  padding-bottom: 0;
+}
+
+.home--novo-trilho.home--competition-active.home--content-event-rail-active.home--header-compact:not(.home--event-inline-active) .header .sport-rail {
+  padding-bottom: var(--sport-rail-padding-bottom, 24px);
+}
+
+.home--event-inline-compact .header .sport-rail__scroll-arrow,
+.home--event-inline-active.home--header-compact .header .sport-rail__scroll-arrow {
+  opacity: 0;
+  animation: none;
+}
+
+.home--novo-trilho.home--competition-active.home--header-compact .header .sport-rail__scroll-arrow {
   opacity: 0;
   animation: none;
 }
@@ -219,6 +346,328 @@
   --sports-carousel-collapse-padding-bottom: 24px;
   --sports-carousel-collapse-opacity: 1;
   --sports-carousel-collapse-translate-y: 0px;
+}
+
+.home__content-event-rail--competition {
+  background: var(--ds-background-app, var(--tokens-background-background));
+}
+
+.home--novo-trilho.home--competition-active.home--content-event-rail-active > .home__content-event-rail--competition {
+  position: sticky;
+  top: var(--home-competition-event-rail-sticky-top, 0px);
+  z-index: 60;
+  background-color: var(--ds-background-app, var(--tokens-background-background));
+  background-image: url('../../assets/lightHeader.png');
+  background-position: center top;
+  background-size: 100% 220px;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+.competition-event-rail {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  height: 48px;
+  padding: 8px 0 0 12px;
+  box-sizing: border-box;
+  background: var(--ds-background-app, var(--tokens-background-background));
+}
+
+.home--novo-trilho.home--competition-active.home--content-event-rail-active:not(.home--event-inline-active) > .home__content-event-rail--competition > .competition-event-rail {
+  background-color: var(--ds-background-app, var(--tokens-background-background));
+  background-image: url('../../assets/lightHeader.png');
+  background-position: center top;
+  background-size: 100% 220px;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* Competition header stack — the event rail + market chips rendered inside the
+   header (mirroring the live-event inline header, without the score block).
+   Styled here in the always-loaded Home.css so it does not depend on the
+   lazily-loaded LiveEventPage.css. */
+.home__competition-header-stack {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: transparent;
+}
+
+.home__competition-header-stack .competition-event-rail {
+  background: transparent;
+}
+
+.home__competition-header-stack .content-filter-chips--competition-markets.content-filter-chips {
+  position: static;
+  top: auto;
+  z-index: auto;
+  padding: 8px 0 0;
+  background: transparent;
+}
+
+.home__competition-header-stack .content-filter-chips--competition-markets .content-filter-chips__list {
+  background: transparent;
+}
+
+.home__competition-header-stack .content-filter-chips--competition-markets .content-filter-chips__item:not(.content-filter-chips__item--active) {
+  background:
+    linear-gradient(
+      0deg,
+      var(--ds-action-transparency-default, rgb(251 251 251 / 0.08)),
+      var(--ds-action-transparency-default, rgb(251 251 251 / 0.08))
+    ),
+    var(--ds-background-app, var(--tokens-background-background));
+}
+
+.competition-event-rail__all {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 56px;
+  background: transparent;
+  color: var(--ds-fill-tertiary, rgb(var(--tokens-text-text-01-rgb) / 0.5));
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.competition-event-rail__all--active {
+  padding: 0;
+}
+
+.competition-event-rail__all-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+}
+
+.competition-event-rail__all--active .competition-event-rail__all-label {
+  padding: 0 6px;
+  border-radius: 56px;
+  background: linear-gradient(
+    53.34deg,
+    var(--tokens-background-background-gradient-header-02, #4b20ff) 0%,
+    var(--tokens-background-background-gradient-header-01, #9730ff) 100%
+  );
+  color: var(--ds-fill-primary, var(--tokens-text-text-01));
+}
+
+.competition-event-rail__all--active::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 7px;
+  width: 10px;
+  height: 3px;
+  transform: translateX(-50%);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  background: linear-gradient(
+    53.34deg,
+    var(--tokens-background-background-gradient-header-02, #4b20ff) 0%,
+    var(--tokens-background-background-gradient-header-01, #9730ff) 100%
+  );
+  pointer-events: none;
+}
+
+.competition-event-rail__scroll {
+  --competition-event-rail-side-fade-width: 16px;
+
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  height: 44px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.competition-event-rail__scroll--fade-left {
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 var(--competition-event-rail-side-fade-width),
+    #000 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 var(--competition-event-rail-side-fade-width),
+    #000 100%
+  );
+}
+
+.competition-event-rail__scroll--fade-right {
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    #000 0,
+    #000 calc(100% - var(--competition-event-rail-side-fade-width)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    #000 0,
+    #000 calc(100% - var(--competition-event-rail-side-fade-width)),
+    transparent 100%
+  );
+}
+
+.competition-event-rail__scroll--fade-left.competition-event-rail__scroll--fade-right {
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 var(--competition-event-rail-side-fade-width),
+    #000 calc(100% - var(--competition-event-rail-side-fade-width)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 var(--competition-event-rail-side-fade-width),
+    #000 calc(100% - var(--competition-event-rail-side-fade-width)),
+    transparent 100%
+  );
+}
+
+.competition-event-rail__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.competition-event-rail__track {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: max-content;
+  min-width: 100%;
+  min-height: 44px;
+  padding: 0 12px 0 0;
+  box-sizing: border-box;
+}
+
+.competition-event-rail__item {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 78px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgb(var(--tokens-text-text-01-rgb) / 0.5);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.competition-event-rail__item--active {
+  color: var(--tokens-text-text-01);
+}
+
+.competition-event-rail__label {
+  display: block;
+  max-width: 104px;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.competition-event-rail__meta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 92px;
+  height: 20px;
+  padding: 0;
+  box-sizing: border-box;
+  border-radius: 999px;
+  color: rgb(var(--tokens-text-text-01-rgb) / 0.7);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.competition-event-rail__meta--active {
+  position: relative;
+  padding: 0 6px;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 15px;
+  overflow: visible;
+}
+
+.competition-event-rail__meta--active-live {
+  background: #f43f5e;
+}
+
+.competition-event-rail__meta--active-prematch {
+  background: linear-gradient(
+    90deg,
+    var(--tokens-background-background-gradient-header-02, #4b20ff) 0%,
+    var(--tokens-background-background-gradient-header-01, #9730ff) 100%
+  );
+}
+
+.competition-event-rail__meta--active::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -3px;
+  width: 10px;
+  height: 3px;
+  transform: translateX(-50%);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  pointer-events: none;
+}
+
+.competition-event-rail__meta--active-live::after {
+  background: #f43f5e;
+}
+
+.competition-event-rail__meta--active-prematch::after {
+  background: linear-gradient(
+    90deg,
+    var(--tokens-background-background-gradient-header-02, #4b20ff) 0%,
+    var(--tokens-background-background-gradient-header-01, #9730ff) 100%
+  );
+}
+
+.competition-event-rail__live-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 4px;
+}
+
+.competition-event-rail__meta--live .competition-event-rail__live-dot {
+  color: #f43f5e;
 }
 
 .home__content-filter-anchor {
@@ -245,6 +694,7 @@
 
 .home--header-morph-active .header__bg-dark,
 .home--header-morph-active .header__top,
+.home--header-morph-active .sport-rail-shell,
 .home--header-morph-active .sport-rail,
 .home--header-morph-active .sport-rail__item,
 .home--header-morph-active .sport-rail__label,

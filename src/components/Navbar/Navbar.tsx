@@ -4,7 +4,7 @@ import './Navbar.css'
 import { productNavbarConfigs } from '../../data/homeProducts'
 import { useFeatureFlags } from '../../hooks/useFeatureFlags'
 import type { ProductMode } from '../../types/home'
-import navClubDraftea from '../../assets/navClubDraftea.svg'
+import navClubDrafteaIniciante from '../../assets/navClubDrafteaIniciante.png'
 
 interface NavbarProps {
   activeProduct?: ProductMode
@@ -14,9 +14,31 @@ interface NavbarProps {
 }
 
 const navbarActiveMotionMs = 520
+const shouldRenderNavbarIconAsImage = (icon: string) =>
+  /\.(png|jpe?g|webp)$/i.test(icon.split('?')[0] ?? icon)
+
 const getNavbarIconStyle = (icon: string) => ({
   '--navbar-icon-mask': `url("${icon}")`,
 }) as CSSProperties
+
+const renderNavbarIcon = (icon: string) => (
+  <span className="navbar__icon-slot">
+    {shouldRenderNavbarIconAsImage(icon) ? (
+      <img
+        aria-hidden="true"
+        className="navbar__icon navbar__icon--image"
+        src={icon}
+        alt=""
+      />
+    ) : (
+      <span
+        aria-hidden="true"
+        className="navbar__icon"
+        style={getNavbarIconStyle(icon)}
+      />
+    )}
+  </span>
+)
 
 export function Navbar({
   activeProduct = 'apostas',
@@ -30,7 +52,7 @@ export function Navbar({
     ? {
         ...baseNavbarConfig,
         mainItems: baseNavbarConfig.mainItems.map((item) =>
-          item.id === 'promocoes' ? { ...item, icon: navClubDraftea } : item
+          item.id === 'promocoes' ? { ...item, icon: navClubDrafteaIniciante } : item
         ),
       }
     : baseNavbarConfig
@@ -182,13 +204,7 @@ export function Navbar({
                       aria-hidden="true"
                     />
                   ) : null}
-                  <span className="navbar__icon-slot">
-                    <span
-                      aria-hidden="true"
-                      className="navbar__icon"
-                      style={getNavbarIconStyle(item.icon)}
-                    />
-                  </span>
+                  {renderNavbarIcon(item.icon)}
                   <span className="navbar__label">{item.label}</span>
                 </button>
               )
@@ -223,13 +239,7 @@ export function Navbar({
                 aria-hidden="true"
               />
             ) : null}
-            <span className="navbar__icon-slot">
-              <span
-                aria-hidden="true"
-                className="navbar__icon"
-                style={getNavbarIconStyle(navbarConfig.searchItem.icon)}
-              />
-            </span>
+            {renderNavbarIcon(navbarConfig.searchItem.icon)}
           </button>
         </div>
       </div>

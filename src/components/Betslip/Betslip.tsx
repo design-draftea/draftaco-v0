@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type TransitionEvent } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type TransitionEvent } from 'react'
 import { CaretRightIcon } from '@phosphor-icons/react'
 import './Betslip.css'
 
@@ -14,6 +14,7 @@ import {
   getBetslipTurboBonusPercent,
 } from '../../hooks/betslipTurboBonus'
 import { useAnimatedBetslipNumber } from '../../hooks/useAnimatedBetslipNumber'
+import { useFeatureFlags } from '../../hooks/useFeatureFlags'
 
 interface BetslipProps {
   summary?: BetslipSummary
@@ -31,6 +32,20 @@ const formatBetslipTurboBonus = (value: number) => `+${Math.max(0, Math.round(va
 const shouldAnimateTurboBonusChange = (startValue: number, targetValue: number) => (
   startValue > 0 && targetValue > 0
 )
+const betslipCompactLabels = {
+  pitaco: {
+    bets: 'Apostas',
+    odds: 'Odds',
+    stake: 'Entrada',
+    payout: 'Para ganhar',
+  },
+  draftea: {
+    bets: 'Bets',
+    odds: 'Momio',
+    stake: 'Monto',
+    payout: 'Gana',
+  },
+}
 
 export function Betslip({
   summary,
@@ -41,6 +56,8 @@ export function Betslip({
   presentationKey = 'default',
   onOpen,
 }: BetslipProps) {
+  const { brandMode } = useFeatureFlags()
+  const compactLabels = betslipCompactLabels[brandMode]
   const shouldShow = visible && !!summary
   const [isRendered, setIsRendered] = useState(shouldShow)
   const [isPresented, setIsPresented] = useState(false)
@@ -244,14 +261,6 @@ export function Betslip({
     setIsRendered(false)
   }, [])
 
-  const handleCompactKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.target !== event.currentTarget) return
-    if (event.key !== 'Enter' && event.key !== ' ') return
-
-    event.preventDefault()
-    onOpen?.()
-  }, [onOpen])
-
   const renderedSummary = shouldShow ? summary : lastVisibleSummary
   const renderedTurboEligibleSelectionCount = shouldShow
     ? turboEligibleSelectionCount ?? summary?.selectionCount ?? 0
@@ -399,15 +408,11 @@ export function Betslip({
       <div className="betslip__surface" ref={surfaceRef} onTransitionEnd={handleSurfaceTransitionEnd}>
         <div
           className="betslip__compact"
-          role="button"
-          tabIndex={0}
-          aria-label={`Bilhete com ${renderedSummary.selectionCount} seleções. Odds totais ${renderedSummary.totalOddsLabel}. Aposta ${renderedSummary.stakeLabel}. Para ganhar ${boostedPotentialWinLabel}.${turboAssistiveLabel}`}
-          onClick={onOpen}
-          onKeyDown={handleCompactKeyDown}
+          aria-label={`Bilhete com ${renderedSummary.selectionCount} seleções. ${compactLabels.odds} ${renderedSummary.totalOddsLabel}. ${compactLabels.stake} ${renderedSummary.stakeLabel}. ${compactLabels.payout} ${boostedPotentialWinLabel}.${turboAssistiveLabel}`}
         >
           <span className="betslip__metrics" aria-hidden="true">
             <span className="betslip__metric betslip__metric--bets">
-              <strong className="betslip__value betslip__count-value">
+              <strong className="betslip__value betslip__value--rolling betslip__count-value">
                 <span className="betslip__count-anchor">
                   {shouldRenderCountBurst ? (
                     <span
@@ -424,15 +429,15 @@ export function Betslip({
                   </span>
                 </span>
               </strong>
-              <span className="betslip__label">Bets</span>
+              <span className="betslip__label">{compactLabels.bets}</span>
             </span>
             <span className="betslip__metric">
               <strong className="betslip__value betslip__value--rolling">{animatedTotalOddsLabel}</strong>
-              <span className="betslip__label">Odds</span>
+              <span className="betslip__label">{compactLabels.odds}</span>
             </span>
             <span className="betslip__metric betslip__metric--stake">
-              <strong className="betslip__value">{renderedSummary.stakeLabel}</strong>
-              <span className="betslip__label">Aposta</span>
+              <strong className="betslip__value betslip__value--rolling">{renderedSummary.stakeLabel}</strong>
+              <span className="betslip__label">{compactLabels.stake}</span>
             </span>
           </span>
           <span className="betslip__payout">
@@ -458,7 +463,7 @@ export function Betslip({
                   </span>
                 ) : (
                   <>
-                    <span aria-hidden="true">Para ganhar</span>
+                    <span aria-hidden="true">{compactLabels.payout}</span>
                     <CaretRightIcon aria-hidden="true" className="betslip__icon" weight="bold" />
                   </>
                 )}

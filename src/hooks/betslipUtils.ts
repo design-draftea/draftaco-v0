@@ -30,6 +30,7 @@ export interface BetslipSelection {
   homeScore?: string | number
   awayScore?: string | number
   playerName?: string
+  selectionTeamName?: string
   homeTeamIcon?: string
   awayTeamIcon?: string
   selectionIcon?: string
@@ -66,6 +67,7 @@ export interface BetslipSelectionInput {
   homeScore?: string | number
   awayScore?: string | number
   playerName?: string
+  selectionTeamName?: string
   homeTeamIcon?: string
   awayTeamIcon?: string
   selectionIcon?: string
@@ -166,6 +168,38 @@ export const getBetslipEventId = ({
   ].join(':')
 }
 
+// Canonical betslip key for a player-prop odd, shared by every screen (sport,
+// competition, live event / pre-match) so the SAME bet produces the SAME id and
+// stays correlated. Each player is its own market (multi-selectable); lines of
+// the same player are mutually exclusive. The match is keyed by full team names
+// (the form already used by match odds and the live event), the line by its label.
+export const getPlayerPropBetslipKey = ({
+  sport,
+  homeTeam,
+  awayTeam,
+  marketId,
+  playerName,
+  lineLabel,
+}: {
+  sport: string
+  homeTeam?: string
+  awayTeam?: string
+  marketId: string
+  playerName: string
+  lineLabel: ReactNode
+}) => {
+  const eventId = getBetslipEventId({ sport, homeTeam, awayTeam })
+  const playerMarketId = `${normalizeBetslipIdPart(marketId)}-${normalizeBetslipIdPart(playerName)}`
+  const outcomeId = normalizeBetslipIdPart(getNodeText(lineLabel))
+
+  return {
+    eventId,
+    marketId: playerMarketId,
+    outcomeId,
+    groupId: getBetslipMarketGroupId({ eventId, marketId: playerMarketId }),
+  }
+}
+
 export const parseBetslipOdd = (odd: ReactNode) => {
   const oddLabel = getNodeText(odd).trim()
   const normalizedOddLabel = oddLabel.includes(',')
@@ -249,6 +283,7 @@ export const createBetslipSelection = ({
   homeScore,
   awayScore,
   playerName,
+  selectionTeamName,
   homeTeamIcon,
   awayTeamIcon,
   selectionIcon,
@@ -306,6 +341,7 @@ export const createBetslipSelection = ({
     homeScore,
     awayScore,
     playerName,
+    selectionTeamName,
     homeTeamIcon,
     awayTeamIcon,
     selectionIcon,

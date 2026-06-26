@@ -17,7 +17,7 @@ import { BrandLocalizationEffect } from './i18n/brandLocalization'
 
 const Home = lazy(() => import('./pages/Home').then((m) => ({ default: m.Home })))
 const PromotionsPage = lazy(() => import('./pages/PromotionsPage').then((m) => ({ default: m.PromotionsPage })))
-const BetslipPage = lazy(() => import('./pages/BetslipPage').then((m) => ({ default: m.BetslipPage })))
+const BetslipPageV2 = lazy(() => import('./pages/BetslipPageV2').then((m) => ({ default: m.BetslipPageV2 })))
 const LiveEventPage = lazy(() => import('./pages/LiveEventPage').then((m) => ({ default: m.LiveEventPage })))
 const HandoffPage = lazy(() => import('./pages/Handoff').then((m) => ({ default: m.HandoffPage })))
 
@@ -32,7 +32,7 @@ const defaultProduct: ProductMode = 'apostas'
 const productRoutes: ProductMode[] = ['apostas', 'cassino']
 const promotionsRouteSegment = 'promocoes'
 const handoffRouteSegment = 'handoff'
-const deployedBasePath = '/draftaco'
+const deployedBasePath = '/draftaco-v0'
 const ENABLE_APP_PROMOTIONS_NAV_LINK = false
 const brasileiraoLeagueIdPattern = /(?:brasil-serie-a|fut-brasileir|fut-brasileirao-a)/
 const brasileiraoLeagueNamePattern = /(?:brasileir|brasileir[aã]o|brasil\s*-\s*s[eé]rie\s*a|s[eé]rie\s*a)/i
@@ -341,7 +341,7 @@ function AppContent() {
   useEffect(() => {
     if (!betslipSummary.hasSelections) return
 
-    void import('./pages/BetslipPage')
+    void import('./pages/BetslipPageV2')
   }, [betslipSummary.hasSelections])
 
   const showCompactBetslip = activeProduct === 'apostas'
@@ -395,7 +395,7 @@ function AppContent() {
       </Suspense>
       {!isHandoffPage && isFullBetslipOpen ? (
         <Suspense fallback={null}>
-          <BetslipPage
+          <BetslipPageV2
             isCoveredByEvent={!!betslipOriginLiveEvent}
             onClose={handleBetslipClose}
             onSelectionsEmptyExitStart={handleCompactBetslipSuppress}
@@ -447,7 +447,6 @@ function AppContent() {
           <Navbar
             activeProduct={activeProduct}
             activeItemId={isPromotionsPage ? promotionsRouteSegment : undefined}
-            disabledItemIds={ENABLE_APP_PROMOTIONS_NAV_LINK ? undefined : [promotionsRouteSegment]}
             onItemSelect={handleNavbarItemSelect}
           />
         </>

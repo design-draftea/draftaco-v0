@@ -1,0 +1,429 @@
+.base-promo {
+  --base-promo-accent-gradient: linear-gradient(167deg, #f0abfc 0%, #6b47ff 100%);
+  --base-promo-badge-gradient: linear-gradient(29deg, #4b20ff 0%, #9730ff 100%);
+  --base-promo-glow-primary-rgb: 107 71 255;
+  --base-promo-light-gradient: linear-gradient(140.49deg, #f0abfc 0%, #6b47ff 100%);
+
+  width: 100%;
+  padding: 0 12px;
+  box-sizing: border-box;
+  background: var(--ds-background-app, var(--tokens-background-background, #000));
+}
+
+.base-promo--super-aumentada {
+  --base-promo-accent-gradient: linear-gradient(149deg, #56deea 0%, #d2ff72 100%);
+  --base-promo-badge-gradient: linear-gradient(90deg, #56deea 0%, #d2ff72 100%);
+  --base-promo-glow-primary-rgb: 86 222 234;
+  --base-promo-light-gradient: linear-gradient(140.49deg, #56deea 0%, #d2ff72 100%);
+}
+
+.base-promo__accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ds-fill-opacity-quaternary, rgb(251 251 251 / 0.12));
+  box-sizing: border-box;
+  transition:
+    gap 180ms ease,
+    padding-bottom 180ms ease;
+}
+
+.base-promo__accordion--collapsed {
+  gap: 0;
+  padding-bottom: 4px;
+}
+
+.base-promo__header {
+  display: flex;
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 0;
+  align-items: center;
+  justify-content: space-between;
+  border: 0;
+  background: transparent;
+  box-sizing: border-box;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.base-promo__badge {
+  display: inline-flex;
+  height: 18px;
+  padding: 0 12px;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--base-promo-badge-gradient);
+  color: var(--ds-fill-dark, #000);
+  font-family: var(--font-forma-djr-display, 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif);
+  font-size: 14px;
+  font-style: italic;
+  font-weight: 900;
+  line-height: 18px;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.base-promo__toggle {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ds-fill-opacity-secondary, rgb(251 251 251 / 0.24));
+  border-radius: 999px;
+  box-sizing: border-box;
+  color: #9ca6b5;
+}
+
+.base-promo__toggle-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  transform: rotate(90deg);
+  transform-origin: center;
+  transition: transform 160ms ease;
+}
+
+.base-promo__accordion--collapsed .base-promo__toggle-icon {
+  transform: rotate(-90deg);
+}
+
+.base-promo__body {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 180ms ease;
+}
+
+.base-promo__accordion--collapsed .base-promo__body {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+.base-promo__markets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.base-promo__markets-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.base-promo__card {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  width: 100%;
+  min-height: 92px;
+  padding: 10px;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  border: 1px solid var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
+  border-radius: 16px;
+  background: var(--ds-background-app, var(--tokens-background-background, #000));
+  box-sizing: border-box;
+  color: var(--ds-fill-primary, #fbfbfb);
+}
+
+.base-promo__light {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -70px;
+  z-index: 0;
+  width: 128px;
+  overflow: hidden;
+  border-radius: 15px 0 0 15px;
+  background:
+    radial-gradient(120% 94% at 20% 50%, rgb(var(--base-promo-glow-primary-rgb) / 0.42) 0%, rgb(var(--base-promo-glow-primary-rgb) / 0.22) 42%, rgb(var(--base-promo-glow-primary-rgb) / 0) 78%),
+    linear-gradient(90deg, rgb(var(--base-promo-glow-primary-rgb) / 0.18) 0%, rgb(var(--base-promo-glow-primary-rgb) / 0.08) 52%, rgb(var(--base-promo-glow-primary-rgb) / 0) 100%);
+  pointer-events: none;
+}
+
+.base-promo__light::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: -11px;
+  width: 35px;
+  background: var(--base-promo-light-gradient);
+  background-size: 30% 30%;
+  filter: blur(60px);
+  opacity: 0.36;
+  transform: scaleX(5);
+  transform-origin: left center;
+}
+
+.base-promo__profile {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 72px;
+  height: 72px;
+  flex: 0 0 72px;
+  align-items: center;
+  justify-content: center;
+}
+
+.base-promo__stat-icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  padding: 4px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: var(--ds-action-secondary-default, rgb(251 251 251 / 0.12));
+  box-sizing: border-box;
+}
+
+.base-promo__stat-icon img {
+  display: block;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+}
+
+.base-promo__avatar-shell {
+  position: relative;
+  display: inline-flex;
+  width: 86px;
+  height: 72px;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+.base-promo__avatar {
+  display: block;
+  width: 84px;
+  height: 80px;
+  object-fit: contain;
+  object-position: left bottom;
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    var(--ds-fill-dark, #000) 0%,
+    var(--ds-fill-dark, #000) 68%,
+    rgb(var(--ds-fill-dark-rgb, 0 0 0) / 0) 100%
+  );
+  mask-image: linear-gradient(
+    180deg,
+    var(--ds-fill-dark, #000) 0%,
+    var(--ds-fill-dark, #000) 68%,
+    rgb(var(--ds-fill-dark-rgb, 0 0 0) / 0) 100%
+  );
+}
+
+.base-promo__content {
+  display: flex;
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.base-promo__player {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 4px;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  letter-spacing: 0;
+  line-height: 21px;
+  white-space: nowrap;
+}
+
+.base-promo__player strong {
+  overflow: hidden;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+}
+
+.base-promo__player span {
+  flex: 0 0 auto;
+  color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 15px;
+}
+
+.base-promo__market {
+  overflow: hidden;
+  width: fit-content;
+  max-width: 100%;
+  color: transparent;
+  background: var(--base-promo-accent-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.base-promo__match-row {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.base-promo__match {
+  display: inline-flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  align-items: baseline;
+  gap: 2px;
+  overflow: hidden;
+  color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 15px;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.base-promo__match-team {
+  font-weight: 500;
+}
+
+.base-promo__match-team--secondary {
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
+}
+
+.base-promo__match-team--tertiary {
+  color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
+}
+
+.base-promo__countdown {
+  display: inline-flex;
+  height: 20px;
+  min-width: 0;
+  padding: 0 4px;
+  align-items: center;
+  gap: 4px;
+  border-radius: 12px;
+  background: var(--ds-background-opacity-primary, rgb(251 251 251 / 0.12));
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.base-promo__countdown-icon {
+  display: block;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+}
+
+.base-promo__countdown-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0;
+}
+
+.base-promo__countdown-separator {
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
+}
+
+.base-promo__boost {
+  display: flex;
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.base-promo__boost strong {
+  color: transparent;
+  background: var(--base-promo-accent-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  font-family: var(--font-forma-djr-display, 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif);
+  font-size: 16px;
+  font-style: italic;
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: 0;
+}
+
+.base-promo__boost span {
+  color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 21px;
+  letter-spacing: 0;
+  text-decoration-line: line-through;
+}
+
+.base-promo__odd {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  width: 74px;
+  height: 72px;
+  flex: 0 0 74px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ds-fill-opacity-quinary, rgb(251 251 251 / 0.08));
+  border-radius: 12px;
+  background: var(--ds-action-secondary-default, rgb(251 251 251 / 0.12));
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.base-promo__odd--selected {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(
+      rgb(var(--ds-background-app-rgb, var(--tokens-background-background-rgb, 19 19 19)) / 0.84),
+      rgb(var(--ds-background-app-rgb, var(--tokens-background-background-rgb, 19 19 19)) / 0.84)
+    ) padding-box,
+    var(--base-promo-accent-gradient) padding-box,
+    var(--base-promo-accent-gradient) border-box;
+}
+
+.home > .banner-highlight + .base-promo {
+  margin-top: -16px;
+}

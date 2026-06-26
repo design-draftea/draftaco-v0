@@ -1,0 +1,1 @@
+export { BasePromo } from './BasePromo'

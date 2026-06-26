@@ -67,7 +67,9 @@ export interface MarketBannerTeam {
   name: string
   image?: string
   imageSourceName?: string
+  glowColor?: string
   score?: string
+  stats?: MarketBannerTeamStat[]
   sets?: string[]
   currentScore?: string
   isServing?: boolean
@@ -77,6 +79,27 @@ export interface MarketBannerOdd {
   label: string
   value: string
   outcomeId: string
+  trend?: 'up' | 'down'
+}
+
+export interface MarketBannerTeamStat {
+  icon: 'corner' | 'red-card' | 'yellow-card' | 'goal'
+  value: string
+}
+
+export interface MarketBannerAlternativeMarket {
+  id: string
+  label: string
+  odds: [MarketBannerOdd, MarketBannerOdd]
+}
+
+export interface MarketBannerPlayerProp {
+  id: string
+  playerName: string
+  position?: string
+  subtitle: string
+  teamName: string
+  odds: [MarketBannerOdd, MarketBannerOdd, MarketBannerOdd]
 }
 
 export interface MarketBanner {
@@ -88,6 +111,8 @@ export interface MarketBanner {
   footerLabel: string
   live?: boolean
   liveClock?: string
+  alternativeMarkets?: MarketBannerAlternativeMarket[]
+  playerProps?: MarketBannerPlayerProp[]
 }
 
 export interface Banner {
@@ -154,6 +179,7 @@ export interface HomeCompetitionMatch {
   sport: 'futebol' | 'basquete'
   homeScore?: string
   awayScore?: string
+  leagueLabel?: string
   marketLabel: string
   tags: string[]
   footerLabel: string
@@ -209,6 +235,11 @@ export interface HomeCompetitionMatch {
 export interface HomeCompetitionPlayerProp {
   id: string
   marketId?: string
+  // Full team names — populated by the real builders (sport / competition) so the
+  // canonical betslip key (see getPlayerPropBetslipKey) correlates selections across
+  // screens. Optional because static fallback fixtures only carry abbreviations.
+  homeTeam?: string
+  awayTeam?: string
   playerName: string
   position: string
   marketLabel: string

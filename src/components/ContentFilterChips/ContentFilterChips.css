@@ -31,14 +31,71 @@
 
 .home--novo-trilho.home--sport-active:not(.home--competition-active)
   > .content-filter-chips--sport-markets.content-filter-chips {
-  --content-filter-chips-padding-y: 8px;
-  --content-filter-chips-sticky-top: -16px;
+  --content-filter-chips-padding-y: 0px;
+  --content-filter-chips-sticky-top: -4px;
+  padding-top: 12px;
+  padding-bottom: 8px;
 }
 
 .home--novo-trilho.home--competition-active
   > .content-filter-chips--competition-markets.content-filter-chips {
-  --content-filter-chips-padding-y: 8px;
-  --content-filter-chips-sticky-top: -16px;
+  --content-filter-chips-padding-y: 0px;
+  --content-filter-chips-sticky-top: 0px;
+  padding-top: 8px;
+  padding-bottom: 0;
+}
+
+.home--novo-trilho.home--competition-active.home--content-event-rail-active
+  > .content-filter-chips--competition-markets.content-filter-chips {
+  --content-filter-chips-sticky-top: var(--home-competition-market-chips-sticky-top, 48px);
+  isolation: isolate;
+  z-index: 60;
+  background: transparent;
+}
+
+.home--novo-trilho.home--competition-active.home--content-event-rail-active
+  > .content-filter-chips--competition-markets.content-filter-chips::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-color: var(--ds-background-app, var(--tokens-background-background));
+  background-image: url('../../assets/lightHeader.png');
+  background-position: center top;
+  background-size: 100% 220px;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    #000 0%,
+    #000 calc(100% - var(--content-filter-chips-fade-height)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    180deg,
+    #000 0%,
+    #000 calc(100% - var(--content-filter-chips-fade-height)),
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.home--novo-trilho.home--competition-active.home--content-event-rail-active
+  > .content-filter-chips--competition-markets.content-filter-chips
+  .content-filter-chips__list {
+  background: transparent;
+}
+
+.home--novo-trilho.home--competition-active.home--content-event-rail-active
+  > .content-filter-chips--competition-markets.content-filter-chips
+  .content-filter-chips__item:not(.content-filter-chips__item--active) {
+  background:
+    linear-gradient(
+      0deg,
+      var(--ds-action-transparency-default, rgb(251 251 251 / 0.08)),
+      var(--ds-action-transparency-default, rgb(251 251 251 / 0.08))
+    ),
+    var(--ds-background-app, var(--tokens-background-background));
 }
 
 .content-filter-chips--sport-markets .content-filter-chips__item,
@@ -54,7 +111,6 @@
   gap: 4px;
   width: 100%;
   padding: 0 12px;
-  background: var(--ds-background-app, var(--tokens-background-background));
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
@@ -104,6 +160,16 @@
   white-space: nowrap;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+}
+
+.content-filter-chips__item:not(.content-filter-chips__item--active) {
+  background:
+    linear-gradient(
+      0deg,
+      var(--ds-action-transparency-default, rgb(251 251 251 / 0.08)),
+      var(--ds-action-transparency-default, rgb(251 251 251 / 0.08))
+    ),
+    var(--ds-background-app, var(--tokens-background-background));
 }
 
 .content-filter-chips__item span {

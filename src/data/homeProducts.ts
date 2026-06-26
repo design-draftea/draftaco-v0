@@ -11,9 +11,6 @@ import type {
   Promotion,
 } from '../types/home'
 
-import bannerTennisAlcaraz from '../assets/iconSports/alcaraz.png'
-import bannerTennisSinner from '../assets/iconSports/sinner.png'
-
 import imgPromoPiggy from '../assets/img-promo-piggy.png'
 import imgPromoRabbit from '../assets/img-promo-rabbit.webp'
 import imgTesouroRei from '../assets/img-promo-tesouro-do-rei.png'
@@ -39,6 +36,9 @@ import escudoRealGde from '../assets/escudoRealGde.png'
 import escudoArsenal from '../assets/escudoArsenal.png'
 import escudoFlamengoGde from '../assets/escudoFlamengoGde.png'
 import escudoCruzeiro from '../assets/escudoCruzeiro.png'
+import escudoPalmeiras from '../assets/escudoPalmeiras.png'
+import escudoFluminense from '../assets/escudoFluminense.png'
+import escudoBullsGde from '../assets/escudoBullsGde.png'
 import escudoLakers from '../assets/escudoLakers.png'
 import escudoMiami from '../assets/escudoMiami.png'
 import escudoWarriorsGde from '../assets/escudoWarriosGde.png'
@@ -54,9 +54,9 @@ import iconSlots from '../assets/iconSports/slots.png'
 
 import navApostas from '../assets/navApostas.svg'
 import navBusca from '../assets/navBusca.svg'
+import navCassino from '../assets/navCassino.svg'
 import navEntrada from '../assets/navEntrada.svg'
-import navLive from '../assets/navLive.svg'
-import navPitacoClub from '../assets/navPitacoClub.svg'
+import navPitacoClubIniciante from '../assets/navPitacoClubIniciante.png'
 
 export const productLabels: Record<ProductMode, string> = {
   apostas: 'APOSTAS',
@@ -69,8 +69,8 @@ export const productNavbarConfigs: Record<ProductMode, NavbarConfig> = {
     mainItems: [
       { id: 'home', icon: navApostas, label: 'Apostas' },
       { id: 'entradas', icon: navEntrada, label: 'Entradas' },
-      { id: 'ao-vivo', icon: navLive, label: 'Ao Vivo' },
-      { id: 'promocoes', icon: navPitacoClub, label: 'Pitaco Club' },
+      { id: 'ao-vivo', icon: navCassino, label: 'Cassino' },
+      { id: 'promocoes', icon: navPitacoClubIniciante, label: 'Pitaco Club' },
     ],
     searchItem: { id: 'buscar', icon: navBusca, label: 'Buscar' },
   },
@@ -79,8 +79,8 @@ export const productNavbarConfigs: Record<ProductMode, NavbarConfig> = {
     mainItems: [
       { id: 'home', icon: navApostas, label: 'Apostas' },
       { id: 'entradas', icon: navEntrada, label: 'Entradas' },
-      { id: 'ao-vivo', icon: navLive, label: 'Ao Vivo' },
-      { id: 'promocoes', icon: navPitacoClub, label: 'Pitaco Club' },
+      { id: 'ao-vivo', icon: navCassino, label: 'Cassino' },
+      { id: 'promocoes', icon: navPitacoClubIniciante, label: 'Pitaco Club' },
     ],
     searchItem: { id: 'buscar', icon: navBusca, label: 'Buscar' },
   },
@@ -99,17 +99,81 @@ export const sportsBanners: Banner[] = [
       variant: 'football-live',
       sport: 'futebol',
       league: 'CHAMPIONS LEAGUE',
-      footerLabel: '1T 12:33',
+      footerLabel: '35 min',
       live: true,
-      liveClock: '1T 12:33',
+      liveClock: '35 min',
       teams: [
-        { name: 'Paris Saint-Germain', imageSourceName: 'PSG', score: '2' },
-        { name: 'Manchester City', imageSourceName: 'Manchester City', score: '1' },
+        {
+          name: 'Paris Saint-Germain',
+          imageSourceName: 'PSG',
+          glowColor: '20 75 168',
+          score: '2',
+          stats: [
+            { icon: 'red-card', value: '0' },
+            { icon: 'yellow-card', value: '1' },
+            { icon: 'corner', value: '3' },
+          ],
+        },
+        {
+          name: 'Manchester City',
+          imageSourceName: 'Manchester City',
+          glowColor: '108 171 221',
+          score: '1',
+          stats: [
+            { icon: 'red-card', value: '0' },
+            { icon: 'yellow-card', value: '1' },
+            { icon: 'corner', value: '1' },
+          ],
+        },
       ],
       odds: [
-        { label: 'Paris Saint-Germain', value: '1.78x', outcomeId: 'home' },
+        { label: 'PSG', value: '1.75x', outcomeId: 'home' },
         { label: 'EMPATE', value: '3.50x', outcomeId: 'draw' },
-        { label: 'Manchester City', value: '2.10x', outcomeId: 'away' },
+        { label: 'MCI', value: '2.10x', outcomeId: 'away' },
+      ],
+      alternativeMarkets: [
+        {
+          id: 'total-escanteios',
+          label: 'Total des Escanteios',
+          odds: [
+            { label: '8.5', value: '1.75x', outcomeId: 'corners-over', trend: 'up' },
+            { label: '8.5', value: '1.95x', outcomeId: 'corners-under', trend: 'down' },
+          ],
+        },
+        {
+          id: 'total-gols',
+          label: 'Total de Gols',
+          odds: [
+            { label: '2.5', value: '1.82x', outcomeId: 'goals-over', trend: 'up' },
+            { label: '2.5', value: '2.05x', outcomeId: 'goals-under', trend: 'down' },
+          ],
+        },
+      ],
+      playerProps: [
+        {
+          id: 'psg-dembele-shots',
+          playerName: 'Dembélé',
+          position: 'ATA',
+          subtitle: 'Finalizações ao Gol',
+          teamName: 'Paris Saint-Germain',
+          odds: [
+            { label: '1.0+', value: '1.42x', outcomeId: 'dembele-shots-1' },
+            { label: '2.0+', value: '1.53x', outcomeId: 'dembele-shots-2' },
+            { label: '3.0+', value: '2.80x', outcomeId: 'dembele-shots-3' },
+          ],
+        },
+        {
+          id: 'city-haaland-shots',
+          playerName: 'Haaland',
+          position: 'ATA',
+          subtitle: 'Finalizações ao Gol',
+          teamName: 'Manchester City',
+          odds: [
+            { label: '1.0+', value: '1.35x', outcomeId: 'haaland-shots-1' },
+            { label: '2.0+', value: '1.53x', outcomeId: 'haaland-shots-2' },
+            { label: '3.0+', value: '2.65x', outcomeId: 'haaland-shots-3' },
+          ],
+        },
       ],
     },
   },
@@ -122,18 +186,70 @@ export const sportsBanners: Banner[] = [
     title: '',
     description: '',
     marketBanner: {
-      variant: 'tennis-live',
-      sport: 'tenis',
-      league: 'ROLAND GARROS',
-      footerLabel: '1º set',
-      live: true,
+      variant: 'football-pre',
+      sport: 'futebol',
+      league: 'BRASILEIRÃO',
+      footerLabel: 'Amanhã 20:00',
       teams: [
-        { name: 'Carlos Alcaraz', image: bannerTennisAlcaraz, sets: ['6', '6', '6'], currentScore: '15' },
-        { name: 'Jannik Sinner', image: bannerTennisSinner, sets: ['2', '4', '4'], currentScore: '30', isServing: true },
+        {
+          name: 'Palmeiras',
+          image: escudoPalmeiras,
+          glowColor: '0 126 82',
+        },
+        {
+          name: 'Fluminense',
+          image: escudoFluminense,
+          glowColor: '128 23 48',
+        },
       ],
       odds: [
-        { label: 'Alcaraz', value: '1.78x', outcomeId: 'player-1' },
-        { label: 'Sinner', value: '2.05x', outcomeId: 'player-2' },
+        { label: 'PAL', value: '1.85x', outcomeId: 'home' },
+        { label: 'EMPATE', value: '3.30x', outcomeId: 'draw' },
+        { label: 'FLU', value: '4.10x', outcomeId: 'away' },
+      ],
+      alternativeMarkets: [
+        {
+          id: 'pal-flu-total-escanteios',
+          label: 'Total de Escanteios',
+          odds: [
+            { label: '9.5', value: '1.80x', outcomeId: 'corners-over', trend: 'up' },
+            { label: '9.5', value: '1.90x', outcomeId: 'corners-under', trend: 'down' },
+          ],
+        },
+        {
+          id: 'pal-flu-total-gols',
+          label: 'Total de Gols',
+          odds: [
+            { label: '2.5', value: '1.88x', outcomeId: 'goals-over', trend: 'up' },
+            { label: '2.5', value: '1.98x', outcomeId: 'goals-under', trend: 'down' },
+          ],
+        },
+      ],
+      playerProps: [
+        {
+          id: 'pal-flaco-shots',
+          playerName: 'Flaco López',
+          position: 'ATA',
+          subtitle: 'Finalizações ao Gol',
+          teamName: 'Palmeiras',
+          odds: [
+            { label: '1.0+', value: '1.45x', outcomeId: 'flaco-shots-1' },
+            { label: '2.0+', value: '1.95x', outcomeId: 'flaco-shots-2' },
+            { label: '3.0+', value: '3.10x', outcomeId: 'flaco-shots-3' },
+          ],
+        },
+        {
+          id: 'flu-cano-shots',
+          playerName: 'Cano',
+          position: 'ATA',
+          subtitle: 'Finalizações ao Gol',
+          teamName: 'Fluminense',
+          odds: [
+            { label: '1.0+', value: '1.58x', outcomeId: 'cano-shots-1' },
+            { label: '2.0+', value: '2.10x', outcomeId: 'cano-shots-2' },
+            { label: '3.0+', value: '3.75x', outcomeId: 'cano-shots-3' },
+          ],
+        },
       ],
     },
   },
@@ -146,41 +262,69 @@ export const sportsBanners: Banner[] = [
     title: '',
     description: '',
     marketBanner: {
-      variant: 'football-pre',
-      sport: 'futebol',
-      league: 'PREMIER LEAGUE',
-      footerLabel: '21/jan (15:00)',
-      teams: [
-        { name: 'Arsenal', imageSourceName: 'Arsenal' },
-        { name: 'Chelsea', imageSourceName: 'Chelsea' },
-      ],
-      odds: [
-        { label: 'Arsenal', value: '2.62x', outcomeId: 'home' },
-        { label: 'EMPATE', value: '3.45x', outcomeId: 'draw' },
-        { label: 'Chelsea', value: '2.58x', outcomeId: 'away' },
-      ],
-    },
-  },
-  {
-    id: 4,
-    type: 'market',
-    headerLeft: '',
-    headerRight: '',
-    background: '',
-    title: '',
-    description: '',
-    marketBanner: {
       variant: 'basketball-pre',
       sport: 'basquete',
       league: 'NBA',
-      footerLabel: '21/jan (17:30)',
+      footerLabel: 'Amanhã 21:30',
       teams: [
-        { name: 'Chicago Bulls', imageSourceName: 'Chicago Bulls' },
-        { name: 'Miami Heat', imageSourceName: 'Miami Heat' },
+        {
+          name: 'Chicago Bulls',
+          image: escudoBullsGde,
+          glowColor: '206 17 65',
+        },
+        {
+          name: 'Miami Heat',
+          image: escudoMiami,
+          glowColor: '152 0 46',
+        },
       ],
       odds: [
-        { label: 'Bulls', value: '2.45x', outcomeId: 'home' },
-        { label: 'Heat', value: '1.58x', outcomeId: 'away' },
+        { label: 'CHI', value: '2.45x', outcomeId: 'home' },
+        { label: 'MIA', value: '1.58x', outcomeId: 'away' },
+      ],
+      alternativeMarkets: [
+        {
+          id: 'bulls-heat-handicap',
+          label: 'Handicap',
+          odds: [
+            { label: 'CHI +5.5', value: '1.87x', outcomeId: 'handicap-home' },
+            { label: 'MIA -5.5', value: '1.94x', outcomeId: 'handicap-away' },
+          ],
+        },
+        {
+          id: 'bulls-heat-total-pontos',
+          label: 'Total de Pontos',
+          odds: [
+            { label: '218.5', value: '1.89x', outcomeId: 'points-over', trend: 'up' },
+            { label: '218.5', value: '1.92x', outcomeId: 'points-under', trend: 'down' },
+          ],
+        },
+      ],
+      playerProps: [
+        {
+          id: 'bulls-lavine-points',
+          playerName: 'Z. LaVine',
+          position: 'ALA',
+          subtitle: 'Pontos',
+          teamName: 'Chicago Bulls',
+          odds: [
+            { label: '18.0+', value: '1.60x', outcomeId: 'lavine-points-18' },
+            { label: '22.0+', value: '2.18x', outcomeId: 'lavine-points-22' },
+            { label: '26.0+', value: '3.70x', outcomeId: 'lavine-points-26' },
+          ],
+        },
+        {
+          id: 'heat-butler-assists',
+          playerName: 'J. Butler',
+          position: 'ALA',
+          subtitle: 'Assistências',
+          teamName: 'Miami Heat',
+          odds: [
+            { label: '4.0+', value: '1.62x', outcomeId: 'butler-assists-4' },
+            { label: '6.0+', value: '2.48x', outcomeId: 'butler-assists-6' },
+            { label: '8.0+', value: '4.90x', outcomeId: 'butler-assists-8' },
+          ],
+        },
       ],
     },
   },
@@ -629,7 +773,7 @@ export const homeCompetitionHighlight: HomeCompetitionHighlight = {
       odds: [
         { label: 'PSG', value: '1.78x' },
         { label: 'EMPATE', value: '3.50x' },
-        { label: 'CITY', value: '2.10x' },
+        { label: 'MCI', value: '2.10x' },
       ],
     },
     {
@@ -641,7 +785,7 @@ export const homeCompetitionHighlight: HomeCompetitionHighlight = {
       tags: ['PA', '90’'],
       footerLabel: '21/jan (15:00)',
       odds: [
-        { label: 'REAL', value: '2.15x' },
+        { label: 'RMA', value: '2.15x' },
         { label: 'EMPATE', value: '3.40x' },
         { label: 'BAY', value: '3.10x' },
       ],
@@ -1049,18 +1193,18 @@ export const nbaCompetitionHighlight: HomeCompetitionHighlight = {
       awayScore: '11',
       marketLabel: 'NBA',
       tags: [],
-      footerLabel: 'Q1 08:25',
+      footerLabel: 'Intervalo',
       live: true,
-      liveClock: 'Q1 08:25',
+      liveClock: 'Intervalo',
       marketColumns: [
         {
           label: 'Vencer',
-          homeOdd: { label: 'JAZ', value: '3.10x' },
+          homeOdd: { label: 'UTA', value: '3.10x' },
           awayOdd: { label: 'OKC', value: '1.36x' },
         },
         {
           label: 'Handicap',
-          homeOdd: { label: 'JAZ +7.5', value: '1.91x' },
+          homeOdd: { label: 'UTA +7.5', value: '1.91x' },
           awayOdd: { label: 'OKC -7.5', value: '1.91x' },
         },
         {
@@ -1070,7 +1214,7 @@ export const nbaCompetitionHighlight: HomeCompetitionHighlight = {
         },
       ],
       odds: [
-        { label: 'JAZ', value: '3.10x' },
+        { label: 'UTA', value: '3.10x' },
         { label: 'OKC', value: '1.36x' },
         { label: 'TOTAL', value: '1.86x' },
       ],
