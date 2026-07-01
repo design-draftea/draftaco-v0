@@ -296,10 +296,14 @@ const BASKETBALL_PLAYER_PROPS_MARKET_ID = 'pontos-jogador'
 const BASKETBALL_ASSISTS_MARKET_ID = 'assistencias'
 const PLAYER_PROP_OPTION_MOUSE_SENSITIVITY = 1
 const PLAYER_PROP_OPTION_TOUCH_SENSITIVITY = 0.92
-const PLAYER_PROP_OPTION_INTENT_THRESHOLD = 8
+const PLAYER_PROP_OPTION_VERTICAL_INTENT_THRESHOLD = 28
+const PLAYER_PROP_OPTION_HORIZONTAL_INTENT_THRESHOLD = 28
+const PLAYER_PROP_OPTION_CLICK_SUPPRESS_THRESHOLD = 28
+const PLAYER_PROP_OPTION_TAP_REPLAY_THRESHOLD = 28
 const PLAYER_PROP_OPTION_AXIS_RATIO = 1.15
 const PLAYER_PROP_OPTION_SWIPE_THRESHOLD = 12
 const PLAYER_PROP_OPTION_PROGRAMMATIC_MS = 220
+const PLAYER_PROP_OPTION_NATIVE_CLICK_SUPPRESS_MS = 450
 
 const playerPropOptions = (values: Array<[string, string]>): PlayerPropOption[] =>
   values.map(([label, odd], index) => ({ label, odd, active: index === 1 }))
@@ -1258,8 +1262,10 @@ export function PreMatchPlayerPropCard({
     lastY: number
     pointerId?: number
     sensitivity: number
+    tapTarget: HTMLButtonElement | null
   } | null>(null)
   const suppressOptionClick = useRef(false)
+  const suppressOptionClickTimeout = useRef<number | null>(null)
   const wheelLock = useRef(0)
   const playerPropsScrollLockTimeout = useRef<number | null>(null)
   const programmaticOptionTarget = useRef<number | null>(null)
@@ -1436,6 +1442,46 @@ export function PreMatchPlayerPropCard({
     drag.lastY = event.clientY
   }
 
+  const getOptionTapTarget = (target: EventTarget | null, x: number, y: number) => {
+    const targetElement = target instanceof Element ? target : document.elementFromPoint(x, y)
+    const directTarget = targetElement?.closest<HTMLButtonElement>('.prematch-section__player-prop-option') ?? null
+
+    if (directTarget && optionsScrollRef.current?.contains(directTarget)) return directTarget
+
+    const pointTarget = document
+      .elementFromPoint(x, y)
+      ?.closest<HTMLButtonElement>('.prematch-section__player-prop-option') ?? null
+
+    return pointTarget && optionsScrollRef.current?.contains(pointTarget) ? pointTarget : null
+  }
+
+  const isReplayableTapDistance = (deltaX: number, deltaY: number) => (
+    Math.hypot(deltaX, deltaY) <= PLAYER_PROP_OPTION_TAP_REPLAY_THRESHOLD
+  )
+
+  const clearOptionClickSuppression = () => {
+    if (suppressOptionClickTimeout.current !== null) {
+      window.clearTimeout(suppressOptionClickTimeout.current)
+      suppressOptionClickTimeout.current = null
+    }
+
+    suppressOptionClick.current = false
+  }
+
+  const suppressNextNativeOptionClick = () => {
+    clearOptionClickSuppression()
+    suppressOptionClick.current = true
+    suppressOptionClickTimeout.current = window.setTimeout(() => {
+      suppressOptionClick.current = false
+      suppressOptionClickTimeout.current = null
+    }, PLAYER_PROP_OPTION_NATIVE_CLICK_SUPPRESS_MS)
+  }
+
+  const replayOptionTap = (tapTarget: HTMLButtonElement) => {
+    suppressNextNativeOptionClick()
+    tapTarget.click()
+  }
+
   const handleOptionPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return
 
@@ -1463,6 +1509,7 @@ export function PreMatchPlayerPropCard({
       sensitivity: event.pointerType === 'touch'
         ? PLAYER_PROP_OPTION_TOUCH_SENSITIVITY
         : PLAYER_PROP_OPTION_MOUSE_SENSITIVITY,
+      tapTarget: getOptionTapTarget(event.target, event.clientX, event.clientY),
     }
   }
 
@@ -1478,7 +1525,7 @@ export function PreMatchPlayerPropCard({
 
     if (drag.direction === 'pending') {
       if (
-        absY >= PLAYER_PROP_OPTION_INTENT_THRESHOLD &&
+        absY >= PLAYER_PROP_OPTION_VERTICAL_INTENT_THRESHOLD &&
         absY > absX * PLAYER_PROP_OPTION_AXIS_RATIO
       ) {
         drag.direction = 'vertical'
@@ -1489,7 +1536,7 @@ export function PreMatchPlayerPropCard({
       }
 
       if (
-        absX < PLAYER_PROP_OPTION_INTENT_THRESHOLD ||
+        absX < PLAYER_PROP_OPTION_HORIZONTAL_INTENT_THRESHOLD ||
         absX <= absY * PLAYER_PROP_OPTION_AXIS_RATIO
       ) {
         return
@@ -1516,7 +1563,7 @@ export function PreMatchPlayerPropCard({
 
 
     const walk = deltaX * drag.sensitivity
-    drag.moved = drag.moved || Math.abs(walk) > 4
+    drag.moved = drag.moved || absX > PLAYER_PROP_OPTION_CLICK_SUPPRESS_THRESHOLD
     containerEl.scrollLeft = drag.scrollLeft - walk
     clampOptionScroll()
   }
@@ -1557,10 +1604,7 @@ export function PreMatchPlayerPropCard({
     releasePlayerPropsScrollLock(releaseDelay)
 
     if (drag.moved) {
-      suppressOptionClick.current = true
-      window.setTimeout(() => {
-        suppressOptionClick.current = false
-      }, 0)
+      suppressNextNativeOptionClick()
     }
 
     snapToNearestOption(dragDelta, drag.startIndex)
@@ -1568,6 +1612,30 @@ export function PreMatchPlayerPropCard({
 
   const handleOptionPointerUp = (event: PointerEvent<HTMLDivElement>) => {
     event.stopPropagation()
+    const drag = optionDrag.current
+
+    if (
+      event.pointerType !== 'mouse' &&
+      drag &&
+      drag.direction !== 'horizontal' &&
+      drag.tapTarget &&
+      !drag.tapTarget.disabled &&
+      drag.tapTarget.isConnected &&
+      isReplayableTapDistance(event.clientX - drag.startX, event.clientY - (drag.startY ?? event.clientY))
+    ) {
+      if (event.cancelable) event.preventDefault()
+      const tapTarget = drag.tapTarget
+      clearOptionDrag()
+      replayOptionTap(tapTarget)
+      return
+    }
+
+    if (drag?.direction === 'vertical') {
+      suppressNextNativeOptionClick()
+      clearOptionDrag()
+      return
+    }
+
     if (optionDrag.current?.direction === 'horizontal') {
       finishOptionDrag(140)
       return
@@ -1607,6 +1675,12 @@ export function PreMatchPlayerPropCard({
   }, [player.options, scrollOptionIntoCenter])
 
   useEffect(() => () => {
+    if (suppressOptionClickTimeout.current !== null) {
+      window.clearTimeout(suppressOptionClickTimeout.current)
+      suppressOptionClickTimeout.current = null
+    }
+    suppressOptionClick.current = false
+
     if (playerPropsScrollLockTimeout.current) {
       window.clearTimeout(playerPropsScrollLockTimeout.current)
     }
@@ -1722,8 +1796,8 @@ export function PreMatchPlayerPropCard({
                 onClick={(event) => {
                   event.stopPropagation()
                   if (disableInteractions) return
-                  if (suppressOptionClick.current) {
-                    suppressOptionClick.current = false
+                  if (suppressOptionClick.current && event.nativeEvent.isTrusted) {
+                    clearOptionClickSuppression()
                     event.preventDefault()
                     return
                   }

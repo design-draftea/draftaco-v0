@@ -44,12 +44,14 @@ const emptyMarketChips: HomeCompetitionMarketChip[] = []
 const PLAYER_PROPS_GRID_INITIAL_COUNT = 4
 const PLAYER_PROPS_GRID_LOAD_STEP = 2
 const PLAYER_PROPS_GRID_MAX_COUNT = 8
-const PLAYER_PROP_ODD_WIDTH = 58
-const PLAYER_PROP_ODD_GAP = 4
 const PLAYER_ODD_MOUSE_SENSITIVITY = 1
 const PLAYER_ODD_TOUCH_SENSITIVITY = 0.92
-const PLAYER_ODD_DRAG_INTENT_THRESHOLD = 8
+const PLAYER_ODD_VERTICAL_INTENT_THRESHOLD = 28
+const PLAYER_ODD_HORIZONTAL_INTENT_THRESHOLD = 28
+const PLAYER_ODD_CLICK_SUPPRESS_THRESHOLD = 28
+const PLAYER_ODD_TAP_REPLAY_THRESHOLD = 28
 const PLAYER_ODD_DRAG_AXIS_RATIO = 1.15
+const PLAYER_ODD_NATIVE_CLICK_SUPPRESS_MS = 450
 
 const getVerticalScrollContainer = (element: HTMLElement | null) => {
   let current = element?.parentElement ?? null
@@ -567,8 +569,10 @@ function PlayerPropOddSlider({
     lastY: number
     pointerId: number
     sensitivity: number
+    tapTarget: HTMLButtonElement | null
   } | null>(null)
   const suppressClickRef = useRef(false)
+  const suppressClickTimeoutRef = useRef<number | null>(null)
   const lockedParentRef = useRef<HTMLElement | null>(null)
   const [activeOddIndex, setActiveOddIndex] = useState(initialOddIndex)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
@@ -578,7 +582,16 @@ function PlayerPropOddSlider({
     oddsRef.current = node
     if (!node) return
 
-    node.scrollLeft = initialOddIndex * (PLAYER_PROP_ODD_WIDTH + PLAYER_PROP_ODD_GAP)
+    window.requestAnimationFrame(() => {
+      const oddEl = Array.from(node.children).filter((child) =>
+        (child as HTMLElement).classList.contains('home-competition__odd')
+      )[initialOddIndex] as HTMLElement | undefined
+
+      if (!oddEl) return
+
+      const oddCenter = oddEl.offsetLeft + oddEl.offsetWidth / 2
+      node.scrollLeft = Math.max(0, oddCenter - node.clientWidth / 2)
+    })
   }, [initialOddIndex])
 
   const getCenteredOddIndex = useCallback(() => {
@@ -630,6 +643,11 @@ function PlayerPropOddSlider({
 
   useEffect(() => () => {
     if (scrollRafRef.current !== null) window.cancelAnimationFrame(scrollRafRef.current)
+    if (suppressClickTimeoutRef.current !== null) {
+      window.clearTimeout(suppressClickTimeoutRef.current)
+      suppressClickTimeoutRef.current = null
+    }
+    suppressClickRef.current = false
     if (lockedParentRef.current) {
       lockedParentRef.current.style.overflowX = ''
       lockedParentRef.current = null
@@ -709,12 +727,53 @@ function PlayerPropOddSlider({
     drag.lastY = event.clientY
   }
 
+  const getOddTapTarget = (target: EventTarget | null, x: number, y: number) => {
+    const targetElement = target instanceof Element ? target : document.elementFromPoint(x, y)
+    const directTarget = targetElement?.closest<HTMLButtonElement>('.home-competition__odd') ?? null
+
+    if (directTarget && oddsRef.current?.contains(directTarget)) return directTarget
+
+    const pointTarget = document
+      .elementFromPoint(x, y)
+      ?.closest<HTMLButtonElement>('.home-competition__odd') ?? null
+
+    return pointTarget && oddsRef.current?.contains(pointTarget) ? pointTarget : null
+  }
+
+  const isReplayableTapDistance = (deltaX: number, deltaY: number) => (
+    Math.hypot(deltaX, deltaY) <= PLAYER_ODD_TAP_REPLAY_THRESHOLD
+  )
+
+  const clearClickSuppression = () => {
+    if (suppressClickTimeoutRef.current !== null) {
+      window.clearTimeout(suppressClickTimeoutRef.current)
+      suppressClickTimeoutRef.current = null
+    }
+
+    suppressClickRef.current = false
+  }
+
+  const suppressNextNativeClick = () => {
+    clearClickSuppression()
+    suppressClickRef.current = true
+    suppressClickTimeoutRef.current = window.setTimeout(() => {
+      suppressClickRef.current = false
+      suppressClickTimeoutRef.current = null
+    }, PLAYER_ODD_NATIVE_CLICK_SUPPRESS_MS)
+  }
+
+  const replayOddTap = (tapTarget: HTMLButtonElement) => {
+    suppressNextNativeClick()
+    tapTarget.click()
+  }
+
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return
 
     const containerEl = oddsRef.current
     if (!containerEl) return
 
+    event.stopPropagation()
     containerEl.setPointerCapture?.(event.pointerId)
     if (event.pointerType === 'mouse') setDraggingClass(true)
 
@@ -730,6 +789,7 @@ function PlayerPropOddSlider({
       sensitivity: event.pointerType === 'touch'
         ? PLAYER_ODD_TOUCH_SENSITIVITY
         : PLAYER_ODD_MOUSE_SENSITIVITY,
+      tapTarget: getOddTapTarget(event.target, event.clientX, event.clientY),
     }
   }
 
@@ -746,13 +806,13 @@ function PlayerPropOddSlider({
     // Lock to one axis once intent is clear: horizontal scrolls the odds, vertical
     // scrolls the page (touch-action is none here, so the page can't scroll itself).
     if (drag.direction === 'pending') {
-      if (absY >= PLAYER_ODD_DRAG_INTENT_THRESHOLD && absY > absX * PLAYER_ODD_DRAG_AXIS_RATIO) {
+      if (absY >= PLAYER_ODD_VERTICAL_INTENT_THRESHOLD && absY > absX * PLAYER_ODD_DRAG_AXIS_RATIO) {
         drag.direction = 'vertical'
         applyVerticalScroll(event)
         return
       }
 
-      if (absX < PLAYER_ODD_DRAG_INTENT_THRESHOLD || absX <= absY * PLAYER_ODD_DRAG_AXIS_RATIO) {
+      if (absX < PLAYER_ODD_HORIZONTAL_INTENT_THRESHOLD || absX <= absY * PLAYER_ODD_DRAG_AXIS_RATIO) {
         return
       }
 
@@ -770,7 +830,7 @@ function PlayerPropOddSlider({
     if (drag.direction !== 'horizontal') return
 
     const walk = deltaX * drag.sensitivity
-    drag.moved = drag.moved || Math.abs(walk) > 4
+    drag.moved = drag.moved || absX > PLAYER_ODD_CLICK_SUPPRESS_THRESHOLD
     containerEl.scrollLeft = drag.scrollLeft - walk
   }
 
@@ -784,10 +844,32 @@ function PlayerPropOddSlider({
   const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current
     const containerEl = oddsRef.current
+    event.stopPropagation()
     releaseOddsPointer(event.pointerId)
     if (!drag) return
 
+    const deltaX = event.clientX - drag.startX
+    const deltaY = event.clientY - drag.startY
+    const shouldReplayTap = event.pointerType !== 'mouse' &&
+      drag.direction !== 'horizontal' &&
+      !!drag.tapTarget &&
+      !drag.tapTarget.disabled &&
+      drag.tapTarget.isConnected &&
+      isReplayableTapDistance(deltaX, deltaY)
+
+    if (shouldReplayTap) {
+      if (event.cancelable) event.preventDefault()
+      const tapTarget = drag.tapTarget!
+      dragRef.current = null
+      setDraggingClass(false)
+      replayOddTap(tapTarget)
+      return
+    }
+
     const wasHorizontal = drag.direction === 'horizontal'
+    const wasVerticalScroll = drag.direction === 'vertical' &&
+      event.pointerType !== 'mouse' &&
+      !isReplayableTapDistance(deltaX, deltaY)
     const dragDelta = containerEl && wasHorizontal ? containerEl.scrollLeft - drag.scrollLeft : 0
     const { startIndex, moved } = drag
     dragRef.current = null
@@ -795,10 +877,11 @@ function PlayerPropOddSlider({
 
     // Swallow the click that follows a real swipe so it never toggles a bet.
     if (wasHorizontal && moved) {
-      suppressClickRef.current = true
-      window.setTimeout(() => {
-        suppressClickRef.current = false
-      }, 0)
+      suppressNextNativeClick()
+    }
+
+    if (wasVerticalScroll) {
+      suppressNextNativeClick()
     }
 
     if (wasHorizontal) snapToNearestOdd(dragDelta, startIndex)
@@ -811,10 +894,22 @@ function PlayerPropOddSlider({
   }
 
   const handleOddsClickCapture = (event: MouseEvent<HTMLDivElement>) => {
-    if (!suppressClickRef.current) return
-    suppressClickRef.current = false
-    event.preventDefault()
-    event.stopPropagation()
+    if (suppressClickRef.current && event.nativeEvent.isTrusted) {
+      clearClickSuppression()
+      event.preventDefault()
+      event.stopPropagation()
+      return
+    }
+
+    const containerEl = oddsRef.current
+    const clickedOdd = getOddTapTarget(event.target, event.clientX, event.clientY)
+    if (!containerEl || !clickedOdd) return
+
+    const clickedIndex = Array.from(containerEl.children)
+      .filter((child) => (child as HTMLElement).classList.contains('home-competition__odd'))
+      .indexOf(clickedOdd)
+
+    if (clickedIndex >= 0) centerOdd(clickedIndex)
   }
 
   const handleWheel = (event: WheelEvent<HTMLDivElement>) => {

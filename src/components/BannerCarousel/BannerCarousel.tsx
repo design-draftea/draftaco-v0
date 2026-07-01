@@ -56,13 +56,15 @@ interface BannerCarouselProps {
 const AUTO_PLAY_INTERVAL = 10000 // 10 segundos
 const LIVE_PROP_OPTION_MOUSE_SENSITIVITY = 1
 const LIVE_PROP_OPTION_TOUCH_SENSITIVITY = 0.92
-const LIVE_PROP_OPTION_VERTICAL_INTENT_THRESHOLD = 8
+const LIVE_PROP_OPTION_VERTICAL_INTENT_THRESHOLD = 28
 const LIVE_PROP_OPTION_HORIZONTAL_INTENT_THRESHOLD = 28
 const LIVE_PROP_OPTION_CLICK_SUPPRESS_THRESHOLD = 28
+const LIVE_PROP_OPTION_TAP_REPLAY_THRESHOLD = 28
 const LIVE_PROP_OPTION_AXIS_RATIO = 1.15
 const LIVE_PROP_OPTION_SWIPE_THRESHOLD = 12
 const LIVE_PROP_OPTION_PROGRAMMATIC_MS = 220
 const LIVE_PROP_OPTION_WHEEL_LOCK_MS = 220
+const LIVE_PROP_OPTION_NATIVE_CLICK_SUPPRESS_MS = 450
 
 interface BannerAutoPlayRefs {
   autoPlayRef: { current: ReturnType<typeof setInterval> | null }
@@ -164,6 +166,7 @@ const FootballLivePropOddsSlider = ({
     tapTarget: HTMLButtonElement | null
   } | null>(null)
   const suppressOptionClick = useRef(false)
+  const suppressOptionClickTimeout = useRef<number | null>(null)
   const fallbackTapRef = useRef<{
     startX: number
     startY: number
@@ -390,18 +393,42 @@ const FootballLivePropOddsSlider = ({
   const isManualTapDistance = (deltaX: number, deltaY: number) => {
     const pointerDistance = Math.hypot(deltaX, deltaY)
 
-    return pointerDistance < LIVE_PROP_OPTION_HORIZONTAL_INTENT_THRESHOLD
+    return pointerDistance <= LIVE_PROP_OPTION_TAP_REPLAY_THRESHOLD
+  }
+
+  const clearOptionClickSuppression = () => {
+    if (suppressOptionClickTimeout.current !== null) {
+      window.clearTimeout(suppressOptionClickTimeout.current)
+      suppressOptionClickTimeout.current = null
+    }
+
+    suppressOptionClick.current = false
+  }
+
+  const suppressNextNativeOptionClick = () => {
+    clearOptionClickSuppression()
+    suppressOptionClick.current = true
+    suppressOptionClickTimeout.current = window.setTimeout(() => {
+      suppressOptionClick.current = false
+      suppressOptionClickTimeout.current = null
+    }, LIVE_PROP_OPTION_NATIVE_CLICK_SUPPRESS_MS)
   }
 
   const replayOptionTap = (tapTarget: HTMLButtonElement) => {
+    suppressNextNativeOptionClick()
     tapTarget.click()
-    suppressOptionClick.current = true
-    window.setTimeout(() => {
-      suppressOptionClick.current = false
-    }, 0)
   }
 
+  const supportsPointerEvents = () => (
+    typeof window !== 'undefined' && 'PointerEvent' in window
+  )
+
   const startFallbackTap = (target: EventTarget | null, x: number, y: number) => {
+    if (supportsPointerEvents()) {
+      fallbackTapRef.current = null
+      return
+    }
+
     if (optionDrag.current) {
       fallbackTapRef.current = null
       return
@@ -420,6 +447,11 @@ const FootballLivePropOddsSlider = ({
     y: number
   ) => {
     event.stopPropagation()
+
+    if (supportsPointerEvents()) {
+      fallbackTapRef.current = null
+      return
+    }
 
     const fallbackTap = fallbackTapRef.current
     fallbackTapRef.current = null
@@ -574,7 +606,7 @@ const FootballLivePropOddsSlider = ({
   const replayPendingOptionTap = (event: PointerEvent<HTMLDivElement>) => {
     const drag = optionDrag.current
     const tapTarget = drag?.tapTarget
-    if (!drag || drag.direction !== 'pending' || !tapTarget || tapTarget.disabled || !tapTarget.isConnected) return false
+    if (!drag || drag.direction === 'horizontal' || !tapTarget || tapTarget.disabled || !tapTarget.isConnected) return false
 
     const deltaX = event.clientX - drag.startX
     const deltaY = event.clientY - drag.startY
@@ -607,10 +639,7 @@ const FootballLivePropOddsSlider = ({
     setDraggingClass(false)
 
     if (drag.moved) {
-      suppressOptionClick.current = true
-      window.setTimeout(() => {
-        suppressOptionClick.current = false
-      }, 0)
+      suppressNextNativeOptionClick()
     }
 
     if (containerEl) snapToNearestOption(dragDelta, drag.startIndex)
@@ -619,6 +648,12 @@ const FootballLivePropOddsSlider = ({
   const handleOptionPointerUp = (event: PointerEvent<HTMLDivElement>) => {
     event.stopPropagation()
     if (replayPendingOptionTap(event)) return
+
+    if (optionDrag.current?.direction === 'vertical') {
+      suppressNextNativeOptionClick()
+      clearOptionDrag()
+      return
+    }
 
     if (optionDrag.current?.direction === 'horizontal') {
       finishOptionDrag()
@@ -676,6 +711,12 @@ const FootballLivePropOddsSlider = ({
       window.cancelAnimationFrame(optionsScrollRafRef.current)
     }
 
+    if (suppressOptionClickTimeout.current !== null) {
+      window.clearTimeout(suppressOptionClickTimeout.current)
+      suppressOptionClickTimeout.current = null
+    }
+    suppressOptionClick.current = false
+
     if (lockedParentRef.current) {
       lockedParentRef.current.style.overflowX = ''
       lockedParentRef.current = null
@@ -715,12 +756,15 @@ const FootballLivePropOddsSlider = ({
               className="banner-live-highlight__prop-odd-item"
               key={`${odd.outcomeId}:${index}`}
               onClickCapture={(event) => {
-                if (!suppressOptionClick.current) return
-                suppressOptionClick.current = false
-                event.preventDefault()
-                event.stopPropagation()
+                if (suppressOptionClick.current && event.nativeEvent.isTrusted) {
+                  clearOptionClickSuppression()
+                  event.preventDefault()
+                  event.stopPropagation()
+                  return
+                }
+
+                centerOption(index)
               }}
-              onClick={() => centerOption(index)}
             >
               {renderOddButton(odd, className, index)}
             </span>
