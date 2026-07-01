@@ -56,7 +56,9 @@ interface BannerCarouselProps {
 const AUTO_PLAY_INTERVAL = 10000 // 10 segundos
 const LIVE_PROP_OPTION_MOUSE_SENSITIVITY = 1
 const LIVE_PROP_OPTION_TOUCH_SENSITIVITY = 0.92
-const LIVE_PROP_OPTION_INTENT_THRESHOLD = 8
+const LIVE_PROP_OPTION_VERTICAL_INTENT_THRESHOLD = 8
+const LIVE_PROP_OPTION_HORIZONTAL_INTENT_THRESHOLD = 28
+const LIVE_PROP_OPTION_CLICK_SUPPRESS_THRESHOLD = 28
 const LIVE_PROP_OPTION_AXIS_RATIO = 1.15
 const LIVE_PROP_OPTION_SWIPE_THRESHOLD = 12
 const LIVE_PROP_OPTION_PROGRAMMATIC_MS = 220
@@ -159,8 +161,14 @@ const FootballLivePropOddsSlider = ({
     lastY: number
     pointerId?: number
     sensitivity: number
+    tapTarget: HTMLButtonElement | null
   } | null>(null)
   const suppressOptionClick = useRef(false)
+  const fallbackTapRef = useRef<{
+    startX: number
+    startY: number
+    tapTarget: HTMLButtonElement | null
+  } | null>(null)
   const wheelLock = useRef(0)
   const programmaticOptionTarget = useRef<number | null>(null)
   const programmaticOptionTimeout = useRef<number | null>(null)
@@ -370,8 +378,105 @@ const FootballLivePropOddsSlider = ({
     drag.lastY = event.clientY
   }
 
-  const stopNestedCarouselEvent = (event: MouseEvent<HTMLDivElement> | TouchEvent<HTMLDivElement>) => {
+  const getOptionTapTarget = (target: EventTarget | null, x: number, y: number) => {
+    const targetElement = target instanceof Element ? target : document.elementFromPoint(x, y)
+    const directTarget = targetElement?.closest<HTMLButtonElement>('.banner-live-highlight__odd-btn--prop') ?? null
+
+    return directTarget ?? document
+      .elementFromPoint(x, y)
+      ?.closest<HTMLButtonElement>('.banner-live-highlight__odd-btn--prop') ?? null
+  }
+
+  const isManualTapDistance = (deltaX: number, deltaY: number) => {
+    const pointerDistance = Math.hypot(deltaX, deltaY)
+
+    return pointerDistance < LIVE_PROP_OPTION_HORIZONTAL_INTENT_THRESHOLD
+  }
+
+  const replayOptionTap = (tapTarget: HTMLButtonElement) => {
+    tapTarget.click()
+    suppressOptionClick.current = true
+    window.setTimeout(() => {
+      suppressOptionClick.current = false
+    }, 0)
+  }
+
+  const startFallbackTap = (target: EventTarget | null, x: number, y: number) => {
+    if (optionDrag.current) {
+      fallbackTapRef.current = null
+      return
+    }
+
+    fallbackTapRef.current = {
+      startX: x,
+      startY: y,
+      tapTarget: getOptionTapTarget(target, x, y),
+    }
+  }
+
+  const finishFallbackTap = (
+    event: MouseEvent<HTMLDivElement> | TouchEvent<HTMLDivElement>,
+    x: number,
+    y: number
+  ) => {
     event.stopPropagation()
+
+    const fallbackTap = fallbackTapRef.current
+    fallbackTapRef.current = null
+
+    const tapTarget = fallbackTap?.tapTarget
+    if (!fallbackTap || !tapTarget || tapTarget.disabled || !tapTarget.isConnected) return
+
+    if (!isManualTapDistance(x - fallbackTap.startX, y - fallbackTap.startY)) return
+
+    if (event.cancelable) event.preventDefault()
+    replayOptionTap(tapTarget)
+  }
+
+  const handleOptionMouseDown = (event: MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation()
+    if (event.button !== 0) return
+    startFallbackTap(event.target, event.clientX, event.clientY)
+  }
+
+  const handleOptionMouseMove = (event: MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation()
+  }
+
+  const handleOptionMouseUp = (event: MouseEvent<HTMLDivElement>) => {
+    finishFallbackTap(event, event.clientX, event.clientY)
+  }
+
+  const handleOptionMouseLeave = (event: MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation()
+    fallbackTapRef.current = null
+  }
+
+  const handleOptionTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    event.stopPropagation()
+    const touch = event.touches[0]
+    if (!touch) return
+    startFallbackTap(event.target, touch.clientX, touch.clientY)
+  }
+
+  const handleOptionTouchMove = (event: TouchEvent<HTMLDivElement>) => {
+    event.stopPropagation()
+  }
+
+  const handleOptionTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    const touch = event.changedTouches[0]
+    if (!touch) {
+      event.stopPropagation()
+      fallbackTapRef.current = null
+      return
+    }
+
+    finishFallbackTap(event, touch.clientX, touch.clientY)
+  }
+
+  const handleOptionTouchCancel = (event: TouchEvent<HTMLDivElement>) => {
+    event.stopPropagation()
+    fallbackTapRef.current = null
   }
 
   const captureOptionPointer = (containerEl: HTMLDivElement, pointerId: number) => {
@@ -387,6 +492,7 @@ const FootballLivePropOddsSlider = ({
 
     event.stopPropagation()
     clearProgrammaticOptionTarget()
+    fallbackTapRef.current = null
     setDraggingClass(false)
     setParentScrollLocked(true)
     captureOptionPointer(containerEl, event.pointerId)
@@ -403,6 +509,7 @@ const FootballLivePropOddsSlider = ({
       sensitivity: event.pointerType === 'touch'
         ? LIVE_PROP_OPTION_TOUCH_SENSITIVITY
         : LIVE_PROP_OPTION_MOUSE_SENSITIVITY,
+      tapTarget: getOptionTapTarget(event.target, event.clientX, event.clientY),
     }
 
     if (event.pointerType === 'mouse') setDraggingClass(true)
@@ -418,17 +525,18 @@ const FootballLivePropOddsSlider = ({
     const absX = Math.abs(deltaX)
     const absY = Math.abs(deltaY)
 
+    event.stopPropagation()
+
     if (drag.direction === 'pending') {
-      if (absY >= LIVE_PROP_OPTION_INTENT_THRESHOLD && absY > absX * LIVE_PROP_OPTION_AXIS_RATIO) {
+      if (absY >= LIVE_PROP_OPTION_VERTICAL_INTENT_THRESHOLD && absY > absX * LIVE_PROP_OPTION_AXIS_RATIO) {
         drag.direction = 'vertical'
         clearDraggingClass()
-        event.stopPropagation()
         if (event.cancelable) event.preventDefault()
         applyVerticalPointerScroll(event)
         return
       }
 
-      if (absX < LIVE_PROP_OPTION_INTENT_THRESHOLD || absX <= absY * LIVE_PROP_OPTION_AXIS_RATIO) {
+      if (absX < LIVE_PROP_OPTION_HORIZONTAL_INTENT_THRESHOLD || absX <= absY * LIVE_PROP_OPTION_AXIS_RATIO) {
         return
       }
 
@@ -436,7 +544,6 @@ const FootballLivePropOddsSlider = ({
       setDraggingClass(true)
     }
 
-    event.stopPropagation()
     if (event.cancelable) event.preventDefault()
 
     if (drag.direction === 'vertical') {
@@ -447,7 +554,7 @@ const FootballLivePropOddsSlider = ({
     if (drag.direction !== 'horizontal') return
 
     const walk = deltaX * drag.sensitivity
-    drag.moved = drag.moved || Math.abs(walk) > 4
+    drag.moved = drag.moved || absX > LIVE_PROP_OPTION_CLICK_SUPPRESS_THRESHOLD
     containerEl.scrollLeft = drag.scrollLeft - walk
     clampOptionScroll()
   }
@@ -462,6 +569,22 @@ const FootballLivePropOddsSlider = ({
 
     optionDrag.current = null
     setDraggingClass(false)
+  }
+
+  const replayPendingOptionTap = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = optionDrag.current
+    const tapTarget = drag?.tapTarget
+    if (!drag || drag.direction !== 'pending' || !tapTarget || tapTarget.disabled || !tapTarget.isConnected) return false
+
+    const deltaX = event.clientX - drag.startX
+    const deltaY = event.clientY - drag.startY
+    if (!isManualTapDistance(deltaX, deltaY)) return false
+
+    if (event.cancelable) event.preventDefault()
+    clearOptionDrag()
+    replayOptionTap(tapTarget)
+
+    return true
   }
 
   const finishOptionDrag = () => {
@@ -495,6 +618,8 @@ const FootballLivePropOddsSlider = ({
 
   const handleOptionPointerUp = (event: PointerEvent<HTMLDivElement>) => {
     event.stopPropagation()
+    if (replayPendingOptionTap(event)) return
+
     if (optionDrag.current?.direction === 'horizontal') {
       finishOptionDrag()
       return
@@ -506,6 +631,10 @@ const FootballLivePropOddsSlider = ({
   const handleOptionPointerCancel = (event: PointerEvent<HTMLDivElement>) => {
     event.stopPropagation()
     clearOptionDrag()
+  }
+
+  const handleOptionLostPointerCapture = () => {
+    if (optionDrag.current?.direction === 'horizontal') finishOptionDrag()
   }
 
   const handleOptionWheel = (event: WheelEvent<HTMLDivElement>) => {
@@ -563,15 +692,15 @@ const FootballLivePropOddsSlider = ({
         onPointerMove={handleOptionPointerMove}
         onPointerUp={handleOptionPointerUp}
         onPointerCancel={handleOptionPointerCancel}
-        onLostPointerCapture={() => finishOptionDrag()}
-        onMouseDown={stopNestedCarouselEvent}
-        onMouseMove={stopNestedCarouselEvent}
-        onMouseUp={stopNestedCarouselEvent}
-        onMouseLeave={stopNestedCarouselEvent}
-        onTouchStart={stopNestedCarouselEvent}
-        onTouchMove={stopNestedCarouselEvent}
-        onTouchEnd={stopNestedCarouselEvent}
-        onTouchCancel={stopNestedCarouselEvent}
+        onLostPointerCapture={handleOptionLostPointerCapture}
+        onMouseDown={handleOptionMouseDown}
+        onMouseMove={handleOptionMouseMove}
+        onMouseUp={handleOptionMouseUp}
+        onMouseLeave={handleOptionMouseLeave}
+        onTouchStart={handleOptionTouchStart}
+        onTouchMove={handleOptionTouchMove}
+        onTouchEnd={handleOptionTouchEnd}
+        onTouchCancel={handleOptionTouchCancel}
       >
         {odds.map((odd, index) => {
           const isActive = index === activeOptionIndex
@@ -1587,14 +1716,10 @@ export function BannerCarousel({
           <div className="banner-live-highlight__props" aria-label="Player props em destaque">
             {playerProps.map((prop) => (
               <div className="banner-live-highlight__prop" key={prop.id}>
-                <span className="banner-live-highlight__prop-avatar-shell" aria-hidden="true">
+                <span className="banner-live-highlight__prop-avatar-shell">
                   <span className={`banner-live-highlight__prop-avatar banner-live-highlight__prop-avatar--${marketBanner.sport === 'basquete' ? 'basketball' : 'football'}`} />
                   <span className="banner-live-highlight__prop-stat-icon" />
-                  <MarketTeamEmblem
-                    team={getFootballLivePropTeam(marketBanner, prop.teamName)}
-                    sport={marketBanner.sport}
-                    className="banner-live-highlight__prop-team-emblem"
-                  />
+                  <span className="banner-live-highlight__prop-team-code">{getBannerTeamCode(prop.teamName)}</span>
                 </span>
 
                 <div className="banner-live-highlight__prop-body">

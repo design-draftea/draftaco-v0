@@ -646,6 +646,9 @@
 }
 
 .prematch-section__player-prop-options {
+  --prematch-player-option-gap: 4px;
+  --prematch-player-option-width: clamp(64px, 18vw, 88px);
+  --prematch-player-option-fade: 18px;
   position: absolute;
   left: var(--prematch-player-card-padding);
   right: var(--prematch-player-card-padding);
@@ -658,15 +661,15 @@
 }
 
 .prematch-section__player-prop-options-scroll {
-  --prematch-player-option-width: 72px;
-  --prematch-player-option-gap: 4px;
-  --prematch-player-option-fade: 18px;
   display: flex;
+  gap: var(--prematch-player-option-gap);
   width: 100%;
   height: 40px;
+  padding-inline: calc((100% - var(--prematch-player-option-width)) / 2);
   box-sizing: border-box;
   overflow-x: auto;
   overflow-y: hidden;
+  scroll-padding-inline: calc((100% - var(--prematch-player-option-width)) / 2);
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
@@ -708,14 +711,13 @@
 
 .prematch-section__player-prop-options-scroll::before,
 .prematch-section__player-prop-options-scroll::after {
-  content: '';
-  flex: 0 0 calc((100% - var(--prematch-player-option-width)) / 2);
-  pointer-events: none;
+  content: none;
 }
 
 .prematch-section__player-prop-option {
   width: var(--prematch-player-option-width);
   flex: 0 0 var(--prematch-player-option-width);
+  min-width: var(--prematch-player-option-width);
   height: 40px;
   padding: 0 8px;
   border: 1px solid transparent;
@@ -739,7 +741,7 @@
 }
 
 .prematch-section__player-prop-option + .prematch-section__player-prop-option {
-  margin-left: var(--prematch-player-option-gap);
+  margin-left: 0;
 }
 
 .prematch-section__player-prop-option:not(.odd-button--selected) {

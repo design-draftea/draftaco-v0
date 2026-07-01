@@ -863,13 +863,9 @@
   left: 10px;
   right: 10px;
   bottom: 10px;
-  width: 144px;
+  width: auto;
   height: 44px;
   overflow: hidden;
-}
-
-.home-competition__players--grid .home-competition__player-odds-frame {
-  width: auto;
 }
 
 .home-competition__players--grid + .home-competition__load-more {
@@ -909,18 +905,19 @@
 }
 
 .home-competition__player-odds {
-  --home-competition-player-odd-width: 58px;
+  --home-competition-player-odd-width: clamp(64px, 18vw, 88px);
   display: flex;
   align-items: center;
   gap: 4px;
   width: 100%;
   min-width: 100%;
   height: 44px;
-  padding: 0 calc((100% - var(--home-competition-player-odd-width)) / 2);
+  padding-inline: calc((100% - var(--home-competition-player-odd-width)) / 2);
   overflow-x: auto;
   overflow-y: hidden;
   box-sizing: border-box;
   scroll-behavior: auto;
+  scroll-padding-inline: calc((100% - var(--home-competition-player-odd-width)) / 2);
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -945,6 +942,7 @@
 .home-competition__player-odds .home-competition__odd {
   flex: 0 0 var(--home-competition-player-odd-width);
   width: var(--home-competition-player-odd-width);
+  min-width: var(--home-competition-player-odd-width);
   height: 44px;
   padding: 4px 8px;
   scroll-snap-align: center;
