@@ -570,7 +570,6 @@ function AppContent() {
       {!isHandoffPage && isAuthPage ? (
         <Suspense fallback={null}>
           <LoginPage
-            key={isSignupPage ? 'signup' : 'login'}
             mode={isSignupPage ? 'signup' : 'login'}
             motionState={loginMotionState ?? 'open'}
             onBack={handleLoginBack}

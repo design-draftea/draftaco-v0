@@ -696,9 +696,13 @@ export function LoginPage({
   const addressAbortRef = useRef<AbortController | null>(null)
   const verificationLoadingTimerRef = useRef<number | null>(null)
   const verificationFadeTimerRef = useRef<number | null>(null)
+  const authModeMotionTimerRef = useRef<number | null>(null)
+  const authModeMotionPhaseRef = useRef<SignupStepMotionPhase>('idle')
   const signupStepMotionTimerRef = useRef<number | null>(null)
   const verificationStreamRef = useRef<MediaStream | null>(null)
   const verificationVideoRef = useRef<HTMLVideoElement | null>(null)
+  const [displayedMode, setDisplayedMode] = useState<AuthMode>(mode)
+  const [authModeMotionPhase, setAuthModeMotionPhase] = useState<SignupStepMotionPhase>('idle')
   const [signupStep, setSignupStep] = useState<SignupStep>('account')
   const [signupStepMotionPhase, setSignupStepMotionPhase] = useState<SignupStepMotionPhase>('idle')
   const [signupLoadingAction, setSignupLoadingAction] = useState<SignupLoadingAction | null>(null)
@@ -766,6 +770,51 @@ export function LoginPage({
     setSignupLoadingAction(null)
   }
 
+  const clearAuthSubmitLoadingTimer = useCallback(() => {
+    if (loginSuccessTimerRef.current === null) return
+
+    window.clearTimeout(loginSuccessTimerRef.current)
+    loginSuccessTimerRef.current = null
+  }, [])
+
+  const clearSignupActionLoadingTimer = useCallback(() => {
+    if (signupActionLoadingTimerRef.current === null) return
+
+    window.clearTimeout(signupActionLoadingTimerRef.current)
+    signupActionLoadingTimerRef.current = null
+  }, [])
+
+  const clearAuthModeMotionTimer = useCallback(() => {
+    if (authModeMotionTimerRef.current === null) return
+
+    window.clearTimeout(authModeMotionTimerRef.current)
+    authModeMotionTimerRef.current = null
+  }, [])
+
+  const updateAuthModeMotionPhase = useCallback((nextPhase: SignupStepMotionPhase) => {
+    authModeMotionPhaseRef.current = nextPhase
+    setAuthModeMotionPhase(nextPhase)
+  }, [])
+
+  const clearSignupStepMotionTimer = useCallback(() => {
+    if (signupStepMotionTimerRef.current === null) return
+
+    window.clearTimeout(signupStepMotionTimerRef.current)
+    signupStepMotionTimerRef.current = null
+  }, [])
+
+  const clearVerificationTimers = useCallback(() => {
+    if (verificationLoadingTimerRef.current !== null) {
+      window.clearTimeout(verificationLoadingTimerRef.current)
+      verificationLoadingTimerRef.current = null
+    }
+
+    if (verificationFadeTimerRef.current !== null) {
+      window.clearTimeout(verificationFadeTimerRef.current)
+      verificationFadeTimerRef.current = null
+    }
+  }, [])
+
   const stopVerificationCamera = useCallback(() => {
     verificationStreamRef.current?.getTracks().forEach((track) => track.stop())
     verificationStreamRef.current = null
@@ -794,10 +843,7 @@ export function LoginPage({
   const goToSignupStep = useCallback((nextStep: SignupStep) => {
     if (nextStep === signupStep) return
 
-    if (signupStepMotionTimerRef.current !== null) {
-      window.clearTimeout(signupStepMotionTimerRef.current)
-      signupStepMotionTimerRef.current = null
-    }
+    clearSignupStepMotionTimer()
 
     setSignupStepMotionPhase('exiting')
 
@@ -810,7 +856,103 @@ export function LoginPage({
         setSignupStepMotionPhase('idle')
       }, signupStepEnterDurationMs)
     }, signupStepExitDurationMs)
-  }, [signupStep])
+  }, [clearSignupStepMotionTimer, signupStep])
+
+  const resetAuthPageState = useCallback(() => {
+    clearAuthSubmitLoadingTimer()
+    clearSignupActionLoadingTimer()
+    clearSignupStepMotionTimer()
+    clearVerificationTimers()
+    addressAbortRef.current?.abort()
+    addressAbortRef.current = null
+    stopVerificationCamera()
+
+    setSignupStep('account')
+    setSignupStepMotionPhase('idle')
+    setSignupLoadingAction(null)
+    setVerificationStage('intro')
+    setPendingVerificationStage(null)
+    setIsVerificationFadingOut(false)
+    setVerificationCameraStatus('idle')
+    setVerificationCameraError(null)
+    setSelectedTimeLimit(gameTimeLimitOptions[4])
+    setSelectedLossLimit(lossLimitOptions[3])
+    setActiveCustomLimitSheet(null)
+    setCustomTimeLimitHoursInput('')
+    setCustomTimeLimitMinutesInput('')
+    setCustomLossLimitInput('')
+    setCustomTimeLimitHours('')
+    setCustomTimeLimitMinutes('')
+    setCustomLossLimit('')
+    setIsCustomLimitSheetOpen(false)
+    setEmail('')
+    setPassword('')
+    setEmailErrorMessage(null)
+    setIsPasswordVisible(false)
+    setSubmittingMethod(null)
+    setCpf('')
+    setPhone('')
+    setIsPhoneValidationOpen(false)
+    setPhoneValidationCode('')
+    setPhoneValidationSeconds(phoneValidationCountdownStart)
+    setAcceptsPromos(true)
+    setCep('')
+    setRegion('')
+    setIsRegionSheetOpen(false)
+    setNeighborhood('')
+    setStreet('')
+    setAddressNumber('')
+    setNoAddressNumber(false)
+    setAddressComplement('')
+    setAddressLookupStatus('idle')
+    setAddressLookupError(null)
+  }, [
+    clearAuthSubmitLoadingTimer,
+    clearSignupActionLoadingTimer,
+    clearSignupStepMotionTimer,
+    clearVerificationTimers,
+    stopVerificationCamera,
+  ])
+
+  useEffect(() => {
+    if (mode === displayedMode) {
+      if (authModeMotionPhaseRef.current === 'exiting') {
+        clearAuthModeMotionTimer()
+
+        authModeMotionTimerRef.current = window.setTimeout(() => {
+          authModeMotionTimerRef.current = null
+          updateAuthModeMotionPhase('idle')
+        }, 0)
+      }
+
+      return
+    }
+
+    clearAuthModeMotionTimer()
+
+    authModeMotionTimerRef.current = window.setTimeout(() => {
+      updateAuthModeMotionPhase('exiting')
+
+      authModeMotionTimerRef.current = window.setTimeout(() => {
+        flushSync(() => {
+          resetAuthPageState()
+          setDisplayedMode(mode)
+          updateAuthModeMotionPhase('entering')
+        })
+
+        authModeMotionTimerRef.current = window.setTimeout(() => {
+          authModeMotionTimerRef.current = null
+          updateAuthModeMotionPhase('idle')
+        }, signupStepEnterDurationMs)
+      }, signupStepExitDurationMs)
+    }, 0)
+  }, [
+    clearAuthModeMotionTimer,
+    displayedMode,
+    mode,
+    resetAuthPageState,
+    updateAuthModeMotionPhase,
+  ])
 
   useEffect(() => () => {
     clearLoginEnterFallbackTimer()
@@ -829,6 +971,10 @@ export function LoginPage({
 
     if (verificationFadeTimerRef.current !== null) {
       window.clearTimeout(verificationFadeTimerRef.current)
+    }
+
+    if (authModeMotionTimerRef.current !== null) {
+      window.clearTimeout(authModeMotionTimerRef.current)
     }
 
     if (signupStepMotionTimerRef.current !== null) {
@@ -1122,18 +1268,6 @@ export function LoginPage({
     })
   }
 
-  const clearVerificationTimers = () => {
-    if (verificationLoadingTimerRef.current !== null) {
-      window.clearTimeout(verificationLoadingTimerRef.current)
-      verificationLoadingTimerRef.current = null
-    }
-
-    if (verificationFadeTimerRef.current !== null) {
-      window.clearTimeout(verificationFadeTimerRef.current)
-      verificationFadeTimerRef.current = null
-    }
-  }
-
   const handleVerificationStart = () => {
     if (isSignupActionLoading) return
 
@@ -1229,7 +1363,7 @@ export function LoginPage({
   const handleBack = () => {
     cancelSignupActionLoading()
 
-    if (mode !== 'signup') {
+    if (displayedMode !== 'signup') {
       onBack?.()
       return
     }
@@ -2065,31 +2199,37 @@ export function LoginPage({
     'login-page__signup-step-motion',
     signupStepMotionPhase !== 'idle' ? `login-page__signup-step-motion--${signupStepMotionPhase}` : '',
   ].filter(Boolean).join(' ')
+  const authModeMotionClassName = [
+    'login-page__auth-mode-motion',
+    authModeMotionPhase !== 'idle' ? `login-page__auth-mode-motion--${authModeMotionPhase}` : '',
+  ].filter(Boolean).join(' ')
 
   return (
     <main
       className={[
         'login-page',
         `login-page--${motionState}`,
-        mode === 'signup' ? 'login-page--signup' : '',
-        signupStep === 'verification' ? 'login-page--verification' : '',
+        displayedMode === 'signup' ? 'login-page--signup' : '',
+        displayedMode === 'signup' && signupStep === 'verification' ? 'login-page--verification' : '',
       ].filter(Boolean).join(' ')}
       data-motion={motionState}
     >
       <div className="login-page__scrim" aria-hidden="true" />
       <div className="login-page__surface" onAnimationEnd={handleSurfaceAnimationEnd}>
-        {mode === 'signup' ? (
-          <>
-            {signupStep !== 'verification' ? <AuthHeader activeStep={signupStep} onBack={handleBack} /> : null}
-            <div key={signupStep} className={signupStepMotionClassName}>
-              {renderSignup()}
-            </div>
-          </>
-        ) : renderLogin()}
+        <div className={authModeMotionClassName}>
+          {displayedMode === 'signup' ? (
+            <>
+              {signupStep !== 'verification' ? <AuthHeader activeStep={signupStep} onBack={handleBack} /> : null}
+              <div key={signupStep} className={signupStepMotionClassName}>
+                {renderSignup()}
+              </div>
+            </>
+          ) : renderLogin()}
+        </div>
       </div>
-      {mode === 'signup' && signupStep === 'personal' ? renderPhoneValidationBottomSheet() : null}
-      {mode === 'signup' && signupStep === 'address' ? renderRegionBottomSheet() : null}
-      {mode === 'signup' && signupStep === 'verification' && verificationStage === 'limits'
+      {displayedMode === 'signup' && signupStep === 'personal' ? renderPhoneValidationBottomSheet() : null}
+      {displayedMode === 'signup' && signupStep === 'address' ? renderRegionBottomSheet() : null}
+      {displayedMode === 'signup' && signupStep === 'verification' && verificationStage === 'limits'
         ? renderLimitsCustomBottomSheet()
         : null}
     </main>
