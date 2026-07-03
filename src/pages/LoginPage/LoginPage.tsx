@@ -9,15 +9,26 @@ import iconError from '../../assets/iconsDraftaco/iconError.svg'
 import iconEye from '../../assets/iconsDraftaco/iconEye.svg'
 import iconEyeHide from '../../assets/iconsDraftaco/iconEyeHide.svg'
 import iconGoogle from '../../assets/iconsDraftaco/iconGoogle.svg'
+import iconClock from '../../assets/iconsDraftaco/iconClock.svg'
 import iconLimiteJogoDiario from '../../assets/iconsDraftaco/iconLimiteJogoDiario.svg'
 import iconLimitePerdaDiario from '../../assets/iconsDraftaco/iconLimitePerdaDiario.svg'
 import iconPass from '../../assets/iconsDraftaco/iconPass.svg'
 import iconSuporte from '../../assets/iconsDraftaco/iconSuporte.svg'
+import glowGarantidaCadastro01 from '../../assets/iconsDraftaco/glowGarantidaCadastro01.png'
+import glowGarantidaCadastro02 from '../../assets/iconsDraftaco/glowGarantidaCadastro02.png'
+import imgLewandowskiPromo from '../../assets/iconsDraftaco/imgLewandowskiPromo.png'
 import imgVerificaIdentidadeBorda from '../../assets/iconsDraftaco/imgVerificaIdentidadeBorda.png'
 import imgVerificaIdentidadeLogo from '../../assets/iconsDraftaco/imgVerificaIdentidadeLogo.png'
 import logoUnico from '../../assets/iconsDraftaco/logoUnico.png'
 import flagBrasil from '../../assets/iconPaises/brasil.png'
 import { BottomSheet } from '../../components/BottomSheet'
+import {
+  PROMO_COUNTDOWN_TICK_MS,
+  formatPromoCountdownSegment,
+  getGarantidaPromoDeadline,
+  getPromoCountdownParts,
+  type PromoCountdownParts,
+} from '../../utils/garantidaPromoCountdown'
 import './LoginPage.css'
 
 type AuthMode = 'login' | 'signup'
@@ -41,6 +52,7 @@ interface LoginPageProps {
   onEnterComplete?: () => void
   onLoginClick?: () => void
   onLoginSuccess?: () => void
+  showSignupGarantidaBanner?: boolean
 }
 
 interface LoginInputProps {
@@ -260,6 +272,10 @@ const getBrazilRegionByUf = (uf?: string) => {
 
   return brazilRegionByUf[uf.toUpperCase()] ?? ''
 }
+
+const getCountdownAriaLabel = ({ hours, minutes }: PromoCountdownParts) => (
+  `Promoção termina em ${hours} ${hours === 1 ? 'hora' : 'horas'} e ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`
+)
 
 const getEmailErrorMessage = (value: string) => {
   const normalizedValue = value.trim()
@@ -733,6 +749,7 @@ export function LoginPage({
   onEnterComplete,
   onLoginClick,
   onLoginSuccess,
+  showSignupGarantidaBanner = false,
 }: LoginPageProps) {
   const loginEnterFallbackTimerRef = useRef<number | null>(null)
   const loginSuccessTimerRef = useRef<number | null>(null)
@@ -790,6 +807,8 @@ export function LoginPage({
   const [addressComplement, setAddressComplement] = useState('')
   const [addressLookupStatus, setAddressLookupStatus] = useState<AddressLookupStatus>('idle')
   const [addressLookupError, setAddressLookupError] = useState<string | null>(null)
+  const [signupGarantidaCountdownDeadline] = useState(() => getGarantidaPromoDeadline())
+  const [signupGarantidaCountdownNow, setSignupGarantidaCountdownNow] = useState(() => Date.now())
   const isEmailValid = useMemo(() => loginEmailPattern.test(email.trim()), [email])
   const isPasswordFilled = password.length > 0
   const isSubmitting = submittingMethod !== null
@@ -810,6 +829,9 @@ export function LoginPage({
     && addressLookupStatus !== 'loading'
   const showCpfError = cpfErrorMessage !== null
   const showPhoneError = phoneErrorMessage !== null
+  const signupGarantidaCountdown = useMemo(() => (
+    getPromoCountdownParts(signupGarantidaCountdownDeadline - signupGarantidaCountdownNow)
+  ), [signupGarantidaCountdownDeadline, signupGarantidaCountdownNow])
 
   const cancelSignupActionLoading = () => {
     if (signupActionLoadingTimerRef.current === null) return
@@ -1205,6 +1227,16 @@ export function LoginPage({
     return () => window.clearInterval(countdownTimer)
   }, [isPhoneValidationOpen])
 
+  useEffect(() => {
+    if (!showSignupGarantidaBanner) return undefined
+
+    const countdownTimer = window.setInterval(() => {
+      setSignupGarantidaCountdownNow(Date.now())
+    }, PROMO_COUNTDOWN_TICK_MS)
+
+    return () => window.clearInterval(countdownTimer)
+  }, [showSignupGarantidaBanner])
+
   const lookupCep = (nextCepDigits: string) => {
     const abortController = new AbortController()
     addressAbortRef.current?.abort()
@@ -1586,11 +1618,61 @@ export function LoginPage({
     </>
   )
 
+  const renderSignupGarantidaBanner = () => {
+    if (!showSignupGarantidaBanner) return null
+
+    return (
+      <aside className="login-page__garantida-banner" aria-label="Promoção Garantida">
+        <img
+          src={glowGarantidaCadastro01}
+          alt=""
+          className="login-page__garantida-banner-glow login-page__garantida-banner-glow--left"
+          aria-hidden="true"
+        />
+        <img
+          src={imgLewandowskiPromo}
+          alt=""
+          className="login-page__garantida-banner-player"
+          aria-hidden="true"
+        />
+        <img
+          src={glowGarantidaCadastro02}
+          alt=""
+          className="login-page__garantida-banner-glow login-page__garantida-banner-glow--right"
+          aria-hidden="true"
+        />
+
+        <div className="login-page__garantida-banner-copy">
+          <p className="login-page__garantida-banner-kicker">A GARANTIDA ESTÁ TE ESPERANDO!</p>
+          <div className="login-page__garantida-banner-row">
+            <div className="login-page__garantida-banner-market">
+              <strong>R. LEWANDOWSKI</strong>
+              <span><b>0.5+</b> Finalizações ao gol</span>
+            </div>
+            <div
+              className="login-page__garantida-banner-timer"
+              aria-label={getCountdownAriaLabel(signupGarantidaCountdown)}
+            >
+              <img src={iconClock} alt="" className="login-page__garantida-banner-timer-icon" aria-hidden="true" />
+              <span className="login-page__garantida-banner-timer-text">
+                <span>{formatPromoCountdownSegment(signupGarantidaCountdown.hours)} h</span>
+                <span className="login-page__garantida-banner-timer-separator">:</span>
+                <span>{formatPromoCountdownSegment(signupGarantidaCountdown.minutes)} m</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    )
+  }
+
   const renderSignupAccount = () => (
     <section
       className="login-page__container login-page__container--signup"
       aria-labelledby="signup-account-title"
     >
+      {renderSignupGarantidaBanner()}
+
       <div className="login-page__title-row">
         <h1 className="login-page__title" id="signup-account-title">Criar conta</h1>
         <button type="button" className="login-page__support" aria-label="Suporte">
@@ -1670,6 +1752,8 @@ export function LoginPage({
       className="login-page__container login-page__container--signup login-page__container--personal"
       aria-labelledby="signup-personal-title"
     >
+      {renderSignupGarantidaBanner()}
+
       <h1 className="login-page__title" id="signup-personal-title">Dados para começar a jogar</h1>
       <p className="login-page__description">
         Precisamos do seu CPF e celular para validar sua identidade, de acordo com a legislação brasileira.
@@ -1812,6 +1896,8 @@ export function LoginPage({
       className="login-page__container login-page__container--signup login-page__container--address"
       aria-labelledby="signup-address-title"
     >
+      {renderSignupGarantidaBanner()}
+
       <h1 className="login-page__title" id="signup-address-title">Onde você mora?</h1>
 
       <form className="login-page__form-section login-page__form-section--signup" onSubmit={handleAddressSubmit} noValidate>

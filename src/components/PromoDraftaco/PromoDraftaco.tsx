@@ -12,6 +12,14 @@ import imgDembelePromo from '../../assets/iconsDraftaco/imgDembelePromo.png'
 import imgLewandowski from '../../assets/iconsDraftaco/imgLewandowskiPromo.png'
 import imgMissaoPromo from '../../assets/iconsDraftaco/imgMissaoPromo.png'
 import imgTorneioPromo from '../../assets/iconsDraftaco/imgTorneioPromo.png'
+import {
+  PROMO_COUNTDOWN_TICK_MS,
+  PROMO_MINUTE_MS,
+  formatPromoCountdownSegment,
+  getGarantidaPromoDeadline,
+  getPromoCountdownParts,
+  type PromoCountdownParts,
+} from '../../utils/garantidaPromoCountdown'
 
 type MarketPromoVariant = 'garantida' | 'aumentada' | 'super-aumentada'
 type MatchHighlightedSide = 'home' | 'away'
@@ -44,13 +52,7 @@ interface SimplePromoItem {
 }
 
 type PromoDraftacoItem = MarketPromoItem | SimplePromoItem
-interface CountdownParts {
-  hours: number
-  minutes: number
-}
 
-const COUNTDOWN_TICK_MS = 1000
-const MINUTE_MS = 60 * 1000
 const GARANTIDA_PROMO_ID = 'garantida-lewandowski'
 
 const promoDraftacoItems: PromoDraftacoItem[] = [
@@ -122,22 +124,11 @@ const getPromoBackgroundStyle = (background: string): CSSProperties => ({
   '--promo-draftaco-bg': `url(${background})`,
 } as CSSProperties)
 
-const getCountdownParts = (remainingMs: number): CountdownParts => {
-  const totalMinutes = Math.max(0, Math.ceil(remainingMs / MINUTE_MS))
-
-  return {
-    hours: Math.floor(totalMinutes / 60),
-    minutes: totalMinutes % 60,
-  }
-}
-
-const formatCountdownSegment = (value: number) => String(value).padStart(2, '0')
-
 const getCountdownDeadline = (
   promo: PromoDraftacoItem,
   deadlines: Record<string, number>,
   now: number
-) => deadlines[promo.id] ?? now + promo.countdownMinutes * MINUTE_MS
+) => deadlines[promo.id] ?? now + promo.countdownMinutes * PROMO_MINUTE_MS
 
 const getMatchTeamClassName = (promo: MarketPromoItem, side: MatchHighlightedSide) => {
   const highlightedSide = promo.matchHighlightedSide ?? 'home'
@@ -146,22 +137,22 @@ const getMatchTeamClassName = (promo: MarketPromoItem, side: MatchHighlightedSid
   return `promo-draftaco__match-team promo-draftaco__match-team--${colorTone}`
 }
 
-const getCountdownLabel = ({ hours, minutes }: CountdownParts) => (
+const getCountdownLabel = ({ hours, minutes }: PromoCountdownParts) => (
   `${hours} ${hours === 1 ? 'hora' : 'horas'} e ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`
 )
 
-const renderCountdown = (countdown: CountdownParts) => (
+const renderCountdown = (countdown: PromoCountdownParts) => (
   <span className="promo-draftaco__countdown" aria-label={getCountdownLabel(countdown)}>
     <img className="promo-draftaco__countdown-icon" src={iconClock} alt="" aria-hidden="true" />
     <span className="promo-draftaco__countdown-text">
-      <span>{formatCountdownSegment(countdown.hours)} h</span>
+      <span>{formatPromoCountdownSegment(countdown.hours)} h</span>
       <span className="promo-draftaco__countdown-separator">:</span>
-      <span>{formatCountdownSegment(countdown.minutes)} m</span>
+      <span>{formatPromoCountdownSegment(countdown.minutes)} m</span>
     </span>
   </span>
 )
 
-const renderMarketPromoContent = (promo: MarketPromoItem, countdown: CountdownParts) => (
+const renderMarketPromoContent = (promo: MarketPromoItem, countdown: PromoCountdownParts) => (
   <>
     <div className="promo-draftaco__image-shell" aria-hidden="true">
       <img className="promo-draftaco__image" src={promo.image} alt="" />
@@ -208,7 +199,7 @@ const renderMarketPromoContent = (promo: MarketPromoItem, countdown: CountdownPa
 
 const renderMarketPromo = (
   promo: MarketPromoItem,
-  countdown: CountdownParts,
+  countdown: PromoCountdownParts,
   onOpenDetails?: () => void
 ) => {
   const cardClassName = [
@@ -240,7 +231,7 @@ const renderMarketPromo = (
   )
 }
 
-const renderSimplePromo = (promo: SimplePromoItem, countdown: CountdownParts) => (
+const renderSimplePromo = (promo: SimplePromoItem, countdown: PromoCountdownParts) => (
   <article
     className="promo-draftaco__card promo-draftaco__card--simple"
     style={getPromoBackgroundStyle(promo.background)}
@@ -263,7 +254,9 @@ export function PromoDraftaco() {
     const createdAt = Date.now()
 
     return promoDraftacoItems.reduce<Record<string, number>>((deadlines, promo) => {
-      deadlines[promo.id] = createdAt + promo.countdownMinutes * MINUTE_MS
+      deadlines[promo.id] = promo.id === GARANTIDA_PROMO_ID
+        ? getGarantidaPromoDeadline()
+        : createdAt + promo.countdownMinutes * PROMO_MINUTE_MS
       return deadlines
     }, {})
   })
@@ -272,7 +265,7 @@ export function PromoDraftaco() {
   useEffect(() => {
     const intervalId = window.setInterval(() => {
       setNow(Date.now())
-    }, COUNTDOWN_TICK_MS)
+    }, PROMO_COUNTDOWN_TICK_MS)
 
     return () => window.clearInterval(intervalId)
   }, [])
@@ -282,7 +275,7 @@ export function PromoDraftaco() {
       <section className="promo-draftaco" aria-label="Promoções">
         <div className="promo-draftaco__track">
           {promoDraftacoItems.map((promo) => {
-            const countdown = getCountdownParts(getCountdownDeadline(promo, countdownDeadlines, now) - now)
+            const countdown = getPromoCountdownParts(getCountdownDeadline(promo, countdownDeadlines, now) - now)
             const shouldOpenGarantidaDetails = promo.id === GARANTIDA_PROMO_ID
 
             return (
@@ -301,7 +294,7 @@ export function PromoDraftaco() {
       </section>
 
       <GarantidaPromoBottomSheet
-        countdown={getCountdownParts(countdownDeadlines[GARANTIDA_PROMO_ID] - now)}
+        countdown={getPromoCountdownParts(countdownDeadlines[GARANTIDA_PROMO_ID] - now)}
         isOpen={isGarantidaBottomSheetOpen}
         onClose={() => setIsGarantidaBottomSheetOpen(false)}
       />

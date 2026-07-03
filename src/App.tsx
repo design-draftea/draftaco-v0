@@ -129,6 +129,16 @@ const buildSignupPath = () => {
   return `${basePath}/${signupRouteSegment}`
 }
 
+const getCurrentPathWithSearch = () => `${window.location.pathname}${window.location.search}`
+
+const getPathnameFromPathWithSearch = (pathWithSearch: string) => pathWithSearch.split('?')[0] || '/'
+
+const hasGarantidaBannerParam = (search: string) => new URLSearchParams(search).get('banner') === 'garantida'
+
+const getGarantidaBannerSearch = (search: string) => (hasGarantidaBannerParam(search) ? '?banner=garantida' : '')
+
+const withSearch = (path: string, search: string) => `${path}${search}`
+
 type AuthVariant = 'logged-in' | 'logged-out'
 type LoginMotionState = 'entering' | 'open' | 'exiting'
 
@@ -138,6 +148,10 @@ const signupInitialBalanceCents = 0
 
 function AppContent() {
   const [pathname, setPathname] = useState(() => window.location.pathname)
+  const [search, setSearch] = useState(() => window.location.search)
+  const [isSignupGarantidaBannerEnabled, setIsSignupGarantidaBannerEnabled] = useState(() => (
+    !isAuthPath(window.location.pathname) && hasGarantidaBannerParam(window.location.search)
+  ))
   const loginReturnPathRef = useRef<string | null>(
     isAuthPath(window.location.pathname) ? buildProductPath(defaultProduct) : null
   )
@@ -167,7 +181,7 @@ function AppContent() {
   const isSignupPage = useMemo(() => isSignupPath(pathname), [pathname])
   const isAuthPage = isLoginPage || isSignupPage
   const renderedPathname = isAuthPage
-    ? loginReturnPathRef.current ?? buildProductPath(defaultProduct)
+    ? getPathnameFromPathWithSearch(loginReturnPathRef.current ?? buildProductPath(defaultProduct))
     : pathname
   const productRoute = useMemo(() => resolveProductFromPath(renderedPathname), [renderedPathname])
   const isPromotionsPage = useMemo(() => isPromotionsPath(renderedPathname), [renderedPathname])
@@ -186,6 +200,19 @@ function AppContent() {
     payload: LiveEventOpenPayload
   } | null>(null)
   const activeProduct = isPromotionsPage ? promotionsProduct : productRoute.product
+  const showSignupGarantidaBanner = isSignupPage && isSignupGarantidaBannerEnabled
+
+  const syncBrowserLocation = useCallback(() => {
+    const nextPathname = window.location.pathname
+    const nextSearch = window.location.search
+
+    setPathname(nextPathname)
+    setSearch(nextSearch)
+
+    if (!isAuthPath(nextPathname)) {
+      setIsSignupGarantidaBannerEnabled(hasGarantidaBannerParam(nextSearch))
+    }
+  }, [])
 
   useEffect(() => {
     if (isCurrentPromotionsPage) return
@@ -193,64 +220,64 @@ function AppContent() {
     if (isAuthPage) return
     if (actualProductRoute.isCanonicalProductRoute) return
 
-    const nextPath = buildProductPath(actualProductRoute.product)
+    const nextPath = withSearch(buildProductPath(actualProductRoute.product), getGarantidaBannerSearch(search))
     window.history.replaceState({}, '', nextPath)
     const timer = window.setTimeout(() => {
-      setPathname(window.location.pathname)
+      syncBrowserLocation()
     }, 0)
 
     return () => window.clearTimeout(timer)
-  }, [actualProductRoute, isCurrentPromotionsPage, isAuthPage, isHandoffPage])
+  }, [actualProductRoute, isCurrentPromotionsPage, isAuthPage, isHandoffPage, search, syncBrowserLocation])
 
   useEffect(() => {
     if (!isCurrentPromotionsPage) return
     if (isCanonicalPromotionsPath(pathname)) return
 
-    const nextPath = buildPromotionsPath()
+    const nextPath = withSearch(buildPromotionsPath(), getGarantidaBannerSearch(search))
     window.history.replaceState({}, '', nextPath)
     const timer = window.setTimeout(() => {
-      setPathname(window.location.pathname)
+      syncBrowserLocation()
     }, 0)
 
     return () => window.clearTimeout(timer)
-  }, [isCurrentPromotionsPage, pathname])
+  }, [isCurrentPromotionsPage, pathname, search, syncBrowserLocation])
 
   useEffect(() => {
     const handlePopState = () => {
-      setPathname(window.location.pathname)
+      syncBrowserLocation()
     }
 
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [])
+  }, [syncBrowserLocation])
 
   const handleProductChange = useCallback((product: ProductMode) => {
     if (isPromotionsPage) {
       setPromotionsProduct(product)
-      const nextPath = buildProductPath(product)
+      const nextPath = withSearch(buildProductPath(product), getGarantidaBannerSearch(search))
 
-      if (window.location.pathname !== nextPath) {
+      if (getCurrentPathWithSearch() !== nextPath) {
         window.history.pushState({}, '', nextPath)
       }
 
-      setPathname(window.location.pathname)
+      syncBrowserLocation()
       return
     }
 
-    const nextPath = buildProductPath(product)
+    const nextPath = withSearch(buildProductPath(product), getGarantidaBannerSearch(search))
 
-    if (window.location.pathname !== nextPath) {
+    if (getCurrentPathWithSearch() !== nextPath) {
       window.history.pushState({}, '', nextPath)
     }
 
-    setPathname(window.location.pathname)
-  }, [isPromotionsPage])
+    syncBrowserLocation()
+  }, [isPromotionsPage, search, syncBrowserLocation])
 
   const handleAuthOpen = useCallback((nextPath: string) => {
     const isCurrentlyAuthPath = isAuthPath(window.location.pathname)
 
     if (!isCurrentlyAuthPath) {
-      loginReturnPathRef.current = window.location.pathname
+      loginReturnPathRef.current = getCurrentPathWithSearch()
       setLoginMotionState('entering')
     } else if (!loginMotionState) {
       loginReturnPathRef.current = loginReturnPathRef.current ?? buildProductPath(defaultProduct)
@@ -261,8 +288,8 @@ function AppContent() {
       window.history.pushState({}, '', nextPath)
     }
 
-    setPathname(window.location.pathname)
-  }, [loginMotionState])
+    syncBrowserLocation()
+  }, [loginMotionState, syncBrowserLocation])
 
   const handleLoginOpen = useCallback(() => {
     handleAuthOpen(buildLoginPath())
@@ -286,13 +313,13 @@ function AppContent() {
       loginReturnPathRef.current = null
       setLoginMotionState(null)
 
-      if (window.location.pathname !== nextPath) {
+      if (getCurrentPathWithSearch() !== nextPath) {
         window.history.pushState({}, '', nextPath)
       }
 
-      setPathname(window.location.pathname)
+      syncBrowserLocation()
     }, loginMotionDurationMs)
-  }, [])
+  }, [syncBrowserLocation])
 
   const handleLoginBack = useCallback(() => {
     if (loginMotionState === 'exiting') return
@@ -364,27 +391,27 @@ function AppContent() {
     if (itemId === promotionsRouteSegment) {
       if (!ENABLE_APP_PROMOTIONS_NAV_LINK) return
 
-      const nextPath = buildPromotionsPath()
+      const nextPath = withSearch(buildPromotionsPath(), getGarantidaBannerSearch(search))
       setPromotionsProduct(activeProduct)
 
-      if (window.location.pathname !== nextPath) {
+      if (getCurrentPathWithSearch() !== nextPath) {
         window.history.pushState({}, '', nextPath)
       }
 
-      setPathname(window.location.pathname)
+      syncBrowserLocation()
       return
     }
 
     if (isPromotionsPage && itemId === 'home') {
-      const nextPath = buildProductPath(activeProduct)
+      const nextPath = withSearch(buildProductPath(activeProduct), getGarantidaBannerSearch(search))
 
-      if (window.location.pathname !== nextPath) {
+      if (getCurrentPathWithSearch() !== nextPath) {
         window.history.pushState({}, '', nextPath)
       }
 
-      setPathname(window.location.pathname)
+      syncBrowserLocation()
     }
-  }, [activeProduct, isPromotionsPage])
+  }, [activeProduct, isPromotionsPage, search, syncBrowserLocation])
 
   const handleBetslipClose = useCallback(() => {
     setIsFullBetslipOpen(false)
@@ -577,6 +604,7 @@ function AppContent() {
           onEnterComplete={handleLoginEnterComplete}
           onLoginClick={handleLoginOpen}
           onLoginSuccess={handleLoginSuccess}
+          showSignupGarantidaBanner={showSignupGarantidaBanner}
         />
       ) : null}
       {!isHandoffPage && !isAuthPage && isFullBetslipOpen ? (
