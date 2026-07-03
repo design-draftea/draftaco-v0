@@ -764,21 +764,29 @@ interface HeaderComponentProps {
   activeProduct?: ProductMode
   activeSport?: string | null
   rail?: ReactNode
+  authVariant?: 'logged-in' | 'logged-out'
+  balanceCents?: number
   disableProductToggle?: boolean
   disableMenuButton?: boolean
   onProductChange?: (product: ProductMode) => void
   onLogoClick?: () => void
   onLogoDoubleClick?: () => void
+  onLoginClick?: () => void
+  onCreateAccountClick?: () => void
   onDepositOpen?: () => void
   children?: ReactNode
 }
 
 interface HomeProps {
   activeProduct?: ProductMode
+  authVariant?: 'logged-in' | 'logged-out'
+  balanceCents?: number
   HeaderComponent?: ComponentType<HeaderComponentProps>
   isLiveEventSuppressed?: boolean
   onProductChange?: (product: ProductMode) => void
   onLogoDoubleClick?: () => void
+  onLoginClick?: () => void
+  onCreateAccountClick?: () => void
   onDepositOpen?: () => void
   onLiveEventOpenChange?: (isOpen: boolean) => void
   onLiveEventOpenSettled?: () => void
@@ -803,9 +811,13 @@ interface LoadedEventContext {
 
 export function Home({
   activeProduct = 'apostas',
+  authVariant = 'logged-out',
+  balanceCents,
   HeaderComponent = HeaderV2,
   onProductChange,
   onLogoDoubleClick,
+  onLoginClick,
+  onCreateAccountClick,
   onDepositOpen,
   onLiveEventOpenChange,
 }: HomeProps = {}) {
@@ -1800,11 +1812,15 @@ export function Home({
       <HeaderComponent
         activeProduct={activeProduct}
         activeSport={displayActiveSport}
+        authVariant={authVariant}
+        balanceCents={balanceCents}
         disableProductToggle={!ENABLE_HOME_PRODUCT_TOGGLE}
         disableMenuButton={!ENABLE_HOME_MENU_BUTTON}
         onDepositOpen={onDepositOpen}
         onLogoClick={isInlineEventMode ? handleReturnToHighlights : undefined}
         onLogoDoubleClick={onLogoDoubleClick}
+        onLoginClick={onLoginClick}
+        onCreateAccountClick={onCreateAccountClick}
         onProductChange={onProductChange}
         rail={headerRail}
       >

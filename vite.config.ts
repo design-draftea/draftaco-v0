@@ -1,11 +1,19 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import basicSsl from '@vitejs/plugin-basic-ssl'
 
 const basePath = '/draftaco-v0'
 
 export default defineConfig(({ command }) => ({
   base: command === 'serve' ? '/' : `${basePath}/`,
   plugins: [
+    ...(process.env.VITE_DEV_HTTPS === '1'
+      ? [
+          basicSsl({
+            name: 'draftaco-dev',
+          }),
+        ]
+      : []),
     react(),
     {
       name: 'redirect-base-path',
@@ -33,6 +41,7 @@ export default defineConfig(({ command }) => ({
     },
   },
   server: {
+    host: '0.0.0.0',
     proxy: {
       '/sportsdb': {
         target: 'https://www.thesportsdb.com',

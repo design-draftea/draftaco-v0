@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { LiveEventOpenPayload } from './pages/LiveEventPage'
 import { MobileOnly } from './components/MobileOnly'
 import { Navbar } from './components/Navbar'
@@ -20,6 +20,7 @@ const PromotionsPage = lazy(() => import('./pages/PromotionsPage').then((m) => (
 const BetslipPageV2 = lazy(() => import('./pages/BetslipPageV2').then((m) => ({ default: m.BetslipPageV2 })))
 const LiveEventPage = lazy(() => import('./pages/LiveEventPage').then((m) => ({ default: m.LiveEventPage })))
 const HandoffPage = lazy(() => import('./pages/Handoff').then((m) => ({ default: m.HandoffPage })))
+const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })))
 
 const RouteFallback = () => (
   <div
@@ -32,6 +33,8 @@ const defaultProduct: ProductMode = 'apostas'
 const productRoutes: ProductMode[] = ['apostas', 'cassino']
 const promotionsRouteSegment = 'promocoes'
 const handoffRouteSegment = 'handoff'
+const loginRouteSegment = 'entrar'
+const signupRouteSegment = 'criar-conta'
 const deployedBasePath = '/draftaco-v0'
 const ENABLE_APP_PROMOTIONS_NAV_LINK = false
 const brasileiraoLeagueIdPattern = /(?:brasil-serie-a|fut-brasileir|fut-brasileirao-a)/
@@ -75,6 +78,20 @@ const isHandoffPath = (pathname: string) => {
   return routeSegments.length === 1 && routeSegments[0] === handoffRouteSegment
 }
 
+const isLoginPath = (pathname: string) => {
+  const routeSegments = getRouteSegments(pathname)
+
+  return routeSegments.length === 1 && routeSegments[0] === loginRouteSegment
+}
+
+const isSignupPath = (pathname: string) => {
+  const routeSegments = getRouteSegments(pathname)
+
+  return routeSegments.length === 1 && routeSegments[0] === signupRouteSegment
+}
+
+const isAuthPath = (pathname: string) => isLoginPath(pathname) || isSignupPath(pathname)
+
 const isCanonicalPromotionsPath = (pathname: string) => {
   const routeSegments = getRouteSegments(pathname)
   return routeSegments.length === 1 && routeSegments[0] === promotionsRouteSegment
@@ -102,8 +119,35 @@ const buildPromotionsPath = () => {
   return `${basePath}/${promotionsRouteSegment}`
 }
 
+const buildLoginPath = () => {
+  const basePath = getBasePath()
+  return `${basePath}/${loginRouteSegment}`
+}
+
+const buildSignupPath = () => {
+  const basePath = getBasePath()
+  return `${basePath}/${signupRouteSegment}`
+}
+
+type AuthVariant = 'logged-in' | 'logged-out'
+type LoginMotionState = 'entering' | 'open' | 'exiting'
+
+const loginMotionDurationMs = 320
+const loggedInInitialBalanceCents = 25000
+const signupInitialBalanceCents = 0
+
 function AppContent() {
   const [pathname, setPathname] = useState(() => window.location.pathname)
+  const loginReturnPathRef = useRef<string | null>(
+    isAuthPath(window.location.pathname) ? buildProductPath(defaultProduct) : null
+  )
+  const loginMotionTimerRef = useRef<number | null>(null)
+  const signupDepositExitPathRef = useRef<string | null>(null)
+  const [authVariant, setAuthVariant] = useState<AuthVariant>('logged-out')
+  const [balanceCents, setBalanceCents] = useState(0)
+  const [loginMotionState, setLoginMotionState] = useState<LoginMotionState | null>(
+    isAuthPath(window.location.pathname) ? 'open' : null
+  )
   const { selections: betslipSelections, summary: betslipSummary } = useBetslip()
   const { brandMode, isFeatureEnabled } = useFeatureFlags()
   const betslipTurboEligibleSelectionCount = useMemo(
@@ -116,9 +160,17 @@ function AppContent() {
       (!!selection.leagueName && brasileiraoLeagueNamePattern.test(selection.leagueName))
     ))
   ), [betslipSelections])
-  const productRoute = useMemo(() => resolveProductFromPath(pathname), [pathname])
-  const isPromotionsPage = useMemo(() => isPromotionsPath(pathname), [pathname])
+  const actualProductRoute = useMemo(() => resolveProductFromPath(pathname), [pathname])
+  const isCurrentPromotionsPage = useMemo(() => isPromotionsPath(pathname), [pathname])
   const isHandoffPage = useMemo(() => isHandoffPath(pathname), [pathname])
+  const isLoginPage = useMemo(() => isLoginPath(pathname), [pathname])
+  const isSignupPage = useMemo(() => isSignupPath(pathname), [pathname])
+  const isAuthPage = isLoginPage || isSignupPage
+  const renderedPathname = isAuthPage
+    ? loginReturnPathRef.current ?? buildProductPath(defaultProduct)
+    : pathname
+  const productRoute = useMemo(() => resolveProductFromPath(renderedPathname), [renderedPathname])
+  const isPromotionsPage = useMemo(() => isPromotionsPath(renderedPathname), [renderedPathname])
   const [promotionsProduct, setPromotionsProduct] = useState<ProductMode>(() => productRoute.product)
   const [isFullBetslipOpen, setIsFullBetslipOpen] = useState(false)
   const [isCompactBetslipSuppressed, setIsCompactBetslipSuppressed] = useState(false)
@@ -136,21 +188,22 @@ function AppContent() {
   const activeProduct = isPromotionsPage ? promotionsProduct : productRoute.product
 
   useEffect(() => {
-    if (isPromotionsPage) return
+    if (isCurrentPromotionsPage) return
     if (isHandoffPage) return
-    if (productRoute.isCanonicalProductRoute) return
+    if (isAuthPage) return
+    if (actualProductRoute.isCanonicalProductRoute) return
 
-    const nextPath = buildProductPath(productRoute.product)
+    const nextPath = buildProductPath(actualProductRoute.product)
     window.history.replaceState({}, '', nextPath)
     const timer = window.setTimeout(() => {
       setPathname(window.location.pathname)
     }, 0)
 
     return () => window.clearTimeout(timer)
-  }, [isHandoffPage, isPromotionsPage, productRoute])
+  }, [actualProductRoute, isCurrentPromotionsPage, isAuthPage, isHandoffPage])
 
   useEffect(() => {
-    if (!isPromotionsPage) return
+    if (!isCurrentPromotionsPage) return
     if (isCanonicalPromotionsPath(pathname)) return
 
     const nextPath = buildPromotionsPath()
@@ -160,7 +213,7 @@ function AppContent() {
     }, 0)
 
     return () => window.clearTimeout(timer)
-  }, [isPromotionsPage, pathname])
+  }, [isCurrentPromotionsPage, pathname])
 
   useEffect(() => {
     const handlePopState = () => {
@@ -192,6 +245,120 @@ function AppContent() {
 
     setPathname(window.location.pathname)
   }, [isPromotionsPage])
+
+  const handleAuthOpen = useCallback((nextPath: string) => {
+    const isCurrentlyAuthPath = isAuthPath(window.location.pathname)
+
+    if (!isCurrentlyAuthPath) {
+      loginReturnPathRef.current = window.location.pathname
+      setLoginMotionState('entering')
+    } else if (!loginMotionState) {
+      loginReturnPathRef.current = loginReturnPathRef.current ?? buildProductPath(defaultProduct)
+      setLoginMotionState('open')
+    }
+
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState({}, '', nextPath)
+    }
+
+    setPathname(window.location.pathname)
+  }, [loginMotionState])
+
+  const handleLoginOpen = useCallback(() => {
+    handleAuthOpen(buildLoginPath())
+  }, [handleAuthOpen])
+
+  const handleCreateAccountClick = useCallback(() => {
+    handleAuthOpen(buildSignupPath())
+  }, [handleAuthOpen])
+
+  const completeLoginExit = useCallback((nextPath: string, onComplete?: () => void) => {
+    if (loginMotionTimerRef.current !== null) {
+      window.clearTimeout(loginMotionTimerRef.current)
+      loginMotionTimerRef.current = null
+    }
+
+    setLoginMotionState('exiting')
+
+    loginMotionTimerRef.current = window.setTimeout(() => {
+      loginMotionTimerRef.current = null
+      onComplete?.()
+      loginReturnPathRef.current = null
+      setLoginMotionState(null)
+
+      if (window.location.pathname !== nextPath) {
+        window.history.pushState({}, '', nextPath)
+      }
+
+      setPathname(window.location.pathname)
+    }, loginMotionDurationMs)
+  }, [])
+
+  const handleLoginBack = useCallback(() => {
+    if (loginMotionState === 'exiting') return
+
+    const fallbackPath = buildProductPath(defaultProduct)
+    const nextPath = loginReturnPathRef.current ?? fallbackPath
+
+    completeLoginExit(nextPath)
+  }, [completeLoginExit, loginMotionState])
+
+  const handleLoginSuccess = useCallback(() => {
+    if (loginMotionState === 'exiting') return
+
+    const fallbackPath = buildProductPath(defaultProduct)
+    const nextPath = loginReturnPathRef.current ?? fallbackPath
+
+    setAuthVariant('logged-in')
+    setBalanceCents(loggedInInitialBalanceCents)
+    completeLoginExit(nextPath)
+  }, [completeLoginExit, loginMotionState])
+
+  const handleSignupDepositOpen = useCallback(() => {
+    if (loginMotionState === 'exiting') return
+
+    const fallbackPath = buildProductPath(defaultProduct)
+    const nextPath = loginReturnPathRef.current ?? fallbackPath
+
+    setAuthVariant('logged-in')
+    setBalanceCents(signupInitialBalanceCents)
+    signupDepositExitPathRef.current = nextPath
+    setIsDepositPanelOpen(true)
+  }, [loginMotionState])
+
+  const handleDepositPanelEnterComplete = useCallback(() => {
+    const nextPath = signupDepositExitPathRef.current
+    if (!nextPath) return
+
+    signupDepositExitPathRef.current = null
+    completeLoginExit(nextPath)
+  }, [completeLoginExit])
+
+  const handleLoginEnterComplete = useCallback(() => {
+    setLoginMotionState((currentState) => (
+      currentState === 'entering' ? 'open' : currentState
+    ))
+  }, [])
+
+  useEffect(() => {
+    if (!isAuthPage) return
+    if (loginReturnPathRef.current) return
+
+    loginReturnPathRef.current = buildProductPath(defaultProduct)
+  }, [isAuthPage])
+
+  useEffect(() => {
+    if (isAuthPage || loginMotionState === 'exiting') return
+    if (!loginMotionState) return
+
+    setLoginMotionState(null)
+  }, [isAuthPage, loginMotionState])
+
+  useEffect(() => () => {
+    if (loginMotionTimerRef.current !== null) {
+      window.clearTimeout(loginMotionTimerRef.current)
+    }
+  }, [])
 
   const handleNavbarItemSelect = useCallback((itemId: string) => {
     if (itemId === promotionsRouteSegment) {
@@ -247,6 +414,10 @@ function AppContent() {
 
   const handleDepositPanelClose = useCallback(() => {
     setIsDepositPanelOpen(false)
+  }, [])
+
+  const handleDepositConfirmed = useCallback((depositAmountCents: number) => {
+    setBalanceCents((currentBalanceCents) => currentBalanceCents + depositAmountCents)
   }, [])
 
   const handleFeatureFlagsPanelClose = useCallback(() => {
@@ -343,6 +514,7 @@ function AppContent() {
   const showCompactBetslip = activeProduct === 'apostas'
     && !isPromotionsPage
     && !isHandoffPage
+    && !isAuthPage
     && betslipSummary.hasSelections
     && !isCompactBetslipSuppressed
   const shouldShowEventBetslip = showCompactBetslip && liveEventUi.isOpen && liveEventUi.isEventBetslipVisible
@@ -370,15 +542,23 @@ function AppContent() {
         ) : isPromotionsPage ? (
           <PromotionsPage
             activeProduct={activeProduct}
+            authVariant={authVariant}
+            balanceCents={balanceCents}
             HeaderComponent={HeaderV2}
+            onLoginClick={handleLoginOpen}
+            onCreateAccountClick={handleCreateAccountClick}
             onDepositOpen={handleDepositPanelOpen}
             onProductChange={handleProductChange}
           />
         ) : (
           <Home
             activeProduct={activeProduct}
+            authVariant={authVariant}
+            balanceCents={balanceCents}
             HeaderComponent={HeaderV2}
             isLiveEventSuppressed={isFullBetslipOpen}
+            onLoginClick={handleLoginOpen}
+            onCreateAccountClick={handleCreateAccountClick}
             onDepositOpen={handleDepositPanelOpen}
             onProductChange={handleProductChange}
             onLiveEventOpenChange={handleLiveEventOpenChange}
@@ -387,7 +567,22 @@ function AppContent() {
           />
         )}
       </Suspense>
-      {!isHandoffPage && isFullBetslipOpen ? (
+      {!isHandoffPage && isAuthPage ? (
+        <Suspense fallback={null}>
+          <LoginPage
+            key={isSignupPage ? 'signup' : 'login'}
+            mode={isSignupPage ? 'signup' : 'login'}
+            motionState={loginMotionState ?? 'open'}
+            onBack={handleLoginBack}
+            onCreateAccountClick={handleCreateAccountClick}
+            onDepositOpen={handleSignupDepositOpen}
+            onEnterComplete={handleLoginEnterComplete}
+            onLoginClick={handleLoginOpen}
+            onLoginSuccess={handleLoginSuccess}
+          />
+        </Suspense>
+      ) : null}
+      {!isHandoffPage && !isAuthPage && isFullBetslipOpen ? (
         <Suspense fallback={null}>
           <BetslipPageV2
             isCoveredByEvent={!!betslipOriginLiveEvent}
@@ -396,7 +591,7 @@ function AppContent() {
           />
         </Suspense>
       ) : null}
-      {!isHandoffPage && betslipOriginLiveEvent ? (
+      {!isHandoffPage && !isAuthPage && betslipOriginLiveEvent ? (
         <Suspense fallback={null}>
           <LiveEventPage
             isOpen={betslipOriginLiveEvent.isOpen}
@@ -413,13 +608,18 @@ function AppContent() {
           />
         </Suspense>
       ) : null}
-      {!isHandoffPage ? (
-        <DepositPanel isOpen={isDepositPanelOpen} onClose={handleDepositPanelClose} />
+      {!isHandoffPage && (!isAuthPage || isDepositPanelOpen) ? (
+        <DepositPanel
+          isOpen={isDepositPanelOpen}
+          onClose={handleDepositPanelClose}
+          onEnterComplete={handleDepositPanelEnterComplete}
+          onDepositConfirmed={handleDepositConfirmed}
+        />
       ) : null}
-      {!isHandoffPage ? (
+      {!isHandoffPage && !isAuthPage ? (
         <FeatureFlagsPanel isOpen={isFeatureFlagsPanelOpen} onClose={handleFeatureFlagsPanelClose} />
       ) : null}
-      {!isHandoffPage ? (
+      {!isHandoffPage && !isAuthPage ? (
         <>
           <Betslip
             visible={showCompactBetslip}
@@ -438,12 +638,14 @@ function AppContent() {
             presentationKey={`live-event-${liveEventUi.betslipMotionKey}`}
             onOpen={handleEventBetslipOpen}
           />
-          <Navbar
-            activeProduct={activeProduct}
-            activeItemId={isPromotionsPage ? promotionsRouteSegment : undefined}
-            onItemSelect={handleNavbarItemSelect}
-          />
         </>
+      ) : null}
+      {!isHandoffPage ? (
+        <Navbar
+          activeProduct={activeProduct}
+          activeItemId={isPromotionsPage ? promotionsRouteSegment : undefined}
+          onItemSelect={handleNavbarItemSelect}
+        />
       ) : null}
     </div>
   )

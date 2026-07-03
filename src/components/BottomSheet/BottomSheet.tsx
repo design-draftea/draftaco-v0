@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useRef, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useState, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { CaretUpIcon } from '@phosphor-icons/react'
 import closeBS from '../../assets/iconsDraftaco/closeBS.svg'
@@ -13,6 +13,7 @@ interface BottomSheetProps {
   children: ReactNode
   footerContent?: ReactNode
   blurBackdrop?: boolean
+  containerClassName?: string
   sheetClassName?: string
   bodyClassName?: string
   hideScrollIndicator?: boolean
@@ -27,6 +28,7 @@ export function BottomSheet({
   children,
   footerContent,
   blurBackdrop = false,
+  containerClassName = '',
   sheetClassName = '',
   bodyClassName = '',
   hideScrollIndicator = false,
@@ -34,8 +36,10 @@ export function BottomSheet({
   const [isClosing, setIsClosing] = useState(false)
   const [shouldRender, setShouldRender] = useState(false)
   const [showScrollIndicator, setShowScrollIndicator] = useState(true)
+  const containerRef = useRef<HTMLDivElement>(null)
   const bodyRef = useRef<HTMLDivElement>(null)
   const closeTimerRef = useRef<number | null>(null)
+  const isMounted = isOpen || shouldRender
 
   // Check scroll position
   const handleScroll = () => {
@@ -92,7 +96,7 @@ export function BottomSheet({
 
   // Prevent body scroll when bottom sheet is open
   useEffect(() => {
-    if (shouldRender) {
+    if (isMounted) {
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = ''
@@ -100,7 +104,36 @@ export function BottomSheet({
     return () => {
       document.body.style.overflow = ''
     }
-  }, [shouldRender, handleClose])
+  }, [isMounted, handleClose])
+
+  useLayoutEffect(() => {
+    if (!isMounted) return undefined
+
+    const updateViewportStyle = () => {
+      if (!containerRef.current) return
+
+      const visualViewport = window.visualViewport
+      const viewportHeight = visualViewport?.height ?? window.innerHeight
+      const viewportTop = visualViewport?.offsetTop ?? 0
+
+      containerRef.current.style.setProperty('--bottom-sheet-viewport-height', `${Math.max(1, viewportHeight)}px`)
+      containerRef.current.style.setProperty('--bottom-sheet-viewport-top', `${Math.max(0, viewportTop)}px`)
+    }
+
+    updateViewportStyle()
+
+    window.addEventListener('resize', updateViewportStyle)
+    window.addEventListener('orientationchange', updateViewportStyle)
+    window.visualViewport?.addEventListener('resize', updateViewportStyle)
+    window.visualViewport?.addEventListener('scroll', updateViewportStyle)
+
+    return () => {
+      window.removeEventListener('resize', updateViewportStyle)
+      window.removeEventListener('orientationchange', updateViewportStyle)
+      window.visualViewport?.removeEventListener('resize', updateViewportStyle)
+      window.visualViewport?.removeEventListener('scroll', updateViewportStyle)
+    }
+  }, [isMounted])
 
   // Close on escape key
   useEffect(() => {
@@ -109,18 +142,21 @@ export function BottomSheet({
         handleClose()
       }
     }
-    if (shouldRender) {
+    if (isMounted) {
       window.addEventListener('keydown', handleEscape)
     }
     return () => {
       window.removeEventListener('keydown', handleEscape)
     }
-  }, [shouldRender, handleClose])
+  }, [isMounted, handleClose])
 
-  if (!shouldRender) return null
+  if (!isMounted) return null
 
   return createPortal(
-    <div className="bottom-sheet__container">
+    <div
+      className={['bottom-sheet__container', containerClassName].filter(Boolean).join(' ')}
+      ref={containerRef}
+    >
       {/* Overlay - separate from bottom sheet for independent animation */}
       <div
         className={`bottom-sheet__overlay ${blurBackdrop ? 'bottom-sheet__overlay--blur' : ''} ${isClosing ? 'bottom-sheet__overlay--closing' : ''}`}

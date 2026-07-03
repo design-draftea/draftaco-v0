@@ -11,6 +11,8 @@ interface HeaderV2Props {
   activeProduct?: ProductMode
   activeSport?: string | null
   rail?: ReactNode
+  authVariant?: 'logged-in' | 'logged-out'
+  balanceCents?: number
   showMenuButton?: boolean
   changeProductOnPointerDown?: boolean
   disableProductToggle?: boolean
@@ -18,28 +20,44 @@ interface HeaderV2Props {
   onProductChange?: (product: ProductMode) => void
   onLogoClick?: () => void
   onLogoDoubleClick?: () => void
+  onLoginClick?: () => void
+  onCreateAccountClick?: () => void
   onDepositOpen?: () => void
   children?: ReactNode
 }
 
-const balanceDisplayValue = 'R$250,00'
+const defaultBalanceCents = 25000
 const headerLogoDoubleTapDelay = 650
 const headerLogoActivationCooldown = 300
 const headerLogoLongPressDelay = 550
+const formatBalanceDisplayValue = (amountCents: number) => {
+  const safeAmountCents = Number.isFinite(amountCents) ? Math.max(0, amountCents) : 0
+
+  return `R$${(safeAmountCents / 100).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
+}
 
 export function HeaderV2({
   activeSport,
   rail,
+  authVariant = 'logged-out',
+  balanceCents = defaultBalanceCents,
   showMenuButton = true,
   disableMenuButton = false,
   onLogoClick,
   onLogoDoubleClick,
+  onLoginClick,
+  onCreateAccountClick,
   onDepositOpen,
   children,
 }: HeaderV2Props = {}) {
   const { brandMode } = useFeatureFlags()
   const isSportPage = !!activeSport && activeSport !== 'destaques'
+  const isLoggedOut = authVariant === 'logged-out'
   const isDrafteaBrand = brandMode === 'draftea'
+  const balanceDisplayValue = formatBalanceDisplayValue(balanceCents)
   const logoAlt = isDrafteaBrand ? 'Draftea' : 'Rei do Pitaco'
   const logoDark = isDrafteaBrand ? logoDraftea : logoReidoPitaco
   const logoLight = isDrafteaBrand ? logoDraftea : logoReidoPitacoLight
@@ -124,6 +142,7 @@ export function HeaderV2({
         'header--liquid-glass',
         'header--liquid-glass-new',
         !showMenuButton ? 'header--balance-only' : '',
+        isLoggedOut ? 'header--logged-out' : 'header--logged-in',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -186,39 +205,66 @@ export function HeaderV2({
         )}
 
         <div className="header__account-actions">
-          <div
-            className="header__balance"
-            aria-label={`Saldo disponível: ${balanceDisplayValue}`}
-          >
-            <span className="header__balance-content">
-              <span className="header__balance-value">{balanceDisplayValue}</span>
-              <span className="header__balance-label">SALDO</span>
-            </span>
-            <span className="header__deposit-icon-shell" aria-hidden="true">
-              <span className="header__deposit-icon" />
-            </span>
-          </div>
-          {showMenuButton && (
-            <button
-              type="button"
-              className="header__menu-btn"
-              aria-label="Abrir menu"
-              aria-expanded={isNavigationMenuOpen}
-              aria-disabled={disableMenuButton}
-              disabled={disableMenuButton}
-              onClick={disableMenuButton ? undefined : () => setIsNavigationMenuOpen(true)}
-            >
-              <span aria-hidden="true" className="header__menu-icon" />
-            </button>
+          {isLoggedOut ? (
+            <>
+              <button
+                type="button"
+                className="header__auth-btn header__auth-btn--primary"
+                onClick={onCreateAccountClick}
+              >
+                Criar conta
+              </button>
+              <button
+                type="button"
+                className="header__auth-btn header__auth-btn--secondary"
+                onClick={onLoginClick}
+              >
+                Entrar
+              </button>
+            </>
+          ) : (
+            <>
+              <div
+                className="header__balance"
+                aria-label={`Saldo disponível: ${balanceDisplayValue}`}
+              >
+                <span className="header__balance-content">
+                  <span className="header__balance-value">{balanceDisplayValue}</span>
+                  <span className="header__balance-label">SALDO</span>
+                </span>
+                <button
+                  type="button"
+                  className="header__deposit-icon-shell"
+                  aria-label="Depositar"
+                  onClick={onDepositOpen}
+                >
+                  <span className="header__deposit-icon" />
+                </button>
+              </div>
+              {showMenuButton && (
+                <button
+                  type="button"
+                  className="header__menu-btn"
+                  aria-label="Abrir menu"
+                  aria-expanded={isNavigationMenuOpen}
+                  aria-disabled={disableMenuButton}
+                  disabled={disableMenuButton}
+                  onClick={disableMenuButton ? undefined : () => setIsNavigationMenuOpen(true)}
+                >
+                  <span aria-hidden="true" className="header__menu-icon" />
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
 
       {rail}
       {children}
-      {showMenuButton && (
+      {!isLoggedOut && showMenuButton && (
         <NavigationMenuBottomSheet
           isOpen={isNavigationMenuOpen}
+          balanceCents={balanceCents}
           onDepositOpen={onDepositOpen}
           onClose={() => setIsNavigationMenuOpen(false)}
         />

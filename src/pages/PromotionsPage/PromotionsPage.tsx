@@ -10,20 +10,28 @@ type PromotionsFilterId = 'todos' | ProductMode
 
 interface HeaderComponentProps {
   activeProduct?: ProductMode
+  authVariant?: 'logged-in' | 'logged-out'
+  balanceCents?: number
   changeProductOnPointerDown?: boolean
   disableProductToggle?: boolean
   disableMenuButton?: boolean
   onProductChange?: (product: ProductMode) => void
   onLogoDoubleClick?: () => void
+  onLoginClick?: () => void
+  onCreateAccountClick?: () => void
   onDepositOpen?: () => void
   children?: ReactNode
 }
 
 interface PromotionsPageProps {
   activeProduct?: ProductMode
+  authVariant?: 'logged-in' | 'logged-out'
+  balanceCents?: number
   HeaderComponent?: ComponentType<HeaderComponentProps>
   onProductChange?: (product: ProductMode) => void
   onLogoDoubleClick?: () => void
+  onLoginClick?: () => void
+  onCreateAccountClick?: () => void
   onDepositOpen?: () => void
 }
 
@@ -57,9 +65,13 @@ const getTranslateXFromTransform = (transform: string) => {
 
 export function PromotionsPage({
   activeProduct = 'apostas',
+  authVariant = 'logged-out',
+  balanceCents,
   HeaderComponent = HeaderV2,
   onProductChange,
   onLogoDoubleClick,
+  onLoginClick,
+  onCreateAccountClick,
   onDepositOpen,
 }: PromotionsPageProps = {}) {
   const pageRef = useRef<HTMLDivElement>(null)
@@ -235,11 +247,15 @@ export function PromotionsPage({
     >
       <HeaderComponent
         activeProduct={activeProduct}
+        authVariant={authVariant}
+        balanceCents={balanceCents}
         changeProductOnPointerDown={false}
         disableProductToggle={true}
         disableMenuButton={true}
         onDepositOpen={onDepositOpen}
         onLogoDoubleClick={onLogoDoubleClick}
+        onLoginClick={onLoginClick}
+        onCreateAccountClick={onCreateAccountClick}
         onProductChange={onProductChange}
       >
         <nav className="promotions-page__tabs" aria-label="Seções de promoções">

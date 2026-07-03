@@ -1,35 +1,47 @@
-import { useCallback, useEffect, useRef, useState, type MouseEvent, type PointerEvent } from 'react'
-import { createPortal } from 'react-dom'
-import {
-  CaretDownIcon,
-  CaretLeftIcon,
-  CaretRightIcon,
-  CaretUpIcon,
-  PixLogoIcon,
-  WarningCircleIcon,
-} from '@phosphor-icons/react'
-import { StakeKeyboard, type StakeKeyboardKey } from '../StakeKeyboard'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal, flushSync } from 'react-dom'
+import { PixLogoIcon } from '@phosphor-icons/react'
+import backHeaderIcon from '../../assets/iconsDraftaco/backHeader.svg'
+import closePixIcon from '../../assets/iconsDraftaco/closeBS.svg'
+import iconClock from '../../assets/iconsDraftaco/iconClock.svg'
+import iconIdeia from '../../assets/iconsDraftaco/iconIdeia.svg'
+import iconInfo from '../../assets/iconsDraftaco/iconInfo.svg'
+import iconPix from '../../assets/iconsDraftaco/iconPix.svg'
+import qrCodeImage from '../../assets/iconsDraftaco/qrCode.png'
 import './DepositPanel.css'
 
 interface DepositPanelProps {
   isOpen: boolean
   onClose: () => void
+  onEnterComplete?: () => void
+  onDepositConfirmed?: (amountCents: number) => void
 }
 
 type PanelMotionState = 'entering' | 'open' | 'closing'
 type DepositView = 'form' | 'pix'
+type DepositOptionId = '50' | '100' | '250' | '1000' | 'custom'
+
+interface QuickDepositOption {
+  id: DepositOptionId
+  label: string
+  amountCents: number | null
+  recommended?: boolean
+}
 
 const contentTransitionDurationMs = 180
+const panelMotionDurationMs = 320
 const pixGenerationDelayMs = 3000
-const pixCountdownInitialSeconds = 60 * 60 + 60
+const pixCountdownInitialSeconds = 30 * 60 - 1
 const maxDepositCents = 99999999
 const animatedDepositAmountDurationMs = 520
+const defaultDepositAmountCents = 10000
 const pixCode = '00020101021226850014br.gov.bcb.pix0123deposito-teste-sem-link'
-const quickDepositOptions = [
-  { label: 'R$25', amountCents: 2500 },
-  { label: 'R$50', amountCents: 5000 },
-  { label: 'R$150', amountCents: 15000 },
-  { label: 'R$250', amountCents: 25000 },
+const quickDepositOptions: QuickDepositOption[] = [
+  { id: '50', label: 'R$ 50', amountCents: 5000 },
+  { id: '100', label: 'R$ 100', amountCents: 10000, recommended: true },
+  { id: '250', label: 'R$ 250', amountCents: 25000 },
+  { id: '1000', label: 'R$ 1.000', amountCents: 100000 },
+  { id: 'custom', label: 'Outro', amountCents: null },
 ]
 
 const formatDepositAmount = (amountCents: number) => (
@@ -39,104 +51,39 @@ const formatDepositAmount = (amountCents: number) => (
   })
 )
 
+const formatDepositDisplayAmount = (amountCents: number) => (
+  Math.floor(amountCents / 100).toLocaleString('pt-BR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })
+)
+
+const getDepositInputDigits = (value: string) => value.replace(/\D/g, '')
+
+const parseManualDepositAmountCents = (value: string) => {
+  const digits = getDepositInputDigits(value)
+  if (!digits) return 0
+
+  const amountCents = Math.min(Number(digits), maxDepositCents)
+  return Number.isFinite(amountCents) ? amountCents : 0
+}
+
+const formatManualDepositAmountInput = (value: string) => {
+  const amountCents = parseManualDepositAmountCents(value)
+  return amountCents > 0 ? formatDepositAmount(amountCents) : ''
+}
+
+const getPresetOptionIdForAmount = (amountCents: number): DepositOptionId | null => (
+  quickDepositOptions.find((option) => option.amountCents === amountCents)?.id ?? null
+)
+
 const easeOutCubic = (progress: number) => 1 - (1 - progress) ** 3
-
-const formatPixCountdown = (remainingSeconds: number) => {
-  if (remainingSeconds > 60 * 60) {
-    return `60min ${remainingSeconds - 60 * 60}s restantes`
-  }
-
-  const minutes = Math.floor(remainingSeconds / 60)
-  const seconds = remainingSeconds % 60
-
-  return `${minutes}min ${seconds}s restantes`
-}
-
-const pixPaymentSteps = [
-  'Copie o código Pix',
-  'Abra o app do seu banco ou instituição financeira e acesse a área do Pix',
-  'Escolha a opção "Pix Copia e Cola"',
-  'Cole o código e confirme o pagamento',
-]
-
-function TestQrCode() {
-  const moduleSize = 4
-  const quietZone = 10
-  const moduleCount = 25
-  const modules = []
-
-  const isFinderModule = (x: number, y: number, originX: number, originY: number) => {
-    const localX = x - originX
-    const localY = y - originY
-    if (localX < 0 || localY < 0 || localX > 6 || localY > 6) return false
-
-    return (
-      localX === 0
-      || localY === 0
-      || localX === 6
-      || localY === 6
-      || (localX >= 2 && localX <= 4 && localY >= 2 && localY <= 4)
-    )
-  }
-
-  const isFinderClearance = (x: number, y: number, originX: number, originY: number) => (
-    x >= originX && x <= originX + 6 && y >= originY && y <= originY + 6
-  )
-
-  for (let y = 0; y < moduleCount; y += 1) {
-    for (let x = 0; x < moduleCount; x += 1) {
-      const isFinder = (
-        isFinderModule(x, y, 0, 0)
-        || isFinderModule(x, y, 18, 0)
-        || isFinderModule(x, y, 0, 18)
-      )
-      const isReserved = (
-        isFinderClearance(x, y, 0, 0)
-        || isFinderClearance(x, y, 18, 0)
-        || isFinderClearance(x, y, 0, 18)
-      )
-      const isData = !isReserved && (
-        ((x * 7 + y * 11 + x * y) % 5 === 0)
-        || ((x + y * 3) % 7 === 0)
-        || (x % 4 === 0 && y % 3 === 1)
-      )
-
-      if (!isFinder && !isData) continue
-
-      modules.push(
-        <rect
-          key={`${x}-${y}`}
-          x={quietZone + x * moduleSize}
-          y={quietZone + y * moduleSize}
-          width={moduleSize}
-          height={moduleSize}
-        />
-      )
-    }
-  }
-
-  return (
-    <svg
-      className="deposit-panel__qr"
-      width="120"
-      height="120"
-      viewBox="0 0 120 120"
-      role="img"
-      aria-label="QR Code Pix de teste"
-    >
-      <rect width="120" height="120" fill="var(--ds-fill-primary, #FBFBFB)" />
-      <g fill="var(--ds-fill-dark, #000000)">{modules}</g>
-    </svg>
-  )
-}
 
 function AnimatedDepositAmount({
   animationKey,
-  isFilled,
   targetValue,
 }: {
   animationKey: number
-  isFilled: boolean
   targetValue: number
 }) {
   const valueRef = useRef<HTMLSpanElement>(null)
@@ -155,7 +102,7 @@ function AnimatedDepositAmount({
       displayedValue.current = value
 
       if (valueRef.current) {
-        valueRef.current.textContent = formatDepositAmount(value)
+        valueRef.current.textContent = formatDepositDisplayAmount(Math.round(value))
       }
     }
 
@@ -189,32 +136,34 @@ function AnimatedDepositAmount({
   }, [animationKey, targetValue])
 
   return (
-    <span
-      ref={valueRef}
-      className={`deposit-panel__amount${isFilled ? ' deposit-panel__amount--filled' : ''}`}
-    >
-      {formatDepositAmount(initialValue)}
+    <span ref={valueRef} className="deposit-panel__amount deposit-panel__amount--filled">
+      {formatDepositDisplayAmount(initialValue)}
     </span>
   )
 }
 
-export function DepositPanel({ isOpen, onClose }: DepositPanelProps) {
+export function DepositPanel({ isOpen, onClose, onEnterComplete, onDepositConfirmed }: DepositPanelProps) {
   const [shouldRender, setShouldRender] = useState(false)
   const [motionState, setMotionState] = useState<PanelMotionState>('entering')
   const [view, setView] = useState<DepositView>('form')
-  const [amountCents, setAmountCents] = useState(0)
+  const [amountCents, setAmountCents] = useState(defaultDepositAmountCents)
   const [amountAnimationKey, setAmountAnimationKey] = useState(0)
-  const [isCalculatorVisible, setIsCalculatorVisible] = useState(false)
+  const [selectedDepositOptionId, setSelectedDepositOptionId] = useState<DepositOptionId>('100')
   const [isGeneratingPix, setIsGeneratingPix] = useState(false)
   const [isContentTransitioning, setIsContentTransitioning] = useState(false)
-  const [isPixSummaryExpanded, setIsPixSummaryExpanded] = useState(false)
   const [pixCountdownSeconds, setPixCountdownSeconds] = useState(pixCountdownInitialSeconds)
   const closeTimerRef = useRef<number | null>(null)
   const generateTimerRef = useRef<number | null>(null)
   const openTimerRef = useRef<number | null>(null)
   const openFrameRef = useRef<number | null>(null)
+  const onEnterCompleteRef = useRef(onEnterComplete)
+  const onDepositConfirmedRef = useRef(onDepositConfirmed)
   const shouldRenderRef = useRef(false)
   const swapTimerRef = useRef<number | null>(null)
+  const panelRef = useRef<HTMLElement | null>(null)
+  const manualAmountInputRef = useRef<HTMLInputElement | null>(null)
+  const [isAmountEditingInline, setIsAmountEditingInline] = useState(false)
+  const [manualAmountInput, setManualAmountInput] = useState(formatDepositAmount(defaultDepositAmountCents))
 
   const clearCloseTimer = useCallback(() => {
     if (closeTimerRef.current === null) return
@@ -256,82 +205,49 @@ export function DepositPanel({ isOpen, onClose }: DepositPanelProps) {
     onClose()
   }, [motionState, onClose])
 
-  const applyNumberKey = (key: string) => {
-    setAmountCents((currentAmountCents) => {
-      const nextDigits = `${currentAmountCents}${key}`.replace(/^0+(?=\d)/, '')
-      const nextAmountCents = Math.min(Number(nextDigits), maxDepositCents)
+  const focusManualAmountInput = useCallback(() => {
+    const input = manualAmountInputRef.current
+    if (!input) return
 
-      return Number.isFinite(nextAmountCents) ? nextAmountCents : currentAmountCents
+    input.focus({ preventScroll: true })
+    input.select()
+  }, [])
+
+  const startInlineAmountEditing = useCallback((selectedOptionId?: DepositOptionId) => {
+    flushSync(() => {
+      setManualAmountInput(amountCents > 0 ? formatDepositAmount(amountCents) : '')
+      if (selectedOptionId) setSelectedDepositOptionId(selectedOptionId)
+      setIsAmountEditingInline(true)
     })
-  }
 
-  const removeNumberKey = () => {
-    setAmountCents((currentAmountCents) => Math.floor(currentAmountCents / 10))
-  }
+    focusManualAmountInput()
+  }, [amountCents, focusManualAmountInput])
 
-  const openCalculator = () => {
-    setIsCalculatorVisible(true)
-  }
+  const handleQuickOption = (option: QuickDepositOption) => {
+    if (option.amountCents === null) {
+      startInlineAmountEditing('custom')
+      return
+    }
 
-  const handleAmountPointerDown = (event: PointerEvent<HTMLButtonElement>) => {
-    event.preventDefault()
-    openCalculator()
-  }
-
-  const handleAmountClick = (event: MouseEvent<HTMLButtonElement>) => {
-    if (event.detail === 0) openCalculator()
-  }
-
-  const handleQuickOption = (amountCents: number) => {
-    setAmountCents(amountCents)
+    setIsAmountEditingInline(false)
+    setAmountCents(option.amountCents)
     setAmountAnimationKey((currentAnimationKey) => currentAnimationKey + 1)
-    openCalculator()
+    setManualAmountInput(formatDepositAmount(option.amountCents))
+    setSelectedDepositOptionId(option.id)
   }
 
-  const handleQuickOptionPointerDown = (
-    event: PointerEvent<HTMLButtonElement>,
-    amountCents: number
-  ) => {
-    event.preventDefault()
-    handleQuickOption(amountCents)
+  const handleManualAmountChange = (value: string) => {
+    const nextInput = formatManualDepositAmountInput(value)
+    const nextAmountCents = parseManualDepositAmountCents(nextInput)
+    const matchingPreset = getPresetOptionIdForAmount(nextAmountCents)
+
+    setManualAmountInput(nextInput)
+    setAmountCents(nextAmountCents)
+    setSelectedDepositOptionId(matchingPreset ?? 'custom')
   }
 
-  const handleQuickOptionClick = (
-    event: MouseEvent<HTMLButtonElement>,
-    amountCents: number
-  ) => {
-    if (event.detail === 0) handleQuickOption(amountCents)
-  }
-
-  const handleKeypadKey = (key: StakeKeyboardKey) => {
-    if (key === 'ok') {
-      setIsCalculatorVisible(false)
-      return
-    }
-
-    openCalculator()
-
-    if (key === 'backspace') {
-      removeNumberKey()
-      return
-    }
-
-    applyNumberKey(key)
-  }
-
-  const handleKeyPointerDown = (
-    event: PointerEvent<HTMLButtonElement>,
-    key: StakeKeyboardKey
-  ) => {
-    event.preventDefault()
-    handleKeypadKey(key)
-  }
-
-  const handleKeyClick = (
-    event: MouseEvent<HTMLButtonElement>,
-    key: StakeKeyboardKey
-  ) => {
-    if (event.detail === 0) handleKeypadKey(key)
+  const handleAmountDisplayClick = () => {
+    startInlineAmountEditing()
   }
 
   const handleCopyPixCode = () => {
@@ -341,9 +257,10 @@ export function DepositPanel({ isOpen, onClose }: DepositPanelProps) {
   const handleGeneratePix = () => {
     if (!amountCents || isGeneratingPix) return
 
+    const confirmedDepositAmountCents = amountCents
+
     clearGenerateTimer()
     clearSwapTimer()
-    setIsCalculatorVisible(false)
     setIsGeneratingPix(true)
 
     generateTimerRef.current = window.setTimeout(() => {
@@ -354,8 +271,8 @@ export function DepositPanel({ isOpen, onClose }: DepositPanelProps) {
         swapTimerRef.current = null
         setView('pix')
         setIsGeneratingPix(false)
-        setIsPixSummaryExpanded(false)
         setPixCountdownSeconds(pixCountdownInitialSeconds)
+        onDepositConfirmedRef.current?.(confirmedDepositAmountCents)
 
         window.requestAnimationFrame(() => {
           setIsContentTransitioning(false)
@@ -369,6 +286,14 @@ export function DepositPanel({ isOpen, onClose }: DepositPanelProps) {
   }, [shouldRender])
 
   useEffect(() => {
+    onEnterCompleteRef.current = onEnterComplete
+  }, [onEnterComplete])
+
+  useEffect(() => {
+    onDepositConfirmedRef.current = onDepositConfirmed
+  }, [onDepositConfirmed])
+
+  useEffect(() => {
     clearCloseTimer()
     clearGenerateTimer()
     clearOpenFrame()
@@ -380,12 +305,12 @@ export function DepositPanel({ isOpen, onClose }: DepositPanelProps) {
         openTimerRef.current = null
         setShouldRender(true)
         setMotionState('entering')
-        openFrameRef.current = window.requestAnimationFrame(() => {
-          openFrameRef.current = window.requestAnimationFrame(() => {
-            openFrameRef.current = null
-            setMotionState('open')
-          })
-        })
+
+        openTimerRef.current = window.setTimeout(() => {
+          openTimerRef.current = null
+          setMotionState('open')
+          onEnterCompleteRef.current?.()
+        }, panelMotionDurationMs)
       }, 0)
       return () => {
         clearCloseTimer()
@@ -405,14 +330,16 @@ export function DepositPanel({ isOpen, onClose }: DepositPanelProps) {
         setShouldRender(false)
         setMotionState('entering')
         setView('form')
-        setAmountCents(0)
-        setIsCalculatorVisible(false)
+        setAmountCents(defaultDepositAmountCents)
+        setAmountAnimationKey(0)
+        setIsAmountEditingInline(false)
+        setManualAmountInput(formatDepositAmount(defaultDepositAmountCents))
+        setSelectedDepositOptionId('100')
         setIsGeneratingPix(false)
         setIsContentTransitioning(false)
-        setIsPixSummaryExpanded(false)
         setPixCountdownSeconds(pixCountdownInitialSeconds)
         closeTimerRef.current = null
-      }, 320)
+      }, panelMotionDurationMs)
     }, 0)
 
     return () => {
@@ -449,29 +376,45 @@ export function DepositPanel({ isOpen, onClose }: DepositPanelProps) {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         requestClose()
-        return
-      }
-
-      if (!isCalculatorVisible) return
-
-      if (/^[0-9]$/.test(event.key)) {
-        applyNumberKey(event.key)
-        return
-      }
-
-      if (event.key === 'Backspace') {
-        removeNumberKey()
-        return
-      }
-
-      if (event.key === 'Enter') {
-        setIsCalculatorVisible(false)
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isCalculatorVisible, requestClose, shouldRender])
+  }, [requestClose, shouldRender])
+
+  useLayoutEffect(() => {
+    if (!shouldRender) return undefined
+
+    const panel = panelRef.current
+    if (!panel) return undefined
+
+    const updateKeyboardOffset = () => {
+      const visualViewport = window.visualViewport
+      const panelBottom = panel.getBoundingClientRect().bottom
+      const viewportBottom = visualViewport
+        ? visualViewport.offsetTop + visualViewport.height
+        : window.innerHeight
+      const keyboardOffset = Math.max(0, panelBottom - viewportBottom)
+
+      panel.style.setProperty('--deposit-keyboard-offset', `${keyboardOffset}px`)
+    }
+
+    updateKeyboardOffset()
+
+    window.addEventListener('resize', updateKeyboardOffset)
+    window.addEventListener('orientationchange', updateKeyboardOffset)
+    window.visualViewport?.addEventListener('resize', updateKeyboardOffset)
+    window.visualViewport?.addEventListener('scroll', updateKeyboardOffset)
+
+    return () => {
+      panel.style.removeProperty('--deposit-keyboard-offset')
+      window.removeEventListener('resize', updateKeyboardOffset)
+      window.removeEventListener('orientationchange', updateKeyboardOffset)
+      window.visualViewport?.removeEventListener('resize', updateKeyboardOffset)
+      window.visualViewport?.removeEventListener('scroll', updateKeyboardOffset)
+    }
+  }, [shouldRender])
 
   useEffect(() => {
     if (!shouldRender || view !== 'pix') return undefined
@@ -487,6 +430,9 @@ export function DepositPanel({ isOpen, onClose }: DepositPanelProps) {
 
   const amount = formatDepositAmount(amountCents)
   const hasAmount = amountCents > 0
+  const pixCountdownMinutes = Math.floor(pixCountdownSeconds / 60)
+  const pixCountdownSecondsRemainder = pixCountdownSeconds % 60
+  const pixCountdownSecondsLabel = pixCountdownSecondsRemainder.toString().padStart(2, '0')
 
   return createPortal(
     <div className="deposit-panel__container">
@@ -495,10 +441,10 @@ export function DepositPanel({ isOpen, onClose }: DepositPanelProps) {
         onClick={requestClose}
       />
       <aside
+        ref={panelRef}
         className={[
           'deposit-panel',
           `deposit-panel--${motionState}`,
-          isCalculatorVisible ? 'deposit-panel--calculator-visible' : '',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -507,14 +453,32 @@ export function DepositPanel({ isOpen, onClose }: DepositPanelProps) {
         aria-label="Depositar"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="deposit-panel__header header--gradient-v3">
-          <div className="header__bg-light" aria-hidden="true" />
-          <div className="header__bg-dark" aria-hidden="true" />
-          <div className="header__bg-gradient" aria-hidden="true" />
-          <button type="button" className="deposit-panel__back" aria-label="Voltar" onClick={requestClose}>
-            <CaretLeftIcon aria-hidden="true" weight="bold" />
-          </button>
-          <h2 className="deposit-panel__title">Depositar</h2>
+        <header
+          className={[
+            'deposit-panel__header',
+            view === 'pix' ? 'deposit-panel__header--pix' : '',
+          ].filter(Boolean).join(' ')}
+        >
+          {view === 'pix' ? (
+            <button
+              type="button"
+              className="deposit-panel__close"
+              aria-label="Fechar depósito"
+              onClick={requestClose}
+            >
+              <img src={closePixIcon} alt="" aria-hidden="true" />
+            </button>
+          ) : (
+            <>
+              <button type="button" className="deposit-panel__back" aria-label="Voltar" onClick={requestClose}>
+                <img src={backHeaderIcon} alt="" aria-hidden="true" />
+              </button>
+              <h2 className="deposit-panel__title">Deposite para jogar</h2>
+              <button type="button" className="deposit-panel__info" aria-label="Informações sobre depósito">
+                <img src={iconInfo} alt="" aria-hidden="true" />
+              </button>
+            </>
+          )}
         </header>
 
         <div className="deposit-panel__content">
@@ -523,171 +487,172 @@ export function DepositPanel({ isOpen, onClose }: DepositPanelProps) {
               'deposit-panel__view',
               view === 'pix' ? 'deposit-panel__view--pix' : 'deposit-panel__view--form',
               isContentTransitioning ? 'deposit-panel__view--transitioning' : '',
-              isPixSummaryExpanded ? 'deposit-panel__view--summary-expanded' : '',
             ].filter(Boolean).join(' ')}
           >
             {view === 'form' ? (
               <>
-                <section className="deposit-panel__amount-section" aria-label="Valor do depósito">
-                  <button
-                    type="button"
-                    className="deposit-panel__amount-display"
-                    aria-label={`Editar valor do depósito: R$ ${amount}`}
-                    onPointerDown={handleAmountPointerDown}
-                    onClick={handleAmountClick}
-                  >
-                    <span className="deposit-panel__currency">R$</span>
-                    <AnimatedDepositAmount
-                      animationKey={amountAnimationKey}
-                      isFilled={hasAmount}
-                      targetValue={amountCents}
-                    />
-                  </button>
-
-                  <div className="deposit-panel__quick-options" aria-label="Valores rápidos">
-                    {quickDepositOptions.map((option) => (
+                <main className="deposit-panel__form-main">
+                  <section className="deposit-panel__amount-section" aria-label="Valor do depósito">
+                    {isAmountEditingInline ? (
+                      <label className="deposit-panel__amount-display deposit-panel__amount-display--editing">
+                        <span className="deposit-panel__currency">R$</span>
+                        <input
+                          ref={manualAmountInputRef}
+                          className="deposit-panel__amount-input"
+                          type="tel"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={manualAmountInput}
+                          size={Math.max(1, manualAmountInput.length)}
+                          style={{ width: `${Math.max(1, manualAmountInput.length)}ch` }}
+                          aria-label="Valor do depósito"
+                          onChange={(event) => handleManualAmountChange(event.target.value)}
+                          onBlur={() => {
+                            setIsAmountEditingInline(false)
+                            setManualAmountInput(amountCents > 0 ? formatDepositAmount(amountCents) : '')
+                          }}
+                        />
+                      </label>
+                    ) : (
                       <button
                         type="button"
-                        className="deposit-panel__quick-option"
-                        key={option.amountCents}
-                        onPointerDown={(event) => handleQuickOptionPointerDown(event, option.amountCents)}
-                        onClick={(event) => handleQuickOptionClick(event, option.amountCents)}
+                        className="deposit-panel__amount-display"
+                        aria-label={`Editar valor do depósito: R$ ${amount}`}
+                        onClick={handleAmountDisplayClick}
                       >
-                        {option.label}
+                        <span className="deposit-panel__currency">R$</span>
+                        <AnimatedDepositAmount
+                          animationKey={amountAnimationKey}
+                          targetValue={amountCents}
+                        />
+                        <span className="deposit-panel__amount-caret" aria-hidden="true" />
                       </button>
-                    ))}
-                  </div>
-                </section>
+                    )}
 
-                <footer className="deposit-panel__footer">
-                  <div className="deposit-panel__payment-method">
-                    <span>Método de pagamento</span>
-                    <span className="deposit-panel__pix">
-                      <PixLogoIcon aria-hidden="true" weight="fill" />
-                      Pix
-                    </span>
-                  </div>
+                    <div className="deposit-panel__quick-options" aria-label="Valores rápidos">
+                      {quickDepositOptions.map((option) => {
+                        const isSelected = selectedDepositOptionId === option.id
 
-                  <div className="deposit-panel__keyboard-stage">
-                    <StakeKeyboard
-                      isOpen={isCalculatorVisible}
-                      ariaLabel="Teclado de depósito"
-                      className="deposit-panel__stake-keyboard"
-                      onKeyPointerDown={handleKeyPointerDown}
-                      onKeyClick={handleKeyClick}
-                    />
-                  </div>
-
-                  <div className="deposit-panel__confirm-area">
-                    <button
-                      type="button"
-                      className={[
-                        'deposit-panel__confirm',
-                        isGeneratingPix ? 'deposit-panel__confirm--loading' : '',
-                      ].filter(Boolean).join(' ')}
-                      disabled={!hasAmount || isGeneratingPix}
-                      aria-busy={isGeneratingPix}
-                      onClick={handleGeneratePix}
-                    >
-                      <span className="deposit-panel__confirm-label">Gerar código Pix</span>
-                      <span className="deposit-panel__confirm-spinner-wrap" aria-hidden="true">
-                        <span className="deposit-panel__confirm-spinner" />
-                      </span>
-                    </button>
-                    <p className="deposit-panel__legal">
-                      O Rei do Pitaco é autorizado e em conformidade com as leis
-                    </p>
-                  </div>
-                </footer>
-              </>
-            ) : (
-              <>
-                <main className="deposit-panel__pix-main" aria-label="Código Pix gerado">
-                  <section className="deposit-panel__pix-intro">
-                    <div className="deposit-panel__pix-title-row">
-                      <h3>Conclua o Pix de R$ {amount}</h3>
-                      <span className="deposit-panel__pix-countdown">
-                        {formatPixCountdown(pixCountdownSeconds)}
-                      </span>
+                        return (
+                          <div className="deposit-panel__quick-option-wrap" key={option.id}>
+                            <button
+                              type="button"
+                              className={[
+                                'deposit-panel__quick-option',
+                                isSelected ? 'deposit-panel__quick-option--selected' : '',
+                              ].filter(Boolean).join(' ')}
+                              aria-pressed={isSelected}
+                              onClick={() => handleQuickOption(option)}
+                            >
+                              {option.label}
+                            </button>
+                            {option.recommended ? (
+                              <span className="deposit-panel__quick-option-badge">
+                                RECOMENDADO
+                              </span>
+                            ) : null}
+                          </div>
+                        )
+                      })}
                     </div>
-                    <p>
-                      Copie o código abaixo, acesse seu banco ou carteira digital e
-                      utilize a opção Pix Copia e Cola.
-                    </p>
                   </section>
 
-                  <div className="deposit-panel__qr-wrap">
-                    <TestQrCode />
-                  </div>
-
-                  <div className="deposit-panel__pix-code-card">
-                    <span>{pixCode}</span>
-                    <button type="button" onClick={handleCopyPixCode}>
-                      Copiar
-                      <CaretRightIcon aria-hidden="true" weight="bold" />
+                  <section className="deposit-panel__method-section" aria-labelledby="deposit-payment-method-title">
+                    <h3 id="deposit-payment-method-title">Método de depósito</h3>
+                    <button type="button" className="deposit-panel__payment-card deposit-panel__payment-card--selected">
+                      <span className="deposit-panel__pix-badge">
+                        <PixLogoIcon aria-hidden="true" weight="fill" />
+                        pix
+                      </span>
+                      <span className="deposit-panel__payment-description">Saldo na hora</span>
+                      <span className="deposit-panel__payment-radio" aria-hidden="true" />
                     </button>
-                  </div>
-
-                  <div className="deposit-panel__pix-warning">
-                    <WarningCircleIcon aria-hidden="true" weight="regular" />
-                    <span>
-                      Somente serão aceitos depósitos realizados pelo mesmo titular do
-                      CPF cadastrado no Rei.
-                    </span>
-                  </div>
-
-                  <section className="deposit-panel__pix-steps">
-                    <h3>Como pagar com Pix?</h3>
-                    <ol>
-                      {pixPaymentSteps.map((step, index) => (
-                        <li key={step}>
-                          <span>{index + 1}</span>
-                          <p>{step}</p>
-                        </li>
-                      ))}
-                    </ol>
                   </section>
                 </main>
 
-                <footer className="deposit-panel__pix-footer">
-                  <div className="deposit-panel__pix-summary-header">
-                    <strong>Resumo</strong>
-                    <button
-                      type="button"
-                      onClick={() => setIsPixSummaryExpanded((current) => !current)}
-                    >
-                      {isPixSummaryExpanded ? 'Ocultar detalhes' : 'Ver detalhes'}
-                      {isPixSummaryExpanded ? (
-                        <CaretUpIcon aria-hidden="true" weight="bold" />
-                      ) : (
-                        <CaretDownIcon aria-hidden="true" weight="bold" />
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="deposit-panel__pix-summary-details" aria-hidden={!isPixSummaryExpanded}>
-                    <div>
-                      <span>Valor do depósito</span>
-                      <strong>R$ {amount}</strong>
-                    </div>
-                    <div>
-                      <span>Bônus e ofertas</span>
-                      <strong>Não aplicado</strong>
-                    </div>
-                    <div>
-                      <span>Total a pagar</span>
-                      <strong>R$ {amount}</strong>
-                    </div>
-                  </div>
-
-                  <button type="button" className="deposit-panel__bank-button">
-                    Abrir aplicativo do banco
+                <footer className="deposit-panel__footer">
+                  <button
+                    type="button"
+                    className={[
+                      'deposit-panel__confirm',
+                      isGeneratingPix ? 'deposit-panel__confirm--loading' : '',
+                    ].filter(Boolean).join(' ')}
+                    disabled={!hasAmount || isGeneratingPix}
+                    aria-busy={isGeneratingPix}
+                    onClick={handleGeneratePix}
+                  >
+                    <span className="deposit-panel__confirm-label">Continuar</span>
+                    <span className="deposit-panel__confirm-spinner-wrap" aria-hidden="true">
+                      <span className="deposit-panel__confirm-spinner" />
+                    </span>
                   </button>
-                  <p className="deposit-panel__legal deposit-panel__pix-footer-legal">
-                    O Rei do Pitaco é autorizado e em conformidade com as leis
-                  </p>
                 </footer>
               </>
+            ) : (
+              <main className="deposit-panel__pix-main" aria-label="Pagamento Pix gerado">
+                <div className="deposit-panel__pix-layout">
+                  <img className="deposit-panel__pix-logo" src={iconPix} alt="Pix" />
+                  <p className="deposit-panel__pix-instruction">
+                    Escaneie o QR code ou copie o código para pagar com Pix
+                  </p>
+
+                  <div className="deposit-panel__pix-qr-frame">
+                    <div className="deposit-panel__pix-qr-card">
+                      <img className="deposit-panel__pix-qr" src={qrCodeImage} alt="QR code Pix" />
+                    </div>
+                  </div>
+
+                  <section className="deposit-panel__pix-payment" aria-label={`Valor do Pix: R$ ${amount}`}>
+                    <div className="deposit-panel__pix-amount">
+                      <span>R$</span>
+                      <strong>{amount}</strong>
+                    </div>
+                    <div
+                      className="deposit-panel__pix-countdown"
+                      aria-label={`Código expira em ${pixCountdownMinutes} minutos e ${pixCountdownSecondsLabel} segundos`}
+                    >
+                      <img src={iconClock} alt="" aria-hidden="true" />
+                      <span className="deposit-panel__pix-countdown-time">
+                        <span>{pixCountdownMinutes} m</span>
+                        <span className="deposit-panel__pix-countdown-separator">:</span>
+                        <span>{pixCountdownSecondsLabel} s</span>
+                      </span>
+                      <span>restantes</span>
+                    </div>
+                    <p>
+                      Lembre-se de que você deve depositar de uma conta vinculada ao seu CPF.
+                    </p>
+                  </section>
+
+                  <button type="button" className="deposit-panel__pix-copy-button" onClick={handleCopyPixCode}>
+                    Copiar código Pix
+                  </button>
+
+                  <div className="deposit-panel__pix-divider" />
+
+                  <section className="deposit-panel__pix-info-list" aria-label="Informações sobre o Pix">
+                    <div className="deposit-panel__pix-info-item">
+                      <span className="deposit-panel__pix-info-icon" aria-hidden="true">
+                        <img src={iconClock} alt="" />
+                      </span>
+                      <p>
+                        O código expira em 30 minutos. Se ele expirar, gere um novo na tela de depósito.
+                      </p>
+                    </div>
+                    <div className="deposit-panel__pix-info-item">
+                      <span
+                        className="deposit-panel__pix-info-icon deposit-panel__pix-info-icon--idea"
+                        aria-hidden="true"
+                      >
+                        <img src={iconIdeia} alt="" />
+                      </span>
+                      <p>
+                        Você pode ver todos as suas transações em "Minha conta" &gt; "Minhas transações."
+                      </p>
+                    </div>
+                  </section>
+                </div>
+              </main>
             )}
           </div>
         </div>

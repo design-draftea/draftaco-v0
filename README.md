@@ -14,8 +14,16 @@ npm run dev
 O Vite abre o app localmente em:
 
 ```text
-http://localhost:5173/
+https://localhost:5173/
 ```
+
+Para testar a câmera no celular, acesse pela rede local usando HTTPS:
+
+```text
+https://<IP-da-máquina>:5173/
+```
+
+O navegador pode pedir confirmação do certificado local na primeira abertura. Use sempre `https://`; em `http://<IP>:<porta>/`, navegadores móveis bloqueiam `getUserMedia` e a câmera fica indisponível.
 
 Scripts úteis:
 

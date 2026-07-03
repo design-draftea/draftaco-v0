@@ -1,14 +1,16 @@
 /* Container */
 .bottom-sheet__container {
   position: fixed;
-  top: 0;
-  left: 0;
+  top: var(--bottom-sheet-viewport-top, 0);
   right: 0;
-  bottom: 0;
+  bottom: auto;
+  left: 0;
   z-index: 2000;
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  width: 100%;
+  height: var(--bottom-sheet-viewport-height, var(--app-viewport-height, 100dvh));
   pointer-events: none;
 }
 
@@ -58,11 +60,14 @@
   border-radius: 8px 8px 0 0;
   width: 100%;
   /* Fallback for older browsers */
-  max-height: calc(100vh - 80px);
+  max-height: calc(100vh - var(--bottom-sheet-top-offset, 80px));
   /* Dynamic viewport height for modern browsers */
-  max-height: calc(100dvh - 80px);
+  max-height: calc(100dvh - var(--bottom-sheet-top-offset, 80px));
   /* JavaScript calculated viewport height for mobile browser chrome changes */
-  max-height: calc(var(--app-viewport-height, 100dvh) - 80px);
+  max-height: calc(
+    var(--bottom-sheet-viewport-height, var(--app-viewport-height, 100dvh))
+    - var(--bottom-sheet-top-offset, 80px)
+  );
   display: flex;
   flex-direction: column;
   animation: slideUp 0.3s ease-out;

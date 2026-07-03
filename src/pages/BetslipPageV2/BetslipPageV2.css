@@ -556,10 +556,6 @@ article.betslip-v2__sgp-leg {
   border-radius: 12px;
 }
 
-.betslip-v2__stake-field:focus-within {
-  border-color: var(--ds-action-primary-default, var(--ds-action-colors-action-primary-default, #8a2cff));
-}
-
 .betslip-v2__stake-icon {
   display: block;
   flex: 0 0 14px;

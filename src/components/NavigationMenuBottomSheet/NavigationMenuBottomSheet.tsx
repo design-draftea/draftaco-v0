@@ -37,6 +37,7 @@ import './NavigationMenuBottomSheet.css'
 
 interface NavigationMenuBottomSheetProps {
   isOpen: boolean
+  balanceCents?: number
   onDepositOpen?: () => void
   onClose: () => void
 }
@@ -53,6 +54,16 @@ interface MenuSection {
 
 type SheetMotionState = 'entering' | 'open' | 'closing'
 type ThemePreference = AppThemePreference
+const defaultBalanceCents = 25000
+
+const formatBalanceDisplayValue = (amountCents: number) => {
+  const safeAmountCents = Number.isFinite(amountCents) ? Math.max(0, amountCents) : 0
+
+  return `R$${(safeAmountCents / 100).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
+}
 
 const menuSections: MenuSection[] = [
   {
@@ -142,7 +153,12 @@ const themePreferenceOptions: { label: string; value: ThemePreference; Icon: Ico
   { label: 'Sistema', value: 'system', Icon: CircleHalfIcon },
 ]
 
-export function NavigationMenuBottomSheet({ isOpen, onDepositOpen, onClose }: NavigationMenuBottomSheetProps) {
+export function NavigationMenuBottomSheet({
+  isOpen,
+  balanceCents = defaultBalanceCents,
+  onDepositOpen,
+  onClose,
+}: NavigationMenuBottomSheetProps) {
   const [shouldRender, setShouldRender] = useState(false)
   const [motionState, setMotionState] = useState<SheetMotionState>('entering')
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -325,6 +341,7 @@ export function NavigationMenuBottomSheet({ isOpen, onDepositOpen, onClose }: Na
 
   const ValuesVisibilityIcon = areValuesVisible ? EyeSlashIcon : EyeIcon
   const maskedValue = '****'
+  const balanceDisplayValue = formatBalanceDisplayValue(balanceCents)
 
   return createPortal(
     <div className="navigation-menu-bs__container">
@@ -373,7 +390,9 @@ export function NavigationMenuBottomSheet({ isOpen, onDepositOpen, onClose }: Na
               <div className="navigation-menu-bs__balance-header">
                 <div className="navigation-menu-bs__balance-copy">
                   <span className="navigation-menu-bs__balance-label">Seu saldo</span>
-                  <strong className="navigation-menu-bs__balance-value">{areValuesVisible ? 'R$ 3.400,00' : maskedValue}</strong>
+                  <strong className="navigation-menu-bs__balance-value">
+                    {areValuesVisible ? balanceDisplayValue : maskedValue}
+                  </strong>
                 </div>
                 <div className="navigation-menu-bs__balance-tools" aria-label="Ações do saldo">
                   <button type="button" className="navigation-menu-bs__icon-button" aria-label="Atualizar saldo">
