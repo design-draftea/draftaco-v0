@@ -6,6 +6,7 @@ import { Betslip } from './components/Betslip'
 import { HeaderV2 } from './components/HeaderV2'
 import { DepositPanel } from './components/DepositPanel'
 import { FeatureFlagsPanel } from './components/FeatureFlagsPanel'
+import { LocationPermissionGate } from './components/LocationPermissionGate'
 import { BetslipProvider } from './hooks/BetslipProvider'
 import { FeatureFlagsProvider } from './hooks/FeatureFlagsProvider'
 import { useFeatureFlags } from './hooks/useFeatureFlags'
@@ -141,6 +142,11 @@ const withSearch = (path: string, search: string) => `${path}${search}`
 
 type AuthVariant = 'logged-in' | 'logged-out'
 type LoginMotionState = 'entering' | 'open' | 'exiting'
+type AuthScrollLockState = {
+  scrollY: number
+  bodyOverflow: string
+  rootOverflow: string
+}
 
 const loginMotionDurationMs = 320
 const loggedInInitialBalanceCents = 25000
@@ -157,6 +163,7 @@ function AppContent() {
   )
   const loginMotionTimerRef = useRef<number | null>(null)
   const signupDepositExitPathRef = useRef<string | null>(null)
+  const authScrollLockRef = useRef<AuthScrollLockState | null>(null)
   const [authVariant, setAuthVariant] = useState<AuthVariant>('logged-out')
   const [balanceCents, setBalanceCents] = useState(0)
   const [loginMotionState, setLoginMotionState] = useState<LoginMotionState | null>(
@@ -546,6 +553,7 @@ function AppContent() {
     && !isCompactBetslipSuppressed
   const shouldShowEventBetslip = showCompactBetslip && liveEventUi.isOpen && liveEventUi.isEventBetslipVisible
   const showFreeBetTag = isFeatureEnabled('freeBetsAvailable') && hasOnlyBrasileiraoSelections
+  const isAuthOverlayOpen = !isHandoffPage && (isAuthPage || loginMotionState !== null)
 
   useEffect(() => {
     document.documentElement.toggleAttribute('data-betslip-compact-visible', showCompactBetslip)
@@ -553,15 +561,50 @@ function AppContent() {
   }, [showCompactBetslip, shouldShowEventBetslip])
 
   useEffect(() => {
+    const restoreAuthScrollLock = () => {
+      const lockState = authScrollLockRef.current
+
+      if (!lockState) return
+
+      document.documentElement.style.overflow = lockState.rootOverflow
+      document.body.style.overflow = lockState.bodyOverflow
+      authScrollLockRef.current = null
+      window.scrollTo(0, lockState.scrollY)
+    }
+
+    document.documentElement.toggleAttribute('data-auth-page-open', isAuthOverlayOpen)
+
+    if (isAuthOverlayOpen && authScrollLockRef.current === null) {
+      authScrollLockRef.current = {
+        scrollY: window.scrollY,
+        bodyOverflow: document.body.style.overflow,
+        rootOverflow: document.documentElement.style.overflow,
+      }
+
+      document.documentElement.style.overflow = 'hidden'
+      document.body.style.overflow = 'hidden'
+    } else if (!isAuthOverlayOpen) {
+      restoreAuthScrollLock()
+    }
+
+    return () => {
+      restoreAuthScrollLock()
+      document.documentElement.removeAttribute('data-auth-page-open')
+    }
+  }, [isAuthOverlayOpen])
+
+  useEffect(() => {
     return () => {
       document.documentElement.removeAttribute('data-betslip-compact-visible')
       document.documentElement.removeAttribute('data-live-event-betslip-visible')
+      document.documentElement.removeAttribute('data-auth-page-open')
     }
   }, [])
 
   return (
     <div className="app-shell">
       <BrandLocalizationEffect brandMode={brandMode} />
+      <LocationPermissionGate isEnabled={!isHandoffPage} />
       {!isHandoffPage ? <MobileOnly /> : null}
       <Suspense fallback={<RouteFallback />}>
         {isHandoffPage ? (

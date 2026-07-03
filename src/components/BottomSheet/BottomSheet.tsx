@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useState, useRef, type ReactNo
 import { createPortal } from 'react-dom'
 import { CaretUpIcon } from '@phosphor-icons/react'
 import closeBS from '../../assets/iconsDraftaco/closeBS.svg'
+import { useTouchScrollFence } from '../../hooks/useTouchScrollFence'
 import './BottomSheet.css'
 
 interface BottomSheetProps {
@@ -40,6 +41,10 @@ export function BottomSheet({
   const bodyRef = useRef<HTMLDivElement>(null)
   const closeTimerRef = useRef<number | null>(null)
   const isMounted = isOpen || shouldRender
+
+  // O portal fica fora da página que já tem o fence: bloqueia aqui o pan nativo
+  // do iOS (teclado aberto) para toques que começam na própria sheet/overlay.
+  useTouchScrollFence(containerRef, isMounted)
 
   // Check scroll position
   const handleScroll = () => {
@@ -96,28 +101,38 @@ export function BottomSheet({
 
   // Prevent body scroll when bottom sheet is open
   useEffect(() => {
-    if (isMounted) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
+    if (!isMounted) return undefined
+
+    const previousBodyOverflow = document.body.style.overflow
+
+    document.body.style.overflow = 'hidden'
+
     return () => {
-      document.body.style.overflow = ''
+      document.body.style.overflow = previousBodyOverflow
     }
-  }, [isMounted, handleClose])
+  }, [isMounted])
 
   useLayoutEffect(() => {
     if (!isMounted) return undefined
+
+    let lastViewportHeight = 0
+    let lastViewportTop = -1
 
     const updateViewportStyle = () => {
       if (!containerRef.current) return
 
       const visualViewport = window.visualViewport
-      const viewportHeight = visualViewport?.height ?? window.innerHeight
-      const viewportTop = visualViewport?.offsetTop ?? 0
+      const viewportHeight = Math.max(1, visualViewport?.height ?? window.innerHeight)
+      const viewportTop = Math.max(0, visualViewport?.offsetTop ?? 0)
 
-      containerRef.current.style.setProperty('--bottom-sheet-viewport-height', `${Math.max(1, viewportHeight)}px`)
-      containerRef.current.style.setProperty('--bottom-sheet-viewport-top', `${Math.max(0, viewportTop)}px`)
+      // Ignora variações mínimas (ex.: barra de autofill do iOS oscilando)
+      // para a sheet não ficar tremendo enquanto o usuário digita.
+      if (Math.abs(viewportHeight - lastViewportHeight) < 2 && Math.abs(viewportTop - lastViewportTop) < 2) return
+
+      lastViewportHeight = viewportHeight
+      lastViewportTop = viewportTop
+      containerRef.current.style.setProperty('--bottom-sheet-viewport-height', `${viewportHeight}px`)
+      containerRef.current.style.setProperty('--bottom-sheet-viewport-top', `${viewportTop}px`)
     }
 
     updateViewportStyle()

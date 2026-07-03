@@ -8,6 +8,7 @@ import iconIdeia from '../../assets/iconsDraftaco/iconIdeia.svg'
 import iconInfo from '../../assets/iconsDraftaco/iconInfo.svg'
 import iconPix from '../../assets/iconsDraftaco/iconPix.svg'
 import qrCodeImage from '../../assets/iconsDraftaco/qrCode.png'
+import { useTouchScrollFence } from '../../hooks/useTouchScrollFence'
 import './DepositPanel.css'
 
 interface DepositPanelProps {
@@ -161,6 +162,7 @@ export function DepositPanel({ isOpen, onClose, onEnterComplete, onDepositConfir
   const shouldRenderRef = useRef(false)
   const swapTimerRef = useRef<number | null>(null)
   const panelRef = useRef<HTMLElement | null>(null)
+  const panelContainerRef = useRef<HTMLDivElement | null>(null)
   const manualAmountInputRef = useRef<HTMLInputElement | null>(null)
   const [isAmountEditingInline, setIsAmountEditingInline] = useState(false)
   const [manualAmountInput, setManualAmountInput] = useState(formatDepositAmount(defaultDepositAmountCents))
@@ -389,14 +391,20 @@ export function DepositPanel({ isOpen, onClose, onEnterComplete, onDepositConfir
     const panel = panelRef.current
     if (!panel) return undefined
 
+    let lastKeyboardOffset = -1
+
     const updateKeyboardOffset = () => {
       const visualViewport = window.visualViewport
       const panelBottom = panel.getBoundingClientRect().bottom
       const viewportBottom = visualViewport
         ? visualViewport.offsetTop + visualViewport.height
         : window.innerHeight
-      const keyboardOffset = Math.max(0, panelBottom - viewportBottom)
+      const keyboardOffset = Math.max(0, Math.round(panelBottom - viewportBottom))
 
+      // Ignora variações mínimas (ex.: barra de autofill do iOS oscilando).
+      if (Math.abs(keyboardOffset - lastKeyboardOffset) < 2) return
+
+      lastKeyboardOffset = keyboardOffset
       panel.style.setProperty('--deposit-keyboard-offset', `${keyboardOffset}px`)
     }
 
@@ -426,6 +434,8 @@ export function DepositPanel({ isOpen, onClose, onEnterComplete, onDepositConfir
     return () => window.clearInterval(countdownInterval)
   }, [shouldRender, view])
 
+  useTouchScrollFence(panelContainerRef, shouldRender)
+
   if (!shouldRender) return null
 
   const amount = formatDepositAmount(amountCents)
@@ -435,7 +445,7 @@ export function DepositPanel({ isOpen, onClose, onEnterComplete, onDepositConfir
   const pixCountdownSecondsLabel = pixCountdownSecondsRemainder.toString().padStart(2, '0')
 
   return createPortal(
-    <div className="deposit-panel__container">
+    <div className="deposit-panel__container" ref={panelContainerRef}>
       <div
         className={`deposit-panel__overlay deposit-panel__overlay--${motionState}`}
         onClick={requestClose}

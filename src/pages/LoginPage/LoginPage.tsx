@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type AnimationEvent, type FormEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type AnimationEvent, type FormEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { flushSync } from 'react-dom'
 import backHeaderIcon from '../../assets/iconsDraftaco/backHeader.svg'
 import iconApple from '../../assets/iconsDraftaco/iconApple.svg'
@@ -10,9 +10,13 @@ import iconEye from '../../assets/iconsDraftaco/iconEye.svg'
 import iconEyeHide from '../../assets/iconsDraftaco/iconEyeHide.svg'
 import iconGoogle from '../../assets/iconsDraftaco/iconGoogle.svg'
 import iconClock from '../../assets/iconsDraftaco/iconClock.svg'
+import iconOferta from '../../assets/iconsDraftaco/iconOferta.svg'
 import iconLimiteJogoDiario from '../../assets/iconsDraftaco/iconLimiteJogoDiario.svg'
 import iconLimitePerdaDiario from '../../assets/iconsDraftaco/iconLimitePerdaDiario.svg'
 import iconPass from '../../assets/iconsDraftaco/iconPass.svg'
+import iconSenhaCorreta from '../../assets/iconsDraftaco/iconSenhaCorreta.svg'
+import iconSenhaDefault from '../../assets/iconsDraftaco/iconSenhaDefault.svg'
+import iconSenhaErro from '../../assets/iconsDraftaco/iconSenhaErro.svg'
 import iconSuporte from '../../assets/iconsDraftaco/iconSuporte.svg'
 import glowGarantidaCadastro01 from '../../assets/iconsDraftaco/glowGarantidaCadastro01.png'
 import glowGarantidaCadastro02 from '../../assets/iconsDraftaco/glowGarantidaCadastro02.png'
@@ -22,6 +26,7 @@ import imgVerificaIdentidadeLogo from '../../assets/iconsDraftaco/imgVerificaIde
 import logoUnico from '../../assets/iconsDraftaco/logoUnico.png'
 import flagBrasil from '../../assets/iconPaises/brasil.png'
 import { BottomSheet } from '../../components/BottomSheet'
+import { useTouchScrollFence } from '../../hooks/useTouchScrollFence'
 import {
   PROMO_COUNTDOWN_TICK_MS,
   formatPromoCountdownSegment,
@@ -63,10 +68,12 @@ interface LoginInputProps {
   value: string
   type?: 'email' | 'text' | 'password' | 'tel'
   autoComplete?: string
+  describedBy?: string
   errorMessage?: string
   inputMode?: 'email' | 'numeric' | 'tel' | 'text'
   isInvalid?: boolean
   maxLength?: number
+  preventScrollOnFocus?: boolean
   readOnly?: boolean
   trailingAction?: ReactNode
   onBlur?: () => void
@@ -99,10 +106,22 @@ interface ViaCepResponse {
   uf?: string
 }
 
+interface ScrollSnapshot {
+  windowX: number
+  windowY: number
+  scrollContainers: Array<{
+    element: HTMLElement
+    left: number
+    top: number
+  }>
+}
+
 const loginEmailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const loginEmailErrorMessage = 'E-mail inválido'
-const cpfIncompleteErrorMessage = 'CPF incompleto'
-const phoneIncompleteErrorMessage = 'Celular incompleto'
+const loginEmailErrorMessage = 'Insira um e-mail válido'
+const cpfIncompleteErrorMessage = 'Insira os 11 dígitos do CPF'
+const cpfInvalidErrorMessage = 'Insira um CPF válido'
+const phoneIncompleteErrorMessage = 'Insira o celular com DDD'
+const cepLookupErrorMessage = 'Verifique o CEP e tente novamente'
 const signupSteps: SignupStep[] = ['account', 'personal', 'address']
 const phoneValidationCodeLength = 6
 const phoneValidationCountdownStart = 30
@@ -146,8 +165,8 @@ const verificationNextStageByCapture: Record<VerificationCaptureStage, Verificat
 }
 const verificationCameraErrorMessageByName: Record<string, string> = {
   NotAllowedError: 'Libere a câmera nas configurações do navegador.',
-  NotFoundError: 'Não foi possível encontrar uma câmera compatível neste dispositivo.',
-  OverconstrainedError: 'Não foi possível encontrar uma câmera compatível neste dispositivo.',
+  NotFoundError: 'Use um dispositivo com câmera compatível.',
+  OverconstrainedError: 'Use um dispositivo com câmera compatível.',
   SecurityError: 'Abra o app em HTTPS para ativar a câmera no celular.',
 }
 const gameTimeLimitOptions = ['1 hora', '2 horas', '5 horas', '12 horas', '24 horas', 'Outro']
@@ -285,12 +304,74 @@ const getEmailErrorMessage = (value: string) => {
   return loginEmailPattern.test(normalizedValue) ? null : loginEmailErrorMessage
 }
 
+const signupPasswordRequirements = [
+  {
+    id: 'length',
+    label: '8 caracteres',
+    isMet: (value: string) => value.length >= 8,
+  },
+  {
+    id: 'uppercase',
+    label: '1 letra maiúscula',
+    isMet: (value: string) => /[A-Z]/.test(value),
+  },
+  {
+    id: 'number',
+    label: '1 número',
+    isMet: (value: string) => /\d/.test(value),
+  },
+  {
+    id: 'special',
+    label: '1 caractere especial',
+    isMet: (value: string) => /[^A-Za-z0-9\s]/.test(value),
+  },
+]
+
+const isSignupPasswordValid = (value: string) => (
+  signupPasswordRequirements.every(({ isMet }) => isMet(value))
+)
+
+const getCpfCheckDigit = (baseDigits: string) => {
+  const initialWeight = baseDigits.length + 1
+  const sum = Array.from(baseDigits).reduce((total, digit, index) => (
+    total + Number(digit) * (initialWeight - index)
+  ), 0)
+  const remainder = 11 - (sum % 11)
+
+  return remainder >= 10 ? 0 : remainder
+}
+
+// CPF de teste liberado para o protótipo.
+const prototypeAllowedCpf = '11111111111'
+
+// CEP de teste liberado para o protótipo, com endereço completo de exemplo.
+const prototypeAllowedCep = '11111111'
+const prototypeAllowedAddress = {
+  region: 'São Paulo',
+  neighborhood: 'Centro',
+  street: 'Avenida Paulista',
+}
+
+const isCpfValid = (value: string) => {
+  const digits = onlyDigits(value)
+
+  if (digits.length !== 11) return false
+  if (digits === prototypeAllowedCpf) return true
+  if (/^(\d)\1{10}$/.test(digits)) return false
+
+  const firstCheckDigit = getCpfCheckDigit(digits.slice(0, 9))
+  const secondCheckDigit = getCpfCheckDigit(digits.slice(0, 10))
+
+  return firstCheckDigit === Number(digits[9]) && secondCheckDigit === Number(digits[10])
+}
+
 const getCpfErrorMessage = (value: string) => {
   const digits = onlyDigits(value)
 
-  if (!digits || digits.length === 11) return null
+  if (!digits) return null
+  if (digits.length !== 11) return cpfIncompleteErrorMessage
 
-  return cpfIncompleteErrorMessage
+  return isCpfValid(digits) ? null : cpfInvalidErrorMessage
 }
 
 const getPhoneErrorMessage = (value: string) => {
@@ -357,12 +438,146 @@ const formatBrazilPhoneForValidation = (value: string) => {
 
 const focusPhoneValidationInput = () => {
   const input = document.getElementById('signup-phone-validation-code')
+  const scrollX = window.scrollX
+  const scrollY = window.scrollY
 
   input?.focus({ preventScroll: true })
 
   if (input instanceof HTMLInputElement) {
     input.setSelectionRange(input.value.length, input.value.length)
   }
+
+  window.scrollTo(scrollX, scrollY)
+}
+
+const isKeyboardFocusElement = (element: Element | null) => {
+  if (!(element instanceof HTMLElement)) return false
+  if (element.isContentEditable) return true
+  if (element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) return true
+  if (!(element instanceof HTMLInputElement)) return false
+
+  return !['button', 'checkbox', 'color', 'file', 'hidden', 'image', 'radio', 'range', 'reset', 'submit'].includes(element.type)
+}
+
+const hasScrollableOverflow = (element: HTMLElement) => {
+  const style = window.getComputedStyle(element)
+
+  return /(auto|scroll|overlay)/.test(`${style.overflow}${style.overflowX}${style.overflowY}`)
+}
+
+const captureScrollSnapshot = (element: HTMLElement): ScrollSnapshot => {
+  const scrollContainers: ScrollSnapshot['scrollContainers'] = []
+  let parentElement = element.parentElement
+
+  while (parentElement) {
+    if (hasScrollableOverflow(parentElement)) {
+      scrollContainers.push({
+        element: parentElement,
+        left: parentElement.scrollLeft,
+        top: parentElement.scrollTop,
+      })
+    }
+
+    parentElement = parentElement.parentElement
+  }
+
+  return {
+    windowX: window.scrollX,
+    windowY: window.scrollY,
+    scrollContainers,
+  }
+}
+
+const restoreScrollSnapshot = (snapshot: ScrollSnapshot) => {
+  window.scrollTo(snapshot.windowX, snapshot.windowY)
+
+  snapshot.scrollContainers.forEach(({ element, left, top }) => {
+    element.scrollLeft = left
+    element.scrollTop = top
+  })
+}
+
+const restoreScrollSnapshotAfterFocus = (snapshot: ScrollSnapshot) => {
+  restoreScrollSnapshot(snapshot)
+
+  window.requestAnimationFrame(() => {
+    restoreScrollSnapshot(snapshot)
+    window.requestAnimationFrame(() => restoreScrollSnapshot(snapshot))
+  })
+
+  window.setTimeout(() => restoreScrollSnapshot(snapshot), 80)
+  window.setTimeout(() => restoreScrollSnapshot(snapshot), 160)
+  window.setTimeout(() => restoreScrollSnapshot(snapshot), 320)
+}
+
+const TAP_MOVEMENT_TOLERANCE_PX = 10
+
+function useTapFocusScrollGuard({
+  inputRef,
+  isEnabled,
+  onFocus,
+}: {
+  inputRef: { current: HTMLInputElement | null }
+  isEnabled: boolean
+  onFocus?: () => void
+}) {
+  const pendingScrollSnapshotRef = useRef<ScrollSnapshot | null>(null)
+  const pendingTapRef = useRef<{ pointerId: number; startX: number; startY: number } | null>(null)
+
+  const handleFieldPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
+    if (!isEnabled) return
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+    if (event.target instanceof Element && event.target.closest('button')) return
+    if (document.activeElement === inputRef.current && event.target === inputRef.current) return
+
+    // Bloqueia o foco nativo (que rola a tela), mas NÃO foca ainda: o foco é
+    // decidido no pointerup, somente se o gesto for um toque — um drag de
+    // scroll dispara pointercancel (touch) ou excede a tolerância de movimento.
+    event.preventDefault()
+    pendingTapRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+    }
+  }
+
+  const handleFieldPointerUp = (event: ReactPointerEvent<HTMLElement>) => {
+    const pendingTap = pendingTapRef.current
+    pendingTapRef.current = null
+
+    if (!isEnabled || !pendingTap || pendingTap.pointerId !== event.pointerId) return
+
+    const tapDistance = Math.hypot(event.clientX - pendingTap.startX, event.clientY - pendingTap.startY)
+
+    if (tapDistance > TAP_MOVEMENT_TOLERANCE_PX) return
+
+    const input = inputRef.current
+
+    if (!input) return
+
+    const scrollSnapshot = captureScrollSnapshot(input)
+
+    pendingScrollSnapshotRef.current = scrollSnapshot
+    input.focus({ preventScroll: true })
+    restoreScrollSnapshotAfterFocus(scrollSnapshot)
+  }
+
+  const handleFieldPointerCancel = () => {
+    pendingTapRef.current = null
+  }
+
+  const handleFocus = () => {
+    onFocus?.()
+
+    if (!isEnabled || pendingScrollSnapshotRef.current === null) return
+
+    const scrollSnapshot = pendingScrollSnapshotRef.current
+
+    pendingScrollSnapshotRef.current = null
+    restoreScrollSnapshotAfterFocus(scrollSnapshot)
+  }
+
+  return { handleFieldPointerDown, handleFieldPointerUp, handleFieldPointerCancel, handleFocus }
 }
 
 function LoginInput({
@@ -373,18 +588,37 @@ function LoginInput({
   value,
   type = 'text',
   autoComplete,
+  describedBy,
   errorMessage,
   inputMode,
   isInvalid = false,
   maxLength,
+  preventScrollOnFocus = false,
   readOnly = false,
   trailingAction,
   onBlur,
   onChange,
   onFocus,
 }: LoginInputProps) {
+  const inputRef = useRef<HTMLInputElement | null>(null)
   const isFilled = value.length > 0
+  const isPasswordMasked = type === 'password'
   const errorId = `${id}-error`
+  const ariaDescribedBy = [
+    describedBy,
+    isInvalid && errorMessage ? errorId : '',
+  ].filter(Boolean).join(' ') || undefined
+
+  const {
+    handleFieldPointerDown,
+    handleFieldPointerUp,
+    handleFieldPointerCancel,
+    handleFocus,
+  } = useTapFocusScrollGuard({
+    inputRef,
+    isEnabled: preventScrollOnFocus && !readOnly,
+    onFocus,
+  })
 
   return (
     <label
@@ -397,27 +631,39 @@ function LoginInput({
       htmlFor={id}
     >
       <span className="login-input__label">{label}</span>
-      <span className="login-input__container">
+      <span
+        className="login-input__container"
+        onPointerDown={handleFieldPointerDown}
+        onPointerUp={handleFieldPointerUp}
+        onPointerCancel={handleFieldPointerCancel}
+      >
         <span className="login-input__content">
           {icon ? <img src={icon} alt="" className="login-input__icon" aria-hidden="true" /> : null}
           <input
+            ref={inputRef}
             id={id}
-            className="login-input__field"
-            type={type}
+            className={[
+              'login-input__field',
+              isPasswordMasked ? 'login-input__field--password-mask' : '',
+            ].filter(Boolean).join(' ')}
+            type={isPasswordMasked ? 'text' : type}
             value={value}
             placeholder={placeholder}
             autoComplete={autoComplete}
             inputMode={inputMode}
             maxLength={maxLength}
             readOnly={readOnly}
-            aria-describedby={isInvalid && errorMessage ? errorId : undefined}
+            autoCapitalize={isPasswordMasked ? 'none' : undefined}
+            autoCorrect={isPasswordMasked ? 'off' : undefined}
+            spellCheck={isPasswordMasked ? false : undefined}
+            aria-describedby={ariaDescribedBy}
             aria-invalid={isInvalid || undefined}
             onBlur={onBlur}
             onChange={(event) => onChange(event.target.value)}
-            onFocus={onFocus}
+            onFocus={handleFocus}
           />
         </span>
-        {isInvalid ? (
+        {isInvalid && !trailingAction ? (
           <img src={iconError} alt="" className="login-input__error-icon" aria-hidden="true" />
         ) : trailingAction}
       </span>
@@ -425,6 +671,58 @@ function LoginInput({
         <span className="login-input__error-message" id={errorId}>{errorMessage}</span>
       ) : null}
     </label>
+  )
+}
+
+function SignupPasswordRequirements({
+  password,
+  showInvalidRequirements,
+}: {
+  password: string
+  showInvalidRequirements: boolean
+}) {
+  const requirementColumns = [
+    signupPasswordRequirements.slice(0, 2),
+    signupPasswordRequirements.slice(2),
+  ]
+
+  return (
+    <div className="login-password-rules" id="signup-password-rules">
+      <p className="login-password-rules__title">Sua senha deve ter pelo menos:</p>
+      <div className="login-password-rules__grid" role="list">
+        {requirementColumns.map((column, columnIndex) => (
+          <div className="login-password-rules__column" key={columnIndex}>
+            {column.map(({ id, label, isMet }) => {
+              const isRequirementMet = isMet(password)
+              const state = isRequirementMet
+                ? 'valid'
+                : showInvalidRequirements
+                  ? 'invalid'
+                  : 'default'
+              const icon = state === 'valid'
+                ? iconSenhaCorreta
+                : state === 'invalid'
+                  ? iconSenhaErro
+                  : iconSenhaDefault
+
+              return (
+                <div
+                  className={[
+                    'login-password-rules__item',
+                    `login-password-rules__item--${state}`,
+                  ].join(' ')}
+                  key={id}
+                  role="listitem"
+                >
+                  <img src={icon} alt="" className="login-password-rules__icon" aria-hidden="true" />
+                  <span>{label}</span>
+                </div>
+              )
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -633,9 +931,21 @@ function PhoneInput({
   onChange: (value: string) => void
   onFocus?: () => void
 }) {
+  const inputRef = useRef<HTMLInputElement | null>(null)
   const phoneDigits = normalizeBrazilPhone(value)
   const isFilled = phoneDigits.length > 0
   const errorId = 'signup-phone-error'
+
+  const {
+    handleFieldPointerDown,
+    handleFieldPointerUp,
+    handleFieldPointerCancel,
+    handleFocus,
+  } = useTapFocusScrollGuard({
+    inputRef,
+    isEnabled: true,
+    onFocus,
+  })
 
   return (
     <label
@@ -647,13 +957,19 @@ function PhoneInput({
       htmlFor="signup-phone"
     >
       <span className="login-input__label">Celular</span>
-      <span className="login-phone-input__container">
+      <span
+        className="login-phone-input__container"
+        onPointerDown={handleFieldPointerDown}
+        onPointerUp={handleFieldPointerUp}
+        onPointerCancel={handleFieldPointerCancel}
+      >
         <span className="login-phone-input__prefix" aria-label="Brasil +55">
           <img src={flagBrasil} alt="" className="login-phone-input__flag" aria-hidden="true" />
           <span className="login-phone-input__country-code">+55</span>
         </span>
         <span className="login-phone-input__divider" aria-hidden="true" />
         <input
+          ref={inputRef}
           id="signup-phone"
           className="login-phone-input__field"
           type="tel"
@@ -665,7 +981,7 @@ function PhoneInput({
           aria-invalid={isInvalid || undefined}
           onBlur={onBlur}
           onChange={(event) => onChange(normalizeBrazilPhone(event.target.value))}
-          onFocus={onFocus}
+          onFocus={handleFocus}
         />
         {isInvalid ? (
           <img src={iconError} alt="" className="login-input__error-icon" aria-hidden="true" />
@@ -685,24 +1001,21 @@ function PhoneValidationCodeInput({
   value: string
   onChange: (value: string) => void
 }) {
-  const inputRef = useRef<HTMLInputElement>(null)
   const [isFocused, setIsFocused] = useState(false)
   const digits = onlyDigits(value).slice(0, phoneValidationCodeLength)
   const activeIndex = Math.min(digits.length, phoneValidationCodeLength - 1)
 
-  useLayoutEffect(() => {
-    focusPhoneValidationInput()
-
-    const animationFrame = window.requestAnimationFrame(focusPhoneValidationInput)
-
-    return () => window.cancelAnimationFrame(animationFrame)
-  }, [])
-
   return (
-    <label className="login-phone-code" htmlFor="signup-phone-validation-code">
+    <label
+      className="login-phone-code"
+      htmlFor="signup-phone-validation-code"
+      onPointerDown={(event) => {
+        event.preventDefault()
+        focusPhoneValidationInput()
+      }}
+    >
       <span className="login-phone-code__accessibility-label">Código de verificação</span>
       <input
-        ref={inputRef}
         id="signup-phone-validation-code"
         className="login-phone-code__input"
         type="text"
@@ -710,7 +1023,6 @@ function PhoneValidationCodeInput({
         pattern="[0-9]*"
         autoComplete="one-time-code"
         enterKeyHint="done"
-        autoFocus
         value={digits}
         aria-label="Código de verificação"
         onBlur={() => setIsFocused(false)}
@@ -787,6 +1099,7 @@ export function LoginPage({
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [emailErrorMessage, setEmailErrorMessage] = useState<string | null>(null)
+  const [showSignupPasswordValidationErrors, setShowSignupPasswordValidationErrors] = useState(false)
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [submittingMethod, setSubmittingMethod] = useState<LoginSubmitMethod | null>(null)
   const [cpf, setCpf] = useState('')
@@ -811,22 +1124,27 @@ export function LoginPage({
   const [signupGarantidaCountdownNow, setSignupGarantidaCountdownNow] = useState(() => Date.now())
   const isEmailValid = useMemo(() => loginEmailPattern.test(email.trim()), [email])
   const isPasswordFilled = password.length > 0
+  const isSignupPasswordAccepted = isSignupPasswordValid(password)
   const isSubmitting = submittingMethod !== null
   const isEmailSubmitting = submittingMethod === 'email'
   const isSignupActionLoading = signupLoadingAction !== null
   const canSubmitCredentials = isEmailValid && isPasswordFilled && !isSubmitting
+  const canSubmitSignupAccount = isEmailValid && isSignupPasswordAccepted && !isSubmitting
   const showEmailError = emailErrorMessage !== null
+  const showSignupPasswordError = showSignupPasswordValidationErrors && !isSignupPasswordAccepted
   const cpfDigits = onlyDigits(cpf)
+  const isCpfAccepted = isCpfValid(cpfDigits)
   const phoneDigits = normalizeBrazilPhone(phone)
   const phoneValidationDigits = onlyDigits(phoneValidationCode)
   const cepDigits = onlyDigits(cep)
-  const canContinuePersonal = cpfDigits.length === 11 && phoneDigits.length === 11
+  const canContinuePersonal = isCpfAccepted && phoneDigits.length === 11
   const canConfirmPhoneValidation = phoneValidationDigits.length === phoneValidationCodeLength
   const shouldShowAddressDetails = cepDigits.length === 8
   const canConfirmAddress = shouldShowAddressDetails
     && street.trim().length > 0
     && (noAddressNumber || addressNumber.trim().length > 0)
     && addressLookupStatus !== 'loading'
+  const isSignupBottomSheetOpen = isPhoneValidationOpen || isRegionSheetOpen || isCustomLimitSheetOpen
   const showCpfError = cpfErrorMessage !== null
   const showPhoneError = phoneErrorMessage !== null
   const signupGarantidaCountdown = useMemo(() => (
@@ -959,6 +1277,7 @@ export function LoginPage({
     setEmail('')
     setPassword('')
     setEmailErrorMessage(null)
+    setShowSignupPasswordValidationErrors(false)
     setIsPasswordVisible(false)
     setSubmittingMethod(null)
     setCpf('')
@@ -1095,32 +1414,222 @@ export function LoginPage({
 
     if (!loginPageElement) return undefined
 
-    const updateLoginViewportHeight = () => {
+    let stableViewportHeight = 0
+    let keyboardInset = 0
+    let viewportUpdateTimer: number | null = null
+    let revealTimer: number | null = null
+
+    const readLayoutViewportHeight = () => Math.max(
+      window.innerHeight || 0,
+      document.documentElement.clientHeight || 0,
+      1
+    )
+
+    // Bottom edge of the area the keyboard leaves visible, in layout viewport coords.
+    const readVisibleViewportBottom = () => {
       const visualViewport = window.visualViewport
-      const viewportHeight = visualViewport?.height ?? window.innerHeight
-      const viewportTop = visualViewport?.offsetTop ?? 0
 
-      if (viewportHeight > 0) {
-        loginPageElement.style.setProperty('--login-page-viewport-height', `${viewportHeight}px`)
-      }
+      if (!visualViewport) return readLayoutViewportHeight()
 
-      loginPageElement.style.setProperty('--login-page-viewport-top', `${Math.max(0, viewportTop)}px`)
+      return visualViewport.offsetTop + visualViewport.height
     }
 
-    updateLoginViewportHeight()
+    const revealFocusedField = () => {
+      const activeElement = document.activeElement
 
-    window.addEventListener('resize', updateLoginViewportHeight)
-    window.addEventListener('orientationchange', updateLoginViewportHeight)
-    window.visualViewport?.addEventListener('resize', updateLoginViewportHeight)
-    window.visualViewport?.addEventListener('scroll', updateLoginViewportHeight)
+      if (!(activeElement instanceof HTMLElement)) return
+      if (!isKeyboardFocusElement(activeElement) || !loginPageElement.contains(activeElement)) return
+
+      const scrollContainer = activeElement.closest('.login-page__container')
+
+      if (!(scrollContainer instanceof HTMLElement)) return
+
+      const hiddenBelow = activeElement.getBoundingClientRect().bottom + 24 - readVisibleViewportBottom()
+
+      if (hiddenBelow > 0) {
+        scrollContainer.scrollTop += hiddenBelow
+      }
+    }
+
+    // A late pass wins over the focus scroll-restore timers (up to 320ms).
+    const scheduleFocusedFieldReveal = () => {
+      window.requestAnimationFrame(revealFocusedField)
+
+      if (revealTimer !== null) window.clearTimeout(revealTimer)
+      revealTimer = window.setTimeout(() => {
+        revealTimer = null
+        revealFocusedField()
+      }, 400)
+    }
+
+    const updateKeyboardInset = () => {
+      const visibleBottom = readVisibleViewportBottom()
+
+      // Área visível maior que a altura congelada = a viewport cresceu (não é teclado);
+      // atualiza a base mesmo com input focado para não deixar buraco no fundo.
+      if (visibleBottom > stableViewportHeight + 1) {
+        const nextViewportHeight = readLayoutViewportHeight()
+
+        if (Math.abs(nextViewportHeight - stableViewportHeight) >= 1) {
+          stableViewportHeight = nextViewportHeight
+          loginPageElement.style.setProperty('--login-page-stable-height', `${nextViewportHeight}px`)
+        }
+      }
+
+      const layoutHeight = stableViewportHeight || readLayoutViewportHeight()
+      const nextKeyboardInset = Math.max(0, Math.round(layoutHeight - visibleBottom))
+
+      if (Math.abs(nextKeyboardInset - keyboardInset) < 2) return
+
+      keyboardInset = nextKeyboardInset
+      loginPageElement.style.setProperty('--login-page-keyboard-inset', `${nextKeyboardInset}px`)
+
+      if (nextKeyboardInset > 0) {
+        scheduleFocusedFieldReveal()
+      }
+    }
+
+    const updateStableViewportHeight = (force = false) => {
+      if (force || !isKeyboardFocusElement(document.activeElement)) {
+        const nextViewportHeight = readLayoutViewportHeight()
+
+        if (Math.abs(nextViewportHeight - stableViewportHeight) >= 1) {
+          stableViewportHeight = nextViewportHeight
+          loginPageElement.style.setProperty('--login-page-stable-height', `${nextViewportHeight}px`)
+        }
+      }
+
+      updateKeyboardInset()
+    }
+
+    const scheduleStableViewportHeightUpdate = (force = false) => {
+      if (viewportUpdateTimer !== null) {
+        window.clearTimeout(viewportUpdateTimer)
+      }
+
+      viewportUpdateTimer = window.setTimeout(() => {
+        viewportUpdateTimer = null
+        updateStableViewportHeight(force)
+      }, force ? 320 : 120)
+    }
+
+    updateStableViewportHeight(true)
+
+    const handleViewportResize = () => {
+      updateKeyboardInset()
+      scheduleStableViewportHeightUpdate()
+    }
+    const handleOrientationChange = () => scheduleStableViewportHeightUpdate(true)
+    const handleVisualViewportChange = () => updateKeyboardInset()
+
+    // Cobre foco programático (setinhas do teclado iOS) com o teclado já aberto,
+    // quando nenhum evento de viewport dispara.
+    const handleFocusInReveal = (event: FocusEvent) => {
+      const target = event.target instanceof Element ? event.target : null
+
+      if (!target || !loginPageElement.contains(target)) return
+      if (!isKeyboardFocusElement(target)) return
+
+      scheduleFocusedFieldReveal()
+    }
+
+    window.addEventListener('resize', handleViewportResize)
+    window.addEventListener('orientationchange', handleOrientationChange)
+    window.visualViewport?.addEventListener('resize', handleVisualViewportChange)
+    window.visualViewport?.addEventListener('scroll', handleVisualViewportChange)
+    document.addEventListener('focusin', handleFocusInReveal)
 
     return () => {
-      window.removeEventListener('resize', updateLoginViewportHeight)
-      window.removeEventListener('orientationchange', updateLoginViewportHeight)
-      window.visualViewport?.removeEventListener('resize', updateLoginViewportHeight)
-      window.visualViewport?.removeEventListener('scroll', updateLoginViewportHeight)
-      loginPageElement.style.removeProperty('--login-page-viewport-height')
-      loginPageElement.style.removeProperty('--login-page-viewport-top')
+      if (viewportUpdateTimer !== null) {
+        window.clearTimeout(viewportUpdateTimer)
+      }
+
+      if (revealTimer !== null) {
+        window.clearTimeout(revealTimer)
+      }
+
+      window.removeEventListener('resize', handleViewportResize)
+      window.removeEventListener('orientationchange', handleOrientationChange)
+      window.visualViewport?.removeEventListener('resize', handleVisualViewportChange)
+      window.visualViewport?.removeEventListener('scroll', handleVisualViewportChange)
+      document.removeEventListener('focusin', handleFocusInReveal)
+      loginPageElement.style.removeProperty('--login-page-stable-height')
+      loginPageElement.style.removeProperty('--login-page-keyboard-inset')
+    }
+  }, [])
+
+  useTouchScrollFence(loginPageRef)
+
+  useLayoutEffect(() => {
+    const loginPageElement = loginPageRef.current
+
+    if (!loginPageElement) return undefined
+
+    let restoreFrame: number | null = null
+    const restoreTimers: number[] = []
+
+    const hasWindowScroll = () => (
+      window.scrollX !== 0
+      || window.scrollY !== 0
+      || document.documentElement.scrollTop !== 0
+      || document.body.scrollTop !== 0
+    )
+
+    const restoreWindowScroll = () => {
+      document.documentElement.scrollTop = 0
+      document.body.scrollTop = 0
+
+      if (window.scrollX !== 0 || window.scrollY !== 0) {
+        window.scrollTo(0, 0)
+      }
+    }
+
+    const scheduleWindowScrollRestore = () => {
+      restoreWindowScroll()
+
+      if (restoreFrame !== null) {
+        window.cancelAnimationFrame(restoreFrame)
+      }
+
+      restoreTimers.splice(0).forEach((timer) => window.clearTimeout(timer))
+
+      restoreFrame = window.requestAnimationFrame(() => {
+        restoreFrame = null
+        restoreWindowScroll()
+      })
+
+      ;[80, 160, 320].forEach((delay) => {
+        restoreTimers.push(window.setTimeout(restoreWindowScroll, delay))
+      })
+    }
+
+    const handleFocusIn = (event: FocusEvent) => {
+      const target = event.target instanceof Element ? event.target : null
+
+      if (!target || !loginPageElement.contains(target)) return
+      if (!isKeyboardFocusElement(target)) return
+
+      scheduleWindowScrollRestore()
+    }
+
+    const handleWindowScroll = () => {
+      if (!hasWindowScroll()) return
+      if (!isKeyboardFocusElement(document.activeElement)) return
+
+      scheduleWindowScrollRestore()
+    }
+
+    document.addEventListener('focusin', handleFocusIn)
+    window.addEventListener('scroll', handleWindowScroll, { passive: true })
+
+    return () => {
+      if (restoreFrame !== null) {
+        window.cancelAnimationFrame(restoreFrame)
+      }
+
+      restoreTimers.splice(0).forEach((timer) => window.clearTimeout(timer))
+      document.removeEventListener('focusin', handleFocusIn)
+      window.removeEventListener('scroll', handleWindowScroll)
     }
   }, [])
 
@@ -1175,7 +1684,7 @@ export function LoginPage({
     }
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      scheduleCameraState('unavailable', 'Câmera indisponível neste navegador ou dispositivo.')
+      scheduleCameraState('unavailable', 'Use um navegador ou dispositivo com câmera.')
       return () => {
         isActive = false
         clearScheduledCameraState()
@@ -1209,7 +1718,7 @@ export function LoginPage({
 
         const errorName = error instanceof DOMException ? error.name : ''
         const cameraErrorMessage = verificationCameraErrorMessageByName[errorName]
-          ?? 'Não foi possível abrir a câmera. Confira a permissão no celular.'
+          ?? 'Confira a permissão da câmera no celular.'
 
         setVerificationCameraStatus('unavailable')
         setVerificationCameraError(cameraErrorMessage)
@@ -1251,29 +1760,41 @@ export function LoginPage({
     setAddressLookupStatus('loading')
     setAddressLookupError(null)
 
+    // CEP de teste liberado para o protótipo: traz um endereço completo de exemplo.
+    if (nextCepDigits === prototypeAllowedCep) {
+      setRegion(prototypeAllowedAddress.region)
+      setNeighborhood(prototypeAllowedAddress.neighborhood)
+      setStreet(prototypeAllowedAddress.street)
+      setAddressNumber('')
+      setAddressComplement('')
+      setNoAddressNumber(false)
+      setAddressLookupStatus('success')
+      return
+    }
+
     fetch(`https://viacep.com.br/ws/${nextCepDigits}/json/`, { signal: abortController.signal })
       .then((response) => {
-        if (!response.ok) throw new Error('CEP indisponível')
+        if (!response.ok) throw new Error(cepLookupErrorMessage)
 
         return response.json() as Promise<ViaCepResponse>
       })
       .then((data) => {
         if (abortController.signal.aborted) return
-        if (data.erro) throw new Error('CEP não encontrado')
+        if (data.erro) throw new Error(cepLookupErrorMessage)
 
         setRegion(getBrazilRegionByUf(data.uf))
         setNeighborhood(data.bairro ?? '')
         setStreet(data.logradouro ?? '')
         setAddressLookupStatus('success')
       })
-      .catch((error: unknown) => {
+      .catch(() => {
         if (abortController.signal.aborted) return
 
         setRegion('')
         setNeighborhood('')
         setStreet('')
         setAddressLookupStatus('error')
-        setAddressLookupError(error instanceof Error ? error.message : 'Não foi possível buscar o CEP')
+        setAddressLookupError(cepLookupErrorMessage)
       })
   }
 
@@ -1288,6 +1809,20 @@ export function LoginPage({
   const handleEmailChange = (nextEmail: string) => {
     setEmail(nextEmail)
     setEmailErrorMessage(null)
+  }
+
+  const validateSignupPassword = () => {
+    const isPasswordAccepted = isSignupPasswordValid(password)
+
+    // Se o usuário apenas focou no campo e saiu sem digitar nada, não mostrar erro.
+    setShowSignupPasswordValidationErrors(password.length > 0 && !isPasswordAccepted)
+
+    return isPasswordAccepted
+  }
+
+  const handleSignupPasswordChange = (nextPassword: string) => {
+    setPassword(nextPassword)
+    setShowSignupPasswordValidationErrors(false)
   }
 
   const validateCpf = () => {
@@ -1360,8 +1895,9 @@ export function LoginPage({
     event.preventDefault()
 
     const isEmailAccepted = validateEmail()
+    const isPasswordAccepted = validateSignupPassword()
 
-    if (!isEmailAccepted || !isPasswordFilled || isSubmitting) return
+    if (!isEmailAccepted || !isPasswordAccepted || isSubmitting) return
 
     beginSignupAccountSuccess('email')
   }
@@ -1369,15 +1905,20 @@ export function LoginPage({
   const handlePersonalSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (!canContinuePersonal || isSignupActionLoading) return
+    const isCpfAcceptedOnSubmit = validateCpf()
+    const isPhoneAcceptedOnSubmit = validatePhone()
+
+    if (!isCpfAcceptedOnSubmit || !isPhoneAcceptedOnSubmit || !canContinuePersonal || isSignupActionLoading) return
+
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
 
     flushSync(() => {
       setPhoneValidationCode('')
       setPhoneValidationSeconds(phoneValidationCountdownStart)
       setIsPhoneValidationOpen(true)
     })
-
-    focusPhoneValidationInput()
   }
 
   const confirmPhoneValidation = () => {
@@ -1532,21 +2073,25 @@ export function LoginPage({
     onBack?.()
   }
 
-  const renderPasswordTrailingAction = () => (
-    <button
-      type="button"
-      className="login-input__eye"
-      aria-label={isPasswordVisible ? 'Ocultar senha' : 'Mostrar senha'}
-      onClick={() => setIsPasswordVisible((current) => !current)}
-    >
-      <img
-        src={isPasswordVisible ? iconEye : iconEyeHide}
-        alt=""
-        className="login-input__eye-icon"
-        aria-hidden="true"
-      />
-    </button>
-  )
+  const renderPasswordTrailingAction = () => {
+    if (!isPasswordFilled) return null
+
+    return (
+      <button
+        type="button"
+        className="login-input__eye"
+        aria-label={isPasswordVisible ? 'Ocultar senha' : 'Mostrar senha'}
+        onClick={() => setIsPasswordVisible((current) => !current)}
+      >
+        <img
+          src={isPasswordVisible ? iconEye : iconEyeHide}
+          alt=""
+          className="login-input__eye-icon"
+          aria-hidden="true"
+        />
+      </button>
+    )
+  }
 
   const renderLogin = () => (
     <>
@@ -1568,6 +2113,7 @@ export function LoginPage({
               inputMode="email"
               errorMessage={emailErrorMessage ?? undefined}
               isInvalid={showEmailError}
+              preventScrollOnFocus
               onBlur={validateEmail}
               onChange={handleEmailChange}
               onFocus={() => setEmailErrorMessage(null)}
@@ -1580,7 +2126,11 @@ export function LoginPage({
               value={password}
               type={isPasswordVisible ? 'text' : 'password'}
               autoComplete="current-password"
-              onChange={(nextPassword) => setPassword(nextPassword)}
+              preventScrollOnFocus
+              onChange={(nextPassword) => {
+                setPassword(nextPassword)
+                setShowSignupPasswordValidationErrors(false)
+              }}
               trailingAction={renderPasswordTrailingAction()}
             />
 
@@ -1650,7 +2200,7 @@ export function LoginPage({
         />
 
         <div className="login-page__garantida-banner-copy">
-          <p className="login-page__garantida-banner-kicker">A GARANTIDA ESTÁ TE ESPERANDO!</p>
+          <p className="login-page__garantida-banner-kicker">OFERTA TE ESPERANDO!</p>
           <div className="login-page__garantida-banner-row">
             <div className="login-page__garantida-banner-market">
               <strong>R. LEWANDOWSKI</strong>
@@ -1668,6 +2218,10 @@ export function LoginPage({
               </span>
             </div>
           </div>
+        </div>
+        <div className="login-page__garantida-banner-tag">
+          <img src={iconOferta} alt="" aria-hidden="true" />
+          <strong>GARANTIDA</strong>
         </div>
       </aside>
     )
@@ -1700,26 +2254,38 @@ export function LoginPage({
             inputMode="email"
             errorMessage={emailErrorMessage ?? undefined}
             isInvalid={showEmailError}
+            preventScrollOnFocus
             onBlur={validateEmail}
             onChange={handleEmailChange}
             onFocus={() => setEmailErrorMessage(null)}
           />
-          <LoginInput
-            id="signup-password"
-            label="Senha"
-            icon={iconPass}
-            placeholder="••••••••••••••"
-            value={password}
-            type={isPasswordVisible ? 'text' : 'password'}
-            autoComplete="new-password"
-            onChange={(nextPassword) => setPassword(nextPassword)}
-            trailingAction={renderPasswordTrailingAction()}
-          />
+          <div className="login-password-field">
+            <LoginInput
+              id="signup-password"
+              label="Senha"
+              icon={iconPass}
+              placeholder="••••••••••••••"
+              value={password}
+              type={isPasswordVisible ? 'text' : 'password'}
+              autoComplete="new-password"
+              describedBy="signup-password-rules"
+              isInvalid={showSignupPasswordError}
+              preventScrollOnFocus
+              onBlur={validateSignupPassword}
+              onChange={handleSignupPasswordChange}
+              onFocus={() => setShowSignupPasswordValidationErrors(false)}
+              trailingAction={renderPasswordTrailingAction()}
+            />
+            <SignupPasswordRequirements
+              password={password}
+              showInvalidRequirements={showSignupPasswordError}
+            />
+          </div>
         </div>
 
         <PrimaryButton
           type="submit"
-          disabled={!isEmailValid || !isPasswordFilled || isSubmitting}
+          disabled={!canSubmitSignupAccount}
           isLoading={isEmailSubmitting}
         >
           Criar conta
@@ -1781,6 +2347,7 @@ export function LoginPage({
             maxLength={14}
             errorMessage={cpfErrorMessage ?? undefined}
             isInvalid={showCpfError}
+            preventScrollOnFocus
             onBlur={validateCpf}
             onChange={handleCpfChange}
             onFocus={() => setCpfErrorMessage(null)}
@@ -1900,7 +2467,14 @@ export function LoginPage({
 
   const renderSignupAddress = () => (
     <section
-      className="login-page__container login-page__container--signup login-page__container--address"
+      className={[
+        'login-page__container',
+        'login-page__container--signup',
+        'login-page__container--address',
+        // Antes do CEP revelar os outros campos, não reserva espaço de scroll
+        // para o teclado: o conteúdo cabe na tela e nada deve rolar.
+        !shouldShowAddressDetails ? 'login-page__container--no-keyboard-inset' : '',
+      ].filter(Boolean).join(' ')}
       aria-labelledby="signup-address-title"
     >
       {renderSignupGarantidaBanner()}
@@ -1920,6 +2494,7 @@ export function LoginPage({
             maxLength={9}
             errorMessage={addressLookupError ?? undefined}
             isInvalid={addressLookupStatus === 'error'}
+            preventScrollOnFocus
             onChange={(nextCep) => {
               const nextCepDigits = onlyDigits(nextCep).slice(0, 8)
 
@@ -1949,13 +2524,21 @@ export function LoginPage({
                 placeholder="Insira o estado ou região"
                 value={region}
                 isOpen={isRegionSheetOpen}
-                onOpen={() => setIsRegionSheetOpen(true)}
+                onOpen={() => {
+                  // Fecha o teclado antes de abrir a sheet para ela não ficar coberta.
+                  if (document.activeElement instanceof HTMLElement) {
+                    document.activeElement.blur()
+                  }
+
+                  setIsRegionSheetOpen(true)
+                }}
               />
               <LoginInput
                 id="signup-neighborhood"
                 label="Bairro"
                 placeholder="Insira o bairro"
                 value={neighborhood}
+                preventScrollOnFocus
                 onChange={setNeighborhood}
               />
               <LoginInput
@@ -1963,6 +2546,7 @@ export function LoginPage({
                 label="Endereço - Rua, Avenida"
                 placeholder="Insira o endereço"
                 value={street}
+                preventScrollOnFocus
                 onChange={setStreet}
               />
               <LoginInput
@@ -1972,6 +2556,7 @@ export function LoginPage({
                 value={addressNumber}
                 type="tel"
                 inputMode="numeric"
+                preventScrollOnFocus
                 onChange={(nextNumber) => setAddressNumber(onlyDigits(nextNumber).slice(0, 8))}
               />
               <SignupCheckbox checked={noAddressNumber} onChange={setNoAddressNumber}>
@@ -1982,6 +2567,7 @@ export function LoginPage({
                 label="Complemento"
                 placeholder="Insira o complemento (se tiver)"
                 value={addressComplement}
+                preventScrollOnFocus
                 onChange={setAddressComplement}
               />
             </>
@@ -2290,6 +2876,19 @@ export function LoginPage({
 
       setCustomTimeLimitMinutesInput(normalizeTimeLimitMinutesInput(value))
     }
+    // Foca já no pointerdown: a troca horas ↔ minutos vira um único passo de foco,
+    // sem o teclado do iOS piscar/reposicionar a sheet no gap entre blur e focus.
+    const handleLimitShellPointerDown = (event: ReactPointerEvent<HTMLSpanElement>) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return
+
+      const input = event.currentTarget.querySelector('input')
+
+      if (!input || input.disabled) return
+      if (document.activeElement === input) return
+
+      event.preventDefault()
+      input.focus({ preventScroll: true })
+    }
 
     return (
       <BottomSheet
@@ -2324,7 +2923,7 @@ export function LoginPage({
             <div className="login-limits-custom-form__time-row">
               <label className="login-limits-custom-form__field">
                 <span className="login-page__sr-only">Horas do limite de tempo de jogo diário</span>
-                <span className="login-limits-custom-form__input-shell">
+                <span className="login-limits-custom-form__input-shell" onPointerDown={handleLimitShellPointerDown}>
                   <input
                     className="login-limits-custom-form__input"
                     type="tel"
@@ -2345,6 +2944,7 @@ export function LoginPage({
                     'login-limits-custom-form__input-shell',
                     isTimeLimitMinutesDisabled ? 'login-limits-custom-form__input-shell--disabled' : '',
                   ].filter(Boolean).join(' ')}
+                  onPointerDown={handleLimitShellPointerDown}
                 >
                   <input
                     className="login-limits-custom-form__input"
@@ -2364,7 +2964,7 @@ export function LoginPage({
           ) : (
             <label className="login-limits-custom-form__field">
               <span className="login-page__sr-only">{title}</span>
-              <span className="login-limits-custom-form__input-shell">
+              <span className="login-limits-custom-form__input-shell" onPointerDown={handleLimitShellPointerDown}>
                 <span className="login-limits-custom-form__affix" aria-hidden="true">R$</span>
                 <input
                   className="login-limits-custom-form__input"
@@ -2419,6 +3019,7 @@ export function LoginPage({
         'login-page',
         `login-page--${motionState}`,
         displayedMode === 'signup' ? 'login-page--signup' : '',
+        isSignupBottomSheetOpen ? 'login-page--sheet-open' : '',
         displayedMode === 'signup' && signupStep === 'verification' ? 'login-page--verification' : '',
       ].filter(Boolean).join(' ')}
       data-motion={motionState}

@@ -12,6 +12,9 @@
   width: 100%;
   height: var(--bottom-sheet-viewport-height, var(--app-viewport-height, 100dvh));
   pointer-events: none;
+  /* Acompanha o teclado suavemente em vez de saltar a cada mudança de altura
+     (ex.: barra de autofill do iOS aparecendo/sumindo ao trocar de input). */
+  transition: top 180ms ease, height 180ms ease;
 }
 
 /* Overlay */
@@ -174,6 +177,8 @@
 .bottom-sheet__body {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 28px 0;
 }
 

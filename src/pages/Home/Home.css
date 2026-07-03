@@ -809,6 +809,12 @@
     scroll-padding-bottom: var(--navbar-page-bottom-padding);
   }
 
+  :root[data-auth-page-open] .home {
+    overflow: hidden;
+    touch-action: none;
+    -webkit-overflow-scrolling: auto;
+  }
+
   .home__sport-featured-content {
     padding-bottom: 0;
   }

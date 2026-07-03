@@ -1,12 +1,8 @@
 .login-page {
-  --login-page-height: var(--login-page-viewport-height, var(--app-viewport-height, 100vh));
-  --login-page-top: var(--login-page-viewport-top, 0px);
+  --login-page-height: var(--login-page-stable-height, var(--app-viewport-height, 100vh));
 
   position: fixed;
-  top: var(--login-page-top);
-  right: 0;
-  bottom: auto;
-  left: 0;
+  inset: 0;
   isolation: isolate;
   z-index: 1100;
   width: 100%;
@@ -161,22 +157,43 @@
   flex-direction: column;
   gap: 20px;
   width: 100%;
-  height: calc(var(--login-page-height) - 56px);
+  /* Encolhe junto com o teclado: o fundo do scroller coincide com o topo do teclado,
+     então o scroll nativo e o reveal de foco funcionam mesmo em WebViews. */
+  height: calc(var(--login-page-height) - 56px - var(--login-page-keyboard-inset, 0px));
   padding: 4px 16px 16px;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* none (não contain): sem bounce quando o conteúdo cabe na tela,
+     evitando o "rola e volta" ao focar um campo. */
+  overscroll-behavior: none;
+  scrollbar-width: none;
+  scroll-padding-top: 12px;
+  scroll-padding-bottom: 24px;
+}
+
+.login-page__container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Tela com conteúdo enxuto (ex.: endereço antes do CEP revelar os campos):
+   mantém a altura cheia com o teclado aberto para não criar scroll desnecessário. */
+.login-page__container.login-page__container--no-keyboard-inset {
+  height: calc(var(--login-page-height) - 56px);
+}
+
+/* Conteúdo transborda (rola) em vez de comprimir quando o container encolhe. */
+.login-page__container > * {
+  flex-shrink: 0;
 }
 
 .login-page__container--signup {
   gap: 20px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior: contain;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
 }
 
-.login-page__container--signup::-webkit-scrollbar {
-  display: none;
+.login-page--sheet-open .login-page__container--signup {
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
 }
 
 .login-page__auth-mode-motion {
@@ -385,6 +402,15 @@
   letter-spacing: 0;
 }
 
+.login-input__field--password-mask {
+  -webkit-text-security: disc;
+}
+
+.login-input--filled .login-input__field--password-mask {
+  font-size: 13px;
+  line-height: 18px;
+}
+
 .login-input__field::placeholder {
   color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
   opacity: 1;
@@ -457,6 +483,72 @@
   font-weight: 500;
   line-height: 21px;
   letter-spacing: 0;
+}
+
+.login-password-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.login-password-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 0 8px;
+  color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+  letter-spacing: 0;
+}
+
+.login-password-rules__title {
+  width: 100%;
+  margin: 0;
+  color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
+}
+
+.login-password-rules__grid {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.login-password-rules__column {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.login-password-rules__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
+  white-space: nowrap;
+}
+
+.login-password-rules__item--valid {
+  color: var(--ds-fill-success, #34d399);
+}
+
+.login-password-rules__item--invalid {
+  color: var(--ds-fill-error, #f87171);
+}
+
+.login-password-rules__icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
 }
 
 .login-page__assist-row {
@@ -728,6 +820,46 @@
   text-overflow: ellipsis;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.login-page__garantida-banner-tag {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  z-index: 3;
+  display: flex;
+  height: 18px;
+  align-items: center;
+  gap: 4px;
+  padding: 0 9px 0 8px;
+  overflow: hidden;
+  border-bottom-left-radius: 12px;
+  background-image: linear-gradient(32deg, #4b20ff 0%, #9730ff 100%);
+  color: var(--ds-fill-dark, #000);
+  font-family: var(--font-forma-djr-display, 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif);
+  font-size: 10px;
+  font-style: italic;
+  font-weight: 900;
+  line-height: 16px;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.login-page__garantida-banner-tag img {
+  display: block;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+}
+
+.login-page__garantida-banner-tag strong {
+  display: inline-flex;
+  height: 18px;
+  align-items: center;
+  color: inherit;
+  font: inherit;
+  line-height: 18px;
+  transform: translateY(1px);
 }
 
 .login-page__garantida-banner-row {
@@ -1182,7 +1314,8 @@
 }
 
 .login-limits-custom-form__input-shell:focus-within {
-  border-color: var(--ds-fill-opacity-secondary, rgb(251 251 251 / 0.24));
+  border-color: var(--ds-fill-primary, #fbfbfb);
+  box-shadow: 0 0 0 3px rgb(255 255 255 / 0.24);
 }
 
 .login-limits-custom-form__input,
@@ -2182,14 +2315,10 @@
   }
 
   .login-page__container {
-    height: calc(var(--login-page-height) - 56px);
+    height: calc(var(--login-page-height) - 56px - var(--login-page-keyboard-inset, 0px));
     min-height: 0;
-    overflow: hidden;
-  }
-
-  .login-page__container--signup {
-    overflow-x: hidden;
     overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .login-page__signup-step-motion {
