@@ -680,8 +680,15 @@
   box-shadow: 0 0 0 3px rgb(255 255 255 / 0.24);
 }
 
-.login-phone-input--filled:not(:focus-within) .login-phone-input__container {
+.login-phone-input--filled:not(:focus-within):not(.login-phone-input--error) .login-phone-input__container {
   border-color: var(--ds-fill-opacity-quinary, rgb(251 251 251 / 0.08));
+  box-shadow: none;
+}
+
+.login-phone-input--error .login-phone-input__container,
+.login-phone-input--error:focus-within .login-phone-input__container {
+  border-color: var(--ds-fill-error, #f87171);
+  box-shadow: 0 0 0 3px rgb(255 121 98 / 0.24);
 }
 
 .login-phone-input__prefix {

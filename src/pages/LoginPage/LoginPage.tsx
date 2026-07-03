@@ -89,6 +89,8 @@ interface ViaCepResponse {
 
 const loginEmailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const loginEmailErrorMessage = 'E-mail inválido'
+const cpfIncompleteErrorMessage = 'CPF incompleto'
+const phoneIncompleteErrorMessage = 'Celular incompleto'
 const signupSteps: SignupStep[] = ['account', 'personal', 'address']
 const phoneValidationCodeLength = 6
 const phoneValidationCountdownStart = 30
@@ -267,6 +269,22 @@ const getEmailErrorMessage = (value: string) => {
   return loginEmailPattern.test(normalizedValue) ? null : loginEmailErrorMessage
 }
 
+const getCpfErrorMessage = (value: string) => {
+  const digits = onlyDigits(value)
+
+  if (!digits || digits.length === 11) return null
+
+  return cpfIncompleteErrorMessage
+}
+
+const getPhoneErrorMessage = (value: string) => {
+  const digits = normalizeBrazilPhone(value)
+
+  if (!digits || digits.length === 11) return null
+
+  return phoneIncompleteErrorMessage
+}
+
 const formatCpf = (value: string) => {
   const digits = onlyDigits(value).slice(0, 11)
   const firstGroup = digits.slice(0, 3)
@@ -350,6 +368,7 @@ function LoginInput({
   onFocus,
 }: LoginInputProps) {
   const isFilled = value.length > 0
+  const errorId = `${id}-error`
 
   return (
     <label
@@ -375,6 +394,8 @@ function LoginInput({
             inputMode={inputMode}
             maxLength={maxLength}
             readOnly={readOnly}
+            aria-describedby={isInvalid && errorMessage ? errorId : undefined}
+            aria-invalid={isInvalid || undefined}
             onBlur={onBlur}
             onChange={(event) => onChange(event.target.value)}
             onFocus={onFocus}
@@ -385,7 +406,7 @@ function LoginInput({
         ) : trailingAction}
       </span>
       {isInvalid && errorMessage ? (
-        <span className="login-input__error-message">{errorMessage}</span>
+        <span className="login-input__error-message" id={errorId}>{errorMessage}</span>
       ) : null}
     </label>
   )
@@ -582,18 +603,31 @@ function SignupCheckbox({
 }
 
 function PhoneInput({
+  errorMessage,
+  isInvalid = false,
+  onBlur,
   value,
   onChange,
+  onFocus,
 }: {
+  errorMessage?: string
+  isInvalid?: boolean
+  onBlur?: () => void
   value: string
   onChange: (value: string) => void
+  onFocus?: () => void
 }) {
   const phoneDigits = normalizeBrazilPhone(value)
   const isFilled = phoneDigits.length > 0
+  const errorId = 'signup-phone-error'
 
   return (
     <label
-      className={['login-phone-input', isFilled ? 'login-phone-input--filled' : ''].filter(Boolean).join(' ')}
+      className={[
+        'login-phone-input',
+        isFilled ? 'login-phone-input--filled' : '',
+        isInvalid ? 'login-phone-input--error' : '',
+      ].filter(Boolean).join(' ')}
       htmlFor="signup-phone"
     >
       <span className="login-input__label">Celular</span>
@@ -611,9 +645,19 @@ function PhoneInput({
           autoComplete="tel"
           placeholder="DDD + número"
           value={formatBrazilPhone(value)}
+          aria-describedby={isInvalid && errorMessage ? errorId : undefined}
+          aria-invalid={isInvalid || undefined}
+          onBlur={onBlur}
           onChange={(event) => onChange(normalizeBrazilPhone(event.target.value))}
+          onFocus={onFocus}
         />
+        {isInvalid ? (
+          <img src={iconError} alt="" className="login-input__error-icon" aria-hidden="true" />
+        ) : null}
       </span>
+      {isInvalid && errorMessage ? (
+        <span className="login-input__error-message" id={errorId}>{errorMessage}</span>
+      ) : null}
     </label>
   )
 }
@@ -728,7 +772,9 @@ export function LoginPage({
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [submittingMethod, setSubmittingMethod] = useState<LoginSubmitMethod | null>(null)
   const [cpf, setCpf] = useState('')
+  const [cpfErrorMessage, setCpfErrorMessage] = useState<string | null>(null)
   const [phone, setPhone] = useState('')
+  const [phoneErrorMessage, setPhoneErrorMessage] = useState<string | null>(null)
   const [isPhoneValidationOpen, setIsPhoneValidationOpen] = useState(false)
   const [phoneValidationCode, setPhoneValidationCode] = useState('')
   const [phoneValidationSeconds, setPhoneValidationSeconds] = useState(phoneValidationCountdownStart)
@@ -761,6 +807,8 @@ export function LoginPage({
     && street.trim().length > 0
     && (noAddressNumber || addressNumber.trim().length > 0)
     && addressLookupStatus !== 'loading'
+  const showCpfError = cpfErrorMessage !== null
+  const showPhoneError = phoneErrorMessage !== null
 
   const cancelSignupActionLoading = () => {
     if (signupActionLoadingTimerRef.current === null) return
@@ -891,7 +939,9 @@ export function LoginPage({
     setIsPasswordVisible(false)
     setSubmittingMethod(null)
     setCpf('')
+    setCpfErrorMessage(null)
     setPhone('')
+    setPhoneErrorMessage(null)
     setIsPhoneValidationOpen(false)
     setPhoneValidationCode('')
     setPhoneValidationSeconds(phoneValidationCountdownStart)
@@ -1171,6 +1221,32 @@ export function LoginPage({
   const handleEmailChange = (nextEmail: string) => {
     setEmail(nextEmail)
     setEmailErrorMessage(null)
+  }
+
+  const validateCpf = () => {
+    const nextCpfErrorMessage = getCpfErrorMessage(cpf)
+
+    setCpfErrorMessage(nextCpfErrorMessage)
+
+    return nextCpfErrorMessage === null
+  }
+
+  const handleCpfChange = (nextCpf: string) => {
+    setCpf(onlyDigits(nextCpf).slice(0, 11))
+    setCpfErrorMessage(null)
+  }
+
+  const validatePhone = () => {
+    const nextPhoneErrorMessage = getPhoneErrorMessage(phone)
+
+    setPhoneErrorMessage(nextPhoneErrorMessage)
+
+    return nextPhoneErrorMessage === null
+  }
+
+  const handlePhoneChange = (nextPhone: string) => {
+    setPhone(nextPhone)
+    setPhoneErrorMessage(null)
   }
 
   const beginAuthSubmitLoading = (method: LoginSubmitMethod, onComplete: () => void) => {
@@ -1584,9 +1660,20 @@ export function LoginPage({
             autoComplete="off"
             inputMode="numeric"
             maxLength={14}
-            onChange={(nextCpf) => setCpf(onlyDigits(nextCpf).slice(0, 11))}
+            errorMessage={cpfErrorMessage ?? undefined}
+            isInvalid={showCpfError}
+            onBlur={validateCpf}
+            onChange={handleCpfChange}
+            onFocus={() => setCpfErrorMessage(null)}
           />
-          <PhoneInput value={phone} onChange={setPhone} />
+          <PhoneInput
+            value={phone}
+            errorMessage={phoneErrorMessage ?? undefined}
+            isInvalid={showPhoneError}
+            onBlur={validatePhone}
+            onChange={handlePhoneChange}
+            onFocus={() => setPhoneErrorMessage(null)}
+          />
         </div>
 
         <SignupCheckbox checked={acceptsPromos} onChange={setAcceptsPromos}>
