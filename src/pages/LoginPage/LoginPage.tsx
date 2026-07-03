@@ -745,6 +745,7 @@ export function LoginPage({
   const signupStepMotionTimerRef = useRef<number | null>(null)
   const verificationStreamRef = useRef<MediaStream | null>(null)
   const verificationVideoRef = useRef<HTMLVideoElement | null>(null)
+  const loginPageRef = useRef<HTMLElement | null>(null)
   const [displayedMode, setDisplayedMode] = useState<AuthMode>(mode)
   const [authModeMotionPhase, setAuthModeMotionPhase] = useState<SignupStepMotionPhase>('idle')
   const [signupStep, setSignupStep] = useState<SignupStep>('account')
@@ -1065,6 +1066,33 @@ export function LoginPage({
     mediaQueryList.addEventListener('change', updateMobileStatus)
 
     return () => mediaQueryList.removeEventListener('change', updateMobileStatus)
+  }, [])
+
+  useLayoutEffect(() => {
+    const loginPageElement = loginPageRef.current
+
+    if (!loginPageElement) return undefined
+
+    const updateLoginViewportHeight = () => {
+      const viewportHeight = window.visualViewport?.height ?? window.innerHeight
+
+      if (viewportHeight > 0) {
+        loginPageElement.style.setProperty('--login-page-viewport-height', `${viewportHeight}px`)
+      }
+    }
+
+    updateLoginViewportHeight()
+
+    window.addEventListener('resize', updateLoginViewportHeight)
+    window.visualViewport?.addEventListener('resize', updateLoginViewportHeight)
+    window.visualViewport?.addEventListener('scroll', updateLoginViewportHeight)
+
+    return () => {
+      window.removeEventListener('resize', updateLoginViewportHeight)
+      window.visualViewport?.removeEventListener('resize', updateLoginViewportHeight)
+      window.visualViewport?.removeEventListener('scroll', updateLoginViewportHeight)
+      loginPageElement.style.removeProperty('--login-page-viewport-height')
+    }
   }, [])
 
   useEffect(() => {
@@ -2293,6 +2321,7 @@ export function LoginPage({
 
   return (
     <main
+      ref={loginPageRef}
       className={[
         'login-page',
         `login-page--${motionState}`,

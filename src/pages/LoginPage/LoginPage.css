@@ -1,10 +1,12 @@
 .login-page {
+  --login-page-height: var(--login-page-viewport-height, var(--app-viewport-height, 100vh));
+
   position: fixed;
   inset: 0;
   isolation: isolate;
   z-index: 1100;
   width: 100%;
-  height: var(--app-viewport-height, 100vh);
+  height: var(--login-page-height);
   min-height: 0;
   overflow: hidden;
   background: transparent;
@@ -30,7 +32,7 @@
   isolation: isolate;
   z-index: 2;
   width: 100%;
-  height: var(--app-viewport-height, 100vh);
+  height: var(--login-page-height);
   min-height: 0;
   overflow: hidden;
   background: var(--ds-background-app, #000000);
@@ -155,7 +157,7 @@
   flex-direction: column;
   gap: 20px;
   width: 100%;
-  height: calc(var(--app-viewport-height, 100vh) - 56px);
+  height: calc(var(--login-page-height) - 56px);
   padding: 4px 16px 16px;
   overflow: hidden;
 }
@@ -166,6 +168,7 @@
   overflow-x: hidden;
   overscroll-behavior: contain;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .login-page__container--signup::-webkit-scrollbar {
@@ -193,7 +196,7 @@
 
 .login-page__signup-step-motion {
   width: 100%;
-  min-height: calc(var(--app-viewport-height, 100vh) - 56px);
+  min-height: calc(var(--login-page-height) - 56px);
   opacity: 1;
   transform: translate3d(0, 0, 0);
   will-change: opacity, transform;
@@ -1351,7 +1354,7 @@
   flex-direction: column;
   justify-content: space-between;
   width: 100%;
-  height: var(--app-viewport-height, 100vh);
+  height: var(--login-page-height);
   padding: 68px 16px 16px;
   overflow: hidden;
 }
@@ -1730,7 +1733,7 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: var(--app-viewport-height, 100vh);
+  height: var(--login-page-height);
   animation: login-verification-step-in 180ms ease-out both;
 }
 
@@ -2001,23 +2004,30 @@
   }
 
   .login-page__surface {
-    height: auto;
-    min-height: var(--app-viewport-height, 100vh);
-    overflow: visible;
+    height: var(--login-page-height);
+    min-height: 0;
+    overflow: hidden;
   }
 
   .login-page__container {
-    height: auto;
-    min-height: calc(var(--app-viewport-height, 100vh) - 56px);
-    overflow: visible;
+    height: calc(var(--login-page-height) - 56px);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .login-page__container--signup {
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .login-page__signup-step-motion {
-    min-height: calc(var(--app-viewport-height, 100vh) - 56px);
+    height: calc(var(--login-page-height) - 56px);
+    min-height: 0;
   }
 
   .login-page--verification .login-page__signup-step-motion {
-    min-height: var(--app-viewport-height, 100vh);
+    height: var(--login-page-height);
+    min-height: 0;
   }
 }
 
