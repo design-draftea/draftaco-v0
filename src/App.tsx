@@ -14,13 +14,13 @@ import { getBetslipTurboEligibleSelectionCount } from './hooks/betslipTurboBonus
 import type { ProductMode } from './types/home'
 import { BETSLIP_LIVE_EVENT_OPEN_EVENT } from './utils/betslipLiveEvent'
 import { BrandLocalizationEffect } from './i18n/brandLocalization'
+import { LoginPage } from './pages/LoginPage'
 
 const Home = lazy(() => import('./pages/Home').then((m) => ({ default: m.Home })))
 const PromotionsPage = lazy(() => import('./pages/PromotionsPage').then((m) => ({ default: m.PromotionsPage })))
 const BetslipPageV2 = lazy(() => import('./pages/BetslipPageV2').then((m) => ({ default: m.BetslipPageV2 })))
 const LiveEventPage = lazy(() => import('./pages/LiveEventPage').then((m) => ({ default: m.LiveEventPage })))
 const HandoffPage = lazy(() => import('./pages/Handoff').then((m) => ({ default: m.HandoffPage })))
-const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })))
 
 const RouteFallback = () => (
   <div
@@ -568,18 +568,16 @@ function AppContent() {
         )}
       </Suspense>
       {!isHandoffPage && isAuthPage ? (
-        <Suspense fallback={null}>
-          <LoginPage
-            mode={isSignupPage ? 'signup' : 'login'}
-            motionState={loginMotionState ?? 'open'}
-            onBack={handleLoginBack}
-            onCreateAccountClick={handleCreateAccountClick}
-            onDepositOpen={handleSignupDepositOpen}
-            onEnterComplete={handleLoginEnterComplete}
-            onLoginClick={handleLoginOpen}
-            onLoginSuccess={handleLoginSuccess}
-          />
-        </Suspense>
+        <LoginPage
+          mode={isSignupPage ? 'signup' : 'login'}
+          motionState={loginMotionState ?? 'open'}
+          onBack={handleLoginBack}
+          onCreateAccountClick={handleCreateAccountClick}
+          onDepositOpen={handleSignupDepositOpen}
+          onEnterComplete={handleLoginEnterComplete}
+          onLoginClick={handleLoginOpen}
+          onLoginSuccess={handleLoginSuccess}
+        />
       ) : null}
       {!isHandoffPage && !isAuthPage && isFullBetslipOpen ? (
         <Suspense fallback={null}>
