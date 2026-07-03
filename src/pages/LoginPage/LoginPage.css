@@ -1,8 +1,12 @@
 .login-page {
   --login-page-height: var(--login-page-viewport-height, var(--app-viewport-height, 100vh));
+  --login-page-top: var(--login-page-viewport-top, 0px);
 
   position: fixed;
-  inset: 0;
+  top: var(--login-page-top);
+  right: 0;
+  bottom: auto;
+  left: 0;
   isolation: isolate;
   z-index: 1100;
   width: 100%;

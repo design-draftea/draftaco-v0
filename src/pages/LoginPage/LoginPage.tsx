@@ -1096,24 +1096,31 @@ export function LoginPage({
     if (!loginPageElement) return undefined
 
     const updateLoginViewportHeight = () => {
-      const viewportHeight = window.visualViewport?.height ?? window.innerHeight
+      const visualViewport = window.visualViewport
+      const viewportHeight = visualViewport?.height ?? window.innerHeight
+      const viewportTop = visualViewport?.offsetTop ?? 0
 
       if (viewportHeight > 0) {
         loginPageElement.style.setProperty('--login-page-viewport-height', `${viewportHeight}px`)
       }
+
+      loginPageElement.style.setProperty('--login-page-viewport-top', `${Math.max(0, viewportTop)}px`)
     }
 
     updateLoginViewportHeight()
 
     window.addEventListener('resize', updateLoginViewportHeight)
+    window.addEventListener('orientationchange', updateLoginViewportHeight)
     window.visualViewport?.addEventListener('resize', updateLoginViewportHeight)
     window.visualViewport?.addEventListener('scroll', updateLoginViewportHeight)
 
     return () => {
       window.removeEventListener('resize', updateLoginViewportHeight)
+      window.removeEventListener('orientationchange', updateLoginViewportHeight)
       window.visualViewport?.removeEventListener('resize', updateLoginViewportHeight)
       window.visualViewport?.removeEventListener('scroll', updateLoginViewportHeight)
       loginPageElement.style.removeProperty('--login-page-viewport-height')
+      loginPageElement.style.removeProperty('--login-page-viewport-top')
     }
   }, [])
 
