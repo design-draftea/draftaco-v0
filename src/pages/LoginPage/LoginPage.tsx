@@ -123,6 +123,7 @@ const loginEmailErrorMessage = 'Insira um e-mail válido'
 const cpfIncompleteErrorMessage = 'Insira os 11 dígitos do CPF'
 const cpfInvalidErrorMessage = 'Insira um CPF válido'
 const phoneIncompleteErrorMessage = 'Insira o celular com DDD'
+const phoneInvalidErrorMessage = 'Insira um celular válido com DDD'
 const cepLookupErrorMessage = 'Verifique o CEP e tente novamente'
 const signupSteps: SignupStep[] = ['account', 'personal', 'address']
 const phoneValidationCodeLength = 6
@@ -346,6 +347,9 @@ const getCpfCheckDigit = (baseDigits: string) => {
 // CPF de teste liberado para o protótipo.
 const prototypeAllowedCpf = '11111111111'
 
+// Celular de teste liberado para o protótipo.
+const prototypeAllowedPhone = '11111111111'
+
 // CEP de teste liberado para o protótipo, com endereço completo de exemplo.
 const prototypeAllowedCep = '11111111'
 const prototypeAllowedAddress = {
@@ -353,6 +357,18 @@ const prototypeAllowedAddress = {
   neighborhood: 'Centro',
   street: 'Avenida Paulista',
 }
+
+const brazilMobileAreaCodes = new Set([
+  '11', '12', '13', '14', '15', '16', '17', '18', '19',
+  '21', '22', '24', '27', '28',
+  '31', '32', '33', '34', '35', '37', '38',
+  '41', '42', '43', '44', '45', '46', '47', '48', '49',
+  '51', '53', '54', '55',
+  '61', '62', '63', '64', '65', '66', '67', '68', '69',
+  '71', '73', '74', '75', '77', '79',
+  '81', '82', '83', '84', '85', '86', '87', '88', '89',
+  '91', '92', '93', '94', '95', '96', '97', '98', '99',
+])
 
 const isCpfValid = (value: string) => {
   const digits = onlyDigits(value)
@@ -379,9 +395,10 @@ const getCpfErrorMessage = (value: string) => {
 const getPhoneErrorMessage = (value: string) => {
   const digits = normalizeBrazilPhone(value)
 
-  if (!digits || digits.length === 11) return null
+  if (!digits) return null
+  if (digits.length !== 11) return phoneIncompleteErrorMessage
 
-  return phoneIncompleteErrorMessage
+  return isBrazilMobilePhoneValid(digits) ? null : phoneInvalidErrorMessage
 }
 
 const formatCpf = (value: string) => {
@@ -414,6 +431,28 @@ const normalizeBrazilPhone = (value: string) => {
   }
 
   return digits.slice(0, 11)
+}
+
+const isSequentialDigits = (value: string) => {
+  if (value.length < 4) return false
+
+  return '01234567890123456789'.includes(value)
+    || '98765432109876543210'.includes(value)
+}
+
+const isBrazilMobilePhoneValid = (value: string) => {
+  const digits = normalizeBrazilPhone(value)
+  const areaCode = digits.slice(0, 2)
+  const subscriberNumber = digits.slice(2)
+
+  if (digits.length !== 11) return false
+  if (digits === prototypeAllowedPhone) return true
+  if (!brazilMobileAreaCodes.has(areaCode)) return false
+  if (!subscriberNumber.startsWith('9')) return false
+  if (/^(\d)\1{8}$/.test(subscriberNumber)) return false
+  if (isSequentialDigits(subscriberNumber) || isSequentialDigits(subscriberNumber.slice(1))) return false
+
+  return true
 }
 
 const formatBrazilPhone = (value: string) => {
@@ -1144,9 +1183,10 @@ export function LoginPage({
   const cpfDigits = onlyDigits(cpf)
   const isCpfAccepted = isCpfValid(cpfDigits)
   const phoneDigits = normalizeBrazilPhone(phone)
+  const isPhoneAccepted = isBrazilMobilePhoneValid(phoneDigits)
   const phoneValidationDigits = onlyDigits(phoneValidationCode)
   const cepDigits = onlyDigits(cep)
-  const canContinuePersonal = isCpfAccepted && phoneDigits.length === 11
+  const canContinuePersonal = isCpfAccepted && isPhoneAccepted
   const canConfirmPhoneValidation = phoneValidationDigits.length === phoneValidationCodeLength
   const shouldShowAddressDetails = cepDigits.length === 8
   const canConfirmAddress = shouldShowAddressDetails
