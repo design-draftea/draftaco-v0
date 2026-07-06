@@ -14,6 +14,14 @@
   font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
 }
 
+.login-page--over-betslip {
+  z-index: 3300;
+}
+
+.login-page__bottom-sheet-container {
+  z-index: 3400;
+}
+
 .login-page__scrim {
   position: absolute;
   inset: 0;
@@ -400,15 +408,6 @@
   font-weight: 500;
   line-height: 24px;
   letter-spacing: 0;
-}
-
-.login-input__field--password-mask {
-  -webkit-text-security: disc;
-}
-
-.login-input--filled .login-input__field--password-mask {
-  font-size: 13px;
-  line-height: 18px;
 }
 
 .login-input__field::placeholder {
@@ -1513,6 +1512,26 @@
 .login-phone-validation__resend strong {
   color: var(--ds-fill-primary, #fbfbfb);
   font-weight: 500;
+}
+
+.login-phone-validation__resend-action {
+  padding: 0;
+  border: 0;
+  appearance: none;
+  background: transparent;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-weight: 700;
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.login-phone-validation__resend-action:focus-visible {
+  outline: 2px solid rgba(141, 108, 255, 0.78);
+  outline-offset: 2px;
 }
 
 .bottom-sheet.login-region-sheet {

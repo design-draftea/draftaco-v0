@@ -118,7 +118,6 @@ function SportsMatchTeamLogo({ teamName, currentLogo, sport, side }: SportsMatch
       className="sports-match-carousel__team-icon"
       fallbackClassName={`sports-match-carousel__team-icon--${fallbackModifier}-${side}`}
       placeholderClassName="sports-match-carousel__team-icon sports-match-carousel__team-icon--placeholder"
-      useCurrentLogoFallback={false}
     />
   )
 }

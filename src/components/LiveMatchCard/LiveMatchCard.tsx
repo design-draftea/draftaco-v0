@@ -1,10 +1,6 @@
 import type { ReactNode } from 'react'
 import { CaretRightIcon, MonitorPlayIcon } from '@phosphor-icons/react'
 import iconAoVivo from '../../assets/iconAoVivo.png'
-import escudoDefaultBasquete from '../../assets/escudoDefaultBasquete.png'
-import iconBasquete from '../../assets/iconSports/basketball.png'
-import iconFutebol from '../../assets/iconSports/soccer.png'
-import iconTenis from '../../assets/iconSports/tennis.png'
 import { getTennisPlayerCountryIcon } from '../../data/tennisCountryIcons'
 import { useSportsDbTeamLogo } from '../../hooks/useSportsDbTeamLogo'
 import playerAvatarFutebol from '../../assets/playerAvatarFutebol.svg'
@@ -733,18 +729,17 @@ export function LiveMatchCard({
   const isBasketball = sport === 'basquete'
   const isTennis = sport === 'tenis'
   const isPlayerProps = isLivePlayerPropsMarket(sport, activeMarket)
-  const sportFallbackIcon = isBasketball ? iconBasquete : isTennis ? iconTenis : iconFutebol
   const homeCurrentIcon = isTennis
     ? getTennisPlayerCountryIcon(match.homeTeam.name, match.homeTeam.icon)
     : match.homeTeam.icon
   const awayCurrentIcon = isTennis
     ? getTennisPlayerCountryIcon(match.awayTeam.name, match.awayTeam.icon)
     : match.awayTeam.icon
-  const homeTeamIcon = useSportsDbTeamLogo(match.homeTeam.name, homeCurrentIcon, sport, sportFallbackIcon, {
-    useCurrentLogoFallback: isTennis,
+  const homeTeamIcon = useSportsDbTeamLogo(match.homeTeam.name, homeCurrentIcon, sport, undefined, {
+    useCurrentLogoFallback: true,
   })
-  const awayTeamIcon = useSportsDbTeamLogo(match.awayTeam.name, awayCurrentIcon, sport, sportFallbackIcon, {
-    useCurrentLogoFallback: isTennis,
+  const awayTeamIcon = useSportsDbTeamLogo(match.awayTeam.name, awayCurrentIcon, sport, undefined, {
+    useCurrentLogoFallback: true,
   })
   const getOddButtonProps = useOddSelection('live-section__odd-btn')
   const eventId = getBetslipEventId({
@@ -821,31 +816,8 @@ export function LiveMatchCard({
     </button>
   )
 
-  const renderTeamIcon = (icon: string | undefined, side: 'home' | 'away') => {
-    if ((sport === 'futebol' && icon === iconFutebol) || (isTennis && icon === iconTenis)) {
-      return (
-        <img
-          src={icon}
-          alt=""
-          className={`live-section__team-icon live-section__team-icon--sport-${side}`}
-        />
-      )
-    }
-
-    if (icon && !(isBasketball && (icon === escudoDefaultBasquete || icon === iconBasquete))) {
-      return <img src={icon} alt="" className="live-section__team-icon" />
-    }
-
-    if (isBasketball) {
-      return (
-        <img
-          src={iconBasquete}
-          alt=""
-          className={`live-section__team-icon--basketball-default live-section__team-icon--basketball-${side}`}
-        />
-      )
-    }
-
+  const renderTeamIcon = (icon: string | undefined) => {
+    if (icon) return <img src={icon} alt="" className="live-section__team-icon" />
     return <div className="live-section__team-icon--placeholder" />
   }
 
@@ -874,7 +846,7 @@ export function LiveMatchCard({
       <div className="live-section__teams">
         <div className="live-section__team">
           <div className="live-section__team-info">
-            {renderTeamIcon(homeTeamIcon, 'home')}
+            {renderTeamIcon(homeTeamIcon)}
             <span className="live-section__team-name">{match.homeTeam.name}</span>
           </div>
           {!isTennis && (
@@ -885,7 +857,7 @@ export function LiveMatchCard({
         </div>
         <div className="live-section__team">
           <div className="live-section__team-info">
-            {renderTeamIcon(awayTeamIcon, 'away')}
+            {renderTeamIcon(awayTeamIcon)}
             <span className="live-section__team-name">{match.awayTeam.name}</span>
           </div>
           {!isTennis && (

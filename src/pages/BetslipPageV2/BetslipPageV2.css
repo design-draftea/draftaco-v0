@@ -190,6 +190,12 @@
   min-width: 0;
 }
 
+.betslip-v2__selection-row,
+.betslip-v2__sgp,
+.betslip-v2__sgp-leg {
+  transform-origin: center top;
+}
+
 .betslip-v2__selection-row {
   height: 70px;
   padding: 8px 0;
@@ -198,6 +204,17 @@
 .betslip-v2__sgp {
   width: 100%;
   padding: 8px 0;
+}
+
+.betslip-v2__selection-row--removing,
+.betslip-v2__sgp--removing {
+  pointer-events: none;
+  animation: betslipV2SelectionRemoveRight 280ms cubic-bezier(0.32, 0, 0.67, 0) forwards;
+}
+
+.betslip-v2__sgp-leg--removing {
+  pointer-events: none;
+  animation: betslipV2LegRemoveRight 220ms cubic-bezier(0.32, 0, 0.67, 0) forwards;
 }
 
 .betslip-v2__sgp + .betslip-v2__sgp,
@@ -235,6 +252,10 @@ article.betslip-v2__sgp-leg {
   color: var(--ds-fill-primary, #fbfbfb);
 }
 
+.betslip-v2__row-remove:disabled {
+  cursor: default;
+}
+
 .betslip-v2__sgp-leg .betslip-v2__row-remove svg {
   color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
 }
@@ -257,6 +278,10 @@ article.betslip-v2__sgp-leg {
   overflow: hidden;
 }
 
+.betslip-v2__selection-row--without-odd .betslip-v2__selection-content {
+  padding-right: 12px;
+}
+
 .betslip-v2__avatar {
   position: relative;
   display: inline-flex;
@@ -274,13 +299,47 @@ article.betslip-v2__sgp-leg {
 }
 
 .betslip-v2__avatar img {
+  display: block;
   width: 36px;
   height: 36px;
+  border-radius: 8px;
+  image-rendering: auto;
   object-fit: contain;
 }
 
 .betslip-v2__avatar--compact {
   flex-basis: 44px;
+}
+
+.betslip-v2__avatar--player {
+  color: var(--ds-fill-opacity-primary, rgb(251 251 251 / 0.32));
+}
+
+.betslip-v2__avatar-versus-stack {
+  position: relative;
+  display: block;
+  width: 36px;
+  height: 36px;
+}
+
+.betslip-v2__avatar .betslip-v2__avatar-versus-logo {
+  position: absolute;
+  display: block;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  image-rendering: auto;
+  object-fit: contain;
+}
+
+.betslip-v2__avatar-versus-logo--home {
+  top: 0;
+  left: 0;
+}
+
+.betslip-v2__avatar-versus-logo--away {
+  right: 0;
+  bottom: 0;
 }
 
 .betslip-v2__selection-copy,
@@ -390,11 +449,35 @@ article.betslip-v2__sgp-leg {
   color: var(--ds-fill-primary, #fbfbfb);
 }
 
+.betslip-v2__live-dot-wrap {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 14px;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+}
+
 .betslip-v2__live-dot {
-  flex: 0 0 8px;
-  width: 8px;
-  height: 8px;
-  object-fit: contain;
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff3f68;
+  box-shadow: 0 0 0 0 rgb(255 63 104 / 0.45);
+  animation: betslip-v2-live-dot-pulse 1.8s ease-out infinite;
+}
+
+@keyframes betslip-v2-live-dot-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(255 63 104 / 0.45);
+  }
+
+  70%,
+  100% {
+    box-shadow: 0 0 0 6px rgb(255 63 104 / 0);
+  }
 }
 
 .betslip-v2__event-separator {
@@ -424,6 +507,16 @@ article.betslip-v2__sgp-leg {
   font-size: 10px;
   font-weight: 700;
   line-height: 15px;
+}
+
+.betslip-v2__badge--button {
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+
+.betslip-v2__badge--button:focus-visible {
+  outline: 2px solid rgba(141, 108, 255, 0.78);
+  outline-offset: 2px;
 }
 
 .betslip-v2__row-odd {
@@ -512,9 +605,9 @@ article.betslip-v2__sgp-leg {
   position: relative;
   z-index: 2;
   display: flex;
-  flex: 0 0 213px;
+  flex: 0 0 auto;
   flex-direction: column;
-  height: 213px;
+  gap: 10px;
   padding: 16px 12px 16px;
   border-top: 1px solid var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
   background: var(--ds-background-app, #000);
@@ -522,8 +615,8 @@ article.betslip-v2__sgp-leg {
 
 .betslip-v2__summary {
   display: grid;
-  grid-template-columns: 123px 123px minmax(0, 1fr);
-  align-items: start;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
   width: 100%;
   min-height: 59px;
 }
@@ -534,7 +627,8 @@ article.betslip-v2__sgp-leg {
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  width: 123px;
+  justify-self: center;
+  width: 100%;
   height: 59px;
   padding: 11px 0 0;
   border: 0;
@@ -623,9 +717,11 @@ article.betslip-v2__sgp-leg {
   align-items: center;
   flex-direction: column;
   justify-content: flex-start;
+  justify-self: center;
+  width: 100%;
   min-width: 0;
-  height: 59px;
-  padding-top: 7px;
+  height: auto;
+  padding-top: 0;
   text-align: center;
 }
 
@@ -656,42 +752,197 @@ article.betslip-v2__sgp-leg {
 }
 
 .betslip-v2__summary-item--win strong {
-  color: var(--ds-component-colors-fill-accent-start, #d2ff72);
+  color: var(--ds-earned, #fbbf24);
+}
+
+.betslip-v2__summary-item--win {
+  position: relative;
+  justify-content: flex-end;
+  width: 100%;
+  padding-top: 11px;
+  text-align: left;
+}
+
+.betslip-v2__win-label {
+  position: absolute;
+  top: 0;
+  left: 8px;
+  z-index: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--ds-background-app, #000);
+  white-space: nowrap;
+}
+
+.betslip-v2__win-field {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 48px;
+  padding: 12px;
+  overflow: hidden;
+  border: 1px solid var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
+  border-radius: 12px;
+}
+
+.betslip-v2__win-field strong {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .betslip-v2__odds-accept {
-  display: flex;
+  display: none;
   align-items: flex-start;
   gap: 12px;
+  width: calc(100% - 36px);
   min-height: 42px;
   margin: 10px 18px 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
   font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
   font-size: 14px;
-  font-weight: 400;
+  font-weight: 500;
   line-height: 21px;
+  text-align: left;
+  cursor: pointer;
 }
 
-.betslip-v2__odds-accept input {
-  appearance: none;
+.betslip-v2__odds-accept-box {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex: 0 0 20px;
   width: 20px;
   height: 20px;
   margin: 1px 0 0;
-  border: 1px solid var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
+  border: 1px solid var(--ds-fill-opacity-primary, rgb(251 251 251 / 0.32));
   border-radius: 4px;
   background: transparent;
 }
 
-.betslip-v2__odds-accept input:checked {
-  background:
-    linear-gradient(var(--ds-action-primary-default-start, #4b20ff), var(--ds-action-primary-default-start, #4b20ff)) padding-box;
+.betslip-v2__odds-accept--checked .betslip-v2__odds-accept-box {
+  border: 0;
+  background: linear-gradient(
+    28deg,
+    var(--ds-action-primary-default-start, #4b20ff) 0%,
+    var(--ds-action-primary-default-end, #9730ff) 100%
+  );
 }
 
-.betslip-v2__odds-accept a {
+.betslip-v2__odds-accept-check {
+  width: 9px;
+  height: 6px;
+  border-bottom: 2px solid var(--ds-fill-primary, #fbfbfb);
+  border-left: 2px solid var(--ds-fill-primary, #fbfbfb);
+  transform: translateY(-1px) rotate(-45deg);
+}
+
+.betslip-v2__odds-accept-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: inherit;
+  letter-spacing: 0;
+}
+
+.betslip-v2__odds-accept-label span {
   color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.betslip-v2__auth-prompt,
+.betslip-v2__deposit-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+}
+
+.betslip-v2__auth-prompt p,
+.betslip-v2__deposit-prompt p {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 21px;
+  margin: 0;
+  color: var(--ds-fill-info, var(--fill-colors-fillinfo, #add25c));
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 21px;
+  letter-spacing: 0;
+  text-align: center;
+  word-break: break-word;
+}
+
+.betslip-v2__deposit-prompt {
+  height: 77px;
+}
+
+.betslip-v2__auth-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  width: 100%;
+  height: 108px;
+}
+
+.betslip-v2 .betslip-v2__auth-action,
+.betslip-v2 .betslip-v2__deposit-action {
+  display: inline-flex;
+  flex: 0 0 48px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  height: 48px;
+  padding: 0 12px;
+  border-radius: 24px;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font: 700 16px / 24px 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  letter-spacing: 0;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.betslip-v2__deposit-action,
+.betslip-v2__auth-action--primary {
+  background: linear-gradient(
+    27.2255deg,
+    var(--ds-action-primary-default-start, #4b20ff) 0%,
+    var(--ds-action-primary-default-end, #9730ff) 100%
+  );
+}
+
+.betslip-v2__auth-action--secondary {
+  background: var(--ds-action-secondary-default, rgb(251 251 251 / 0.12));
+}
+
+.betslip-v2__auth-action:focus-visible,
+.betslip-v2__deposit-action:focus-visible {
+  outline: 2px solid rgba(141, 108, 255, 0.78);
+  outline-offset: 2px;
+}
+
+.betslip-v2__deposit-action:active,
+.betslip-v2__auth-action--primary:active {
+  background: var(--ds-action-primary-pressed, #6b47ff);
+}
+
+.betslip-v2__auth-action--secondary:active {
+  background: var(--ds-action-secondary-pressed, rgb(251 251 251 / 0.14));
 }
 
 .betslip-v2__swipe {
@@ -818,9 +1069,101 @@ article.betslip-v2__sgp-leg {
   animation: betslipV2SwipeSpinner 720ms linear infinite;
 }
 
+.bottom-sheet__container.betslip-v2-info-sheet-container {
+  z-index: 3400;
+}
+
+.bottom-sheet.betslip-v2-info-sheet {
+  box-sizing: border-box;
+  width: calc(100% - 32px);
+  margin: 0 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  overflow: hidden;
+  border: 1px solid var(--ds-fill-opacity-quinary, rgb(251 251 251 / 0.08));
+  border-radius: 24px;
+  background: linear-gradient(180deg, #191919 0%, #0f0f0f 100%);
+}
+
+.bottom-sheet.betslip-v2-info-sheet .bottom-sheet__header {
+  padding: 14px 14px 0 24px;
+  border-bottom: 0;
+}
+
+.bottom-sheet.betslip-v2-info-sheet .bottom-sheet__title span {
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+}
+
+.bottom-sheet.betslip-v2-info-sheet .bottom-sheet__body-wrapper {
+  flex: 0 0 auto;
+}
+
+.bottom-sheet__body.betslip-v2-info-sheet__body {
+  flex: 0 0 auto;
+  padding: 8px 24px 24px;
+  overflow: visible;
+}
+
+.betslip-v2-info-sheet__content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.betslip-v2-info-sheet__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+}
+
+.betslip-v2-info-sheet__badge {
+  flex: 0 0 auto;
+  margin-top: 3px;
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
+}
+
+.betslip-v2-info-sheet__row p {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+}
+
 @keyframes betslipV2SwipeSpinner {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes betslipV2SelectionRemoveRight {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(110%, 0, 0);
+  }
+}
+
+@keyframes betslipV2LegRemoveRight {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(36px, 0, 0);
   }
 }
 

@@ -13,33 +13,53 @@ import {
 import { CaretRightIcon, XIcon } from '@phosphor-icons/react'
 import './BetslipPageV2.css'
 
+import { BottomSheet } from '../../components/BottomSheet'
 import closeBetslipIcon from '../../assets/iconsDraftaco/closeBS.svg'
-import iconLive from '../../assets/iconsDraftaco/icon-live.svg'
 import iconPencil from '../../assets/iconsDraftaco/iconPencil.svg'
 import trashIcon from '../../assets/iconsDraftaco/iconTrash.svg'
-import placeholderBasquete from '../../assets/iconsDraftaco/placeholderBasquete.svg'
-import placeholderShield from '../../assets/iconsDraftaco/placeholderShield.svg'
-import placeholderShieldVersus from '../../assets/iconsDraftaco/placeholderShieldVersus.svg'
-import placeholderSoccer from '../../assets/iconsDraftaco/placeholderSoccer.svg'
-import placeholderTenis from '../../assets/iconsDraftaco/placeholderTenis.svg'
-import { getTeamLogo } from '../../data/teamLogos'
+import iconShieldVersusPlaceholder from '../../assets/iconsDraftaco/iconShieldVersusPlaceholder.svg'
 import { useBetslip } from '../../hooks/useBetslip'
+import { useSportsDbTeamLogo } from '../../hooks/useSportsDbTeamLogo'
 import {
   formatBetslipOdd,
-  normalizeBetslipIdPart,
   type BetslipSelection,
 } from '../../hooks/betslipUtils'
 import { getTeamAbbreviation } from '../../utils/teamAbbreviations'
+import type { BetSuccessReceipt } from '../BetSuccessPage'
+import {
+  type BetslipSelectionGroup,
+  formatMoney,
+  formatStakeInputValue,
+  getPlayerAvatarFallbackSrc,
+  getPlayerSelectionValueLabel,
+  getSelectionAvatarDrawContext,
+  getSelectionAvatarFallback,
+  getSelectionAvatarTeamContext,
+  getSelectionBadges,
+  getSelectionEventMeta,
+  getSelectionEventTeams,
+  getSelectionMarketLabel,
+  getSelectionScoreLabel,
+  getSelectionTeamSuffix,
+  getSelectionTimeLabel,
+  getSelectionTitle,
+  getSgpHeaderParts,
+  getSgpHeaderSelection,
+  groupSelectionsByEvent,
+} from './betslipDisplayUtils'
+
+type BetslipAuthVariant = 'logged-in' | 'logged-out'
 
 interface BetslipPageV2Props {
+  authVariant?: BetslipAuthVariant
   isCoveredByEvent?: boolean
+  onCreateAccountClick?: () => void
+  onDepositClick?: () => void
+  onLoginClick?: () => void
   onClose?: () => void
+  onBetSuccess?: (receipt: BetSuccessReceipt) => void
   onSelectionsEmptyExitStart?: () => void
-}
-
-interface BetslipSelectionGroup {
-  eventId: string
-  selections: BetslipSelection[]
+  requiresDeposit?: boolean
 }
 
 const DEFAULT_STAKE_CENTS = 1000
@@ -49,240 +69,20 @@ const SWIPE_COMPLETE_RATIO = 0.6
 const SWIPE_COMPLETE_ANIMATION_MS = 180
 const SWIPE_KNOB_SIZE_PX = 52
 const SWIPE_TRACK_PADDING_PX = 4
+const SELECTION_REMOVE_ANIMATION_MS = 280
+const SGP_LEG_REMOVE_ANIMATION_MS = 220
+const BETSLIP_INFO_BADGES = new Set(['PA', '90’'])
 
-const marketTranslations: Record<string, string> = {
-  'ambos-marcam': 'AMBOS ANOTAN',
-  'assistencias-do-jogador': 'ASISTENCIAS',
-  'assistencias-jogador': 'ASISTENCIAS',
-  'cartoes': 'TARJETAS',
-  'dupla-chance': 'DOBLE OPORTUNIDAD',
-  'escanteios': 'CORNERS',
-  'handicap': 'HANDICAP',
-  'rebotes-do-jogador': 'REBOTES',
-  'rebotes-jogador': 'REBOTES',
-  'resultado-final': 'RESULTADO FINAL',
-  'resultado-final-pagamento-antecipado': 'RESULTADO FINAL',
-  'total-de-cartoes': 'TOTAL DE TARJETAS',
-  'total-de-escanteios': 'TOTAL DE CORNERS',
-  'total-de-gols': 'TOTAL DE GOLES',
-  'total-de-pontos': 'TOTAL DE PUNTOS',
-  'total-gols': 'TOTAL DE GOLES',
-  'total-pontos': 'TOTAL DE PUNTOS',
-  'vencedor': 'GANADOR',
-}
-
-const formatMoney = (cents: number, options?: { compactWhole?: boolean }) => {
-  const value = cents / 100
-  const hasCents = Math.abs(cents % 100) > 0
-
-  return `R$${value.toLocaleString('pt-BR', {
-    minimumFractionDigits: options?.compactWhole && !hasCents ? 0 : 2,
-    maximumFractionDigits: 2,
-  })}`
-}
-
-const formatStakeInputValue = (cents: number) => String(Math.max(0, Math.floor(cents / 100)))
-
-const normalizeSelectionLineValue = (value: string) => (
-  value
-    .trim()
-    .split(/\s*(?:→|»)\s*/)
-    .pop()
-    ?.trim()
-    .replace(/^mais\s+de\s+(\d+(?:[,.]\d+)?)(.*)$/i, '↑ $1$2')
-    .replace(/^menos\s+de\s+(\d+(?:[,.]\d+)?)(.*)$/i, '↓ $1$2')
-    .replace(/^over\s+(\d+(?:[,.]\d+)?)(.*)$/i, '↑ $1$2')
-    .replace(/^under\s+(\d+(?:[,.]\d+)?)(.*)$/i, '↓ $1$2')
-    .replace(/\b(\d+)\.0\+/g, '$1+') ?? ''
-)
-
-const getSelectionEventName = (selection: BetslipSelection) => {
-  if (selection.homeTeam && selection.awayTeam) return `${selection.homeTeam} vs ${selection.awayTeam}`
-  if (selection.eventName) return selection.eventName.replace(/\s+x\s+/i, ' vs ')
-  return selection.eventId.split(':').slice(-2).map((part) => part.replace(/-/g, ' ')).join(' vs ')
-}
-
-const getTeamLabelKeys = (teamName: string) => {
-  const normalizedTeamName = teamName
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-  const cleanWords = normalizedTeamName
-    .split(/\s+/)
-    .map((word) => word.replace(/[^a-z0-9]/gi, ''))
-    .filter(Boolean)
-  const compactName = cleanWords.join('')
-  const acronym = cleanWords.length > 1 ? cleanWords.map((word) => word[0]).join('') : ''
-  const variants = [
-    teamName,
-    getTeamAbbreviation(teamName),
-    acronym,
-    cleanWords[0] ?? '',
-    compactName.slice(0, 3),
-    compactName.slice(0, 4),
-  ]
-
-  return new Set(
-    variants
-      .filter(Boolean)
-      .map((variant) => normalizeBetslipIdPart(variant))
-  )
-}
-
-const getAbbreviatedEventMatchup = (selection: BetslipSelection) => {
-  const { homeTeam, awayTeam } = getSelectionEventTeams(selection)
-
-  if (homeTeam && awayTeam) {
-    return `${getTeamAbbreviation(homeTeam)} vs ${getTeamAbbreviation(awayTeam)}`
-  }
-
-  const eventName = getSelectionEventName(selection)
-  const eventNameParts = eventName.split(/\s+(?:x|vs|v)\s+/i).map((part) => part.trim()).filter(Boolean)
-
-  if (eventNameParts.length === 2) {
-    return `${getTeamAbbreviation(eventNameParts[0])} vs ${getTeamAbbreviation(eventNameParts[1])}`
-  }
-
-  return eventName
-}
-
-const getSelectionTimeLabel = (selection: BetslipSelection) => {
-  if (selection.eventStatus === 'live') return selection.liveClock ?? selection.eventTimeLabel ?? '18:00'
-  return selection.eventTimeLabel ?? 'dd/mes (20:00)'
-}
-
-const getSelectionEventTeams = (selection: BetslipSelection) => {
-  if (selection.homeTeam && selection.awayTeam) {
-    return {
-      homeTeam: selection.homeTeam,
-      awayTeam: selection.awayTeam,
-    }
-  }
-
-  const eventNameParts = selection.eventName?.split(/\s+(?:x|vs|v)\s+/i).map((part) => part.trim()).filter(Boolean)
-  if (eventNameParts?.length === 2) {
-    return {
-      homeTeam: eventNameParts[0],
-      awayTeam: eventNameParts[1],
-    }
-  }
-
-  const eventIdParts = selection.eventId
-    .split(':')
-  if (eventIdParts.length < 3) {
-    return {
-      homeTeam: '',
-      awayTeam: '',
-    }
-  }
-
-  const eventTeamParts = eventIdParts
-    .slice(-2)
-    .map((part) => part.replace(/-/g, ' '))
-    .filter(Boolean)
-
-  return {
-    homeTeam: eventTeamParts[0] ?? '',
-    awayTeam: eventTeamParts[1] ?? '',
-  }
-}
-
-const getEventTeamGroupCode = (teamName: string, fallback: string) => (
-  teamName.trim() ? normalizeBetslipIdPart(getTeamAbbreviation(teamName)) : fallback
-)
-
-const getSelectionEventGroupKey = (selection: BetslipSelection) => {
-  const { homeTeam, awayTeam } = getSelectionEventTeams(selection)
-  const sportKey = normalizeBetslipIdPart(selection.sport ?? selection.leagueId ?? selection.leagueName ?? 'event')
-
-  if (homeTeam || awayTeam) {
-    return [
-      sportKey,
-      getEventTeamGroupCode(homeTeam, 'home'),
-      getEventTeamGroupCode(awayTeam, 'away'),
-    ].join(':')
-  }
-
-  return [
-    sportKey,
-    normalizeBetslipIdPart(getSelectionEventName(selection)),
-  ].join(':')
-}
-
-const getSelectionScoreLabel = (score: BetslipSelection['homeScore']) => String(score ?? 0)
-
-const getSportPlaceholderSrc = (selection: BetslipSelection) => {
-  const sportKey = normalizeBetslipIdPart(selection.sport ?? selection.leagueId ?? selection.leagueName ?? '')
-
-  if (sportKey.includes('basquete') || sportKey.includes('basket') || sportKey.includes('nba')) {
-    return placeholderBasquete
-  }
-
-  if (sportKey.includes('tenis') || sportKey.includes('tennis')) {
-    return placeholderTenis
-  }
-
-  if (sportKey.includes('futebol') || sportKey.includes('football') || sportKey.includes('soccer')) {
-    return placeholderSoccer
-  }
-
-  return ''
-}
-
-const getSelectionTitle = (selection: BetslipSelection) => {
-  if (selection.selectionType === 'player') {
-    return selection.playerName ?? selection.selectionLabel
-  }
-
-  const rawTitle = normalizeSelectionLineValue(selection.selectionLabel)
-  const titleKey = normalizeBetslipIdPart(rawTitle)
-  const labelKey = normalizeBetslipIdPart(selection.label)
-  const { homeTeam, awayTeam } = getSelectionEventTeams(selection)
-
-  if (homeTeam) {
-    const homeKeys = getTeamLabelKeys(homeTeam)
-    if (homeKeys.has(titleKey) || homeKeys.has(labelKey)) return homeTeam
-  }
-
-  if (awayTeam) {
-    const awayKeys = getTeamLabelKeys(awayTeam)
-    if (awayKeys.has(titleKey) || awayKeys.has(labelKey)) return awayTeam
-  }
-
-  return rawTitle
-}
-
-const getPlayerSelectionValueLabel = (selection: BetslipSelection) => {
-  if (selection.selectionType !== 'player') return ''
-
-  const rawValue = selection.label.trim()
-  const title = getSelectionTitle(selection).trim()
-
-  if (!rawValue || rawValue === title) return ''
-
-  const valueWithoutTitle = rawValue.toLowerCase().startsWith(title.toLowerCase())
-    ? rawValue.slice(title.length).trim()
-    : rawValue
-
-  return normalizeSelectionLineValue(valueWithoutTitle)
-}
-
-const getSelectionMarketLabel = (selection: BetslipSelection) => {
-  const normalizedMarket = normalizeBetslipIdPart(selection.marketLabel || selection.marketId || selection.label)
-  return marketTranslations[normalizedMarket] ?? (selection.marketLabel || selection.marketId || 'Mercado').toUpperCase()
-}
-
-const getSelectionTeamSuffix = (selection: BetslipSelection) => {
-  if (selection.selectionType !== 'player') return ''
-  if (selection.selectionTeamName) return getTeamAbbreviation(selection.selectionTeamName)
-
-  return selection.awayTeam ?? selection.homeTeam ?? ''
-}
-
-const getSelectionEventMeta = (selection: BetslipSelection) => {
-  const eventName = getAbbreviatedEventMatchup(selection)
-  const timeLabel = getSelectionTimeLabel(selection)
-  return `${timeLabel} · ${eventName}`
-}
+const betslipInfoItems = [
+  {
+    label: 'PA',
+    text: 'Pagamento antecipado: se sua seleção abrir 2 gols de vantagem no futebol, 20 pontos no basquete, ou vencer o 1º set por 6-0 ou 6-1 no tênis, essa seleção será marcada como vencedora.',
+  },
+  {
+    label: '90’',
+    text: 'Tempo regulamentar: os mercados consideram apenas os 90 minutos + acréscimos da partida. Não inclui prorrogação ou pênaltis.',
+  },
+]
 
 function SelectionEventMeta({ selection }: { selection: BetslipSelection }) {
   if (selection.eventStatus !== 'live') {
@@ -296,7 +96,9 @@ function SelectionEventMeta({ selection }: { selection: BetslipSelection }) {
   return (
     <span className="betslip-v2__event-line betslip-v2__event-line--live">
       <span className="betslip-v2__live-time">
-        <img className="betslip-v2__live-dot" src={iconLive} alt="" aria-hidden="true" draggable="false" />
+        <span className="betslip-v2__live-dot-wrap" aria-hidden="true">
+          <span className="betslip-v2__live-dot" />
+        </span>
         {getSelectionTimeLabel(selection)}
       </span>
       <span className="betslip-v2__event-separator" aria-hidden="true">•</span>
@@ -308,132 +110,138 @@ function SelectionEventMeta({ selection }: { selection: BetslipSelection }) {
   )
 }
 
-const getSelectionIconSrc = (selection: BetslipSelection) => {
-  const selectionTitle = getSelectionTitle(selection)
-  const sportPlaceholder = getSportPlaceholderSrc(selection)
-  const getResolvedTeamLogo = (teamName?: string, teamIcon?: string) => {
-    if (teamIcon) return teamIcon
-    if (!teamName) return ''
-
-    return getTeamLogo(teamName)
-  }
-
-  if (selection.selectionType === 'player') {
-    const playerIcon = selection.playerImage
-      ?? selection.selectionIcon
-      ?? getResolvedTeamLogo(selection.homeTeam, selection.homeTeamIcon)
-
-    return playerIcon || sportPlaceholder || placeholderSoccer
-  }
-
-  if (selection.selectionIcon) return selection.selectionIcon
-
-  if (selection.homeTeam && selectionTitle === selection.homeTeam) {
-    return getResolvedTeamLogo(selection.homeTeam, selection.homeTeamIcon) || placeholderShield
-  }
-
-  if (selection.awayTeam && selectionTitle === selection.awayTeam) {
-    return getResolvedTeamLogo(selection.awayTeam, selection.awayTeamIcon) || placeholderShield
-  }
-
-  if (selection.homeTeam) {
-    return getResolvedTeamLogo(selection.homeTeam, selection.homeTeamIcon) || placeholderShieldVersus
-  }
-
-  if (selection.awayTeam) {
-    return getResolvedTeamLogo(selection.awayTeam, selection.awayTeamIcon) || placeholderShieldVersus
-  }
-
-  return sportPlaceholder || placeholderShield
-}
-
-const getSelectionBadge = (selection: BetslipSelection) => {
-  const marketKey = normalizeBetslipIdPart(selection.marketLabel || selection.marketId)
-  const marketIdKey = normalizeBetslipIdPart(selection.marketId)
-  const isResultMarket = [
-    'resultado-final',
-    'resultado-final-pagamento-antecipado',
-    '1x2',
-    'vencedor',
-    'vencedor-pagamento-antecipado',
-  ].includes(marketKey) || [
-    'resultado-final',
-    'resultado-final-pagamento-antecipado',
-    '1x2',
-    'vencedor',
-    'vencedor-pagamento-antecipado',
-  ].includes(marketIdKey)
-
-  if (
-    marketKey.includes('pagamento-antecipado')
-    || marketIdKey.includes('pagamento-antecipado')
-    || (selection.badgeType === 'boost' && isResultMarket)
-  ) return 'PA'
-  if (selection.badgeType === 'boost' || selection.badgeType === 'substitution') return 'B+'
-
-  return ''
-}
-
-const groupSelectionsByEvent = (selections: BetslipSelection[]) => {
-  const groups = new Map<string, BetslipSelection[]>()
-
-  selections.forEach((selection) => {
-    const eventGroupKey = getSelectionEventGroupKey(selection)
-    groups.set(eventGroupKey, [...(groups.get(eventGroupKey) ?? []), selection])
-  })
-
-  return Array.from(groups.entries()).map(([eventId, groupSelections]): BetslipSelectionGroup => ({
-    eventId,
-    selections: groupSelections,
-  }))
-}
-
-const getSgpHeaderSelection = (selections: BetslipSelection[]) => (
-  selections.find((selection) => selection.homeTeam && selection.awayTeam) ?? selections[0]
-)
-
-const getSgpHeaderParts = (selection: BetslipSelection | undefined) => {
-  if (!selection) {
-    return {
-      homeLabel: 'ABC',
-      awayLabel: 'XYZ',
-      timeLabel: '',
-      eventLabel: '',
-    }
-  }
-
-  const { homeTeam, awayTeam } = getSelectionEventTeams(selection)
-
-  return {
-    homeLabel: homeTeam ? getTeamAbbreviation(homeTeam) : 'ABC',
-    awayLabel: awayTeam ? getTeamAbbreviation(awayTeam) : 'XYZ',
-    timeLabel: getSelectionTimeLabel(selection),
-    eventLabel: getSelectionEventName(selection),
-  }
-}
-
 function SelectionAvatar({ selection, compact = false }: { selection: BetslipSelection; compact?: boolean }) {
-  const iconSrc = getSelectionIconSrc(selection)
+  const isPlayerSelection = selection.selectionType === 'player'
+  const drawContext = isPlayerSelection ? null : getSelectionAvatarDrawContext(selection)
+  const teamContext = isPlayerSelection ? null : getSelectionAvatarTeamContext(selection)
+  const resolvedDrawHomeLogo = useSportsDbTeamLogo(
+    drawContext?.homeTeam ?? '',
+    drawContext?.homeLogo,
+    selection.sport ?? '',
+    undefined,
+    { useCurrentLogoFallback: true }
+  )
+  const resolvedDrawAwayLogo = useSportsDbTeamLogo(
+    drawContext?.awayTeam ?? '',
+    drawContext?.awayLogo,
+    selection.sport ?? '',
+    undefined,
+    { useCurrentLogoFallback: true }
+  )
+  const resolvedTeamLogo = useSportsDbTeamLogo(
+    teamContext?.teamName ?? '',
+    teamContext?.currentLogo,
+    selection.sport ?? '',
+    teamContext?.fallbackLogo,
+    { useCurrentLogoFallback: true }
+  )
+  const iconSrc = isPlayerSelection
+    ? selection.playerImage || getPlayerAvatarFallbackSrc(selection)
+    : resolvedTeamLogo || teamContext?.fallbackLogo || getSelectionAvatarFallback(selection)
+
+  if (drawContext) {
+    const hasVersusTeamLogos = Boolean(resolvedDrawHomeLogo && resolvedDrawAwayLogo)
+
+    return (
+      <span
+        className={[
+          'betslip-v2__avatar',
+          'betslip-v2__avatar--versus',
+          compact ? 'betslip-v2__avatar--compact' : '',
+        ].filter(Boolean).join(' ')}
+        aria-hidden="true"
+      >
+        {hasVersusTeamLogos ? (
+          <span className="betslip-v2__avatar-versus-stack">
+            <img
+              className="betslip-v2__avatar-versus-logo betslip-v2__avatar-versus-logo--home"
+              src={resolvedDrawHomeLogo}
+              alt=""
+              draggable="false"
+            />
+            <img
+              className="betslip-v2__avatar-versus-logo betslip-v2__avatar-versus-logo--away"
+              src={resolvedDrawAwayLogo}
+              alt=""
+              draggable="false"
+            />
+          </span>
+        ) : (
+          <img src={iconShieldVersusPlaceholder} alt="" draggable="false" />
+        )}
+      </span>
+    )
+  }
 
   return (
-    <span className={`betslip-v2__avatar${compact ? ' betslip-v2__avatar--compact' : ''}`} aria-hidden="true">
+    <span
+      className={[
+        'betslip-v2__avatar',
+        compact ? 'betslip-v2__avatar--compact' : '',
+        isPlayerSelection ? 'betslip-v2__avatar--player' : '',
+      ].filter(Boolean).join(' ')}
+      aria-hidden="true"
+    >
       <img src={iconSrc} alt="" draggable="false" />
     </span>
   )
 }
 
-function RemoveButton({ label, onClick }: { label: string; onClick: () => void }) {
+function RemoveButton({
+  disabled = false,
+  label,
+  onClick,
+}: {
+  disabled?: boolean
+  label: string
+  onClick: () => void
+}) {
   return (
-    <button type="button" className="betslip-v2__row-remove" aria-label={label} onClick={onClick}>
+    <button
+      type="button"
+      className="betslip-v2__row-remove"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+    >
       <XIcon aria-hidden="true" weight="regular" />
     </button>
   )
 }
 
-function Badge({ label }: { label: string }) {
-  if (!label) return null
+function Badges({
+  labels,
+  onInfoClick,
+}: {
+  labels: string[]
+  onInfoClick: () => void
+}) {
+  if (labels.length === 0) return null
 
-  return <span className="betslip-v2__badge">{label}</span>
+  return (
+    <>
+      {labels.map((label) => {
+        if (BETSLIP_INFO_BADGES.has(label)) {
+          return (
+            <button
+              type="button"
+              className="betslip-v2__badge betslip-v2__badge--button"
+              key={label}
+              aria-label={`Abrir informações sobre ${label}`}
+              onClick={(event) => {
+                event.stopPropagation()
+                onInfoClick()
+              }}
+            >
+              {label}
+            </button>
+          )
+        }
+
+        return <span className="betslip-v2__badge" key={label}>{label}</span>
+      })}
+    </>
+  )
 }
 
 function SelectionTitleLine({ selection }: { selection: BetslipSelection }) {
@@ -456,53 +264,86 @@ function SelectionTitleLine({ selection }: { selection: BetslipSelection }) {
 }
 
 function SimpleSelectionRow({
+  isRemoveDisabled = false,
+  isRemoving = false,
   selection,
   onRemove,
+  onTagInfoOpen,
+  showOdd = true,
 }: {
+  isRemoveDisabled?: boolean
+  isRemoving?: boolean
   selection: BetslipSelection
   onRemove: (selectionId: string) => void
+  onTagInfoOpen: () => void
+  showOdd?: boolean
 }) {
   const title = getSelectionTitle(selection)
 
   return (
-    <article className="betslip-v2__selection-row">
-      <RemoveButton label={`Eliminar selección ${title}`} onClick={() => onRemove(selection.id)} />
+    <article
+      className={[
+        'betslip-v2__selection-row',
+        showOdd ? '' : 'betslip-v2__selection-row--without-odd',
+        isRemoving ? 'betslip-v2__selection-row--removing' : '',
+      ].filter(Boolean).join(' ')}
+    >
+      <RemoveButton
+        disabled={isRemoveDisabled}
+        label={`Eliminar selección ${title}`}
+        onClick={() => onRemove(selection.id)}
+      />
       <span className="betslip-v2__divider" aria-hidden="true" />
       <div className="betslip-v2__selection-content">
         <SelectionAvatar selection={selection} />
         <div className="betslip-v2__selection-copy">
           <div className="betslip-v2__market-line">
             <span>{getSelectionMarketLabel(selection)}</span>
-            <Badge label={getSelectionBadge(selection)} />
+            <Badges labels={getSelectionBadges(selection)} onInfoClick={onTagInfoOpen} />
           </div>
           <SelectionTitleLine selection={selection} />
           <SelectionEventMeta selection={selection} />
         </div>
       </div>
-      <strong className="betslip-v2__row-odd">{selection.oddLabel}</strong>
+      {showOdd ? <strong className="betslip-v2__row-odd">{selection.oddLabel}</strong> : null}
     </article>
   )
 }
 
 function SgpGroup({
   group,
+  isRemoveDisabled = false,
+  isRemoving = false,
   onRemoveGroup,
   onRemoveSelection,
+  onTagInfoOpen,
+  removingSelectionId,
 }: {
   group: BetslipSelectionGroup
-  onRemoveGroup: (selectionIds: string[]) => void
+  isRemoveDisabled?: boolean
+  isRemoving?: boolean
+  onRemoveGroup: (groupId: string, selectionIds: string[]) => void
   onRemoveSelection: (selectionId: string) => void
+  onTagInfoOpen: () => void
+  removingSelectionId?: string | null
 }) {
   const headerSelection = getSgpHeaderSelection(group.selections)
   const { homeLabel, awayLabel, timeLabel, eventLabel: headerEventLabel } = getSgpHeaderParts(headerSelection)
   const eventLabel = headerEventLabel || group.eventId
 
   return (
-    <section className="betslip-v2__sgp" aria-label={`Crear apuesta ${eventLabel}`}>
+    <section
+      className={[
+        'betslip-v2__sgp',
+        isRemoving ? 'betslip-v2__sgp--removing' : '',
+      ].filter(Boolean).join(' ')}
+      aria-label={`Crear apuesta ${eventLabel}`}
+    >
       <div className="betslip-v2__sgp-header">
         <RemoveButton
+          disabled={isRemoveDisabled}
           label={`Eliminar crear apuesta ${eventLabel}`}
-          onClick={() => onRemoveGroup(group.selections.map((selection) => selection.id))}
+          onClick={() => onRemoveGroup(group.eventId, group.selections.map((selection) => selection.id))}
         />
         <span className="betslip-v2__divider" aria-hidden="true" />
         <div className="betslip-v2__sgp-match">
@@ -521,13 +362,23 @@ function SgpGroup({
         const title = getSelectionTitle(selection)
 
         return (
-          <article key={selection.id} className="betslip-v2__sgp-leg">
-            <RemoveButton label={`Eliminar selección ${title}`} onClick={() => onRemoveSelection(selection.id)} />
+          <article
+            key={selection.id}
+            className={[
+              'betslip-v2__sgp-leg',
+              removingSelectionId === selection.id ? 'betslip-v2__sgp-leg--removing' : '',
+            ].filter(Boolean).join(' ')}
+          >
+            <RemoveButton
+              disabled={isRemoveDisabled}
+              label={`Eliminar selección ${title}`}
+              onClick={() => onRemoveSelection(selection.id)}
+            />
             <SelectionAvatar selection={selection} compact />
             <div className="betslip-v2__sgp-copy">
               <div className="betslip-v2__market-line">
                 <span>{getSelectionMarketLabel(selection)}</span>
-                <Badge label={getSelectionBadge(selection)} />
+                <Badges labels={getSelectionBadges(selection)} onInfoClick={onTagInfoOpen} />
               </div>
               <SelectionTitleLine selection={selection} />
             </div>
@@ -535,6 +386,36 @@ function SgpGroup({
         )
       })}
     </section>
+  )
+}
+
+function BetslipTagInfoBottomSheet({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean
+  onClose: () => void
+}) {
+  return (
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Informações"
+      containerClassName="betslip-v2-info-sheet-container"
+      sheetClassName="betslip-v2-info-sheet"
+      bodyClassName="betslip-v2-info-sheet__body"
+      hideScrollIndicator
+      blurBackdrop
+    >
+      <div className="betslip-v2-info-sheet__content">
+        {betslipInfoItems.map((item) => (
+          <div className="betslip-v2-info-sheet__row" key={item.label}>
+            <span className="betslip-v2__badge betslip-v2-info-sheet__badge">{item.label}</span>
+            <p>{item.text}</p>
+          </div>
+        ))}
+      </div>
+    </BottomSheet>
   )
 }
 
@@ -748,15 +629,27 @@ function SwipeButton({
 }
 
 export function BetslipPageV2({
+  authVariant = 'logged-in',
   isCoveredByEvent = false,
+  onCreateAccountClick,
+  onDepositClick,
+  onLoginClick,
   onClose,
+  onBetSuccess,
   onSelectionsEmptyExitStart,
+  requiresDeposit = false,
 }: BetslipPageV2Props) {
   const { selections, summary, removeSelection, clearSelections } = useBetslip()
   const [isLeaving, setIsLeaving] = useState(false)
   const [stakeCents, setStakeCents] = useState(DEFAULT_STAKE_CENTS)
   const [stakeInputValue, setStakeInputValue] = useState(() => formatStakeInputValue(DEFAULT_STAKE_CENTS))
+  const [acceptsOddsChanges, setAcceptsOddsChanges] = useState(false)
+  const [isTagInfoOpen, setIsTagInfoOpen] = useState(false)
+  const [removingRowId, setRemovingRowId] = useState<string | null>(null)
+  const [removingLegId, setRemovingLegId] = useState<string | null>(null)
   const closeTimerRef = useRef<number | null>(null)
+  const rowRemoveTimerRef = useRef<number | null>(null)
+  const legRemoveTimerRef = useRef<number | null>(null)
   const hadSelectionsRef = useRef(selections.length > 0)
 
   const selectionGroups = useMemo(() => groupSelectionsByEvent(selections), [selections])
@@ -766,6 +659,9 @@ export function BetslipPageV2({
   const stakeLabel = formatMoney(stakeCents, { compactWhole: true })
   const potentialWinLabel = formatMoney(potentialWinCents)
   const hasSgp = selectionGroups.some((group) => group.selections.length > 1)
+  const isLoggedOut = authVariant === 'logged-out'
+  const shouldShowDepositPrompt = !isLoggedOut && requiresDeposit
+  const isRemoveLocked = removingRowId !== null || removingLegId !== null
 
   const handleStakeChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const digits = event.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '')
@@ -790,16 +686,96 @@ export function BetslipPageV2({
     requestClose(clearSelections)
   }, [clearSelections, onSelectionsEmptyExitStart, requestClose])
 
-  const handleRemoveGroup = useCallback((selectionIds: string[]) => {
-    selectionIds.forEach(removeSelection)
-  }, [removeSelection])
+  const handleRemoveGroup = useCallback((groupId: string, selectionIds: string[]) => {
+    if (
+      removingRowId
+      || removingLegId
+      || rowRemoveTimerRef.current !== null
+      || legRemoveTimerRef.current !== null
+      || selectionIds.length === 0
+    ) return
+
+    setRemovingRowId(groupId)
+    rowRemoveTimerRef.current = window.setTimeout(() => {
+      selectionIds.forEach(removeSelection)
+      setRemovingRowId(null)
+      rowRemoveTimerRef.current = null
+    }, SELECTION_REMOVE_ANIMATION_MS)
+  }, [removeSelection, removingLegId, removingRowId])
+
+  const handleRemoveSelection = useCallback((selectionId: string) => {
+    if (
+      removingRowId
+      || removingLegId
+      || rowRemoveTimerRef.current !== null
+      || legRemoveTimerRef.current !== null
+    ) return
+
+    setRemovingRowId(selectionId)
+    rowRemoveTimerRef.current = window.setTimeout(() => {
+      removeSelection(selectionId)
+      setRemovingRowId(null)
+      rowRemoveTimerRef.current = null
+    }, SELECTION_REMOVE_ANIMATION_MS)
+  }, [removeSelection, removingLegId, removingRowId])
+
+  const handleRemoveSgpLeg = useCallback((selectionId: string) => {
+    if (
+      removingRowId
+      || removingLegId
+      || rowRemoveTimerRef.current !== null
+      || legRemoveTimerRef.current !== null
+    ) return
+
+    setRemovingLegId(selectionId)
+    legRemoveTimerRef.current = window.setTimeout(() => {
+      removeSelection(selectionId)
+      setRemovingLegId(null)
+      legRemoveTimerRef.current = null
+    }, SGP_LEG_REMOVE_ANIMATION_MS)
+  }, [removeSelection, removingLegId, removingRowId])
 
   const handleConfirm = useCallback(() => {
-    requestClose(clearSelections)
-  }, [clearSelections, requestClose])
+    if (!summary.hasSelections || selections.length === 0) {
+      requestClose(clearSelections)
+      return
+    }
+
+    const receipt: BetSuccessReceipt = {
+      selections: selections.map((selection) => ({ ...selection })),
+      stakeCents,
+      totalOddsLabel,
+      potentialWinLabel,
+      createdAtMs: Date.now(),
+    }
+
+    requestClose(() => {
+      clearSelections()
+      onBetSuccess?.(receipt)
+    })
+  }, [
+    clearSelections,
+    onBetSuccess,
+    potentialWinLabel,
+    requestClose,
+    selections,
+    stakeCents,
+    summary.hasSelections,
+    totalOddsLabel,
+  ])
+
+  const handleTagInfoOpen = useCallback(() => {
+    setIsTagInfoOpen(true)
+  }, [])
+
+  const handleTagInfoClose = useCallback(() => {
+    setIsTagInfoOpen(false)
+  }, [])
 
   useEffect(() => () => {
     if (closeTimerRef.current !== null) window.clearTimeout(closeTimerRef.current)
+    if (rowRemoveTimerRef.current !== null) window.clearTimeout(rowRemoveTimerRef.current)
+    if (legRemoveTimerRef.current !== null) window.clearTimeout(legRemoveTimerRef.current)
   }, [])
 
   useEffect(() => {
@@ -815,20 +791,21 @@ export function BetslipPageV2({
   }, [isLeaving, onSelectionsEmptyExitStart, requestClose, selections.length])
 
   return (
-    <main
-      className={[
-        'betslip-v2',
-        isLeaving ? 'betslip-v2--leaving' : 'betslip-v2--entering',
-        isCoveredByEvent ? 'betslip-v2--covered-by-event' : '',
-      ].filter(Boolean).join(' ')}
-      aria-hidden={isCoveredByEvent ? true : undefined}
-      aria-labelledby="betslip-v2-title"
-    >
-      <div className="betslip-v2__light" aria-hidden="true" />
-      <header className="betslip-v2__header">
-        <button type="button" className="betslip-v2__icon-button" aria-label="Eliminar todas las selecciones" onClick={handleClearAll}>
-          <img className="betslip-v2__header-icon" src={trashIcon} alt="" aria-hidden="true" draggable="false" />
-        </button>
+    <>
+      <main
+        className={[
+          'betslip-v2',
+          isLeaving ? 'betslip-v2--leaving' : 'betslip-v2--entering',
+          isCoveredByEvent ? 'betslip-v2--covered-by-event' : '',
+        ].filter(Boolean).join(' ')}
+        aria-hidden={isCoveredByEvent ? true : undefined}
+        aria-labelledby="betslip-v2-title"
+      >
+        <div className="betslip-v2__light" aria-hidden="true" />
+        <header className="betslip-v2__header">
+          <button type="button" className="betslip-v2__icon-button" aria-label="Eliminar todas las selecciones" onClick={handleClearAll}>
+            <img className="betslip-v2__header-icon" src={trashIcon} alt="" aria-hidden="true" draggable="false" />
+          </button>
 
         <div className="betslip-v2__header-title">
           <div className="betslip-v2__title-row">
@@ -855,14 +832,22 @@ export function BetslipPageV2({
               <SgpGroup
                 key={group.eventId}
                 group={group}
+                isRemoveDisabled={isRemoveLocked}
+                isRemoving={removingRowId === group.eventId}
                 onRemoveGroup={handleRemoveGroup}
-                onRemoveSelection={removeSelection}
+                onRemoveSelection={handleRemoveSgpLeg}
+                onTagInfoOpen={handleTagInfoOpen}
+                removingSelectionId={removingLegId}
               />
             ) : (
               <SimpleSelectionRow
                 key={group.selections[0].id}
+                isRemoveDisabled={isRemoveLocked}
+                isRemoving={removingRowId === group.selections[0].id}
                 selection={group.selections[0]}
-                onRemove={removeSelection}
+                onRemove={handleRemoveSelection}
+                onTagInfoOpen={handleTagInfoOpen}
+                showOdd={!hasSgp}
               />
             )
           ))}
@@ -899,21 +884,69 @@ export function BetslipPageV2({
             {hasSgp ? <em>SGP</em> : null}
           </div>
 
-          <div className="betslip-v2__summary-item betslip-v2__summary-item--win">
-            <span>Para ganar</span>
-            <strong>{potentialWinLabel}</strong>
+          <div className="betslip-v2__summary-item betslip-v2__summary-item--win" aria-label={`Para ganar ${potentialWinLabel}`}>
+            <span className="betslip-v2__win-label">Para ganar</span>
+            <div className="betslip-v2__win-field">
+              <strong>{potentialWinLabel}</strong>
+            </div>
           </div>
         </div>
 
-        <label className="betslip-v2__odds-accept">
-          <input type="checkbox" />
-          <span>
-            Aceptar siempre cambios en las odds para agilizar la creación de tu boleto. <a href="#betslip-odds-info">Saber más.</a>
+        <button
+          type="button"
+          className={[
+            'betslip-v2__odds-accept',
+            acceptsOddsChanges ? 'betslip-v2__odds-accept--checked' : '',
+          ].filter(Boolean).join(' ')}
+          role="checkbox"
+          aria-checked={acceptsOddsChanges}
+          onClick={() => setAcceptsOddsChanges((current) => !current)}
+        >
+          <span className="betslip-v2__odds-accept-box" aria-hidden="true">
+            {acceptsOddsChanges ? <span className="betslip-v2__odds-accept-check" /> : null}
           </span>
-        </label>
+          <span className="betslip-v2__odds-accept-label">
+            Aceitar sempre alterações nas odds para agilizar a criação do seu bilhete. <span>Saiba mais.</span>
+          </span>
+        </button>
 
-        <SwipeButton stakeLabel={stakeLabel} onComplete={handleConfirm} />
-      </footer>
-    </main>
+        {isLoggedOut ? (
+          <div className="betslip-v2__auth-prompt" aria-label="Acesse sua conta para apostar">
+            <p>Quase lá! Entre ou crie uma conta para começar a jogar.</p>
+            <div className="betslip-v2__auth-actions">
+              <button
+                type="button"
+                className="betslip-v2__auth-action betslip-v2__auth-action--primary"
+                onClick={onCreateAccountClick}
+              >
+                Criar conta
+              </button>
+              <button
+                type="button"
+                className="betslip-v2__auth-action betslip-v2__auth-action--secondary"
+                onClick={onLoginClick}
+              >
+                Entrar
+              </button>
+            </div>
+          </div>
+        ) : shouldShowDepositPrompt ? (
+          <div className="betslip-v2__deposit-prompt" aria-label="Adicione saldo para apostar">
+            <p>Quase lá! Adicione saldo para começar a jogar.</p>
+            <button
+              type="button"
+              className="betslip-v2__deposit-action"
+              onClick={onDepositClick}
+            >
+              Depositar
+            </button>
+          </div>
+        ) : (
+          <SwipeButton stakeLabel={stakeLabel} onComplete={handleConfirm} />
+        )}
+        </footer>
+      </main>
+      <BetslipTagInfoBottomSheet isOpen={isTagInfoOpen} onClose={handleTagInfoClose} />
+    </>
   )
 }

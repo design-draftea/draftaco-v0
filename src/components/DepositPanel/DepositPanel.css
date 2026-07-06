@@ -134,7 +134,8 @@
 
 .deposit-panel__back,
 .deposit-panel__info,
-.deposit-panel__close {
+.deposit-panel__close,
+.deposit-panel__header-spacer {
   display: inline-flex;
   width: 40px;
   height: 40px;

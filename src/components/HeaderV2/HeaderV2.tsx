@@ -13,6 +13,7 @@ interface HeaderV2Props {
   rail?: ReactNode
   authVariant?: 'logged-in' | 'logged-out'
   balanceCents?: number
+  depositStatus?: 'deposit-pending'
   showMenuButton?: boolean
   changeProductOnPointerDown?: boolean
   disableProductToggle?: boolean
@@ -44,6 +45,7 @@ export function HeaderV2({
   rail,
   authVariant = 'logged-out',
   balanceCents = defaultBalanceCents,
+  depositStatus,
   showMenuButton = true,
   disableMenuButton = false,
   onLogoClick,
@@ -57,7 +59,12 @@ export function HeaderV2({
   const isSportPage = !!activeSport && activeSport !== 'destaques'
   const isLoggedOut = authVariant === 'logged-out'
   const isDrafteaBrand = brandMode === 'draftea'
+  const isDepositPending = depositStatus === 'deposit-pending'
   const balanceDisplayValue = formatBalanceDisplayValue(balanceCents)
+  const balanceLabel = isDepositPending ? 'DEPÓSITO PENDENTE' : 'SALDO'
+  const balanceAriaLabel = isDepositPending
+    ? `Saldo disponível: ${balanceDisplayValue}; depósito pendente`
+    : `Saldo disponível: ${balanceDisplayValue}`
   const logoAlt = isDrafteaBrand ? 'Draftea' : 'Rei do Pitaco'
   const logoDark = isDrafteaBrand ? logoDraftea : logoReidoPitaco
   const logoLight = isDrafteaBrand ? logoDraftea : logoReidoPitacoLight
@@ -143,6 +150,7 @@ export function HeaderV2({
         'header--liquid-glass-new',
         !showMenuButton ? 'header--balance-only' : '',
         isLoggedOut ? 'header--logged-out' : 'header--logged-in',
+        isDepositPending ? 'header--deposit-pending' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -224,23 +232,23 @@ export function HeaderV2({
             </>
           ) : (
             <>
-              <div
+              <button
+                type="button"
                 className="header__balance"
-                aria-label={`Saldo disponível: ${balanceDisplayValue}`}
+                aria-label={balanceAriaLabel}
+                onClick={onDepositOpen}
               >
                 <span className="header__balance-content">
                   <span className="header__balance-value">{balanceDisplayValue}</span>
-                  <span className="header__balance-label">SALDO</span>
+                  <span className="header__balance-label">{balanceLabel}</span>
                 </span>
-                <button
-                  type="button"
+                <span
                   className="header__deposit-icon-shell"
-                  aria-label="Depositar"
-                  onClick={onDepositOpen}
+                  aria-hidden="true"
                 >
                   <span className="header__deposit-icon" />
-                </button>
-              </div>
+                </span>
+              </button>
               {showMenuButton && (
                 <button
                   type="button"

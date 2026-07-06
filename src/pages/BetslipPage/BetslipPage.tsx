@@ -65,6 +65,7 @@ import {
 } from '../../hooks/betslipUtils'
 import { BETSLIP_LIVE_EVENT_OPEN_EVENT } from '../../utils/betslipLiveEvent'
 import { advanceLiveClock } from '../../utils/liveClock'
+import { TEAM_LOGO_FALLBACK, normalizeTeamLogoSource } from '../../utils/teamLogoFallback'
 
 interface BetslipPageProps {
   isCoveredByEvent?: boolean
@@ -241,13 +242,19 @@ const getBetslipLiveEventSport = (selection: BetslipSelection) => {
   return betslipLiveEventSupportedSports.has(sport) ? sport : 'futebol'
 }
 
+const getTeamIconSource = (teamName: string | undefined, icon?: string) => (
+  normalizeTeamLogoSource(icon)
+  ?? normalizeTeamLogoSource(teamName ? getTeamLogo(teamName) : undefined)
+  ?? (teamName ? TEAM_LOGO_FALLBACK : '')
+)
+
 const getBetslipTeamIcon = (
   selection: BetslipSelection,
   teamName: string | undefined,
   side: 'home' | 'away'
 ) => {
   const icon = side === 'home' ? selection.homeTeamIcon : selection.awayTeamIcon
-  return icon ?? (teamName ? getTeamLogo(teamName) : '')
+  return getTeamIconSource(teamName, icon)
 }
 
 const getBetslipEventOddLabel = (
@@ -669,8 +676,8 @@ const createRelatedRecommendation = (
   const eventName = baseSelection ? getSelectionEventName(baseSelection) : `${homeTeam} x ${awayTeam}`
   const eventTimeLabel = baseSelection ? getSelectionTimeLabel(baseSelection, nowMs) : 'Hoje, 19h30'
   const liveClock = eventStatus === 'live' ? eventTimeLabel : undefined
-  const homeTeamIcon = baseSelection?.homeTeamIcon ?? getTeamLogo(homeTeam)
-  const awayTeamIcon = baseSelection?.awayTeamIcon ?? getTeamLogo(awayTeam)
+  const homeTeamIcon = getTeamIconSource(homeTeam, baseSelection?.homeTeamIcon)
+  const awayTeamIcon = getTeamIconSource(awayTeam, baseSelection?.awayTeamIcon)
   const variants = sport === 'basquete'
     ? [
       { marketId: 'total-pontos', outcomeId: `over-${index}`, label: 'Mais de 218.5', marketLabel: 'Total de Pontos', odd: '1.91x' },
@@ -763,22 +770,21 @@ const getSelectionIconSrc = (selection: BetslipSelection) => {
   if (selection.selectionType === 'player') {
     return selection.playerImage
       ?? selection.selectionIcon
-      ?? selection.homeTeamIcon
-      ?? (selection.homeTeam ? getTeamLogo(selection.homeTeam) : '')
+      ?? getTeamIconSource(selection.homeTeam, selection.homeTeamIcon)
   }
 
   if (selection.selectionIcon) return selection.selectionIcon
 
   if (selection.homeTeam && selectionTitle === selection.homeTeam) {
-    return selection.homeTeamIcon ?? getTeamLogo(selection.homeTeam)
+    return getTeamIconSource(selection.homeTeam, selection.homeTeamIcon)
   }
 
   if (selection.awayTeam && selectionTitle === selection.awayTeam) {
-    return selection.awayTeamIcon ?? getTeamLogo(selection.awayTeam)
+    return getTeamIconSource(selection.awayTeam, selection.awayTeamIcon)
   }
 
-  if (selection.homeTeam) return selection.homeTeamIcon ?? getTeamLogo(selection.homeTeam)
-  if (selection.awayTeam) return selection.awayTeamIcon ?? getTeamLogo(selection.awayTeam)
+  if (selection.homeTeam) return getTeamIconSource(selection.homeTeam, selection.homeTeamIcon)
+  if (selection.awayTeam) return getTeamIconSource(selection.awayTeam, selection.awayTeamIcon)
 
   return ''
 }

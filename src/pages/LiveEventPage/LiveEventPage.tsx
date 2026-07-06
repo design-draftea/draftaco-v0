@@ -17,7 +17,6 @@ import streamingFutebol from '../../assets/streamingFutebol.webp'
 import streamingBasquete from '../../assets/streamingBasquete.webp'
 import iconBasquete from '../../assets/iconSports/basketball.png'
 import iconFutebol from '../../assets/iconSports/soccer.png'
-import escudoDefaultBasquete from '../../assets/escudoDefaultBasquete.png'
 import playerAvatarFutebol from '../../assets/playerAvatarFutebol.svg'
 import playerAvatarBasquete from '../../assets/playerAvatarBasquete.svg'
 import arrascaetaProps from '../../assets/arrascaetaProps.png'
@@ -34,6 +33,7 @@ import { useOddSelection } from '../../hooks/useOddSelection'
 import { createBetslipSelection, getBetslipEventId, getBetslipMarketGroupId, getPlayerPropBetslipKey } from '../../hooks/betslipUtils'
 import { useSportsDbTeamLogo } from '../../hooks/useSportsDbTeamLogo'
 import { getTeamAbbreviation } from '../../utils/teamAbbreviations'
+import { TEAM_LOGO_FALLBACK, isTeamLogoFallback } from '../../utils/teamLogoFallback'
 
 export interface LiveEventMatch {
   id?: string
@@ -1036,22 +1036,19 @@ function getLiveEventMatchTime(match: LiveEventMatch, index: number, currentTime
   return currentTimes?.[key] ?? match.currentTime ?? fallback ?? match.dateTime ?? match.time ?? 'Ao vivo'
 }
 
-function getLiveEventSportFallbackIcon(sport: string): string {
-  return sport === 'basquete' ? iconBasquete : iconFutebol
+function getLiveEventSportFallbackIcon(): string {
+  return TEAM_LOGO_FALLBACK
 }
 
-function isLiveEventFallbackTeamIcon(icon: string | undefined, sport: string): boolean {
-  if (!icon) return true
-  if (sport === 'basquete') return icon === escudoDefaultBasquete || icon === iconBasquete
-  if (sport === 'futebol') return icon === iconFutebol
-  return false
+function isLiveEventFallbackTeamIcon(icon: string | undefined): boolean {
+  return isTeamLogoFallback(icon)
 }
 
-function getLiveEventTeamIconView(icon: string | undefined, sport: string) {
-  const isFallback = isLiveEventFallbackTeamIcon(icon, sport)
+function getLiveEventTeamIconView(icon: string | undefined) {
+  const isFallback = isLiveEventFallbackTeamIcon(icon)
 
   return {
-    src: isFallback ? getLiveEventSportFallbackIcon(sport) : icon,
+    src: isFallback ? getLiveEventSportFallbackIcon() : icon,
     isFallback,
   }
 }
@@ -1108,14 +1105,13 @@ function getLiveEventRailPreMatchHeader(item: LiveEventRailItem) {
 interface LiveEventRailTeamIconProps {
   team: LiveEventRailItem['homeTeam']
   sport: string
-  side: 'home' | 'away'
 }
 
-function LiveEventRailTeamIcon({ team, sport, side }: LiveEventRailTeamIconProps) {
-  const resolvedIcon = useSportsDbTeamLogo(team.name, team.icon, sport, getLiveEventSportFallbackIcon(sport), {
-    useCurrentLogoFallback: false,
+function LiveEventRailTeamIcon({ team, sport }: LiveEventRailTeamIconProps) {
+  const resolvedIcon = useSportsDbTeamLogo(team.name, team.icon, sport, getLiveEventSportFallbackIcon(), {
+    useCurrentLogoFallback: true,
   })
-  const teamIcon = getLiveEventTeamIconView(resolvedIcon, sport)
+  const teamIcon = getLiveEventTeamIconView(resolvedIcon)
 
   if (!teamIcon.src) {
     return <span className="live-event-page__rail-team-icon live-event-page__rail-team-icon--placeholder" />
@@ -1125,10 +1121,7 @@ function LiveEventRailTeamIcon({ team, sport, side }: LiveEventRailTeamIconProps
     <img
       src={teamIcon.src}
       alt=""
-      className={[
-        'live-event-page__rail-team-icon',
-        teamIcon.isFallback ? `live-event-page__rail-team-icon--sport-fallback live-event-page__rail-team-icon--sport-${side}` : '',
-      ].filter(Boolean).join(' ')}
+      className="live-event-page__rail-team-icon"
     />
   )
 }
@@ -1237,11 +1230,11 @@ function LiveEventMatchRail({
               <span className="live-event-page__rail-teams">
                 <span className="live-event-page__rail-team-list">
                   <span className="live-event-page__rail-team-row">
-                    <LiveEventRailTeamIcon team={item.homeTeam} sport={item.sport} side="home" />
+                    <LiveEventRailTeamIcon team={item.homeTeam} sport={item.sport} />
                     <span className="live-event-page__rail-team-name">{item.homeTeam.name}</span>
                   </span>
                   <span className="live-event-page__rail-team-row">
-                    <LiveEventRailTeamIcon team={item.awayTeam} sport={item.sport} side="away" />
+                    <LiveEventRailTeamIcon team={item.awayTeam} sport={item.sport} />
                     <span className="live-event-page__rail-team-name">{item.awayTeam.name}</span>
                   </span>
                 </span>
@@ -1776,14 +1769,14 @@ function LiveEventContent({
   const tertiaryRows = isBasketball ? getQuarterTotalRows(match.q3TotalOdds) : getTotalCardsRows()
   const finalRows = isBasketball ? getQuarterTotalRows(match.q4TotalOdds) : []
   const doubleChanceRows = isBasketball ? [] : getDoubleChanceRows(match)
-  const resolvedHomeTeamIcon = useSportsDbTeamLogo(match.homeTeam.name, match.homeTeam.icon, contentSport, getLiveEventSportFallbackIcon(contentSport), {
-    useCurrentLogoFallback: false,
+  const resolvedHomeTeamIcon = useSportsDbTeamLogo(match.homeTeam.name, match.homeTeam.icon, contentSport, getLiveEventSportFallbackIcon(), {
+    useCurrentLogoFallback: true,
   })
-  const resolvedAwayTeamIcon = useSportsDbTeamLogo(match.awayTeam.name, match.awayTeam.icon, contentSport, getLiveEventSportFallbackIcon(contentSport), {
-    useCurrentLogoFallback: false,
+  const resolvedAwayTeamIcon = useSportsDbTeamLogo(match.awayTeam.name, match.awayTeam.icon, contentSport, getLiveEventSportFallbackIcon(), {
+    useCurrentLogoFallback: true,
   })
-  const homeTeamIcon = getLiveEventTeamIconView(resolvedHomeTeamIcon, contentSport)
-  const awayTeamIcon = getLiveEventTeamIconView(resolvedAwayTeamIcon, contentSport)
+  const homeTeamIcon = getLiveEventTeamIconView(resolvedHomeTeamIcon)
+  const awayTeamIcon = getLiveEventTeamIconView(resolvedAwayTeamIcon)
   const homeLogoGlowColor = useLogoGlowColor(
     homeTeamIcon.src,
     match.homeTeam.name,
@@ -1817,6 +1810,13 @@ function LiveEventContent({
     if (marketId === finalMarketId) return finalMarketTitle
 
     return marketId
+  }
+  const getMarketTags = (marketId: string) => {
+    if (isBasketball) return []
+    if (marketId === resultMarketId) return ['PA', '90’']
+    if ([primaryTotalMarketId, secondaryMarketId, tertiaryMarketId, finalMarketId].includes(marketId)) return ['90’']
+
+    return []
   }
   const renderMarketOddButton = (
     marketId: string,
@@ -1854,6 +1854,7 @@ function LiveEventContent({
             homeScore: match.homeTeam.score,
             awayScore: match.awayTeam.score,
             badgeType: marketId === resultMarketId ? 'boost' : undefined,
+            marketTags: getMarketTags(marketId),
           })
         )}
       >
@@ -2268,7 +2269,6 @@ function LiveEventContent({
                 alt=""
                 className={[
                   'live-event-page__sticky-score-logo',
-                  homeTeamIcon.isFallback ? 'live-event-page__sticky-score-logo--sport-fallback live-event-page__sticky-score-logo--sport-home' : '',
                 ].filter(Boolean).join(' ')}
               />
             )}
@@ -2299,7 +2299,6 @@ function LiveEventContent({
                 alt=""
                 className={[
                   'live-event-page__sticky-score-logo',
-                  awayTeamIcon.isFallback ? 'live-event-page__sticky-score-logo--sport-fallback live-event-page__sticky-score-logo--sport-away' : '',
                 ].filter(Boolean).join(' ')}
               />
             )}
@@ -2378,7 +2377,6 @@ function LiveEventContent({
                         alt={match.homeTeam.name}
                         className={[
                           'live-event-page__logo',
-                          homeTeamIcon.isFallback ? 'live-event-page__logo--sport-fallback live-event-page__logo--sport-home' : '',
                         ].filter(Boolean).join(' ')}
                       />
                     </>
@@ -2414,7 +2412,6 @@ function LiveEventContent({
                         alt={match.awayTeam.name}
                         className={[
                           'live-event-page__logo',
-                          awayTeamIcon.isFallback ? 'live-event-page__logo--sport-fallback live-event-page__logo--sport-away' : '',
                         ].filter(Boolean).join(' ')}
                       />
                     </>
@@ -3229,10 +3226,10 @@ function LiveEventInlineScoreTeam({
   sport,
   side,
 }: LiveEventInlineScoreTeamProps) {
-  const resolvedIcon = useSportsDbTeamLogo(team.name, team.icon, sport, getLiveEventSportFallbackIcon(sport), {
-    useCurrentLogoFallback: false,
+  const resolvedIcon = useSportsDbTeamLogo(team.name, team.icon, sport, getLiveEventSportFallbackIcon(), {
+    useCurrentLogoFallback: true,
   })
-  const teamIcon = getLiveEventTeamIconView(resolvedIcon, sport)
+  const teamIcon = getLiveEventTeamIconView(resolvedIcon)
   const logoGlowColor = useLogoGlowColor(
     teamIcon.src,
     team.name,
@@ -3256,10 +3253,7 @@ function LiveEventInlineScoreTeam({
             <img
               src={teamIcon.src}
               alt={team.name}
-              className={[
-                'live-event-inline__summary-logo',
-                teamIcon.isFallback ? `live-event-inline__summary-logo--sport-fallback live-event-inline__summary-logo--sport-${side}` : '',
-              ].filter(Boolean).join(' ')}
+              className="live-event-inline__summary-logo"
             />
           </>
         ) : (
@@ -3705,6 +3699,13 @@ function LiveEventInlineMarkets({
 
     return marketId
   }
+  const getMarketTags = (marketId: string) => {
+    if (isBasketball) return []
+    if (marketId === resultMarketId) return ['PA', '90’']
+    if ([primaryTotalMarketId, secondaryMarketId, finalMarketId].includes(marketId)) return ['90’']
+
+    return []
+  }
 
   const buildEventPlayerPropCards = (marketId: string, fallbackRows: PlayerShotMarket[] = []): MatchPlayerProp[] => {
     const syncedCards = isLiveMatch
@@ -3863,6 +3864,7 @@ function LiveEventInlineMarkets({
             selectionIcon: selectionDetails?.selectionIcon,
             playerImage: selectionDetails?.playerImage,
             badgeType: selectionDetails?.badgeType ?? (marketId === resultMarketId ? 'boost' : undefined),
+            marketTags: getMarketTags(marketId),
           })
         )}
       />

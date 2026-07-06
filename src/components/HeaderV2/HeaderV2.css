@@ -126,6 +126,7 @@
   padding: 0;
   border-radius: 12px;
   color: inherit;
+  cursor: pointer;
 }
 
 .header--v2 .header__balance-content {
@@ -156,6 +157,10 @@
   text-align: right;
 }
 
+.header--v2.header--deposit-pending .header__balance-label {
+  color: var(--ds-fill-warning, #FDE047);
+}
+
 .header--v2 .header__deposit-icon-shell {
   display: flex;
   align-items: center;
@@ -170,6 +175,11 @@
   color: inherit;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+}
+
+.header--v2.header--deposit-pending .header__deposit-icon-shell {
+  background: var(--ds-fill-warning, #FDE047);
+  color: var(--ds-fill-dark, #000000);
 }
 
 .header--v2 .header__deposit-icon-shell:focus-visible {
@@ -195,6 +205,11 @@
   border-radius: 999px;
   background: #fbfbfb;
   transform: translate(-50%, -50%);
+}
+
+.header--v2.header--deposit-pending .header__deposit-icon::before,
+.header--v2.header--deposit-pending .header__deposit-icon::after {
+  background: var(--ds-fill-dark, #000000);
 }
 
 .header--v2 .header__deposit-icon::after {

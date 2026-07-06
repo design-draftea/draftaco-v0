@@ -23,7 +23,6 @@ import {
 } from '../../utils/competitionNavigation'
 
 import pagamentoAntecipado from '../../assets/pagamentoAntecipado.png'
-import iconBasquete from '../../assets/iconSports/basketball.png'
 import iconFutebol from '../../assets/iconSports/soccer.png'
 import iconTenis from '../../assets/iconSports/tennis.png'
 import playerAvatarFutebol from '../../assets/playerAvatarFutebol.svg'
@@ -534,6 +533,76 @@ const calendarFootballFinishingPlayersByTeam: Record<string, TeamPlayerProfile[]
     { name: 'Tomas Martinez', position: 'MEI' },
     { name: 'Cristian Bordacahar', position: 'ATA' },
   ],
+  'Inter Miami': [
+    { name: 'Lionel Messi', position: 'ATA' },
+    { name: 'Luis Suarez', position: 'ATA' },
+    { name: 'Tadeo Allende', position: 'ATA' },
+  ],
+  Whitecaps: [
+    { name: 'Brian White', position: 'ATA' },
+    { name: 'Ryan Gauld', position: 'MEI' },
+    { name: 'Pedro Vite', position: 'MEI' },
+  ],
+  Cincinnati: [
+    { name: 'Kevin Denkey', position: 'ATA' },
+    { name: 'Luciano Acosta', position: 'MEI' },
+    { name: 'Yuya Kubo', position: 'ATA' },
+  ],
+  'Chicago Fire': [
+    { name: 'Hugo Cuypers', position: 'ATA' },
+    { name: 'Philip Zinckernagel', position: 'MEI' },
+    { name: 'Brian Gutierrez', position: 'MEI' },
+  ],
+  Nashville: [
+    { name: 'Sam Surridge', position: 'ATA' },
+    { name: 'Hany Mukhtar', position: 'MEI' },
+    { name: 'Jacob Shaffelburg', position: 'ATA' },
+  ],
+  'New York City': [
+    { name: 'Alonso Martinez', position: 'ATA' },
+    { name: 'Santiago Rodriguez', position: 'MEI' },
+    { name: 'Hannes Wolf', position: 'ATA' },
+  ],
+  'Seattle Sounders': [
+    { name: 'Jordan Morris', position: 'ATA' },
+    { name: 'Pedro de la Vega', position: 'ATA' },
+    { name: 'Albert Rusnak', position: 'MEI' },
+  ],
+  'LA Galaxy': [
+    { name: 'Gabriel Pec', position: 'ATA' },
+    { name: 'Joseph Paintsil', position: 'ATA' },
+    { name: 'Riqui Puig', position: 'MEI' },
+  ],
+  'Atlanta United': [
+    { name: 'Miguel Almiron', position: 'MEI' },
+    { name: 'Saba Lobjanidze', position: 'ATA' },
+    { name: 'Jamal Thiare', position: 'ATA' },
+  ],
+  'Portland Timbers': [
+    { name: 'Jonathan Rodriguez', position: 'ATA' },
+    { name: 'Felipe Mora', position: 'ATA' },
+    { name: 'Santiago Moreno', position: 'ATA' },
+  ],
+  'Orlando City': [
+    { name: 'Martin Ojeda', position: 'MEI' },
+    { name: 'Luis Muriel', position: 'ATA' },
+    { name: 'Duncan McGuire', position: 'ATA' },
+  ],
+  'FC Dallas': [
+    { name: 'Petar Musa', position: 'ATA' },
+    { name: 'Jesus Ferreira', position: 'ATA' },
+    { name: 'Paul Arriola', position: 'ATA' },
+  ],
+  'Houston Dynamo': [
+    { name: 'Ezequiel Ponce', position: 'ATA' },
+    { name: 'Ibrahim Aliyu', position: 'ATA' },
+    { name: 'Amine Bassi', position: 'MEI' },
+  ],
+  'Charlotte FC': [
+    { name: 'Patrick Agyemang', position: 'ATA' },
+    { name: 'Pep Biel', position: 'MEI' },
+    { name: 'Karol Swiderski', position: 'ATA' },
+  ],
 }
 
 const calendarFootballAssistPlayersByTeam: Record<string, TeamPlayerProfile[]> = {
@@ -896,6 +965,76 @@ const calendarFootballAssistPlayersByTeam: Record<string, TeamPlayerProfile[]> =
     { name: 'Tomas Martinez', position: 'MEI' },
     { name: 'Horacio Orzan', position: 'MEI' },
     { name: 'Cristian Bordacahar', position: 'MEI' },
+  ],
+  'Inter Miami': [
+    { name: 'Lionel Messi', position: 'ATA' },
+    { name: 'Jordi Alba', position: 'LAT' },
+    { name: 'Sergio Busquets', position: 'MEI' },
+  ],
+  Whitecaps: [
+    { name: 'Ryan Gauld', position: 'MEI' },
+    { name: 'Pedro Vite', position: 'MEI' },
+    { name: 'Sebastian Berhalter', position: 'MEI' },
+  ],
+  Cincinnati: [
+    { name: 'Luciano Acosta', position: 'MEI' },
+    { name: 'Pavel Bucha', position: 'MEI' },
+    { name: 'Luca Orellano', position: 'ALA' },
+  ],
+  'Chicago Fire': [
+    { name: 'Philip Zinckernagel', position: 'MEI' },
+    { name: 'Brian Gutierrez', position: 'MEI' },
+    { name: 'Maren Haile-Selassie', position: 'ATA' },
+  ],
+  Nashville: [
+    { name: 'Hany Mukhtar', position: 'MEI' },
+    { name: 'Jacob Shaffelburg', position: 'ATA' },
+    { name: 'Shaq Moore', position: 'LAT' },
+  ],
+  'New York City': [
+    { name: 'Santiago Rodriguez', position: 'MEI' },
+    { name: 'Hannes Wolf', position: 'ATA' },
+    { name: 'Maxi Moralez', position: 'MEI' },
+  ],
+  'Seattle Sounders': [
+    { name: 'Albert Rusnak', position: 'MEI' },
+    { name: 'Cristian Roldan', position: 'MEI' },
+    { name: 'Pedro de la Vega', position: 'ATA' },
+  ],
+  'LA Galaxy': [
+    { name: 'Riqui Puig', position: 'MEI' },
+    { name: 'Gabriel Pec', position: 'ATA' },
+    { name: 'Joseph Paintsil', position: 'ATA' },
+  ],
+  'Atlanta United': [
+    { name: 'Miguel Almiron', position: 'MEI' },
+    { name: 'Saba Lobjanidze', position: 'ATA' },
+    { name: 'Bartosz Slisz', position: 'MEI' },
+  ],
+  'Portland Timbers': [
+    { name: 'Santiago Moreno', position: 'ATA' },
+    { name: 'David Ayala', position: 'MEI' },
+    { name: 'Antony', position: 'ATA' },
+  ],
+  'Orlando City': [
+    { name: 'Martin Ojeda', position: 'MEI' },
+    { name: 'Luis Muriel', position: 'ATA' },
+    { name: 'Ivan Angulo', position: 'ATA' },
+  ],
+  'FC Dallas': [
+    { name: 'Jesus Ferreira', position: 'ATA' },
+    { name: 'Sebastian Lletget', position: 'MEI' },
+    { name: 'Paul Arriola', position: 'ATA' },
+  ],
+  'Houston Dynamo': [
+    { name: 'Amine Bassi', position: 'MEI' },
+    { name: 'Ibrahim Aliyu', position: 'ATA' },
+    { name: 'Artur', position: 'MEI' },
+  ],
+  'Charlotte FC': [
+    { name: 'Pep Biel', position: 'MEI' },
+    { name: 'Ashley Westwood', position: 'MEI' },
+    { name: 'Karol Swiderski', position: 'ATA' },
   ],
 }
 
@@ -1427,48 +1566,21 @@ export const getCalendarPlayerPropsForEvent = (
   return getCalendarPlayerProps(event, sport, marketId, homeIcon, awayIcon)
 }
 
-function getCalendarSportFallbackIcon(sport: string): string {
-  if (sport === 'basquete') return iconBasquete
-  if (sport === 'futebol') return iconFutebol
-  if (sport === 'tenis') return iconTenis
-  return ''
-}
-
-function isCalendarSportFallbackIcon(icon: string | undefined, sport: string): boolean {
-  if (!icon) return true
-  if (sport === 'basquete') return icon === iconBasquete || icon === escudoDefaultBasquete
-  return icon === getCalendarSportFallbackIcon(sport)
-}
-
 interface CalendarTeamIconProps {
   teamName: string
   currentIcon: string | undefined
   sport: string
-  side: 'home' | 'away'
 }
 
-function CalendarTeamIcon({ teamName, currentIcon, sport, side }: CalendarTeamIconProps) {
-  const fallbackIcon = getCalendarSportFallbackIcon(sport)
+function CalendarTeamIcon({ teamName, currentIcon, sport }: CalendarTeamIconProps) {
   const displayIcon = sport === 'tenis'
     ? getTennisPlayerCountryIcon(teamName, currentIcon)
     : currentIcon
-  const resolvedIcon = useSportsDbTeamLogo(teamName, displayIcon, sport, fallbackIcon || undefined, {
-    useCurrentLogoFallback: sport === 'tenis',
+  const resolvedIcon = useSportsDbTeamLogo(teamName, displayIcon, sport, undefined, {
+    useCurrentLogoFallback: true,
   })
 
   if (!resolvedIcon) return <div className="prematch-section__team-icon--placeholder" />
-
-  if (isCalendarSportFallbackIcon(resolvedIcon, sport)) {
-    const fallbackModifier = sport === 'basquete' ? 'basketball' : 'sport'
-
-    return (
-      <img
-        src={fallbackIcon}
-        alt=""
-        className={`prematch-section__team-icon prematch-section__team-icon--${fallbackModifier}-${side}`}
-      />
-    )
-  }
 
   return <img src={resolvedIcon} alt="" className="prematch-section__team-icon" />
 }
@@ -3528,7 +3640,6 @@ export function CalendarSection({
                 teamName={event.homeName}
                 currentIcon={homeIcon}
                 sport={league.sport}
-                side="home"
               />
               <span className="prematch-section__team-name">{event.homeName}</span>
             </div>
@@ -3537,7 +3648,6 @@ export function CalendarSection({
                 teamName={event.awayName}
                 currentIcon={awayIcon}
                 sport={league.sport}
-                side="away"
               />
               <span className="prematch-section__team-name">{event.awayName}</span>
             </div>

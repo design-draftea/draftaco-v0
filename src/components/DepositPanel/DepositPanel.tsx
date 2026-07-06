@@ -14,13 +14,18 @@ import './DepositPanel.css'
 interface DepositPanelProps {
   isOpen: boolean
   onClose: () => void
+  confirmationMode?: DepositConfirmationMode
+  initialAmountCents?: number | null
+  initialView?: DepositView
   onEnterComplete?: () => void
   onDepositConfirmed?: (amountCents: number) => void
+  onDepositPending?: (amountCents: number) => void
 }
 
 type PanelMotionState = 'entering' | 'open' | 'closing'
 type DepositView = 'form' | 'pix'
 type DepositOptionId = '50' | '100' | '250' | '1000' | 'custom'
+type DepositConfirmationMode = 'on-pix-generated' | 'on-pix-copy'
 
 interface QuickDepositOption {
   id: DepositOptionId
@@ -72,6 +77,12 @@ const parseManualDepositAmountCents = (value: string) => {
 const formatManualDepositAmountInput = (value: string) => {
   const amountCents = parseManualDepositAmountCents(value)
   return amountCents > 0 ? formatDepositAmount(amountCents) : ''
+}
+
+const normalizeInitialDepositAmountCents = (amountCents: number | null | undefined) => {
+  if (typeof amountCents !== 'number' || !Number.isFinite(amountCents)) return defaultDepositAmountCents
+
+  return Math.min(Math.max(0, Math.round(amountCents)), maxDepositCents)
 }
 
 const getPresetOptionIdForAmount = (amountCents: number): DepositOptionId | null => (
@@ -143,7 +154,16 @@ function AnimatedDepositAmount({
   )
 }
 
-export function DepositPanel({ isOpen, onClose, onEnterComplete, onDepositConfirmed }: DepositPanelProps) {
+export function DepositPanel({
+  isOpen,
+  onClose,
+  confirmationMode = 'on-pix-generated',
+  initialAmountCents,
+  initialView = 'form',
+  onEnterComplete,
+  onDepositConfirmed,
+  onDepositPending,
+}: DepositPanelProps) {
   const [shouldRender, setShouldRender] = useState(false)
   const [motionState, setMotionState] = useState<PanelMotionState>('entering')
   const [view, setView] = useState<DepositView>('form')
@@ -157,12 +177,19 @@ export function DepositPanel({ isOpen, onClose, onEnterComplete, onDepositConfir
   const generateTimerRef = useRef<number | null>(null)
   const openTimerRef = useRef<number | null>(null)
   const openFrameRef = useRef<number | null>(null)
+  const confirmationModeRef = useRef(confirmationMode)
+  const initialAmountCentsRef = useRef(initialAmountCents)
+  const initialViewRef = useRef(initialView)
   const onEnterCompleteRef = useRef(onEnterComplete)
   const onDepositConfirmedRef = useRef(onDepositConfirmed)
+  const onDepositPendingRef = useRef(onDepositPending)
   const shouldRenderRef = useRef(false)
   const swapTimerRef = useRef<number | null>(null)
   const panelRef = useRef<HTMLElement | null>(null)
   const panelContainerRef = useRef<HTMLDivElement | null>(null)
+  const pixAmountCentsRef = useRef<number | null>(null)
+  const isPixDepositConfirmedRef = useRef(false)
+  const isDepositPendingNotifiedRef = useRef(false)
   const manualAmountInputRef = useRef<HTMLInputElement | null>(null)
   const [isAmountEditingInline, setIsAmountEditingInline] = useState(false)
   const [manualAmountInput, setManualAmountInput] = useState(formatDepositAmount(defaultDepositAmountCents))
@@ -204,8 +231,23 @@ export function DepositPanel({ isOpen, onClose, onEnterComplete, onDepositConfir
 
   const requestClose = useCallback(() => {
     if (motionState === 'closing') return
+
+    if (
+      view === 'pix' &&
+      confirmationModeRef.current === 'on-pix-copy' &&
+      !isPixDepositConfirmedRef.current &&
+      !isDepositPendingNotifiedRef.current
+    ) {
+      const pendingAmountCents = pixAmountCentsRef.current ?? amountCents
+
+      if (pendingAmountCents > 0) {
+        isDepositPendingNotifiedRef.current = true
+        onDepositPendingRef.current?.(pendingAmountCents)
+      }
+    }
+
     onClose()
-  }, [motionState, onClose])
+  }, [amountCents, motionState, onClose, view])
 
   const focusManualAmountInput = useCallback(() => {
     const input = manualAmountInputRef.current
@@ -254,6 +296,16 @@ export function DepositPanel({ isOpen, onClose, onEnterComplete, onDepositConfir
 
   const handleCopyPixCode = () => {
     navigator.clipboard?.writeText(pixCode).catch(() => undefined)
+
+    if (confirmationModeRef.current !== 'on-pix-copy') return
+    if (isPixDepositConfirmedRef.current) return
+
+    const confirmedDepositAmountCents = pixAmountCentsRef.current ?? amountCents
+
+    if (confirmedDepositAmountCents <= 0) return
+
+    isPixDepositConfirmedRef.current = true
+    onDepositConfirmedRef.current?.(confirmedDepositAmountCents)
   }
 
   const handleGeneratePix = () => {
@@ -274,7 +326,14 @@ export function DepositPanel({ isOpen, onClose, onEnterComplete, onDepositConfir
         setView('pix')
         setIsGeneratingPix(false)
         setPixCountdownSeconds(pixCountdownInitialSeconds)
-        onDepositConfirmedRef.current?.(confirmedDepositAmountCents)
+        pixAmountCentsRef.current = confirmedDepositAmountCents
+        isPixDepositConfirmedRef.current = false
+        isDepositPendingNotifiedRef.current = false
+
+        if (confirmationModeRef.current === 'on-pix-generated') {
+          isPixDepositConfirmedRef.current = true
+          onDepositConfirmedRef.current?.(confirmedDepositAmountCents)
+        }
 
         window.requestAnimationFrame(() => {
           setIsContentTransitioning(false)
@@ -288,12 +347,28 @@ export function DepositPanel({ isOpen, onClose, onEnterComplete, onDepositConfir
   }, [shouldRender])
 
   useEffect(() => {
+    confirmationModeRef.current = confirmationMode
+  }, [confirmationMode])
+
+  useEffect(() => {
+    initialAmountCentsRef.current = initialAmountCents
+  }, [initialAmountCents])
+
+  useEffect(() => {
+    initialViewRef.current = initialView
+  }, [initialView])
+
+  useEffect(() => {
     onEnterCompleteRef.current = onEnterComplete
   }, [onEnterComplete])
 
   useEffect(() => {
     onDepositConfirmedRef.current = onDepositConfirmed
   }, [onDepositConfirmed])
+
+  useEffect(() => {
+    onDepositPendingRef.current = onDepositPending
+  }, [onDepositPending])
 
   useEffect(() => {
     clearCloseTimer()
@@ -303,8 +378,26 @@ export function DepositPanel({ isOpen, onClose, onEnterComplete, onDepositConfir
     clearSwapTimer()
 
     if (isOpen) {
+      const openAmountCents = normalizeInitialDepositAmountCents(initialAmountCentsRef.current)
+      const shouldOpenPixView = initialViewRef.current === 'pix' && openAmountCents > 0
+      const openView: DepositView = shouldOpenPixView ? 'pix' : 'form'
+      const matchingPreset = getPresetOptionIdForAmount(openAmountCents)
+
+      pixAmountCentsRef.current = shouldOpenPixView ? openAmountCents : null
+      isPixDepositConfirmedRef.current = false
+      isDepositPendingNotifiedRef.current = false
+
       openTimerRef.current = window.setTimeout(() => {
         openTimerRef.current = null
+        setView(openView)
+        setAmountCents(openAmountCents)
+        setAmountAnimationKey(0)
+        setIsAmountEditingInline(false)
+        setManualAmountInput(formatDepositAmount(openAmountCents))
+        setSelectedDepositOptionId(matchingPreset ?? 'custom')
+        setIsGeneratingPix(false)
+        setIsContentTransitioning(false)
+        setPixCountdownSeconds(pixCountdownInitialSeconds)
         setShouldRender(true)
         setMotionState('entering')
 
@@ -340,6 +433,9 @@ export function DepositPanel({ isOpen, onClose, onEnterComplete, onDepositConfir
         setIsGeneratingPix(false)
         setIsContentTransitioning(false)
         setPixCountdownSeconds(pixCountdownInitialSeconds)
+        pixAmountCentsRef.current = null
+        isPixDepositConfirmedRef.current = false
+        isDepositPendingNotifiedRef.current = false
         closeTimerRef.current = null
       }, panelMotionDurationMs)
     }, 0)
@@ -440,6 +536,7 @@ export function DepositPanel({ isOpen, onClose, onEnterComplete, onDepositConfir
 
   const amount = formatDepositAmount(amountCents)
   const hasAmount = amountCents > 0
+  const isSignupDepositFlow = confirmationMode === 'on-pix-copy'
   const pixCountdownMinutes = Math.floor(pixCountdownSeconds / 60)
   const pixCountdownSecondsRemainder = pixCountdownSeconds % 60
   const pixCountdownSecondsLabel = pixCountdownSecondsRemainder.toString().padStart(2, '0')
@@ -480,12 +577,21 @@ export function DepositPanel({ isOpen, onClose, onEnterComplete, onDepositConfir
             </button>
           ) : (
             <>
-              <button type="button" className="deposit-panel__back" aria-label="Voltar" onClick={requestClose}>
-                <img src={backHeaderIcon} alt="" aria-hidden="true" />
-              </button>
+              {isSignupDepositFlow ? (
+                <span className="deposit-panel__header-spacer" aria-hidden="true" />
+              ) : (
+                <button type="button" className="deposit-panel__back" aria-label="Voltar" onClick={requestClose}>
+                  <img src={backHeaderIcon} alt="" aria-hidden="true" />
+                </button>
+              )}
               <h2 className="deposit-panel__title">Deposite para jogar</h2>
-              <button type="button" className="deposit-panel__info" aria-label="Informações sobre depósito">
-                <img src={iconInfo} alt="" aria-hidden="true" />
+              <button
+                type="button"
+                className={isSignupDepositFlow ? 'deposit-panel__close' : 'deposit-panel__info'}
+                aria-label={isSignupDepositFlow ? 'Fechar depósito' : 'Informações sobre depósito'}
+                onClick={isSignupDepositFlow ? requestClose : undefined}
+              >
+                <img src={isSignupDepositFlow ? closePixIcon : iconInfo} alt="" aria-hidden="true" />
               </button>
             </>
           )}

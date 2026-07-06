@@ -176,12 +176,19 @@
   height: 100%;
   padding: 0;
   border: 0;
+  appearance: none;
   background: transparent;
   color: var(--tokens-text-text-01);
-  cursor: default;
+  cursor: pointer;
+  font: inherit;
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
+}
+
+.betslip__compact:focus-visible {
+  outline: 2px solid rgb(var(--tokens-text-text-on-color-white-rgb) / 0.84);
+  outline-offset: 3px;
 }
 
 .betslip--visible .betslip__surface {

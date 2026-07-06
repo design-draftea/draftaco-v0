@@ -627,6 +627,7 @@ function CompetitionMatchCarousel({
             homeScore: match.homeScore,
             awayScore: match.awayScore,
             selectionLabel: String(odd.label),
+            marketTags: match.tags,
           })
         )}
         key={`${match.id}-${market.id}-${outcomeId}`}

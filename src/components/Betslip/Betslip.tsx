@@ -406,9 +406,11 @@ export function Betslip({
         </button>
       ) : null}
       <div className="betslip__surface" ref={surfaceRef} onTransitionEnd={handleSurfaceTransitionEnd}>
-        <div
+        <button
+          type="button"
           className="betslip__compact"
           aria-label={`Bilhete com ${renderedSummary.selectionCount} seleções. ${compactLabels.odds} ${renderedSummary.totalOddsLabel}. ${compactLabels.stake} ${renderedSummary.stakeLabel}. ${compactLabels.payout} ${boostedPotentialWinLabel}.${turboAssistiveLabel}`}
+          onClick={onOpen}
         >
           <span className="betslip__metrics" aria-hidden="true">
             <span className="betslip__metric betslip__metric--bets">
@@ -470,7 +472,7 @@ export function Betslip({
               </span>
             </span>
           </span>
-        </div>
+        </button>
       </div>
     </div>
   )

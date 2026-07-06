@@ -1,4 +1,3 @@
-import flagMundo from '../../assets/iconPaises/mundo.png'
 import flacoLopezProps from '../../assets/flacoLopezProps.png'
 import arrascaetaProps from '../../assets/arrascaetaProps.png'
 import depayProps from '../../assets/depayProps.png'
@@ -20,6 +19,7 @@ import playerLeBronJames from '../../assets/playerLeBronJames.png'
 import playerStephenCurry from '../../assets/playerStephenCurry.png'
 import playerLukaDoncic from '../../assets/playerLukaDoncic.png'
 import playerJimmyButler from '../../assets/playerJimmyButler.png'
+import { TEAM_LOGO_FALLBACK } from '../../utils/teamLogoFallback'
 
 export interface CompetitionMatch {
   id: string
@@ -79,7 +79,7 @@ export interface CompetitionData {
   longTermOddsByTab: Record<string, LongTermOdd[]>
 }
 
-const defaultFlag = flagMundo
+const defaultFlag = TEAM_LOGO_FALLBACK
 
 const baseMatches: CompetitionMatch[] = [
   {

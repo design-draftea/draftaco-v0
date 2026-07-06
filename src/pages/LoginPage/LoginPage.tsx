@@ -51,6 +51,7 @@ type LimitCustomSheetType = 'time' | 'loss'
 interface LoginPageProps {
   mode?: AuthMode
   motionState?: LoginMotionState
+  overlayVariant?: 'default' | 'over-betslip'
   onBack?: () => void
   onCreateAccountClick?: () => void
   onDepositOpen?: () => void
@@ -72,6 +73,7 @@ interface LoginInputProps {
   errorMessage?: string
   inputMode?: 'email' | 'numeric' | 'tel' | 'text'
   isInvalid?: boolean
+  isPasswordField?: boolean
   maxLength?: number
   preventScrollOnFocus?: boolean
   readOnly?: boolean
@@ -527,7 +529,10 @@ function useTapFocusScrollGuard({
   const handleFieldPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
     if (!isEnabled) return
     if (event.pointerType === 'mouse' && event.button !== 0) return
-    if (event.target instanceof Element && event.target.closest('button')) return
+    if (event.target instanceof Element && event.target.closest('button')) {
+      pendingTapRef.current = null
+      return
+    }
     if (document.activeElement === inputRef.current && event.target === inputRef.current) return
 
     // Bloqueia o foco nativo (que rola a tela), mas NÃO foca ainda: o foco é
@@ -542,6 +547,11 @@ function useTapFocusScrollGuard({
   }
 
   const handleFieldPointerUp = (event: ReactPointerEvent<HTMLElement>) => {
+    if (event.target instanceof Element && event.target.closest('button')) {
+      pendingTapRef.current = null
+      return
+    }
+
     const pendingTap = pendingTapRef.current
     pendingTapRef.current = null
 
@@ -592,6 +602,7 @@ function LoginInput({
   errorMessage,
   inputMode,
   isInvalid = false,
+  isPasswordField = false,
   maxLength,
   preventScrollOnFocus = false,
   readOnly = false,
@@ -602,7 +613,7 @@ function LoginInput({
 }: LoginInputProps) {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const isFilled = value.length > 0
-  const isPasswordMasked = type === 'password'
+  const shouldDisableTextAssist = isPasswordField || type === 'password'
   const errorId = `${id}-error`
   const ariaDescribedBy = [
     describedBy,
@@ -642,20 +653,17 @@ function LoginInput({
           <input
             ref={inputRef}
             id={id}
-            className={[
-              'login-input__field',
-              isPasswordMasked ? 'login-input__field--password-mask' : '',
-            ].filter(Boolean).join(' ')}
-            type={isPasswordMasked ? 'text' : type}
+            className="login-input__field"
+            type={type}
             value={value}
             placeholder={placeholder}
             autoComplete={autoComplete}
             inputMode={inputMode}
             maxLength={maxLength}
             readOnly={readOnly}
-            autoCapitalize={isPasswordMasked ? 'none' : undefined}
-            autoCorrect={isPasswordMasked ? 'off' : undefined}
-            spellCheck={isPasswordMasked ? false : undefined}
+            autoCapitalize={shouldDisableTextAssist ? 'none' : undefined}
+            autoCorrect={shouldDisableTextAssist ? 'off' : undefined}
+            spellCheck={shouldDisableTextAssist ? false : undefined}
             aria-describedby={ariaDescribedBy}
             aria-invalid={isInvalid || undefined}
             onBlur={onBlur}
@@ -1055,6 +1063,7 @@ function PhoneValidationCodeInput({
 export function LoginPage({
   mode = 'login',
   motionState = 'open',
+  overlayVariant = 'default',
   onBack,
   onCreateAccountClick,
   onDepositOpen,
@@ -1736,7 +1745,7 @@ export function LoginPage({
 
     const countdownTimer = window.setInterval(() => {
       setPhoneValidationSeconds((currentSeconds) => (
-        currentSeconds <= 1 ? phoneValidationCountdownStart : currentSeconds - 1
+        currentSeconds <= 0 ? 0 : currentSeconds - 1
       ))
     }, 1000)
 
@@ -1935,6 +1944,10 @@ export function LoginPage({
     setIsPhoneValidationOpen(false)
   }
 
+  const handlePhoneValidationResend = () => {
+    setPhoneValidationSeconds(phoneValidationCountdownStart)
+  }
+
   const handlePhoneValidationSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
@@ -2076,11 +2089,18 @@ export function LoginPage({
   const renderPasswordTrailingAction = () => {
     if (!isPasswordFilled) return null
 
+    const handlePasswordEyePointerEvent = (event: ReactPointerEvent<HTMLButtonElement>) => {
+      event.stopPropagation()
+    }
+
     return (
       <button
         type="button"
         className="login-input__eye"
         aria-label={isPasswordVisible ? 'Ocultar senha' : 'Mostrar senha'}
+        onPointerDown={handlePasswordEyePointerEvent}
+        onPointerUp={handlePasswordEyePointerEvent}
+        onPointerCancel={handlePasswordEyePointerEvent}
         onClick={() => setIsPasswordVisible((current) => !current)}
       >
         <img
@@ -2126,6 +2146,7 @@ export function LoginPage({
               value={password}
               type={isPasswordVisible ? 'text' : 'password'}
               autoComplete="current-password"
+              isPasswordField
               preventScrollOnFocus
               onChange={(nextPassword) => {
                 setPassword(nextPassword)
@@ -2269,6 +2290,7 @@ export function LoginPage({
               type={isPasswordVisible ? 'text' : 'password'}
               autoComplete="new-password"
               describedBy="signup-password-rules"
+              isPasswordField
               isInvalid={showSignupPasswordError}
               preventScrollOnFocus
               onBlur={validateSignupPassword}
@@ -2383,6 +2405,7 @@ export function LoginPage({
       onClose={closePhoneValidation}
       title="Validar celular"
       leadingContent={<span className="login-phone-validation-sheet__header-spacer" aria-hidden="true" />}
+      containerClassName="login-page__bottom-sheet-container"
       sheetClassName="login-phone-validation-sheet"
       bodyClassName="login-phone-validation-sheet__body"
       blurBackdrop
@@ -2425,10 +2448,23 @@ export function LoginPage({
             value={phoneValidationCode}
             onChange={setPhoneValidationCode}
           />
-          <p className="login-phone-validation__resend">
-            <span>Reenviar código em</span>
-            <strong>{phoneValidationSeconds} seg</strong>
-          </p>
+          {phoneValidationSeconds > 0 ? (
+            <p className="login-phone-validation__resend">
+              <span>Reenviar código em</span>
+              <strong>{phoneValidationSeconds} seg</strong>
+            </p>
+          ) : (
+            <div className="login-phone-validation__resend">
+              <span>Não recebeu o código?</span>
+              <button
+                type="button"
+                className="login-phone-validation__resend-action"
+                onClick={handlePhoneValidationResend}
+              >
+                Reenviar código
+              </button>
+            </div>
+          )}
         </div>
       </form>
     </BottomSheet>
@@ -2439,6 +2475,7 @@ export function LoginPage({
       isOpen={isRegionSheetOpen}
       onClose={() => setIsRegionSheetOpen(false)}
       title="Selecione um Estado"
+      containerClassName="login-page__bottom-sheet-container"
       sheetClassName="login-region-sheet"
       bodyClassName="login-region-sheet__body"
       blurBackdrop
@@ -2896,6 +2933,7 @@ export function LoginPage({
         onClose={closeCustomLimitSheet}
         title={title}
         leadingContent={<span className="login-limits-custom-sheet__header-spacer" aria-hidden="true" />}
+        containerClassName="login-page__bottom-sheet-container"
         sheetClassName="login-limits-custom-sheet"
         bodyClassName="login-limits-custom-sheet__body"
         blurBackdrop
@@ -3018,6 +3056,7 @@ export function LoginPage({
       className={[
         'login-page',
         `login-page--${motionState}`,
+        overlayVariant === 'over-betslip' ? 'login-page--over-betslip' : '',
         displayedMode === 'signup' ? 'login-page--signup' : '',
         isSignupBottomSheetOpen ? 'login-page--sheet-open' : '',
         displayedMode === 'signup' && signupStep === 'verification' ? 'login-page--verification' : '',

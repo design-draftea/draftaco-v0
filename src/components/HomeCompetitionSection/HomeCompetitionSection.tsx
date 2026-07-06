@@ -1610,6 +1610,7 @@ export function HomeCompetitionSection({
             awayTeamIcon,
             selectionIcon,
             badgeType: isEarlyPayoutResultMarket ? 'boost' : undefined,
+            marketTags: match.tags,
           })
         )}
       />

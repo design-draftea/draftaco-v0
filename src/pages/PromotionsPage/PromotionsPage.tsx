@@ -12,6 +12,7 @@ interface HeaderComponentProps {
   activeProduct?: ProductMode
   authVariant?: 'logged-in' | 'logged-out'
   balanceCents?: number
+  depositStatus?: 'deposit-pending'
   changeProductOnPointerDown?: boolean
   disableProductToggle?: boolean
   disableMenuButton?: boolean
@@ -27,6 +28,7 @@ interface PromotionsPageProps {
   activeProduct?: ProductMode
   authVariant?: 'logged-in' | 'logged-out'
   balanceCents?: number
+  depositStatus?: 'deposit-pending'
   HeaderComponent?: ComponentType<HeaderComponentProps>
   onProductChange?: (product: ProductMode) => void
   onLogoDoubleClick?: () => void
@@ -67,6 +69,7 @@ export function PromotionsPage({
   activeProduct = 'apostas',
   authVariant = 'logged-out',
   balanceCents,
+  depositStatus,
   HeaderComponent = HeaderV2,
   onProductChange,
   onLogoDoubleClick,
@@ -249,6 +252,7 @@ export function PromotionsPage({
         activeProduct={activeProduct}
         authVariant={authVariant}
         balanceCents={balanceCents}
+        depositStatus={depositStatus}
         changeProductOnPointerDown={false}
         disableProductToggle={true}
         disableMenuButton={true}

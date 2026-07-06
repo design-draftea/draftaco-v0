@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "check:player-props": "node scripts/check-player-props-coverage.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build && cp dist/index.html dist/404.html",

@@ -766,6 +766,7 @@ interface HeaderComponentProps {
   rail?: ReactNode
   authVariant?: 'logged-in' | 'logged-out'
   balanceCents?: number
+  depositStatus?: 'deposit-pending'
   disableProductToggle?: boolean
   disableMenuButton?: boolean
   onProductChange?: (product: ProductMode) => void
@@ -781,6 +782,7 @@ interface HomeProps {
   activeProduct?: ProductMode
   authVariant?: 'logged-in' | 'logged-out'
   balanceCents?: number
+  depositStatus?: 'deposit-pending'
   HeaderComponent?: ComponentType<HeaderComponentProps>
   isLiveEventSuppressed?: boolean
   onProductChange?: (product: ProductMode) => void
@@ -813,6 +815,7 @@ export function Home({
   activeProduct = 'apostas',
   authVariant = 'logged-out',
   balanceCents,
+  depositStatus,
   HeaderComponent = HeaderV2,
   onProductChange,
   onLogoDoubleClick,
@@ -1814,6 +1817,7 @@ export function Home({
         activeSport={displayActiveSport}
         authVariant={authVariant}
         balanceCents={balanceCents}
+        depositStatus={depositStatus}
         disableProductToggle={!ENABLE_HOME_PRODUCT_TOGGLE}
         disableMenuButton={!ENABLE_HOME_MENU_BUTTON}
         onDepositOpen={onDepositOpen}

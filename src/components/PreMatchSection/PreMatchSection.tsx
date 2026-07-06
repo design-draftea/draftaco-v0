@@ -228,43 +228,18 @@ const sportChips: SportChip[] = [
   { id: 'esoccer', icon: iconEsoccer, label: 'Esoccer', disabled: true },
 ]
 
-function getPreMatchSportFallbackIcon(sport: string): string {
-  if (sport === 'basquete') return iconBasquete
-  if (sport === 'futebol') return iconFutebol
-  return ''
-}
-
-function isPreMatchSportFallbackIcon(icon: string | undefined, sport: string): boolean {
-  if (!icon) return true
-  return icon === getPreMatchSportFallbackIcon(sport)
-}
-
 interface PreMatchTeamIconProps {
   teamName: string
   currentIcon: string | undefined
   sport: string
-  side: 'home' | 'away'
 }
 
-function PreMatchTeamIcon({ teamName, currentIcon, sport, side }: PreMatchTeamIconProps) {
-  const fallbackIcon = getPreMatchSportFallbackIcon(sport)
-  const resolvedIcon = useSportsDbTeamLogo(teamName, currentIcon, sport, fallbackIcon || undefined, {
-    useCurrentLogoFallback: false,
+function PreMatchTeamIcon({ teamName, currentIcon, sport }: PreMatchTeamIconProps) {
+  const resolvedIcon = useSportsDbTeamLogo(teamName, currentIcon, sport, undefined, {
+    useCurrentLogoFallback: true,
   })
 
   if (!resolvedIcon) return <div className="prematch-section__team-icon--placeholder" />
-
-  if (isPreMatchSportFallbackIcon(resolvedIcon, sport)) {
-    const fallbackModifier = sport === 'basquete' ? 'basketball' : 'sport'
-
-    return (
-      <img
-        src={resolvedIcon}
-        alt=""
-        className={`prematch-section__team-icon prematch-section__team-icon--${fallbackModifier}-${side}`}
-      />
-    )
-  }
 
   return <img src={resolvedIcon} alt="" className="prematch-section__team-icon" />
 }
@@ -1238,12 +1213,9 @@ export function PreMatchPlayerPropCard({
   player,
   disableInteractions = false,
 }: PreMatchPlayerPropCardProps) {
-  const fallbackTeamIcon = getPreMatchSportFallbackIcon(player.sport)
-  const resolvedTeamIcon = useSportsDbTeamLogo(player.teamName, player.teamIcon, player.sport, fallbackTeamIcon || undefined, {
-    useCurrentLogoFallback: false,
+  const resolvedTeamIcon = useSportsDbTeamLogo(player.teamName, player.teamIcon, player.sport, undefined, {
+    useCurrentLogoFallback: true,
   })
-  const isFallbackTeamIcon = isPreMatchSportFallbackIcon(resolvedTeamIcon, player.sport)
-  const fallbackTeamIconModifier = player.sport === 'basquete' ? 'basketball' : 'sport'
   const getPlayerPropOddButtonProps = useOddSelection('prematch-section__player-prop-option')
   const [activeOptionIndex, setActiveOptionIndex] = useState(() =>
     getInitialPlayerPropOptionIndex(player.options)
@@ -1700,7 +1672,7 @@ export function PreMatchPlayerPropCard({
         <img
           src={resolvedTeamIcon}
           alt=""
-          className={`prematch-section__player-prop-team-icon${isFallbackTeamIcon ? ` prematch-section__player-prop-team-icon--${fallbackTeamIconModifier}-${player.teamSide}` : ''}`}
+          className="prematch-section__player-prop-team-icon"
         />
       ) : null}
       {hasPlayerImage ? (
@@ -2618,7 +2590,6 @@ export function PreMatchSection({
                                 teamName={match.homeTeam.name}
                                 currentIcon={match.homeTeam.icon}
                                 sport={league.sport}
-                                side="home"
                               />
                               <span className="prematch-section__team-name">{match.homeTeam.name}</span>
                             </div>
@@ -2627,7 +2598,6 @@ export function PreMatchSection({
                                 teamName={match.awayTeam.name}
                                 currentIcon={match.awayTeam.icon}
                                 sport={league.sport}
-                                side="away"
                               />
                               <span className="prematch-section__team-name">{match.awayTeam.name}</span>
                             </div>

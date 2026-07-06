@@ -36,6 +36,7 @@ export interface BetslipSelection {
   selectionIcon?: string
   playerImage?: string
   badgeType?: BetslipBadgeType
+  marketTags?: string[]
   comboId?: string
   comboTitle?: string
   comboTypeLabel?: string
@@ -73,6 +74,7 @@ export interface BetslipSelectionInput {
   selectionIcon?: string
   playerImage?: string
   badgeType?: BetslipBadgeType
+  marketTags?: string[]
   comboId?: string
   comboTitle?: string
   comboTypeLabel?: string
@@ -289,6 +291,7 @@ export const createBetslipSelection = ({
   selectionIcon,
   playerImage,
   badgeType,
+  marketTags,
   comboId,
   comboTitle,
   comboTypeLabel,
@@ -347,6 +350,7 @@ export const createBetslipSelection = ({
     selectionIcon,
     playerImage,
     badgeType,
+    marketTags,
     comboId: normalizedComboId,
     comboTitle,
     comboTypeLabel,

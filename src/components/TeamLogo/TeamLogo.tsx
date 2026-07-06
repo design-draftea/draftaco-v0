@@ -1,16 +1,7 @@
 import { getTeamLogo } from '../../data/teamLogos'
 import { useSportsDbTeamLogo } from '../../hooks/useSportsDbTeamLogo'
-import iconBasquete from '../../assets/iconSports/basketball.png'
-import iconFutebol from '../../assets/iconSports/soccer.png'
-import iconTenis from '../../assets/iconSports/tennis.png'
 import { getTennisPlayerCountryIcon } from '../../data/tennisCountryIcons'
-
-function getSportFallbackLogo(sport: string) {
-  if (sport === 'basquete') return iconBasquete
-  if (sport === 'futebol') return iconFutebol
-  if (sport === 'tenis') return iconTenis
-  return ''
-}
+import { isTeamLogoFallback } from '../../utils/teamLogoFallback'
 
 interface TeamLogoProps {
   teamName: string
@@ -35,8 +26,7 @@ export function TeamLogo({
 }: TeamLogoProps) {
   const mappedLogo = getTeamLogo(teamName)
   const currentTeamLogo = mappedLogo || currentLogo
-  const fallbackLogo = getSportFallbackLogo(sport)
-  const sportsDbResolvedLogo = useSportsDbTeamLogo(teamName, currentTeamLogo, sport, fallbackLogo || undefined, {
+  const sportsDbResolvedLogo = useSportsDbTeamLogo(teamName, currentTeamLogo, sport, undefined, {
     useCurrentLogoFallback,
   })
   const tennisCountryIcon = sport === 'tenis' ? getTennisPlayerCountryIcon(teamName) : ''
@@ -46,10 +36,11 @@ export function TeamLogo({
     return placeholderClassName ? <span className={placeholderClassName} /> : null
   }
 
-  const isFallback = fallbackLogo && resolvedLogo === fallbackLogo
+  const isFallback = isTeamLogoFallback(resolvedLogo)
+  const fallbackClassIsSportSpecific = fallbackClassName.includes('--sport') || fallbackClassName.includes('--basketball')
   const logoClassName = [
     className,
-    isFallback ? fallbackClassName : '',
+    isFallback && !fallbackClassIsSportSpecific ? fallbackClassName : '',
   ].filter(Boolean).join(' ')
 
   return <img src={resolvedLogo} alt={alt} className={logoClassName} />

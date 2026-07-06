@@ -16,10 +16,12 @@ import type { ProductMode } from './types/home'
 import { BETSLIP_LIVE_EVENT_OPEN_EVENT } from './utils/betslipLiveEvent'
 import { BrandLocalizationEffect } from './i18n/brandLocalization'
 import { LoginPage } from './pages/LoginPage'
+import type { BetSuccessReceipt } from './pages/BetSuccessPage'
 
 const Home = lazy(() => import('./pages/Home').then((m) => ({ default: m.Home })))
 const PromotionsPage = lazy(() => import('./pages/PromotionsPage').then((m) => ({ default: m.PromotionsPage })))
 const BetslipPageV2 = lazy(() => import('./pages/BetslipPageV2').then((m) => ({ default: m.BetslipPageV2 })))
+const BetSuccessPage = lazy(() => import('./pages/BetSuccessPage').then((m) => ({ default: m.BetSuccessPage })))
 const LiveEventPage = lazy(() => import('./pages/LiveEventPage').then((m) => ({ default: m.LiveEventPage })))
 const HandoffPage = lazy(() => import('./pages/Handoff').then((m) => ({ default: m.HandoffPage })))
 
@@ -141,7 +143,9 @@ const getGarantidaBannerSearch = (search: string) => (hasGarantidaBannerParam(se
 const withSearch = (path: string, search: string) => `${path}${search}`
 
 type AuthVariant = 'logged-in' | 'logged-out'
+type AuthOverlayOrigin = 'default' | 'betslip'
 type LoginMotionState = 'entering' | 'open' | 'exiting'
+type DepositPanelOrigin = 'standard' | 'signup'
 type AuthScrollLockState = {
   scrollY: number
   bodyOverflow: string
@@ -169,6 +173,7 @@ function AppContent() {
   const [loginMotionState, setLoginMotionState] = useState<LoginMotionState | null>(
     isAuthPath(window.location.pathname) ? 'open' : null
   )
+  const [authOverlayOrigin, setAuthOverlayOrigin] = useState<AuthOverlayOrigin>('default')
   const { selections: betslipSelections, summary: betslipSummary } = useBetslip()
   const { brandMode, isFeatureEnabled } = useFeatureFlags()
   const betslipTurboEligibleSelectionCount = useMemo(
@@ -194,8 +199,11 @@ function AppContent() {
   const isPromotionsPage = useMemo(() => isPromotionsPath(renderedPathname), [renderedPathname])
   const [promotionsProduct, setPromotionsProduct] = useState<ProductMode>(() => productRoute.product)
   const [isFullBetslipOpen, setIsFullBetslipOpen] = useState(false)
+  const [betSuccessReceipt, setBetSuccessReceipt] = useState<BetSuccessReceipt | null>(null)
   const [isCompactBetslipSuppressed, setIsCompactBetslipSuppressed] = useState(false)
   const [isDepositPanelOpen, setIsDepositPanelOpen] = useState(false)
+  const [depositPanelOrigin, setDepositPanelOrigin] = useState<DepositPanelOrigin>('standard')
+  const [signupPendingDepositAmountCents, setSignupPendingDepositAmountCents] = useState<number | null>(null)
   const [isFeatureFlagsPanelOpen, setIsFeatureFlagsPanelOpen] = useState(false)
   const [liveEventUi, setLiveEventUi] = useState({
     isOpen: false,
@@ -208,6 +216,14 @@ function AppContent() {
   } | null>(null)
   const activeProduct = isPromotionsPage ? promotionsProduct : productRoute.product
   const showSignupGarantidaBanner = isSignupPage && isSignupGarantidaBannerEnabled
+  const hasSignupDepositPending = signupPendingDepositAmountCents !== null
+  const headerDepositStatus = hasSignupDepositPending ? 'deposit-pending' : undefined
+  const depositConfirmationMode = depositPanelOrigin === 'signup' ? 'on-pix-copy' : 'on-pix-generated'
+  const depositPanelInitialView = depositPanelOrigin === 'signup' && hasSignupDepositPending ? 'pix' : 'form'
+  const depositPanelInitialAmountCents = depositPanelOrigin === 'signup'
+    ? signupPendingDepositAmountCents
+    : null
+  const isDepositRequiredForBetting = authVariant === 'logged-in' && balanceCents <= 0
 
   const syncBrowserLocation = useCallback(() => {
     const nextPathname = window.location.pathname
@@ -299,10 +315,28 @@ function AppContent() {
   }, [loginMotionState, syncBrowserLocation])
 
   const handleLoginOpen = useCallback(() => {
+    if (!isAuthPath(window.location.pathname)) {
+      setAuthOverlayOrigin('default')
+    }
+
     handleAuthOpen(buildLoginPath())
   }, [handleAuthOpen])
 
   const handleCreateAccountClick = useCallback(() => {
+    if (!isAuthPath(window.location.pathname)) {
+      setAuthOverlayOrigin('default')
+    }
+
+    handleAuthOpen(buildSignupPath())
+  }, [handleAuthOpen])
+
+  const handleBetslipLoginOpen = useCallback(() => {
+    setAuthOverlayOrigin('betslip')
+    handleAuthOpen(buildLoginPath())
+  }, [handleAuthOpen])
+
+  const handleBetslipCreateAccountClick = useCallback(() => {
+    setAuthOverlayOrigin('betslip')
     handleAuthOpen(buildSignupPath())
   }, [handleAuthOpen])
 
@@ -318,6 +352,7 @@ function AppContent() {
       loginMotionTimerRef.current = null
       onComplete?.()
       loginReturnPathRef.current = null
+      setAuthOverlayOrigin('default')
       setLoginMotionState(null)
 
       if (getCurrentPathWithSearch() !== nextPath) {
@@ -345,6 +380,7 @@ function AppContent() {
 
     setAuthVariant('logged-in')
     setBalanceCents(loggedInInitialBalanceCents)
+    setSignupPendingDepositAmountCents(null)
     completeLoginExit(nextPath)
   }, [completeLoginExit, loginMotionState])
 
@@ -356,6 +392,8 @@ function AppContent() {
 
     setAuthVariant('logged-in')
     setBalanceCents(signupInitialBalanceCents)
+    setSignupPendingDepositAmountCents(null)
+    setDepositPanelOrigin('signup')
     signupDepositExitPathRef.current = nextPath
     setIsDepositPanelOpen(true)
   }, [loginMotionState])
@@ -387,6 +425,12 @@ function AppContent() {
 
     setLoginMotionState(null)
   }, [isAuthPage, loginMotionState])
+
+  useEffect(() => {
+    if (isAuthPage || authOverlayOrigin === 'default') return
+
+    setAuthOverlayOrigin('default')
+  }, [authOverlayOrigin, isAuthPage])
 
   useEffect(() => () => {
     if (loginMotionTimerRef.current !== null) {
@@ -424,6 +468,27 @@ function AppContent() {
     setIsFullBetslipOpen(false)
   }, [])
 
+  const handleBetSuccess = useCallback((receipt: BetSuccessReceipt) => {
+    setBetSuccessReceipt(receipt)
+  }, [])
+
+  const handleBetSuccessShare = useCallback(() => {
+    // Placeholder until the prototype gets a real share integration.
+  }, [])
+
+  const handleBetSuccessNewBet = useCallback(() => {
+    setBetSuccessReceipt(null)
+    setIsCompactBetslipSuppressed(false)
+
+    const nextPath = withSearch(buildProductPath(defaultProduct), getGarantidaBannerSearch(search))
+
+    if (getCurrentPathWithSearch() !== nextPath) {
+      window.history.pushState({}, '', nextPath)
+    }
+
+    syncBrowserLocation()
+  }, [search, syncBrowserLocation])
+
   const handleBetslipOpen = useCallback(() => {
     setIsCompactBetslipSuppressed(false)
     setIsFullBetslipOpen(true)
@@ -443,8 +508,9 @@ function AppContent() {
   }, [])
 
   const handleDepositPanelOpen = useCallback(() => {
+    setDepositPanelOrigin(signupPendingDepositAmountCents !== null ? 'signup' : 'standard')
     setIsDepositPanelOpen(true)
-  }, [])
+  }, [signupPendingDepositAmountCents])
 
   const handleDepositPanelClose = useCallback(() => {
     setIsDepositPanelOpen(false)
@@ -452,6 +518,11 @@ function AppContent() {
 
   const handleDepositConfirmed = useCallback((depositAmountCents: number) => {
     setBalanceCents((currentBalanceCents) => currentBalanceCents + depositAmountCents)
+    setSignupPendingDepositAmountCents(null)
+  }, [])
+
+  const handleSignupDepositPending = useCallback((pendingAmountCents: number) => {
+    setSignupPendingDepositAmountCents(pendingAmountCents)
   }, [])
 
   const handleFeatureFlagsPanelClose = useCallback(() => {
@@ -554,6 +625,9 @@ function AppContent() {
   const shouldShowEventBetslip = showCompactBetslip && liveEventUi.isOpen && liveEventUi.isEventBetslipVisible
   const showFreeBetTag = isFeatureEnabled('freeBetsAvailable') && hasOnlyBrasileiraoSelections
   const isAuthOverlayOpen = !isHandoffPage && (isAuthPage || loginMotionState !== null)
+  const shouldRenderFullBetslip = !isHandoffPage
+    && isFullBetslipOpen
+    && (!isAuthPage || authOverlayOrigin === 'betslip')
 
   useEffect(() => {
     document.documentElement.toggleAttribute('data-betslip-compact-visible', showCompactBetslip)
@@ -614,6 +688,7 @@ function AppContent() {
             activeProduct={activeProduct}
             authVariant={authVariant}
             balanceCents={balanceCents}
+            depositStatus={headerDepositStatus}
             HeaderComponent={HeaderV2}
             onLoginClick={handleLoginOpen}
             onCreateAccountClick={handleCreateAccountClick}
@@ -625,6 +700,7 @@ function AppContent() {
             activeProduct={activeProduct}
             authVariant={authVariant}
             balanceCents={balanceCents}
+            depositStatus={headerDepositStatus}
             HeaderComponent={HeaderV2}
             isLiveEventSuppressed={isFullBetslipOpen}
             onLoginClick={handleLoginOpen}
@@ -641,6 +717,7 @@ function AppContent() {
         <LoginPage
           mode={isSignupPage ? 'signup' : 'login'}
           motionState={loginMotionState ?? 'open'}
+          overlayVariant={authOverlayOrigin === 'betslip' ? 'over-betslip' : 'default'}
           onBack={handleLoginBack}
           onCreateAccountClick={handleCreateAccountClick}
           onDepositOpen={handleSignupDepositOpen}
@@ -650,12 +727,27 @@ function AppContent() {
           showSignupGarantidaBanner={showSignupGarantidaBanner}
         />
       ) : null}
-      {!isHandoffPage && !isAuthPage && isFullBetslipOpen ? (
+      {shouldRenderFullBetslip ? (
         <Suspense fallback={null}>
           <BetslipPageV2
+            authVariant={authVariant}
             isCoveredByEvent={!!betslipOriginLiveEvent}
+            onCreateAccountClick={handleBetslipCreateAccountClick}
+            onDepositClick={handleDepositPanelOpen}
+            onLoginClick={handleBetslipLoginOpen}
             onClose={handleBetslipClose}
+            onBetSuccess={handleBetSuccess}
             onSelectionsEmptyExitStart={handleCompactBetslipSuppress}
+            requiresDeposit={isDepositRequiredForBetting}
+          />
+        </Suspense>
+      ) : null}
+      {!isHandoffPage && betSuccessReceipt ? (
+        <Suspense fallback={null}>
+          <BetSuccessPage
+            receipt={betSuccessReceipt}
+            onShare={handleBetSuccessShare}
+            onNewBet={handleBetSuccessNewBet}
           />
         </Suspense>
       ) : null}
@@ -680,8 +772,12 @@ function AppContent() {
         <DepositPanel
           isOpen={isDepositPanelOpen}
           onClose={handleDepositPanelClose}
+          confirmationMode={depositConfirmationMode}
+          initialAmountCents={depositPanelInitialAmountCents}
+          initialView={depositPanelInitialView}
           onEnterComplete={handleDepositPanelEnterComplete}
           onDepositConfirmed={handleDepositConfirmed}
+          onDepositPending={depositPanelOrigin === 'signup' ? handleSignupDepositPending : undefined}
         />
       ) : null}
       {!isHandoffPage && !isAuthPage ? (
