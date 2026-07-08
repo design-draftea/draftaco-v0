@@ -18,10 +18,18 @@ import closeBetslipIcon from '../../assets/iconsDraftaco/closeBS.svg'
 import iconPencil from '../../assets/iconsDraftaco/iconPencil.svg'
 import trashIcon from '../../assets/iconsDraftaco/iconTrash.svg'
 import iconShieldVersusPlaceholder from '../../assets/iconsDraftaco/iconShieldVersusPlaceholder.svg'
+import iconBetslipAumentada from '../../assets/iconsDraftaco/iconBetslipAumentada.svg'
+import iconBetslipGarantida from '../../assets/iconsDraftaco/iconBetslipGarantida.svg'
+import iconBetslipSuperAumentada from '../../assets/iconsDraftaco/iconBetslipSuperAumentada.svg'
+import imgAdebayoPromo from '../../assets/iconsDraftaco/imgAdebayoPromo.png'
+import imgDembelePromo from '../../assets/iconsDraftaco/imgDembelePromo.png'
+import lewandowskiCard from '../../assets/iconsDraftaco/LewandowskiCard.png'
 import { useBetslip } from '../../hooks/useBetslip'
+import { useAnimatedBetslipNumber } from '../../hooks/useAnimatedBetslipNumber'
 import { useSportsDbTeamLogo } from '../../hooks/useSportsDbTeamLogo'
 import {
   formatBetslipOdd,
+  normalizeBetslipIdPart,
   type BetslipSelection,
 } from '../../hooks/betslipUtils'
 import { getTeamAbbreviation } from '../../utils/teamAbbreviations'
@@ -65,6 +73,7 @@ interface BetslipPageV2Props {
 const DEFAULT_STAKE_CENTS = 1000
 const BALANCE_LABEL = 'R$250,00'
 const CLOSE_ANIMATION_MS = 320
+const BET_CONFIRM_LOADING_MS = 3000
 const SWIPE_COMPLETE_RATIO = 0.6
 const SWIPE_COMPLETE_ANIMATION_MS = 180
 const SWIPE_KNOB_SIZE_PX = 52
@@ -83,6 +92,49 @@ const betslipInfoItems = [
     text: 'Tempo regulamentar: os mercados consideram apenas os 90 minutos + acréscimos da partida. Não inclui prorrogação ou pênaltis.',
   },
 ]
+
+type BetslipPromoVariant = NonNullable<BetslipSelection['promoVariant']>
+
+const promoIconByVariant: Record<BetslipPromoVariant, string> = {
+  garantida: iconBetslipGarantida,
+  aumentada: iconBetslipAumentada,
+  'super-aumentada': iconBetslipSuperAumentada,
+}
+
+const promoPlayerImageFallbackByVariant: Record<BetslipPromoVariant, string> = {
+  garantida: lewandowskiCard,
+  aumentada: imgDembelePromo,
+  'super-aumentada': imgAdebayoPromo,
+}
+
+const promoVariantClassNameByVariant: Record<BetslipPromoVariant, string> = {
+  garantida: 'betslip-v2__selection-row--promo-garantida',
+  aumentada: 'betslip-v2__selection-row--promo-aumentada',
+  'super-aumentada': 'betslip-v2__selection-row--promo-super-aumentada',
+}
+
+const isIOSDevice = () => (
+  /iP(hone|ad|od)/.test(navigator.platform)
+  || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+)
+
+const getSelectionPromoVariant = (selection: BetslipSelection): BetslipPromoVariant | null => {
+  if (selection.promoVariant) return selection.promoVariant
+
+  const normalizedValues = [
+    selection.marketId,
+    selection.comboTypeLabel,
+    selection.comboTitle,
+    selection.marketLabel,
+    selection.id,
+  ].map((value) => normalizeBetslipIdPart(value ?? ''))
+
+  if (normalizedValues.some((value) => value.includes('super-aumentada'))) return 'super-aumentada'
+  if (normalizedValues.some((value) => value.includes('aumentada'))) return 'aumentada'
+  if (normalizedValues.some((value) => value.includes('garantida'))) return 'garantida'
+
+  return null
+}
 
 function SelectionEventMeta({ selection }: { selection: BetslipSelection }) {
   if (selection.eventStatus !== 'live') {
@@ -110,7 +162,15 @@ function SelectionEventMeta({ selection }: { selection: BetslipSelection }) {
   )
 }
 
-function SelectionAvatar({ selection, compact = false }: { selection: BetslipSelection; compact?: boolean }) {
+function SelectionAvatar({
+  selection,
+  compact = false,
+  promoVariant = null,
+}: {
+  selection: BetslipSelection
+  compact?: boolean
+  promoVariant?: BetslipPromoVariant | null
+}) {
   const isPlayerSelection = selection.selectionType === 'player'
   const drawContext = isPlayerSelection ? null : getSelectionAvatarDrawContext(selection)
   const teamContext = isPlayerSelection ? null : getSelectionAvatarTeamContext(selection)
@@ -136,7 +196,7 @@ function SelectionAvatar({ selection, compact = false }: { selection: BetslipSel
     { useCurrentLogoFallback: true }
   )
   const iconSrc = isPlayerSelection
-    ? selection.playerImage || getPlayerAvatarFallbackSrc(selection)
+    ? selection.playerImage || (promoVariant ? promoPlayerImageFallbackByVariant[promoVariant] : undefined) || getPlayerAvatarFallbackSrc(selection)
     : resolvedTeamLogo || teamContext?.fallbackLogo || getSelectionAvatarFallback(selection)
 
   if (drawContext) {
@@ -179,6 +239,7 @@ function SelectionAvatar({ selection, compact = false }: { selection: BetslipSel
         'betslip-v2__avatar',
         compact ? 'betslip-v2__avatar--compact' : '',
         isPlayerSelection ? 'betslip-v2__avatar--player' : '',
+        promoVariant ? 'betslip-v2__avatar--promo' : '',
       ].filter(Boolean).join(' ')}
       aria-hidden="true"
     >
@@ -244,19 +305,36 @@ function Badges({
   )
 }
 
-function SelectionTitleLine({ selection }: { selection: BetslipSelection }) {
+function SelectionTitleLine({
+  selection,
+  promoVariant = null,
+}: {
+  selection: BetslipSelection
+  promoVariant?: BetslipPromoVariant | null
+}) {
   const title = getSelectionTitle(selection)
   const teamSuffix = getSelectionTeamSuffix(selection)
   const playerChoice = getPlayerSelectionValueLabel(selection)
+  const promoIcon = promoVariant ? promoIconByVariant[promoVariant] : null
 
   return (
     <div className="betslip-v2__title-line">
-      <strong>{title}</strong>
+      <strong className={promoVariant ? 'betslip-v2__promo-gradient-text' : undefined}>{title}</strong>
       {teamSuffix ? <span className="betslip-v2__team-suffix">{teamSuffix}</span> : null}
       {playerChoice ? (
         <>
           <span className="betslip-v2__title-separator" aria-hidden="true">|</span>
-          <span className="betslip-v2__player-choice">{playerChoice}</span>
+          <span
+            className={[
+              'betslip-v2__player-choice',
+              promoVariant ? 'betslip-v2__promo-gradient-text betslip-v2__player-choice--promo' : '',
+            ].filter(Boolean).join(' ')}
+          >
+            {playerChoice}
+          </span>
+          {promoIcon ? (
+            <img className="betslip-v2__promo-value-icon" src={promoIcon} alt="" aria-hidden="true" />
+          ) : null}
         </>
       ) : null}
     </div>
@@ -279,12 +357,15 @@ function SimpleSelectionRow({
   showOdd?: boolean
 }) {
   const title = getSelectionTitle(selection)
+  const promoVariant = getSelectionPromoVariant(selection)
 
   return (
     <article
       className={[
         'betslip-v2__selection-row',
         showOdd ? '' : 'betslip-v2__selection-row--without-odd',
+        promoVariant ? 'betslip-v2__selection-row--promo' : '',
+        promoVariant ? promoVariantClassNameByVariant[promoVariant] : '',
         isRemoving ? 'betslip-v2__selection-row--removing' : '',
       ].filter(Boolean).join(' ')}
     >
@@ -295,13 +376,13 @@ function SimpleSelectionRow({
       />
       <span className="betslip-v2__divider" aria-hidden="true" />
       <div className="betslip-v2__selection-content">
-        <SelectionAvatar selection={selection} />
+        <SelectionAvatar selection={selection} promoVariant={promoVariant} />
         <div className="betslip-v2__selection-copy">
           <div className="betslip-v2__market-line">
             <span>{getSelectionMarketLabel(selection)}</span>
             <Badges labels={getSelectionBadges(selection)} onInfoClick={onTagInfoOpen} />
           </div>
-          <SelectionTitleLine selection={selection} />
+          <SelectionTitleLine selection={selection} promoVariant={promoVariant} />
           <SelectionEventMeta selection={selection} />
         </div>
       </div>
@@ -500,10 +581,12 @@ function SwipeButton({
     setVisualProgress(1)
 
     completeTimerRef.current = window.setTimeout(() => {
-      completeTimerRef.current = null
       setIsCompleting(false)
       setIsLoadingVisible(true)
-      onComplete()
+      completeTimerRef.current = window.setTimeout(() => {
+        completeTimerRef.current = null
+        onComplete()
+      }, BET_CONFIRM_LOADING_MS)
     }, SWIPE_COMPLETE_ANIMATION_MS)
   }, [clearCompleteTimer, isInteractionDisabled, onComplete, setVisualProgress])
 
@@ -621,8 +704,9 @@ function SwipeButton({
       <span className="betslip-v2__swipe-fill" aria-hidden="true">
         <CaretRightIcon className="betslip-v2__swipe-icon" weight="bold" />
       </span>
-      <span className="betslip-v2__swipe-spinner-wrap" aria-hidden="true">
+      <span className="betslip-v2__swipe-spinner-wrap">
         <span className="betslip-v2__swipe-spinner" />
+        <span className="betslip-v2__swipe-spinner-text">Preparando sua aposta</span>
       </span>
     </button>
   )
@@ -650,25 +734,44 @@ export function BetslipPageV2({
   const closeTimerRef = useRef<number | null>(null)
   const rowRemoveTimerRef = useRef<number | null>(null)
   const legRemoveTimerRef = useRef<number | null>(null)
+  const pageRef = useRef<HTMLElement | null>(null)
   const hadSelectionsRef = useRef(selections.length > 0)
 
   const selectionGroups = useMemo(() => groupSelectionsByEvent(selections), [selections])
   const totalOddsValue = summary.hasSelections ? summary.totalOdds : 0
   const totalOddsLabel = summary.hasSelections ? summary.totalOddsLabel : formatBetslipOdd(0)
   const potentialWinCents = Math.round(stakeCents * totalOddsValue)
-  const stakeLabel = formatMoney(stakeCents, { compactWhole: true })
+  const stakeLabel = formatMoney(stakeCents)
   const potentialWinLabel = formatMoney(potentialWinCents)
+  const animatedTotalOddsLabel = useAnimatedBetslipNumber(
+    totalOddsValue,
+    formatBetslipOdd,
+    !isLeaving && summary.hasSelections
+  )
+  const animatedPotentialWinLabel = useAnimatedBetslipNumber(
+    potentialWinCents,
+    formatMoney,
+    !isLeaving && summary.hasSelections
+  )
   const hasSgp = selectionGroups.some((group) => group.selections.length > 1)
   const isLoggedOut = authVariant === 'logged-out'
   const shouldShowDepositPrompt = !isLoggedOut && requiresDeposit
   const isRemoveLocked = removingRowId !== null || removingLegId !== null
 
   const handleStakeChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    const digits = event.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '')
-    const nextStakeReais = digits ? Number(digits) : 0
+    const digits = event.target.value.replace(/\D/g, '')
 
-    setStakeInputValue(digits)
-    setStakeCents(Number.isFinite(nextStakeReais) ? nextStakeReais * 100 : 0)
+    if (!digits) {
+      setStakeInputValue('')
+      setStakeCents(0)
+      return
+    }
+
+    const nextStakeCents = Number(digits)
+    const safeStakeCents = Number.isFinite(nextStakeCents) ? nextStakeCents : 0
+
+    setStakeInputValue(formatStakeInputValue(safeStakeCents))
+    setStakeCents(safeStakeCents)
   }, [])
 
   const requestClose = useCallback((afterClose?: () => void) => {
@@ -772,6 +875,345 @@ export function BetslipPageV2({
     setIsTagInfoOpen(false)
   }, [])
 
+  const blurFocusedStakeInput = useCallback(() => {
+    const page = pageRef.current
+    const activeElement = document.activeElement
+
+    if (activeElement instanceof HTMLInputElement && page?.contains(activeElement)) {
+      activeElement.blur()
+    }
+  }, [])
+
+  useLayoutEffect(() => {
+    const page = pageRef.current
+    if (!page) return undefined
+
+    let stableViewportHeight = 0
+    let keyboardInset = -1
+    let viewportTop = 0
+    let watchFrame: number | null = null
+    let viewportUpdateTimer: number | null = null
+    let blurResyncTimer: number | null = null
+
+    const readLayoutViewportHeight = () => Math.max(
+      window.innerHeight || 0,
+      document.documentElement.clientHeight || 0,
+      1
+    )
+
+    const hasFocusedInput = () => {
+      const activeElement = document.activeElement
+      return activeElement instanceof HTMLInputElement && page.contains(activeElement)
+    }
+
+    // Durante a abertura do teclado o Safari iOS faz uma "dança" de viewport
+    // (barra inferior recolhendo + teclado subindo) que desloca elementos fixed
+    // por alguns frames. A página segue visualViewport.offsetTop no top — SEM
+    // clamp, pois o transiente pode ser negativo — apenas enquanto o input está
+    // focado; o footer sobe pela altura do teclado (altura estável - visível).
+    const updateKeyboardInset = () => {
+      const visualViewport = window.visualViewport
+      const offsetTop = visualViewport?.offsetTop ?? 0
+      const visualHeight = visualViewport ? visualViewport.height : readLayoutViewportHeight()
+      const visibleViewportBottom = offsetTop + visualHeight
+      const isFocused = hasFocusedInput()
+
+      if (visibleViewportBottom > stableViewportHeight + 1) {
+        const nextViewportHeight = readLayoutViewportHeight()
+
+        if (Math.abs(nextViewportHeight - stableViewportHeight) >= 1) {
+          stableViewportHeight = nextViewportHeight
+          page.style.setProperty('--betslip-v2-stable-height', `${nextViewportHeight}px`)
+        }
+      }
+
+      const nextViewportTop = isFocused ? offsetTop : 0
+
+      if (Math.abs(nextViewportTop - viewportTop) >= 0.5) {
+        viewportTop = nextViewportTop
+        page.style.setProperty('--betslip-v2-viewport-top', `${nextViewportTop}px`)
+      }
+
+      const layoutHeight = stableViewportHeight || readLayoutViewportHeight()
+      const nextKeyboardInset = isFocused
+        ? Math.max(0, Math.round(layoutHeight - visualHeight))
+        : 0
+
+      if (Math.abs(nextKeyboardInset - keyboardInset) < 2) return
+
+      keyboardInset = nextKeyboardInset
+      page.style.setProperty('--betslip-v2-keyboard-inset', `${nextKeyboardInset}px`)
+    }
+
+    // Watchdog por frame enquanto o input estiver focado: mantém o inset em dia
+    // mesmo quando o Safari não dispara os eventos de viewport a tempo.
+    const watchViewport = () => {
+      updateKeyboardInset()
+
+      if (!hasFocusedInput()) {
+        watchFrame = null
+        return
+      }
+
+      watchFrame = window.requestAnimationFrame(watchViewport)
+    }
+
+    const startViewportWatch = () => {
+      if (watchFrame !== null) return
+
+      watchFrame = window.requestAnimationFrame(watchViewport)
+    }
+
+    const updateStableViewportHeight = (force = false) => {
+      if (force || !hasFocusedInput()) {
+        const nextViewportHeight = readLayoutViewportHeight()
+
+        if (Math.abs(nextViewportHeight - stableViewportHeight) >= 1) {
+          stableViewportHeight = nextViewportHeight
+          page.style.setProperty('--betslip-v2-stable-height', `${nextViewportHeight}px`)
+        }
+      }
+
+      updateKeyboardInset()
+    }
+
+    const scheduleStableViewportHeightUpdate = (force = false) => {
+      if (viewportUpdateTimer !== null) {
+        window.clearTimeout(viewportUpdateTimer)
+      }
+
+      viewportUpdateTimer = window.setTimeout(() => {
+        viewportUpdateTimer = null
+        updateStableViewportHeight(force)
+      }, force ? 320 : 120)
+    }
+
+    updateStableViewportHeight(true)
+
+    const handleViewportResize = () => {
+      updateKeyboardInset()
+      scheduleStableViewportHeightUpdate()
+    }
+    const handleOrientationChange = () => scheduleStableViewportHeightUpdate(true)
+    const handleVisualViewportChange = () => updateKeyboardInset()
+    const handleFocusIn = () => {
+      updateKeyboardInset()
+      startViewportWatch()
+      scheduleStableViewportHeightUpdate()
+    }
+    const handleFocusOut = () => {
+      updateKeyboardInset()
+      startViewportWatch()
+
+      // No iOS 26 o visualViewport pode ficar com offset/altura residuais depois
+      // que o teclado fecha (WebKit 297779); ressincroniza uma única vez.
+      if (blurResyncTimer !== null) window.clearTimeout(blurResyncTimer)
+      blurResyncTimer = window.setTimeout(() => {
+        blurResyncTimer = null
+
+        if (hasFocusedInput()) return
+
+        if (window.scrollX !== 0 || window.scrollY !== 0) window.scrollTo(0, 0)
+        updateStableViewportHeight(true)
+      }, 450)
+    }
+
+    // Último recurso (padrão react-aria): com a supressão do reveal isso não
+    // deve disparar; cobre casos exóticos em que o Safari ainda rola a janela.
+    const handleWindowScroll = () => {
+      if (!hasFocusedInput()) return
+      if (window.scrollX === 0 && window.scrollY === 0) return
+
+      window.scrollTo(0, 0)
+    }
+
+    window.addEventListener('resize', handleViewportResize)
+    window.addEventListener('orientationchange', handleOrientationChange)
+    window.addEventListener('scroll', handleWindowScroll, { passive: true })
+    window.visualViewport?.addEventListener('resize', handleVisualViewportChange)
+    window.visualViewport?.addEventListener('scroll', handleVisualViewportChange)
+    page.addEventListener('focusin', handleFocusIn)
+    page.addEventListener('focusout', handleFocusOut)
+
+    return () => {
+      if (watchFrame !== null) window.cancelAnimationFrame(watchFrame)
+      if (viewportUpdateTimer !== null) window.clearTimeout(viewportUpdateTimer)
+      if (blurResyncTimer !== null) window.clearTimeout(blurResyncTimer)
+      page.style.removeProperty('--betslip-v2-keyboard-inset')
+      page.style.removeProperty('--betslip-v2-stable-height')
+      page.style.removeProperty('--betslip-v2-viewport-top')
+      window.removeEventListener('resize', handleViewportResize)
+      window.removeEventListener('orientationchange', handleOrientationChange)
+      window.removeEventListener('scroll', handleWindowScroll)
+      window.visualViewport?.removeEventListener('resize', handleVisualViewportChange)
+      window.visualViewport?.removeEventListener('scroll', handleVisualViewportChange)
+      page.removeEventListener('focusin', handleFocusIn)
+      page.removeEventListener('focusout', handleFocusOut)
+    }
+  }, [])
+
+  // O Safari iOS rola a página inteira para "revelar" o input focado sob o
+  // teclado — é essa rolagem que faz o conteúdo pular. Deslocar o input para
+  // fora da área visível faz o reveal clampar em zero (alvo acima do topo).
+  // No iOS 26 a decisão de reveal acontece DEPOIS do focus (junto do commit do
+  // teclado — o debug mostrou offsetTop batendo na altura do teclado mesmo com
+  // o truque de 1 frame do react-aria/Vaul), então o input fica deslocado do
+  // foco até o teclado assentar; ao voltar, o footer já foi elevado pelo
+  // --betslip-v2-keyboard-inset e o input está visível — nada a revelar.
+  useLayoutEffect(() => {
+    const page = pageRef.current
+    if (!page || !isIOSDevice()) return undefined
+
+    let displacedInput: HTMLInputElement | null = null
+    let restoreFrame: number | null = null
+    let restoreTimer: number | null = null
+
+    const isKeyboardOpen = () => {
+      const visualViewport = window.visualViewport
+
+      if (!visualViewport) return false
+
+      const layoutHeight = Math.max(
+        window.innerHeight || 0,
+        document.documentElement.clientHeight || 0
+      )
+
+      return layoutHeight - visualViewport.height > 60
+    }
+
+    const restoreDisplacedInput = () => {
+      if (restoreFrame !== null) {
+        window.cancelAnimationFrame(restoreFrame)
+        restoreFrame = null
+      }
+
+      if (restoreTimer !== null) {
+        window.clearTimeout(restoreTimer)
+        restoreTimer = null
+      }
+
+      window.visualViewport?.removeEventListener('resize', handleViewportResize)
+
+      if (displacedInput) {
+        displacedInput.style.transform = ''
+        displacedInput = null
+      }
+    }
+
+    // Dois frames de folga após o teclado assentar, para a decisão de reveal
+    // do Safari (e a elevação do footer) já terem acontecido.
+    const scheduleRestore = () => {
+      if (restoreFrame !== null) return
+
+      restoreFrame = window.requestAnimationFrame(() => {
+        restoreFrame = window.requestAnimationFrame(() => {
+          restoreFrame = null
+          restoreDisplacedInput()
+        })
+      })
+    }
+
+    const handleViewportResize = () => {
+      if (isKeyboardOpen()) scheduleRestore()
+    }
+
+    const handleFocusIn = (event: Event) => {
+      const target = event.target
+
+      if (!(target instanceof HTMLInputElement)) return
+
+      restoreDisplacedInput()
+      displacedInput = target
+      target.style.transform = 'translateY(-2000px)'
+      window.visualViewport?.addEventListener('resize', handleViewportResize)
+      restoreTimer = window.setTimeout(restoreDisplacedInput, 700)
+
+      // Teclado já aberto (refoco): a janela de reveal é imediata e curta.
+      if (isKeyboardOpen()) scheduleRestore()
+    }
+
+    const handleFocusOut = () => restoreDisplacedInput()
+
+    page.addEventListener('focusin', handleFocusIn)
+    page.addEventListener('focusout', handleFocusOut)
+
+    return () => {
+      restoreDisplacedInput()
+      page.removeEventListener('focusin', handleFocusIn)
+      page.removeEventListener('focusout', handleFocusOut)
+    }
+  }, [])
+
+  // Arrastar o dedo numa área sem scroll faz o iOS puxar a página inteira
+  // (rubber-band) — e, com o teclado aberto, o iOS 26 deixa a página presa
+  // deslocada em vez de quicar de volta (o overscroll-behavior do CSS não
+  // segura o rubber-band do documento no iOS). Bloqueia o touchmove na página,
+  // liberando apenas alvos dentro de um container realmente rolável.
+  useLayoutEffect(() => {
+    const page = pageRef.current
+    if (!page) return undefined
+
+    const hasScrollableAncestor = (target: EventTarget | null) => {
+      let element = target instanceof Element ? target : null
+
+      while (element && element !== page) {
+        if (element instanceof HTMLElement) {
+          const { overflowY } = getComputedStyle(element)
+
+          if (
+            (overflowY === 'auto' || overflowY === 'scroll')
+            && element.scrollHeight > element.clientHeight + 1
+          ) {
+            return true
+          }
+        }
+
+        element = element.parentElement
+      }
+
+      return false
+    }
+
+    const handleTouchMove = (event: TouchEvent) => {
+      if (event.touches.length === 1 && hasScrollableAncestor(event.target)) return
+
+      event.preventDefault()
+    }
+
+    page.addEventListener('touchmove', handleTouchMove, { passive: false })
+
+    return () => page.removeEventListener('touchmove', handleTouchMove)
+  }, [])
+
+  // Trava o body enquanto o betslip está aberto (padrão do Vaul no iOS):
+  // garante que o documento em si não tem como se mover sob a página fixed.
+  useLayoutEffect(() => {
+    if (!isIOSDevice()) return undefined
+
+    const body = document.body
+    const previous = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      overflow: body.style.overflow,
+    }
+
+    body.style.position = 'fixed'
+    body.style.top = '0'
+    body.style.left = '0'
+    body.style.right = '0'
+    body.style.overflow = 'hidden'
+
+    return () => {
+      body.style.position = previous.position
+      body.style.top = previous.top
+      body.style.left = previous.left
+      body.style.right = previous.right
+      body.style.overflow = previous.overflow
+    }
+  }, [])
+
   useEffect(() => () => {
     if (closeTimerRef.current !== null) window.clearTimeout(closeTimerRef.current)
     if (rowRemoveTimerRef.current !== null) window.clearTimeout(rowRemoveTimerRef.current)
@@ -793,6 +1235,7 @@ export function BetslipPageV2({
   return (
     <>
       <main
+        ref={pageRef}
         className={[
           'betslip-v2',
           isLeaving ? 'betslip-v2--leaving' : 'betslip-v2--entering',
@@ -821,7 +1264,12 @@ export function BetslipPageV2({
       </header>
 
       <section className="betslip-v2__content" aria-label="Selecciones">
-        <div className="betslip-v2__list">
+        <div
+          className="betslip-v2__list"
+          onScroll={blurFocusedStakeInput}
+          onTouchMove={blurFocusedStakeInput}
+          onWheel={blurFocusedStakeInput}
+        >
           {selectionGroups.length === 0 ? (
             <div className="betslip-v2__empty">
               <strong>No hay selecciones</strong>
@@ -871,7 +1319,16 @@ export function BetslipPageV2({
                   aria-label="Entrada"
                   value={stakeInputValue}
                   onChange={handleStakeChange}
-                  onFocus={(event) => event.currentTarget.select()}
+                  onFocus={(event) => {
+                    const input = event.currentTarget
+
+                    // Um frame depois: após a restauração do transform da
+                    // supressão do reveal iOS e do posicionamento default do
+                    // caret, que sobrescreveria o select() síncrono.
+                    window.requestAnimationFrame(() => {
+                      if (document.activeElement === input) input.select()
+                    })
+                  }}
                 />
               </span>
             </span>
@@ -880,14 +1337,14 @@ export function BetslipPageV2({
 
           <div className="betslip-v2__summary-item">
             <span>Odds</span>
-            <strong>{totalOddsLabel}</strong>
+            <strong>{animatedTotalOddsLabel}</strong>
             {hasSgp ? <em>SGP</em> : null}
           </div>
 
           <div className="betslip-v2__summary-item betslip-v2__summary-item--win" aria-label={`Para ganar ${potentialWinLabel}`}>
             <span className="betslip-v2__win-label">Para ganar</span>
             <div className="betslip-v2__win-field">
-              <strong>{potentialWinLabel}</strong>
+              <strong>{animatedPotentialWinLabel}</strong>
             </div>
           </div>
         </div>

@@ -425,6 +425,10 @@
   text-align: left;
 }
 
+.login-input__select-button:disabled {
+  cursor: default;
+}
+
 .login-input__select-button:focus-visible {
   outline: 0;
 }
@@ -1122,6 +1126,24 @@
   line-height: 21px;
 }
 
+.login-page__lookup-status--error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ds-fill-error, #f87171);
+}
+
+.login-page__lookup-retry {
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font: inherit;
+  font-weight: 700;
+}
+
 .login-phone-validation-sheet {
   --bottom-sheet-top-offset: max(8px, env(safe-area-inset-top, 0px));
 
@@ -1490,6 +1512,27 @@
   height: 20px;
   border-radius: 1px;
   background: var(--ds-fill-primary, #fbfbfb);
+}
+
+.login-phone-code--invalid .login-phone-code__slot {
+  border-color: var(--ds-fill-error, #f87171);
+  box-shadow: 0 0 0 3px rgb(255 121 98 / 0.24);
+}
+
+.login-phone-code--invalid .login-phone-code__slot--filled {
+  color: var(--ds-fill-primary, #fbfbfb);
+}
+
+.login-phone-validation__code-error {
+  width: min(100%, 328px);
+  margin: -8px 0 0;
+  color: var(--ds-fill-error, #f87171);
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+  letter-spacing: 0;
+  text-align: left;
 }
 
 .login-phone-validation__resend {

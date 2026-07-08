@@ -6,6 +6,7 @@ import {
   EMPTY_BETSLIP_SUMMARY,
   formatBetslipCurrency,
   formatBetslipOdd,
+  isSameBetslipSelection,
   type BetslipSelection,
   type BetslipSummary,
 } from './betslipUtils'
@@ -156,13 +157,17 @@ export function BetslipProvider({ children }: { children: ReactNode }) {
   const toggleSelection = useCallback((groupId: string, selection: BetslipSelection) => {
     setBetslipState((current) => {
       const selectedEntries = Object.entries(current.selectedSelectionIdsByGroup)
-      const isRemoving = selectedEntries.some(([, selectionId]) => selectionId === selection.id)
+      const isRemoving = selectedEntries.some(([, selectionId]) => (
+        isSameBetslipSelection(current.selectionsById[selectionId], selection)
+      ))
 
       if (isRemoving) {
         const selectedSelectionIdsByGroup = { ...current.selectedSelectionIdsByGroup }
 
         selectedEntries.forEach(([currentGroupId, selectionId]) => {
-          if (selectionId === selection.id) delete selectedSelectionIdsByGroup[currentGroupId]
+          if (isSameBetslipSelection(current.selectionsById[selectionId], selection)) {
+            delete selectedSelectionIdsByGroup[currentGroupId]
+          }
         })
 
         const selectionsById = { ...current.selectionsById }

@@ -32,8 +32,7 @@ import type { CompetitionLinkTarget } from '../../utils/competitionNavigation'
 import { getTeamAbbreviation } from '../../utils/teamAbbreviations'
 import {
   createBetslipSelection,
-  getBetslipEventId,
-  getBetslipMarketGroupId,
+  getMatchOddBetslipKey,
   getPlayerPropBetslipKey,
   normalizeBetslipIdPart,
 } from '../../hooks/betslipUtils'
@@ -134,8 +133,8 @@ const getFootballCarouselMarket = (
       id: marketId,
       label: marketLabel,
       odds: [
-        { label: `↑ ${line}`, value: match.totalGoalsOdds.over },
-        { label: `↓ ${line}`, value: match.totalGoalsOdds.under },
+        { label: `${line}+`, value: match.totalGoalsOdds.over },
+        { label: `${line}-`, value: match.totalGoalsOdds.under },
       ],
     }
   }
@@ -147,8 +146,8 @@ const getFootballCarouselMarket = (
       id: marketId,
       label: marketLabel,
       odds: [
-        { label: `↑ ${line}`, value: match.totalCornersOdds.over },
-        { label: `↓ ${line}`, value: match.totalCornersOdds.under },
+        { label: `${line}+`, value: match.totalCornersOdds.over },
+        { label: `${line}-`, value: match.totalCornersOdds.under },
       ],
     }
   }
@@ -187,8 +186,8 @@ const getBasketballCarouselMarket = (
       id: 'total-pontos',
       label: marketLabel,
       odds: [
-        { label: `↑ ${line}`, value: match.totalPointsOdds.over },
-        { label: `↓ ${line}`, value: match.totalPointsOdds.under },
+        { label: `${line}+`, value: match.totalPointsOdds.over },
+        { label: `${line}-`, value: match.totalPointsOdds.under },
       ],
     }
   }
@@ -332,8 +331,8 @@ const getBasketballMarketColumns = (
     },
     {
       label: 'Total',
-      homeOdd: { label: `↑ ${totalPointsLine}`, value: match.totalPointsOdds?.over ?? '1.89x' },
-      awayOdd: { label: `↓ ${totalPointsLine}`, value: match.totalPointsOdds?.under ?? '1.92x' },
+      homeOdd: { label: `${totalPointsLine}+`, value: match.totalPointsOdds?.over ?? '1.89x' },
+      awayOdd: { label: `${totalPointsLine}-`, value: match.totalPointsOdds?.under ?? '1.92x' },
     },
   ]
 }
@@ -591,27 +590,30 @@ function CompetitionMatchCarousel({
     odd: HomeCompetitionOdd,
     index: number
   ) => {
-    const eventId = getBetslipEventId({
+    const outcomeId = getCompetitionOddOutcomeId(odd.label, index)
+    const betslipKey = getMatchOddBetslipKey({
       sport: match.sport,
       homeTeam: match.homeTeam,
       awayTeam: match.awayTeam,
-      fallbackId: match.id,
+      marketId: market.id,
+      outcomeId,
+      label: odd.label,
     })
-    const groupId = getBetslipMarketGroupId({ eventId, marketId: market.id })
-    const outcomeId = getCompetitionOddOutcomeId(odd.label, index)
+    const eventId = betslipKey.eventId
+    const groupId = betslipKey.groupId
     const eventTimeLabel = match.live ? liveTimes[match.id] ?? match.liveClock ?? match.footerLabel : match.footerLabel
 
     return (
       <HomeCompetitionOddButton
         odd={odd}
         {...getOddButtonProps(
-          `${groupId}:${outcomeId}`,
+          `${groupId}:${betslipKey.outcomeId}`,
           groupId,
           'competition-match-carousel__odd',
           createBetslipSelection({
             eventId,
-            marketId: market.id,
-            outcomeId,
+            marketId: betslipKey.marketId,
+            outcomeId: betslipKey.outcomeId,
             label: odd.label,
             odd: odd.value,
             marketLabel: market.label,

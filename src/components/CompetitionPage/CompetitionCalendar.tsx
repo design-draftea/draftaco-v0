@@ -4,7 +4,7 @@ import '../PreMatchSection/PreMatchSection.css'
 import '../CalendarSection/CalendarSection.css'
 import './CompetitionCalendar.css'
 import { useHomeMarketStickyState } from '../../hooks/useHomeMarketStickyVisible'
-import { createBetslipSelection, getBetslipEventId, getBetslipMarketGroupId } from '../../hooks/betslipUtils'
+import { createBetslipSelection, getBetslipEventId, getMatchOddBetslipKey } from '../../hooks/betslipUtils'
 import { useOddSelection } from '../../hooks/useOddSelection'
 import { useSlidingActiveIndicator } from '../../hooks/useSlidingActiveIndicator'
 
@@ -115,40 +115,50 @@ export function CompetitionCalendar({ sport, competitionId, competitionName, mat
       homeTeam: m.homeName,
       awayTeam: m.awayName,
     })
-    const oddGroupId = getBetslipMarketGroupId({ eventId, marketId: activeMarket })
     const marketLabel = marketChips.find((chip) => chip.id === activeMarket)?.label
     const liveClock = liveTimes[m.id] ?? m.liveTime
-    const renderOddButton = (outcomeId: string, label: ReactNode, value: ReactNode) => (
-      <button
-        {...getOddButtonProps(
-          `${oddGroupId}:${outcomeId}`,
-          oddGroupId,
-          'prematch-section__odd-btn',
-          createBetslipSelection({
-            eventId,
-            marketId: activeMarket,
-            outcomeId,
-            label,
-            odd: value,
-            marketLabel,
-            eventStatus: m.isLive ? 'live' : 'prematch',
-            sport,
-            leagueId: competitionId,
-            leagueName: competitionName,
-            homeTeam: m.homeName,
-            awayTeam: m.awayName,
-            eventTimeLabel: m.isLive ? liveClock : m.dateTime,
-            liveClock,
-            homeScore: m.homeScore,
-            awayScore: m.awayScore,
-            badgeType: m.earlyPayout ? 'boost' : undefined,
-          })
-        )}
-      >
-        <span className="prematch-section__odd-team">{label}</span>
-        <span className="prematch-section__odd-value">{value}</span>
-      </button>
-    )
+    const renderOddButton = (outcomeId: string, label: ReactNode, value: ReactNode) => {
+      const betslipKey = getMatchOddBetslipKey({
+        sport,
+        homeTeam: m.homeName,
+        awayTeam: m.awayName,
+        marketId: activeMarket,
+        outcomeId,
+        label,
+      })
+
+      return (
+        <button
+          {...getOddButtonProps(
+            `${betslipKey.groupId}:${betslipKey.outcomeId}`,
+            betslipKey.groupId,
+            'prematch-section__odd-btn',
+            createBetslipSelection({
+              eventId,
+              marketId: betslipKey.marketId,
+              outcomeId: betslipKey.outcomeId,
+              label,
+              odd: value,
+              marketLabel,
+              eventStatus: m.isLive ? 'live' : 'prematch',
+              sport,
+              leagueId: competitionId,
+              leagueName: competitionName,
+              homeTeam: m.homeName,
+              awayTeam: m.awayName,
+              eventTimeLabel: m.isLive ? liveClock : m.dateTime,
+              liveClock,
+              homeScore: m.homeScore,
+              awayScore: m.awayScore,
+              badgeType: m.earlyPayout ? 'boost' : undefined,
+            })
+          )}
+        >
+          <span className="prematch-section__odd-team">{label}</span>
+          <span className="prematch-section__odd-value">{value}</span>
+        </button>
+      )
+    }
 
     if (sport === 'basquete' || activeMarket === 'vencedor') {
       return (

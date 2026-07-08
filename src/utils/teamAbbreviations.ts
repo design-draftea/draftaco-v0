@@ -192,3 +192,10 @@ export function getTeamAbbreviation(teamName: string) {
   const compactFallback = cleanWords.join('').slice(0, 3).toUpperCase()
   return compactFallback || trimmedTeamName.slice(0, 3).toUpperCase()
 }
+
+export function getTeamAbbreviationAlias(teamName: string) {
+  const trimmedTeamName = teamName.trim()
+  if (!trimmedTeamName) return ''
+
+  return teamAbbreviationAliases[normalizeTeamAbbreviationKey(trimmedTeamName)] ?? ''
+}

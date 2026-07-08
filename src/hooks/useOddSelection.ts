@@ -1,5 +1,5 @@
 import { useCallback, useState, type ButtonHTMLAttributes, type MouseEvent } from 'react'
-import { BETSLIP_ODD_INTERACTION_EVENT, type BetslipSelection } from './betslipUtils'
+import { BETSLIP_ODD_INTERACTION_EVENT, isSameBetslipSelection, type BetslipSelection } from './betslipUtils'
 import { useBetslip } from './useBetslip'
 
 type OddButtonProps = Pick<
@@ -9,7 +9,7 @@ type OddButtonProps = Pick<
 
 export function useOddSelection(defaultClassName: string) {
   const [localSelectedOddsByGroup, setLocalSelectedOddsByGroup] = useState<Record<string, string>>({})
-  const { selectedSelectionIdsByGroup, toggleSelection } = useBetslip()
+  const { selections, toggleSelection } = useBetslip()
 
   return useCallback((
     oddId: string,
@@ -18,7 +18,7 @@ export function useOddSelection(defaultClassName: string) {
     betslipSelection?: BetslipSelection
   ): OddButtonProps => {
     const isSelected = betslipSelection
-      ? Object.values(selectedSelectionIdsByGroup).includes(betslipSelection.id)
+      ? selections.some((selection) => isSameBetslipSelection(selection, betslipSelection))
       : localSelectedOddsByGroup[groupId] === oddId
 
     return {
@@ -48,5 +48,5 @@ export function useOddSelection(defaultClassName: string) {
         })
       },
     }
-  }, [defaultClassName, localSelectedOddsByGroup, selectedSelectionIdsByGroup, toggleSelection])
+  }, [defaultClassName, localSelectedOddsByGroup, selections, toggleSelection])
 }

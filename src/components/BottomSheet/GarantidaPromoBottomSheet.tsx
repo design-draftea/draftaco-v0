@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { BottomSheet } from './BottomSheet'
-import { createBetslipSelection, getBetslipEventId, getBetslipMarketGroupId } from '../../hooks/betslipUtils'
+import { getBetslipMarketGroupId } from '../../hooks/betslipUtils'
 import { useOddSelection } from '../../hooks/useOddSelection'
+import {
+  createGarantidaLewandowskiSelection,
+  GARANTIDA_LEWANDOWSKI_GROUP_ID,
+} from '../../data/garantidaLewandowskiSelection'
 import './GarantidaPromoBottomSheet.css'
 
 import closeIcon from '../../assets/iconsDraftaco/garantidaBsClose.svg'
@@ -40,7 +44,7 @@ function MatchInfo() {
     <div className="garantida-promo-bs__match">
       <span className="garantida-promo-bs__teams">
         <strong>BAR</strong>
-        <span> vs REA</span>
+        <span> vs INT</span>
       </span>
       <span className="garantida-promo-bs__dot">•</span>
       <span className="garantida-promo-bs__market">Finalizações ao gol</span>
@@ -83,23 +87,10 @@ export function GarantidaPromoBottomSheet({
   }, [])
 
   // The boosted promo odd, added to / removed from the real betslip on tap.
-  const [oddSelection] = useState(() => createBetslipSelection({
-    eventId: getBetslipEventId({ sport: 'futebol', homeTeam: 'BAR', awayTeam: 'REA' }),
-    marketId: 'garantida-finalizacao-gol-lewandowski',
-    outcomeId: '0-5-mais',
-    label: '0.5+',
-    odd: '1.85x',
-    marketLabel: 'Finalizações ao gol',
-    selectionType: 'player',
-    sport: 'futebol',
-    playerName: 'R. Lewandowski',
-    selectionTeamName: 'BAR',
-    eventName: 'BAR vs REA',
-    badgeType: 'boost',
-  }))
+  const [oddSelection] = useState(() => createGarantidaLewandowskiSelection())
   const oddGroupId = oddSelection
     ? getBetslipMarketGroupId({ eventId: oddSelection.eventId, marketId: oddSelection.marketId })
-    : 'garantida-promo-odd'
+    : GARANTIDA_LEWANDOWSKI_GROUP_ID
   const oddButtonProps = getOddButtonProps(
     oddSelection?.id ?? 'garantida-promo-odd',
     oddGroupId,

@@ -8,6 +8,7 @@ import {
   getBetslipEventId,
   getBetslipMarketGroupId,
   normalizeBetslipIdPart,
+  type BetslipPromoVariant,
   type BetslipSelection,
 } from '../../hooks/betslipUtils'
 import { useBetslip } from '../../hooks/useBetslip'
@@ -87,6 +88,13 @@ const offerAumentadaRuleLabels = [
 ]
 
 const showSuperCombinadaOffers = false
+
+const getOfferPromoVariant = (offer: Pick<OfferCard, 'category' | 'type'>): BetslipPromoVariant | undefined => {
+  if (offer.category === 'super-aumentada' || offer.type === 'super_aumentada') return 'super-aumentada'
+  if (offer.category === 'aumentada' || offer.type === 'aumentada') return 'aumentada'
+
+  return undefined
+}
 
 const offerTeamNameByLogo: Record<string, string> = {
   [escudoBayerLeverkusen]: 'B. Leverkusen',
@@ -368,6 +376,7 @@ const getOfferComboBetslipEntries = (
     comboTypeLabel: offer.tagLabel,
     comboTotalOddLabel: offer.newOdd,
     comboLegCount: legCount,
+    promoVariant: getOfferPromoVariant(offer),
   }
 
   if (offer.events?.length) {
@@ -1541,6 +1550,7 @@ export function OffersSection({
         playerImage: offer.player?.image,
         selectionIcon: offer.teamStat?.teamIcon,
         badgeType: 'boost',
+        promoVariant: getOfferPromoVariant(offer),
       })
     )
   }

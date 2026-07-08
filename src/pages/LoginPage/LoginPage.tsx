@@ -83,11 +83,12 @@ interface LoginInputProps {
   onFocus?: () => void
 }
 
-interface RegionSelectProps {
+interface AddressSelectProps {
   id: string
   label: string
   placeholder: string
   value: string
+  disabled?: boolean
   isOpen: boolean
   onOpen: () => void
 }
@@ -108,6 +109,10 @@ interface ViaCepResponse {
   uf?: string
 }
 
+interface IbgeCityResponse {
+  nome?: string
+}
+
 interface ScrollSnapshot {
   windowX: number
   windowY: number
@@ -125,6 +130,7 @@ const cpfInvalidErrorMessage = 'Insira um CPF válido'
 const phoneIncompleteErrorMessage = 'Insira o celular com DDD'
 const phoneInvalidErrorMessage = 'Insira um celular válido com DDD'
 const cepLookupErrorMessage = 'Verifique o CEP e tente novamente'
+const cityLookupErrorMessage = 'Não foi possível carregar as cidades'
 const signupSteps: SignupStep[] = ['account', 'personal', 'address']
 const phoneValidationCodeLength = 6
 const phoneValidationCountdownStart = 30
@@ -176,64 +182,34 @@ const gameTimeLimitOptions = ['1 hora', '2 horas', '5 horas', '12 horas', '24 ho
 const lossLimitOptions = ['R$ 1.000', 'R$ 10.000', 'R$ 100.000', 'R$ 1.000.000', 'Outro']
 const customLimitOption = 'Outro'
 const brazilRegionOptions = [
-  'Acre',
-  'Alagoas',
-  'Amapa',
-  'Amazonas',
-  'Bahía',
-  'Ceara',
-  'Distrito Federal',
-  'Espirito Santo',
-  'Goias',
-  'Maranhao',
-  'Mato Grosso',
-  'Mato Grosso do Sul',
-  'Minas Gerais',
-  'Para',
-  'Paraiba',
-  'Paraná',
-  'Pernambuco',
-  'Piaui',
-  'Río de Janeiro',
-  'Río Grande do Norte',
-  'Río Grande do Sul',
-  'Rondonia',
-  'Roraima',
-  'Santa Catarina',
-  'São Paulo',
-  'Sergipe',
-  'Tocantins',
+  { uf: 'AC', label: 'Acre' },
+  { uf: 'AL', label: 'Alagoas' },
+  { uf: 'AP', label: 'Amapa' },
+  { uf: 'AM', label: 'Amazonas' },
+  { uf: 'BA', label: 'Bahía' },
+  { uf: 'CE', label: 'Ceara' },
+  { uf: 'DF', label: 'Distrito Federal' },
+  { uf: 'ES', label: 'Espirito Santo' },
+  { uf: 'GO', label: 'Goias' },
+  { uf: 'MA', label: 'Maranhao' },
+  { uf: 'MT', label: 'Mato Grosso' },
+  { uf: 'MS', label: 'Mato Grosso do Sul' },
+  { uf: 'MG', label: 'Minas Gerais' },
+  { uf: 'PA', label: 'Para' },
+  { uf: 'PB', label: 'Paraiba' },
+  { uf: 'PR', label: 'Paraná' },
+  { uf: 'PE', label: 'Pernambuco' },
+  { uf: 'PI', label: 'Piaui' },
+  { uf: 'RJ', label: 'Río de Janeiro' },
+  { uf: 'RN', label: 'Río Grande do Norte' },
+  { uf: 'RS', label: 'Río Grande do Sul' },
+  { uf: 'RO', label: 'Rondonia' },
+  { uf: 'RR', label: 'Roraima' },
+  { uf: 'SC', label: 'Santa Catarina' },
+  { uf: 'SP', label: 'São Paulo' },
+  { uf: 'SE', label: 'Sergipe' },
+  { uf: 'TO', label: 'Tocantins' },
 ]
-const brazilRegionByUf: Record<string, string> = {
-  AC: 'Acre',
-  AL: 'Alagoas',
-  AP: 'Amapa',
-  AM: 'Amazonas',
-  BA: 'Bahía',
-  CE: 'Ceara',
-  DF: 'Distrito Federal',
-  ES: 'Espirito Santo',
-  GO: 'Goias',
-  MA: 'Maranhao',
-  MT: 'Mato Grosso',
-  MS: 'Mato Grosso do Sul',
-  MG: 'Minas Gerais',
-  PA: 'Para',
-  PB: 'Paraiba',
-  PR: 'Paraná',
-  PE: 'Pernambuco',
-  PI: 'Piaui',
-  RJ: 'Río de Janeiro',
-  RN: 'Río Grande do Norte',
-  RS: 'Río Grande do Sul',
-  RO: 'Rondonia',
-  RR: 'Roraima',
-  SC: 'Santa Catarina',
-  SP: 'São Paulo',
-  SE: 'Sergipe',
-  TO: 'Tocantins',
-}
-
 const onlyDigits = (value: string) => value.replace(/\D/g, '')
 
 const formatCurrencyLimitInput = (value: string) => {
@@ -289,10 +265,28 @@ const isCustomTimeLimitValid = (hours: string, minutes: string) => {
     && totalMinutes <= 24 * 60
 }
 
-const getBrazilRegionByUf = (uf?: string) => {
-  if (!uf) return ''
+const getBrazilRegionOptionByUf = (uf?: string) => {
+  if (!uf) return undefined
 
-  return brazilRegionByUf[uf.toUpperCase()] ?? ''
+  const normalizedUf = uf.toUpperCase()
+
+  return brazilRegionOptions.find((option) => option.uf === normalizedUf)
+}
+
+const normalizeBrazilText = (value: string) => (
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+)
+
+const getCanonicalCityOption = (cityOptions: string[], cityName: string) => {
+  const normalizedCityName = normalizeBrazilText(cityName)
+
+  if (!normalizedCityName) return ''
+
+  return cityOptions.find((option) => normalizeBrazilText(option) === normalizedCityName) ?? ''
 }
 
 const getCountdownAriaLabel = ({ hours, minutes }: PromoCountdownParts) => (
@@ -354,6 +348,8 @@ const prototypeAllowedPhone = '11111111111'
 const prototypeAllowedCep = '11111111'
 const prototypeAllowedAddress = {
   region: 'São Paulo',
+  regionUf: 'SP',
+  city: 'São Paulo',
   neighborhood: 'Centro',
   street: 'Avenida Paulista',
 }
@@ -773,14 +769,15 @@ function SignupPasswordRequirements({
   )
 }
 
-function RegionSelect({
+function AddressSelect({
   id,
   label,
   placeholder,
   value,
+  disabled = false,
   isOpen,
   onOpen,
-}: RegionSelectProps) {
+}: AddressSelectProps) {
   const labelId = `${id}-label`
   const isFilled = value.length > 0
 
@@ -800,6 +797,7 @@ function RegionSelect({
         aria-labelledby={labelId}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
+        disabled={disabled}
         onClick={onOpen}
       >
         <span className="login-input__content">
@@ -1115,6 +1113,7 @@ export function LoginPage({
   const loginSuccessTimerRef = useRef<number | null>(null)
   const signupActionLoadingTimerRef = useRef<number | null>(null)
   const addressAbortRef = useRef<AbortController | null>(null)
+  const cityAbortRef = useRef<AbortController | null>(null)
   const verificationLoadingTimerRef = useRef<number | null>(null)
   const verificationFadeTimerRef = useRef<number | null>(null)
   const authModeMotionTimerRef = useRef<number | null>(null)
@@ -1160,7 +1159,12 @@ export function LoginPage({
   const [acceptsPromos, setAcceptsPromos] = useState(true)
   const [cep, setCep] = useState('')
   const [region, setRegion] = useState('')
+  const [regionUf, setRegionUf] = useState('')
   const [isRegionSheetOpen, setIsRegionSheetOpen] = useState(false)
+  const [city, setCity] = useState('')
+  const [cityOptions, setCityOptions] = useState<string[]>([])
+  const [cityLookupStatus, setCityLookupStatus] = useState<AddressLookupStatus>('idle')
+  const [isCitySheetOpen, setIsCitySheetOpen] = useState(false)
   const [neighborhood, setNeighborhood] = useState('')
   const [street, setStreet] = useState('')
   const [addressNumber, setAddressNumber] = useState('')
@@ -1190,10 +1194,14 @@ export function LoginPage({
   const canConfirmPhoneValidation = phoneValidationDigits.length === phoneValidationCodeLength
   const shouldShowAddressDetails = cepDigits.length === 8
   const canConfirmAddress = shouldShowAddressDetails
+    && regionUf.trim().length > 0
+    && city.trim().length > 0
     && street.trim().length > 0
     && (noAddressNumber || addressNumber.trim().length > 0)
     && addressLookupStatus !== 'loading'
-  const isSignupBottomSheetOpen = isPhoneValidationOpen || isRegionSheetOpen || isCustomLimitSheetOpen
+    && cityLookupStatus !== 'loading'
+    && cityLookupStatus !== 'error'
+  const isSignupBottomSheetOpen = isPhoneValidationOpen || isRegionSheetOpen || isCitySheetOpen || isCustomLimitSheetOpen
   const showCpfError = cpfErrorMessage !== null
   const showPhoneError = phoneErrorMessage !== null
   const signupGarantidaCountdown = useMemo(() => (
@@ -1303,6 +1311,8 @@ export function LoginPage({
     clearVerificationTimers()
     addressAbortRef.current?.abort()
     addressAbortRef.current = null
+    cityAbortRef.current?.abort()
+    cityAbortRef.current = null
     stopVerificationCamera()
 
     setSignupStep('account')
@@ -1339,7 +1349,12 @@ export function LoginPage({
     setAcceptsPromos(true)
     setCep('')
     setRegion('')
+    setRegionUf('')
     setIsRegionSheetOpen(false)
+    setCity('')
+    setCityOptions([])
+    setCityLookupStatus('idle')
+    setIsCitySheetOpen(false)
     setNeighborhood('')
     setStreet('')
     setAddressNumber('')
@@ -1423,6 +1438,7 @@ export function LoginPage({
     }
 
     addressAbortRef.current?.abort()
+    cityAbortRef.current?.abort()
     stopVerificationCamera()
   }, [clearLoginEnterFallbackTimer, stopVerificationCamera])
 
@@ -1802,22 +1818,107 @@ export function LoginPage({
     return () => window.clearInterval(countdownTimer)
   }, [showSignupGarantidaBanner])
 
+  const resetCityLookup = () => {
+    cityAbortRef.current?.abort()
+    cityAbortRef.current = null
+    setCity('')
+    setCityOptions([])
+    setCityLookupStatus('idle')
+    setIsCitySheetOpen(false)
+  }
+
+  const resetAddressDetails = () => {
+    setRegion('')
+    setRegionUf('')
+    resetCityLookup()
+    setNeighborhood('')
+    setStreet('')
+    setAddressNumber('')
+    setAddressComplement('')
+    setNoAddressNumber(false)
+  }
+
+  const loadCityOptions = (uf: string, preferredCity = '', shouldOpenCitySheetOnSuccess = false) => {
+    const normalizedUf = uf.toUpperCase()
+    const preferredCityValue = preferredCity.trim()
+
+    if (!normalizedUf) {
+      resetCityLookup()
+      return
+    }
+
+    const abortController = new AbortController()
+    cityAbortRef.current?.abort()
+    cityAbortRef.current = abortController
+    setCity(preferredCityValue)
+    setCityOptions([])
+    setCityLookupStatus('loading')
+    setIsCitySheetOpen(false)
+
+    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${normalizedUf}/municipios?orderBy=nome`, {
+      signal: abortController.signal,
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(cityLookupErrorMessage)
+
+        return response.json() as Promise<IbgeCityResponse[]>
+      })
+      .then((data) => {
+        if (abortController.signal.aborted) return
+
+        const nextCityOptions = data
+          .map(({ nome }) => nome?.trim() ?? '')
+          .filter((cityName): cityName is string => cityName.length > 0)
+
+        if (nextCityOptions.length === 0) throw new Error(cityLookupErrorMessage)
+
+        setCityOptions(nextCityOptions)
+        setCity(preferredCityValue ? getCanonicalCityOption(nextCityOptions, preferredCityValue) : '')
+        setCityLookupStatus('success')
+
+        if (cityAbortRef.current === abortController) {
+          cityAbortRef.current = null
+        }
+
+        if (shouldOpenCitySheetOnSuccess) {
+          setIsCitySheetOpen(true)
+        }
+      })
+      .catch(() => {
+        if (abortController.signal.aborted) return
+
+        setCity('')
+        setCityOptions([])
+        setCityLookupStatus('error')
+        setIsCitySheetOpen(false)
+
+        if (cityAbortRef.current === abortController) {
+          cityAbortRef.current = null
+        }
+      })
+  }
+
   const lookupCep = (nextCepDigits: string) => {
     const abortController = new AbortController()
     addressAbortRef.current?.abort()
     addressAbortRef.current = abortController
     setAddressLookupStatus('loading')
     setAddressLookupError(null)
+    resetAddressDetails()
 
     // CEP de teste liberado para o protótipo: traz um endereço completo de exemplo.
     if (nextCepDigits === prototypeAllowedCep) {
       setRegion(prototypeAllowedAddress.region)
+      setRegionUf(prototypeAllowedAddress.regionUf)
+      setCity(prototypeAllowedAddress.city)
       setNeighborhood(prototypeAllowedAddress.neighborhood)
       setStreet(prototypeAllowedAddress.street)
       setAddressNumber('')
       setAddressComplement('')
       setNoAddressNumber(false)
       setAddressLookupStatus('success')
+      addressAbortRef.current = null
+      loadCityOptions(prototypeAllowedAddress.regionUf, prototypeAllowedAddress.city)
       return
     }
 
@@ -1831,19 +1932,32 @@ export function LoginPage({
         if (abortController.signal.aborted) return
         if (data.erro) throw new Error(cepLookupErrorMessage)
 
-        setRegion(getBrazilRegionByUf(data.uf))
+        const regionOption = getBrazilRegionOptionByUf(data.uf)
+
+        if (!regionOption) throw new Error(cepLookupErrorMessage)
+
+        setRegion(regionOption.label)
+        setRegionUf(regionOption.uf)
         setNeighborhood(data.bairro ?? '')
         setStreet(data.logradouro ?? '')
         setAddressLookupStatus('success')
+
+        if (addressAbortRef.current === abortController) {
+          addressAbortRef.current = null
+        }
+
+        loadCityOptions(regionOption.uf, data.localidade ?? '')
       })
       .catch(() => {
         if (abortController.signal.aborted) return
 
-        setRegion('')
-        setNeighborhood('')
-        setStreet('')
+        resetAddressDetails()
         setAddressLookupStatus('error')
         setAddressLookupError(cepLookupErrorMessage)
+
+        if (addressAbortRef.current === abortController) {
+          addressAbortRef.current = null
+        }
       })
   }
 
@@ -1982,6 +2096,10 @@ export function LoginPage({
   const closePhoneValidation = () => {
     cancelSignupActionLoading()
     setIsPhoneValidationOpen(false)
+  }
+
+  const handlePhoneValidationCodeChange = (value: string) => {
+    setPhoneValidationCode(value)
   }
 
   const handlePhoneValidationResend = () => {
@@ -2486,7 +2604,7 @@ export function LoginPage({
         <div className="login-phone-validation__code-group">
           <PhoneValidationCodeInput
             value={phoneValidationCode}
-            onChange={setPhoneValidationCode}
+            onChange={handlePhoneValidationCodeChange}
           />
           {phoneValidationSeconds > 0 ? (
             <p className="login-phone-validation__resend">
@@ -2510,37 +2628,87 @@ export function LoginPage({
     </BottomSheet>
   )
 
-  const renderRegionBottomSheet = () => (
+  const renderAddressSelectBottomSheet = ({
+    isOpen,
+    legend,
+    name,
+    options,
+    selectedValue,
+    title,
+    onClose,
+    onSelect,
+  }: {
+    isOpen: boolean
+    legend: string
+    name: string
+    options: string[]
+    selectedValue: string
+    title: string
+    onClose: () => void
+    onSelect: (option: string) => void
+  }) => (
     <BottomSheet
-      isOpen={isRegionSheetOpen}
-      onClose={() => setIsRegionSheetOpen(false)}
-      title="Selecione um Estado"
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
       containerClassName="login-page__bottom-sheet-container"
       sheetClassName="login-region-sheet"
       bodyClassName="login-region-sheet__body"
       blurBackdrop
     >
       <fieldset className="login-region-sheet__options">
-        <legend className="login-region-sheet__legend">Estado/Região</legend>
-        {brazilRegionOptions.map((option) => (
+        <legend className="login-region-sheet__legend">{legend}</legend>
+        {options.map((option) => (
           <label key={option} className="login-region-sheet__option">
             <span className="login-region-sheet__option-label">{option}</span>
             <input
               className="login-region-sheet__radio"
               type="radio"
-              name="signup-region"
+              name={name}
               value={option}
-              checked={region === option}
-              onChange={() => {
-                setRegion(option)
-                setIsRegionSheetOpen(false)
-              }}
+              checked={selectedValue === option}
+              onChange={() => onSelect(option)}
             />
           </label>
         ))}
       </fieldset>
     </BottomSheet>
   )
+
+  const renderRegionBottomSheet = () => renderAddressSelectBottomSheet({
+    isOpen: isRegionSheetOpen,
+    legend: 'Estado/Região',
+    name: 'signup-region',
+    options: brazilRegionOptions.map((option) => option.label),
+    selectedValue: region,
+    title: 'Selecione um Estado',
+    onClose: () => setIsRegionSheetOpen(false),
+    onSelect: (selectedRegion) => {
+      const regionOption = brazilRegionOptions.find((option) => option.label === selectedRegion)
+
+      if (!regionOption) return
+
+      setRegion(regionOption.label)
+      setRegionUf(regionOption.uf)
+      setIsRegionSheetOpen(false)
+      setCity('')
+      loadCityOptions(regionOption.uf, '', true)
+    },
+  })
+
+  const renderCityBottomSheet = () => renderAddressSelectBottomSheet({
+    isOpen: isCitySheetOpen,
+    legend: 'Cidade',
+    name: 'signup-city',
+    options: cityOptions,
+    selectedValue: city,
+    title: 'Selecione uma Cidade',
+    onClose: () => setIsCitySheetOpen(false),
+    onSelect: (selectedCity) => {
+      setCity(selectedCity)
+      setIsCitySheetOpen(false)
+    },
+  })
 
   const renderSignupAddress = () => (
     <section
@@ -2582,6 +2750,7 @@ export function LoginPage({
                 addressAbortRef.current?.abort()
                 addressAbortRef.current = null
                 setAddressLookupStatus('idle')
+                resetAddressDetails()
                 return
               }
 
@@ -2595,7 +2764,7 @@ export function LoginPage({
                 <div className="login-page__lookup-status" role="status">Buscando endereço...</div>
               ) : null}
 
-              <RegionSelect
+              <AddressSelect
                 id="signup-region"
                 label="Estado/Região"
                 placeholder="Insira o estado ou região"
@@ -2610,6 +2779,42 @@ export function LoginPage({
                   setIsRegionSheetOpen(true)
                 }}
               />
+              <AddressSelect
+                id="signup-city"
+                label="Cidade"
+                placeholder={
+                  !regionUf
+                    ? 'Selecione o estado primeiro'
+                    : cityLookupStatus === 'loading'
+                      ? 'Carregando cidades...'
+                      : 'Selecione a cidade'
+                }
+                value={city}
+                disabled={!regionUf || cityLookupStatus !== 'success' || cityOptions.length === 0}
+                isOpen={isCitySheetOpen}
+                onOpen={() => {
+                  if (document.activeElement instanceof HTMLElement) {
+                    document.activeElement.blur()
+                  }
+
+                  setIsCitySheetOpen(true)
+                }}
+              />
+              {cityLookupStatus === 'loading' ? (
+                <div className="login-page__lookup-status" role="status">Carregando cidades...</div>
+              ) : null}
+              {cityLookupStatus === 'error' ? (
+                <div className="login-page__lookup-status login-page__lookup-status--error" role="status">
+                  <span>{cityLookupErrorMessage}.</span>
+                  <button
+                    type="button"
+                    className="login-page__lookup-retry"
+                    onClick={() => loadCityOptions(regionUf, '', true)}
+                  >
+                    Tentar novamente
+                  </button>
+                </div>
+              ) : null}
               <LoginInput
                 id="signup-neighborhood"
                 label="Bairro"
@@ -3118,6 +3323,7 @@ export function LoginPage({
       </div>
       {displayedMode === 'signup' && signupStep === 'personal' ? renderPhoneValidationBottomSheet() : null}
       {displayedMode === 'signup' && signupStep === 'address' ? renderRegionBottomSheet() : null}
+      {displayedMode === 'signup' && signupStep === 'address' ? renderCityBottomSheet() : null}
       {displayedMode === 'signup' && signupStep === 'verification' && verificationStage === 'limits'
         ? renderLimitsCustomBottomSheet()
         : null}

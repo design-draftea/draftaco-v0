@@ -16,8 +16,7 @@ import { homeCompetitionHighlight } from '../../data/homeProducts'
 import { getTeamLogo } from '../../data/teamLogos'
 import {
   createBetslipSelection,
-  getBetslipEventId,
-  getBetslipMarketGroupId,
+  getMatchOddBetslipKey,
   getPlayerPropBetslipKey,
   normalizeBetslipIdPart,
 } from '../../hooks/betslipUtils'
@@ -1555,13 +1554,16 @@ export function HomeCompetitionSection({
     marketLabel,
     outcomeId,
   }) => {
-    const eventId = getBetslipEventId({
+    const betslipKey = getMatchOddBetslipKey({
       sport: match.sport,
       homeTeam: match.homeTeam,
       awayTeam: match.awayTeam,
-      fallbackId: match.id,
+      marketId,
+      outcomeId,
+      label: odd.label,
     })
-    const oddGroupId = getBetslipMarketGroupId({ eventId, marketId })
+    const eventId = betslipKey.eventId
+    const oddGroupId = betslipKey.groupId
     const eventTimeLabel = match.live
       ? liveTimes[match.id] ?? match.liveClock ?? match.footerLabel
       : match.footerLabel
@@ -1585,13 +1587,13 @@ export function HomeCompetitionSection({
       <HomeCompetitionOddButton
         odd={odd}
         {...getOddButtonProps(
-          `${oddGroupId}:${outcomeId}`,
+          `${oddGroupId}:${betslipKey.outcomeId}`,
           oddGroupId,
           '',
           createBetslipSelection({
             eventId,
-            marketId,
-            outcomeId,
+            marketId: betslipKey.marketId,
+            outcomeId: betslipKey.outcomeId,
             label: odd.label,
             odd: odd.value,
             marketLabel,

@@ -17,6 +17,8 @@ import {
   createBetslipSelection,
   getBetslipEventId,
   getBetslipMarketGroupId,
+  getMatchOddBetslipKey,
+  type BetslipPromoVariant,
   type BetslipSelection,
 } from '../../hooks/betslipUtils'
 import { useBetslip } from '../../hooks/useBetslip'
@@ -90,6 +92,7 @@ interface BannerOddSelectionContext {
   playerName?: string
   selectionTeamName?: string
   selectionIcon?: string
+  promoVariant?: BetslipPromoVariant
 }
 
 interface MarketTeamEmblemProps {
@@ -946,17 +949,24 @@ const getBannerMarketInfo = (banner: Banner, groupId: string) => {
     }
   }
 
-  if (groupId === 'total-escanteios') {
+  if (groupId.endsWith('total-escanteios')) {
     return {
       marketId: groupId,
       marketLabel: 'Total de Escanteios',
     }
   }
 
-  if (groupId === 'total-gols') {
+  if (groupId.endsWith('total-gols')) {
     return {
       marketId: groupId,
       marketLabel: 'Total de Gols',
+    }
+  }
+
+  if (groupId.endsWith('total-pontos')) {
+    return {
+      marketId: groupId,
+      marketLabel: 'Total de Pontos',
     }
   }
 
@@ -1453,34 +1463,49 @@ export function BannerCarousel({
     const labelText = getReactNodeText(label)
     const playerName = selectionContext.playerName ?? aumentadaDetails?.playerName
     const selectionLabel = selectionContext.selectionLabel ?? playerName ?? labelText
+    const sport = getBannerSport(banner)
     const eventTimeLabel = getBannerLiveTimeLabel(banner, liveMatchTime, marketLiveTimes)
     const selectionType = selectionContext.selectionType
       ?? (aumentadaDetails
         ? 'player'
         : selectionLabel === homeTeam || selectionLabel === awayTeam ? 'team' : 'market')
-
-    return getOddButtonProps(
-      `banner:${banner.id}:${marketId}:${outcomeId}`,
-      `banner:${banner.id}:${marketId}`,
-      className,
-      createBetslipSelection({
-        eventId: getBannerBetslipEventId(banner),
+    const matchOddKey = selectionType === 'player'
+      ? null
+      : getMatchOddBetslipKey({
+        sport,
+        homeTeam,
+        awayTeam,
         marketId,
         outcomeId,
+        label,
+      })
+    const eventId = matchOddKey?.eventId ?? getBannerBetslipEventId(banner)
+    const betslipMarketId = matchOddKey?.marketId ?? marketId
+    const betslipOutcomeId = matchOddKey?.outcomeId ?? outcomeId
+    const betslipGroupId = matchOddKey?.groupId ?? `banner:${banner.id}:${marketId}`
+
+    return getOddButtonProps(
+      `${betslipGroupId}:${betslipOutcomeId}`,
+      betslipGroupId,
+      className,
+      createBetslipSelection({
+        eventId,
+        marketId: betslipMarketId,
+        outcomeId: betslipOutcomeId,
         label: aumentadaDetails?.label ?? label,
         selectionLabel,
         odd: value,
         marketLabel,
         eventStatus: isLive ? 'live' : 'prematch',
         selectionType,
-        sport: getBannerSport(banner),
+        sport,
         homeTeam,
         awayTeam,
         eventName: getBannerEventName(banner, matchTeams),
         eventTimeLabel,
         liveClock: isLive ? eventTimeLabel : undefined,
-        homeScore: banner.tennisMatch?.player1.games ?? banner.liveMatch?.homeTeam.score,
-        awayScore: banner.tennisMatch?.player2.games ?? banner.liveMatch?.awayTeam.score,
+        homeScore: banner.tennisMatch?.player1.games ?? banner.liveMatch?.homeTeam.score ?? banner.marketBanner?.teams[0].score,
+        awayScore: banner.tennisMatch?.player2.games ?? banner.liveMatch?.awayTeam.score ?? banner.marketBanner?.teams[1].score,
         homeTeamIcon: getBannerHomeTeamIcon(banner),
         awayTeamIcon: getBannerAwayTeamIcon(banner),
         selectionIcon: selectionContext.selectionIcon ?? (aumentadaDetails ? undefined : getBannerOutcomeIcon(banner, outcomeId, label)),
@@ -1488,6 +1513,7 @@ export function BannerCarousel({
         selectionTeamName: selectionContext.selectionTeamName,
         playerImage: playerName === 'Pedro' ? pedroProps : undefined,
         badgeType: 'boost',
+        promoVariant: selectionContext.promoVariant ?? (banner.type === 'aumentada' ? 'aumentada' : undefined),
       })
     )
   }
@@ -1676,18 +1702,19 @@ export function BannerCarousel({
     odd: NonNullable<MarketBanner['odds']>[number],
     className = 'banner-live-highlight__odd-btn',
     selectionContext?: BannerOddSelectionContext
-  ) => (
-    <button
-      key={`${banner.id}:${groupId}:${odd.outcomeId}`}
-      {...getBannerOddButtonProps(banner, groupId, odd.outcomeId, className, odd.label, odd.value, selectionContext)}
-    >
-      <span className="banner-live-highlight__odd-label">
-        {odd.trend && <span className={`banner-live-highlight__trend banner-live-highlight__trend--${odd.trend}`}>{odd.trend === 'up' ? '↑' : '↓'}</span>}
-        {odd.label}
-      </span>
-      <span className="banner-live-highlight__odd-value">{odd.value}</span>
-    </button>
-  )
+  ) => {
+    const oddLabel = odd.trend ? `${getReactNodeText(odd.label)}${odd.trend === 'up' ? '+' : '-'}` : odd.label
+
+    return (
+      <button
+        key={`${banner.id}:${groupId}:${odd.outcomeId}`}
+        {...getBannerOddButtonProps(banner, groupId, odd.outcomeId, className, oddLabel, odd.value, selectionContext)}
+      >
+        <span className="banner-live-highlight__odd-label">{oddLabel}</span>
+        <span className="banner-live-highlight__odd-value">{odd.value}</span>
+      </button>
+    )
+  }
 
   const renderFootballLiveBanner = (banner: Banner & { marketBanner: NonNullable<Banner['marketBanner']> }) => {
     const { marketBanner } = banner
@@ -1748,7 +1775,17 @@ export function BannerCarousel({
                 <div className="banner-live-highlight__alternative" key={market.id}>
                   <span className="banner-live-highlight__alternative-title">{market.label}</span>
                   <div className="banner-live-highlight__alternative-odds">
-                    {market.odds.map((odd) => renderFootballLiveOddButton(banner, market.id, odd, 'banner-live-highlight__odd-btn banner-live-highlight__odd-btn--small'))}
+                    {market.odds.map((odd) => renderFootballLiveOddButton(
+                      banner,
+                      market.id,
+                      odd,
+                      'banner-live-highlight__odd-btn banner-live-highlight__odd-btn--small',
+                      {
+                        marketId: market.id,
+                        marketLabel: market.label,
+                        selectionType: 'market',
+                      }
+                    ))}
                   </div>
                 </div>
               ))}

@@ -436,8 +436,8 @@ const getBasketballMarketColumns = (
 
   columns.push({
     label: 'Total',
-    homeOdd: { label: `↑ ${totalPointsLine}`, value: event.totalPointsOdds?.over ?? '1.89x' },
-    awayOdd: { label: `↓ ${totalPointsLine}`, value: event.totalPointsOdds?.under ?? '1.92x' },
+    homeOdd: { label: `${totalPointsLine}+`, value: event.totalPointsOdds?.over ?? '1.89x' },
+    awayOdd: { label: `${totalPointsLine}-`, value: event.totalPointsOdds?.under ?? '1.92x' },
   })
 
   return columns

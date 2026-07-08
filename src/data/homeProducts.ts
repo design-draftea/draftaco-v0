@@ -1209,8 +1209,8 @@ export const nbaCompetitionHighlight: HomeCompetitionHighlight = {
         },
         {
           label: 'Total',
-          homeOdd: { label: '↑ 221.5', value: '1.86x' },
-          awayOdd: { label: '↓ 221.5', value: '1.95x' },
+          homeOdd: { label: '221.5+', value: '1.86x' },
+          awayOdd: { label: '221.5-', value: '1.95x' },
         },
       ],
       odds: [
@@ -1241,8 +1241,8 @@ export const nbaCompetitionHighlight: HomeCompetitionHighlight = {
         },
         {
           label: 'Total',
-          homeOdd: { label: '↑ 212.5', value: '1.90x' },
-          awayOdd: { label: '↓ 212.5', value: '1.90x' },
+          homeOdd: { label: '212.5+', value: '1.90x' },
+          awayOdd: { label: '212.5-', value: '1.90x' },
         },
       ],
       odds: [
@@ -1273,8 +1273,8 @@ export const nbaCompetitionHighlight: HomeCompetitionHighlight = {
         },
         {
           label: 'Total',
-          homeOdd: { label: '↑ 218.5', value: '1.89x' },
-          awayOdd: { label: '↓ 218.5', value: '1.92x' },
+          homeOdd: { label: '218.5+', value: '1.89x' },
+          awayOdd: { label: '218.5-', value: '1.92x' },
         },
       ],
       odds: [

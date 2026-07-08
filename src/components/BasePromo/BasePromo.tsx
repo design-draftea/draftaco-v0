@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 import { CaretRightIcon } from '@phosphor-icons/react'
 import { createBetslipSelection, getBetslipEventId, getBetslipMarketGroupId, normalizeBetslipIdPart } from '../../hooks/betslipUtils'
 import { useOddSelection } from '../../hooks/useOddSelection'
+import {
+  createGarantidaLewandowskiSelection,
+  GARANTIDA_LEWANDOWSKI_GROUP_ID,
+} from '../../data/garantidaLewandowskiSelection'
 import iconClock from '../../assets/iconsDraftaco/iconClock.svg'
 import iconStatistic from '../../assets/iconsDraftaco/iconStatistic.svg'
 import adebayoCard from '../../assets/iconsDraftaco/AdebayoCard.png'
@@ -23,6 +27,7 @@ interface BasePromoConfig {
   matchHome: string
   matchAway: string
   matchHighlightedSide?: MatchHighlightedSide
+  eventTimeLabel: string
   value: string
   previousValue?: string
   odd: string
@@ -40,6 +45,7 @@ const promos: Record<BasePromoVariant, BasePromoConfig> = {
     market: 'Finalizações ao gol',
     matchHome: 'BAR',
     matchAway: 'INT',
+    eventTimeLabel: 'Hoje, 20:00',
     value: '0.5+',
     previousValue: '3.5',
     odd: '1.85x',
@@ -56,6 +62,7 @@ const promos: Record<BasePromoVariant, BasePromoConfig> = {
     matchHome: 'CHI',
     matchAway: 'MIA',
     matchHighlightedSide: 'away',
+    eventTimeLabel: 'Hoje, 20:00',
     value: '11.5+',
     odd: '1.85x',
     playerImage: adebayoCard,
@@ -109,23 +116,30 @@ export function BasePromo({ variant = 'garantida' }: BasePromoProps) {
   const [now, setNow] = useState(() => Date.now())
   const getOddButtonProps = useOddSelection('base-promo__odd')
   // The boosted promo odd, added to / removed from the real betslip on tap.
-  const [oddSelection] = useState(() => createBetslipSelection({
-    eventId: getBetslipEventId({ sport: promo.sport, homeTeam: promo.matchHome, awayTeam: promo.matchAway }),
-    marketId: `${promo.variant}-${normalizeBetslipIdPart(promo.market)}-${normalizeBetslipIdPart(promo.playerName)}`,
-    outcomeId: normalizeBetslipIdPart(promo.value),
-    label: promo.value,
-    odd: promo.odd,
-    marketLabel: promo.market,
-    selectionType: 'player',
-    sport: promo.sport,
-    playerName: promo.playerName,
-    selectionTeamName: (promo.matchHighlightedSide ?? 'home') === 'away' ? promo.matchAway : promo.matchHome,
-    eventName: `${promo.matchHome} vs ${promo.matchAway}`,
-    badgeType: 'boost',
-  }))
+  const [oddSelection] = useState(() => (
+    promo.variant === 'garantida'
+      ? createGarantidaLewandowskiSelection()
+      : createBetslipSelection({
+        eventId: getBetslipEventId({ sport: promo.sport, homeTeam: promo.matchHome, awayTeam: promo.matchAway }),
+        marketId: `${promo.variant}-${normalizeBetslipIdPart(promo.market)}-${normalizeBetslipIdPart(promo.playerName)}`,
+        outcomeId: normalizeBetslipIdPart(promo.value),
+        label: promo.value,
+        odd: promo.odd,
+        marketLabel: promo.market,
+        selectionType: 'player',
+        sport: promo.sport,
+        playerName: promo.playerName,
+        selectionTeamName: (promo.matchHighlightedSide ?? 'home') === 'away' ? promo.matchAway : promo.matchHome,
+        eventName: `${promo.matchHome} vs ${promo.matchAway}`,
+        eventTimeLabel: promo.eventTimeLabel,
+        playerImage: promo.playerImage,
+        badgeType: 'boost',
+        promoVariant: promo.variant,
+      })
+  ))
   const oddGroupId = oddSelection
     ? getBetslipMarketGroupId({ eventId: oddSelection.eventId, marketId: oddSelection.marketId })
-    : `base-promo-${promo.variant}`
+    : promo.variant === 'garantida' ? GARANTIDA_LEWANDOWSKI_GROUP_ID : `base-promo-${promo.variant}`
   const oddButtonProps = getOddButtonProps(
     oddSelection?.id ?? `base-promo-${promo.variant}`,
     oddGroupId,

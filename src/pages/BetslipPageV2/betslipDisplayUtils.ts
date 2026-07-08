@@ -31,24 +31,147 @@ export interface SelectionAvatarDrawContext {
 }
 
 const marketTranslations: Record<string, string> = {
-  'ambos-marcam': 'AMBOS ANOTAN',
-  'assistencias-do-jogador': 'ASISTENCIAS',
-  'assistencias-jogador': 'ASISTENCIAS',
-  'cartoes': 'TARJETAS',
-  'dupla-chance': 'DOBLE OPORTUNIDAD',
-  'escanteios': 'CORNERS',
+  'ambos-marcam': 'AMBOS MARCAM',
+  assistencias: 'ASSISTÊNCIAS',
+  'assistencias-do-jogador': 'ASSISTÊNCIAS',
+  'assistencias-jogador': 'ASSISTÊNCIAS',
+  'cartoes': 'CARTÕES',
+  'dupla-chance': 'DUPLA CHANCE',
+  'escanteios': 'ESCANTEIOS',
+  'finalizacao-ao-gol': 'FINALIZAÇÃO AO GOL',
+  'finalizacao-gol': 'FINALIZAÇÃO AO GOL',
+  'finalizacao-total': 'FINALIZAÇÃO TOTAL',
+  'finalizacoes-ao-gol': 'FINALIZAÇÕES AO GOL',
+  gols: 'GOLS',
   'handicap': 'HANDICAP',
+  'pontos-jogador': 'PONTOS',
+  rebotes: 'REBOTES',
   'rebotes-do-jogador': 'REBOTES',
   'rebotes-jogador': 'REBOTES',
   'resultado-final': 'RESULTADO FINAL',
   'resultado-final-pagamento-antecipado': 'RESULTADO FINAL',
-  'total-de-cartoes': 'TOTAL DE TARJETAS',
-  'total-de-escanteios': 'TOTAL DE CORNERS',
-  'total-de-gols': 'TOTAL DE GOLES',
-  'total-de-pontos': 'TOTAL DE PUNTOS',
-  'total-gols': 'TOTAL DE GOLES',
-  'total-pontos': 'TOTAL DE PUNTOS',
-  'vencedor': 'GANADOR',
+  'total-de-cartoes': 'TOTAL DE CARTÕES',
+  'total-de-escanteios': 'TOTAL DE ESCANTEIOS',
+  'total-de-gols': 'TOTAL DE GOLS',
+  'total-de-pontos': 'TOTAL DE PONTOS',
+  'total-escanteios': 'TOTAL DE ESCANTEIOS',
+  'total-gols': 'TOTAL DE GOLS',
+  'total-pontos': 'TOTAL DE PONTOS',
+  vencer: 'VENCER',
+  'vencedor': 'VENCEDOR',
+}
+
+const eventTotalMarketLabels = {
+  corners: 'TOTAL DE ESCANTEIOS',
+  goals: 'TOTAL DE GOLS',
+  points: 'TOTAL DE PONTOS',
+} as const
+
+type EventTotalMarketKind = keyof typeof eventTotalMarketLabels
+
+const getEventTotalMarketKindFromKey = (value: string): EventTotalMarketKind | null => {
+  const key = normalizeBetslipIdPart(value)
+
+  if (/(^|-)total-(de-)?(escanteios|corners)$/.test(key)) return 'corners'
+  if (/(^|-)total-(de-)?(gols|goals)$/.test(key)) return 'goals'
+  if (/(^|-)total-(de-)?(pontos|points)$/.test(key)) return 'points'
+
+  return null
+}
+
+const getSelectionEventTotalMarketKind = (selection: BetslipSelection): EventTotalMarketKind | null => (
+  [
+    selection.marketId,
+    selection.marketLabel,
+  ].map(getEventTotalMarketKindFromKey).find(Boolean) ?? null
+)
+
+const isEventTotalSelection = (selection: BetslipSelection) => (
+  getSelectionEventTotalMarketKind(selection) !== null
+)
+
+const getSelectionLineDirection = (selection: BetslipSelection) => {
+  const rawValues = [
+    selection.outcomeId,
+    selection.label,
+    selection.selectionLabel,
+  ]
+  const normalizedValues = rawValues.map(normalizeBetslipIdPart)
+
+  if (
+    rawValues.some((value) => /^\s*(?:\u2191|\+)|\+\s*$/.test(value))
+    || normalizedValues.some((value) => /(^|-)over(-|$)|(^|-)mais(-|$)|(^|-)up(-|$)/.test(value))
+  ) return '+'
+
+  if (
+    rawValues.some((value) => /^\s*(?:\u2193|-)|-\s*$/.test(value))
+    || normalizedValues.some((value) => /(^|-)under(-|$)|(^|-)menos(-|$)|(^|-)down(-|$)/.test(value))
+  ) return '-'
+
+  return ''
+}
+
+const withLineDirectionSuffix = (value: string, direction: string) => {
+  const line = value.trim().replace(/\s+/g, ' ')
+
+  if (!direction || /[+-]$/.test(line)) return line
+
+  return `${line}${direction}`
+}
+
+const hasReadableMarketLabel = (value: string) => (
+  /[\sÀ-ÿ]/.test(value.trim()) && !/[_.:]/.test(value)
+)
+
+const getPlayerMarketLabelKeys = (selection: BetslipSelection) => {
+  const keys = new Set<string>()
+
+  const addKey = (value: string | undefined) => {
+    if (!value) return
+    const key = normalizeBetslipIdPart(value)
+    if (key && key !== 'item') keys.add(key)
+  }
+
+  addKey(selection.playerName)
+  addKey(getSelectionTitle(selection))
+
+  if (selection.selectionLabel) {
+    const selectionLabelParts = selection.selectionLabel.split(/\s+/).filter(Boolean)
+    addKey(selectionLabelParts[0])
+    addKey(selectionLabelParts.slice(0, 2).join(' '))
+  }
+
+  return [...keys].sort((a, b) => b.length - a.length)
+}
+
+const stripPlayerKeyFromMarketKey = (marketKey: string, selection: BetslipSelection) => {
+  if (selection.selectionType !== 'player') return marketKey
+
+  return getPlayerMarketLabelKeys(selection).reduce((currentKey, playerKey) => (
+    currentKey.endsWith(`-${playerKey}`) ? currentKey.slice(0, -playerKey.length - 1) : currentKey
+  ), marketKey)
+}
+
+const humanizeMarketKey = (marketKey: string) => (
+  marketKey
+    .split('-')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+    .toUpperCase()
+)
+
+const getNormalizedMarketLabel = (selection: BetslipSelection) => {
+  const rawLabel = (selection.marketLabel || selection.marketId || selection.label || 'Mercado').trim()
+  const rawKey = normalizeBetslipIdPart(rawLabel)
+  const marketKey = stripPlayerKeyFromMarketKey(rawKey, selection)
+
+  if (marketTranslations[marketKey]) return marketTranslations[marketKey]
+  if (selection.selectionType !== 'player' && marketTranslations[rawKey]) return marketTranslations[rawKey]
+  if (hasReadableMarketLabel(rawLabel) && normalizeBetslipIdPart(rawLabel) === marketKey) return rawLabel.toUpperCase()
+  if (selection.selectionType !== 'player' && hasReadableMarketLabel(rawLabel)) return rawLabel.toUpperCase()
+
+  return humanizeMarketKey(marketKey)
 }
 
 export const formatMoney = (cents: number, options?: { compactWhole?: boolean }) => {
@@ -61,7 +184,10 @@ export const formatMoney = (cents: number, options?: { compactWhole?: boolean })
   })}`
 }
 
-export const formatStakeInputValue = (cents: number) => String(Math.max(0, Math.floor(cents / 100)))
+export const formatStakeInputValue = (cents: number) => (Math.max(0, cents) / 100).toLocaleString('pt-BR', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
 
 export const normalizeSelectionLineValue = (value: string) => (
   value
@@ -69,11 +195,13 @@ export const normalizeSelectionLineValue = (value: string) => (
     .split(/\s*(?:→|»)\s*/)
     .pop()
     ?.trim()
-    .replace(/^mais\s+de\s+(\d+(?:[,.]\d+)?)(.*)$/i, '↑ $1$2')
-    .replace(/^menos\s+de\s+(\d+(?:[,.]\d+)?)(.*)$/i, '↓ $1$2')
-    .replace(/^over\s+(\d+(?:[,.]\d+)?)(.*)$/i, '↑ $1$2')
-    .replace(/^under\s+(\d+(?:[,.]\d+)?)(.*)$/i, '↓ $1$2')
-    .replace(/\b(\d+)\.0\+/g, '$1+') ?? ''
+    .replace(/^mais\s+de\s+(.+)$/i, '$1+')
+    .replace(/^menos\s+de\s+(.+)$/i, '$1-')
+    .replace(/^over\s+(.+)$/i, '$1+')
+    .replace(/^under\s+(.+)$/i, '$1-')
+    .replace(/^\u2191\s*(.+)$/i, '$1+')
+    .replace(/^\u2193\s*(.+)$/i, '$1-')
+    .replace(/\b(\d+)\.0([+-])/g, '$1$2') ?? ''
 )
 
 export const getSelectionEventName = (selection: BetslipSelection) => {
@@ -127,7 +255,7 @@ const getAbbreviatedEventMatchup = (selection: BetslipSelection) => {
 
 export const getSelectionTimeLabel = (selection: BetslipSelection) => {
   if (selection.eventStatus === 'live') return selection.liveClock ?? selection.eventTimeLabel ?? '18:00'
-  return selection.eventTimeLabel ?? 'dd/mes (20:00)'
+  return selection.eventTimeLabel ?? 'Hoje (20:00)'
 }
 
 export const getSelectionEventTeams = (selection: BetslipSelection) => {
@@ -214,6 +342,10 @@ export const getSelectionTitle = (selection: BetslipSelection) => {
   }
 
   const rawTitle = normalizeSelectionLineValue(selection.selectionLabel)
+  if (isEventTotalSelection(selection)) {
+    return withLineDirectionSuffix(rawTitle, getSelectionLineDirection(selection))
+  }
+
   const titleKey = normalizeBetslipIdPart(rawTitle)
   const labelKey = normalizeBetslipIdPart(selection.label)
   const { homeTeam, awayTeam } = getSelectionEventTeams(selection)
@@ -247,8 +379,10 @@ export const getPlayerSelectionValueLabel = (selection: BetslipSelection) => {
 }
 
 export const getSelectionMarketLabel = (selection: BetslipSelection) => {
-  const normalizedMarket = normalizeBetslipIdPart(selection.marketLabel || selection.marketId || selection.label)
-  return marketTranslations[normalizedMarket] ?? (selection.marketLabel || selection.marketId || 'Mercado').toUpperCase()
+  const eventTotalMarketKind = getSelectionEventTotalMarketKind(selection)
+  if (eventTotalMarketKind) return eventTotalMarketLabels[eventTotalMarketKind]
+
+  return getNormalizedMarketLabel(selection)
 }
 
 export const getSelectionTeamSuffix = (selection: BetslipSelection) => {
@@ -276,7 +410,7 @@ export const isDrawSelection = (selection: BetslipSelection) => {
 }
 
 export const getSelectionAvatarDrawContext = (selection: BetslipSelection): SelectionAvatarDrawContext | null => {
-  if (selection.selectionType === 'player' || !isDrawSelection(selection)) return null
+  if (selection.selectionType === 'player' || (!isDrawSelection(selection) && !isEventTotalSelection(selection))) return null
 
   const { homeTeam, awayTeam } = getSelectionEventTeams(selection)
   if (!homeTeam || !awayTeam) return null
@@ -290,7 +424,7 @@ export const getSelectionAvatarDrawContext = (selection: BetslipSelection): Sele
 }
 
 export const getSelectionAvatarTeamContext = (selection: BetslipSelection): SelectionAvatarTeamContext | null => {
-  if (selection.selectionType === 'player' || isDrawSelection(selection)) return null
+  if (selection.selectionType === 'player' || isDrawSelection(selection) || isEventTotalSelection(selection)) return null
 
   const selectionTitle = getSelectionTitle(selection)
   const createContext = (
@@ -352,12 +486,14 @@ const getSelectionBadge = (selection: BetslipSelection) => {
     'resultado-final',
     'resultado-final-pagamento-antecipado',
     '1x2',
+    'vencer',
     'vencedor',
     'vencedor-pagamento-antecipado',
   ].includes(marketKey) || [
     'resultado-final',
     'resultado-final-pagamento-antecipado',
     '1x2',
+    'vencer',
     'vencedor',
     'vencedor-pagamento-antecipado',
   ].includes(marketIdKey)
@@ -381,8 +517,8 @@ export const getSelectionBadges = (selection: BetslipSelection) => {
   const marketKey = normalizeBetslipIdPart(selection.marketLabel || selection.marketId)
   const marketIdKey = normalizeBetslipIdPart(selection.marketId)
   const isFootballSelection = ['futebol', 'football', 'soccer'].some((key) => sportKey.includes(key))
-  const isResultMarket = ['resultado-final', '1x2', 'vencedor'].includes(marketKey)
-    || ['resultado-final', '1x2', 'vencedor'].includes(marketIdKey)
+  const isResultMarket = ['resultado-final', '1x2', 'vencer', 'vencedor'].includes(marketKey)
+    || ['resultado-final', '1x2', 'vencer', 'vencedor'].includes(marketIdKey)
   const badgeLabels = [
     ...(selection.marketTags ?? []),
     isFootballSelection && isResultMarket ? '90’' : '',

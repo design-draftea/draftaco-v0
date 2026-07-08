@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react'
+import { getTeamAbbreviationAlias } from '../utils/teamAbbreviations'
 
 export type BetslipEventStatus = 'prematch' | 'live'
 export type BetslipSelectionType = 'team' | 'player' | 'market'
 export type BetslipBadgeType = 'boost' | 'substitution'
+export type BetslipPromoVariant = 'garantida' | 'aumentada' | 'super-aumentada'
 
 export const BETSLIP_ODD_INTERACTION_EVENT = 'betslip:odd-interaction'
 
@@ -37,6 +39,7 @@ export interface BetslipSelection {
   playerImage?: string
   badgeType?: BetslipBadgeType
   marketTags?: string[]
+  promoVariant?: BetslipPromoVariant
   comboId?: string
   comboTitle?: string
   comboTypeLabel?: string
@@ -75,6 +78,7 @@ export interface BetslipSelectionInput {
   playerImage?: string
   badgeType?: BetslipBadgeType
   marketTags?: string[]
+  promoVariant?: BetslipPromoVariant
   comboId?: string
   comboTitle?: string
   comboTypeLabel?: string
@@ -93,6 +97,18 @@ export interface BetslipSummary {
   stakeLabel: string
   potentialWin: number
   potentialWinLabel: string
+}
+
+export const isSameBetslipSelection = (
+  first: BetslipSelection | undefined,
+  second: BetslipSelection | undefined
+) => {
+  if (!first || !second) return false
+  if (first.id === second.id) return true
+
+  return first.eventId === second.eventId
+    && first.marketId === second.marketId
+    && first.outcomeId === second.outcomeId
 }
 
 export const BETSLIP_STAKE = 10
@@ -134,6 +150,13 @@ export const normalizeBetslipIdPart = (value: string) => (
     .replace(/^-+|-+$/g, '') || 'item'
 )
 
+export const getCanonicalBetslipTeamId = (teamName?: string) => {
+  if (!teamName) return ''
+
+  const alias = getTeamAbbreviationAlias(teamName)
+  return normalizeBetslipIdPart(alias || teamName)
+}
+
 export const getBetslipMarketGroupId = ({
   eventId,
   marketId,
@@ -153,8 +176,8 @@ export const getBetslipEventId = ({
   awayTeam?: string
   fallbackId?: string
 }) => {
-  const homePart = homeTeam ? normalizeBetslipIdPart(homeTeam) : ''
-  const awayPart = awayTeam ? normalizeBetslipIdPart(awayTeam) : ''
+  const homePart = getCanonicalBetslipTeamId(homeTeam)
+  const awayPart = getCanonicalBetslipTeamId(awayTeam)
 
   if (homePart || awayPart) {
     return [
@@ -168,6 +191,185 @@ export const getBetslipEventId = ({
     normalizeBetslipIdPart(sport),
     normalizeBetslipIdPart(fallbackId ?? 'event'),
   ].join(':')
+}
+
+const resultMarketIds = new Set([
+  '1x2',
+  'partidas',
+  'resultado',
+  'resultado-final',
+])
+
+const winnerMarketIds = new Set([
+  'principais',
+  'vencedor',
+  'vencer',
+])
+
+const getCanonicalMatchMarketId = (marketId: string, sport: string) => {
+  const normalizedMarketId = normalizeBetslipIdPart(marketId)
+
+  if (normalizedMarketId === 'q3-total' || normalizedMarketId === 'q4-total') {
+    return normalizedMarketId
+  }
+
+  if (resultMarketIds.has(normalizedMarketId)) return sport === 'basquete' ? 'vencedor' : 'resultado-final'
+  if (winnerMarketIds.has(normalizedMarketId) || /(^|-)vencer$/.test(normalizedMarketId)) return 'vencedor'
+  if (normalizedMarketId === 'handicap' || /(^|-)handicap$/.test(normalizedMarketId)) return 'handicap'
+  if (normalizedMarketId === 'total' || /(^|-)total$/.test(normalizedMarketId)) {
+    return sport === 'basquete' ? 'total-pontos' : normalizedMarketId
+  }
+  if (normalizedMarketId === 'total-de-pontos') return 'total-pontos'
+  if (normalizedMarketId === 'total-de-gols') return 'total-gols'
+  if (normalizedMarketId === 'total-escanteios' || normalizedMarketId === 'total-de-escanteios') return 'escanteios'
+
+  return normalizedMarketId
+}
+
+const normalizeOutcomeText = (value: ReactNode) => normalizeBetslipIdPart(getNodeText(value))
+
+const getOutcomeNumberLine = (value: ReactNode) => {
+  const match = getNodeText(value).match(/[+-]?\d+(?:[.,]\d+)?/)
+  return match ? match[0].replace(',', '.') : ''
+}
+
+const getSignedLineId = (value: ReactNode) => {
+  const line = getOutcomeNumberLine(value)
+  if (!line) return ''
+
+  if (line.startsWith('+')) return `plus-${normalizeBetslipIdPart(line.slice(1))}`
+  if (line.startsWith('-')) return `minus-${normalizeBetslipIdPart(line.slice(1))}`
+
+  const text = getNodeText(value)
+  if (/\s\+\d|^\+\d/.test(text)) return `plus-${normalizeBetslipIdPart(line)}`
+  if (/\s-\d|^-\d/.test(text)) return `minus-${normalizeBetslipIdPart(line)}`
+
+  return normalizeBetslipIdPart(line)
+}
+
+const getSideOutcomeId = ({
+  outcomeId,
+  label,
+  homeTeam,
+  awayTeam,
+}: {
+  outcomeId: string
+  label: ReactNode
+  homeTeam?: string
+  awayTeam?: string
+}) => {
+  const normalizedOutcomeId = normalizeBetslipIdPart(outcomeId)
+  const normalizedLabel = normalizeOutcomeText(label)
+  const homeId = getCanonicalBetslipTeamId(homeTeam)
+  const awayId = getCanonicalBetslipTeamId(awayTeam)
+
+  if (normalizedOutcomeId === 'home' || normalizedOutcomeId.startsWith('home-')) return 'home'
+  if (normalizedOutcomeId === 'away' || normalizedOutcomeId.startsWith('away-')) return 'away'
+  if (normalizedOutcomeId === 'player-1') return 'home'
+  if (normalizedOutcomeId === 'player-2') return 'away'
+  if (normalizedOutcomeId === 'draw' || normalizedOutcomeId === 'empate') return 'draw'
+  if (normalizedLabel === 'empate' || normalizedLabel === 'draw' || normalizedLabel === 'x') return 'draw'
+  if (homeId && getCanonicalBetslipTeamId(getNodeText(label)) === homeId) return 'home'
+  if (awayId && getCanonicalBetslipTeamId(getNodeText(label)) === awayId) return 'away'
+  if (homeId && normalizedLabel.startsWith(`${homeId}-`)) return 'home'
+  if (awayId && normalizedLabel.startsWith(`${awayId}-`)) return 'away'
+
+  return ''
+}
+
+const getDirectionOutcomeId = ({
+  outcomeId,
+  label,
+}: {
+  outcomeId: string
+  label: ReactNode
+}) => {
+  const normalizedOutcomeId = normalizeBetslipIdPart(outcomeId)
+  const normalizedLabel = normalizeOutcomeText(label)
+  const rawLabel = getNodeText(label).trim()
+  const line = getOutcomeNumberLine(label)
+  const lineId = line ? normalizeBetslipIdPart(line) : ''
+  const isOver = /(^|-)over(-|$)|(^|-)mais(-|$)|(^|-)up(-|$)/.test(normalizedOutcomeId)
+    || /(^|-)over(-|$)|(^|-)mais(-|$)/.test(normalizedLabel)
+    || /^\s*\u2191/.test(rawLabel)
+    || /^\+/.test(rawLabel)
+    || /\+$/.test(rawLabel)
+  const isUnder = /(^|-)under(-|$)|(^|-)menos(-|$)|(^|-)down(-|$)/.test(normalizedOutcomeId)
+    || /(^|-)under(-|$)|(^|-)menos(-|$)/.test(normalizedLabel)
+    || /^\s*\u2193/.test(rawLabel)
+    || /^-/.test(rawLabel)
+    || /-$/.test(rawLabel)
+
+  if (isOver) return lineId ? `over-${lineId}` : 'over'
+  if (isUnder) return lineId ? `under-${lineId}` : 'under'
+
+  return ''
+}
+
+const getCanonicalMatchOutcomeId = ({
+  marketId,
+  outcomeId,
+  label,
+  homeTeam,
+  awayTeam,
+}: {
+  marketId: string
+  outcomeId: string
+  label: ReactNode
+  homeTeam?: string
+  awayTeam?: string
+}) => {
+  const normalizedOutcomeId = normalizeBetslipIdPart(outcomeId)
+
+  if (marketId === 'resultado-final' || marketId === 'vencedor') {
+    return getSideOutcomeId({ outcomeId, label, homeTeam, awayTeam }) || normalizedOutcomeId
+  }
+
+  if (marketId === 'total-gols' || marketId === 'total-pontos' || marketId === 'q3-total' || marketId === 'q4-total' || marketId === 'escanteios') {
+    return getDirectionOutcomeId({ outcomeId, label }) || normalizedOutcomeId
+  }
+
+  if (marketId === 'handicap') {
+    const side = getSideOutcomeId({ outcomeId, label, homeTeam, awayTeam })
+    const line = getSignedLineId(label)
+
+    return [side || normalizedOutcomeId, line].filter(Boolean).join('-')
+  }
+
+  return normalizedOutcomeId
+}
+
+export const getMatchOddBetslipKey = ({
+  sport,
+  homeTeam,
+  awayTeam,
+  marketId,
+  outcomeId,
+  label,
+}: {
+  sport: string
+  homeTeam?: string
+  awayTeam?: string
+  marketId: string
+  outcomeId: string
+  label: ReactNode
+}) => {
+  const eventId = getBetslipEventId({ sport, homeTeam, awayTeam })
+  const canonicalMarketId = getCanonicalMatchMarketId(marketId, sport)
+  const canonicalOutcomeId = getCanonicalMatchOutcomeId({
+    marketId: canonicalMarketId,
+    outcomeId,
+    label,
+    homeTeam,
+    awayTeam,
+  })
+
+  return {
+    eventId,
+    marketId: canonicalMarketId,
+    outcomeId: canonicalOutcomeId,
+    groupId: getBetslipMarketGroupId({ eventId, marketId: canonicalMarketId }),
+  }
 }
 
 // Canonical betslip key for a player-prop odd, shared by every screen (sport,
@@ -292,6 +494,7 @@ export const createBetslipSelection = ({
   playerImage,
   badgeType,
   marketTags,
+  promoVariant,
   comboId,
   comboTitle,
   comboTypeLabel,
@@ -351,6 +554,7 @@ export const createBetslipSelection = ({
     playerImage,
     badgeType,
     marketTags,
+    promoVariant,
     comboId: normalizedComboId,
     comboTitle,
     comboTypeLabel,

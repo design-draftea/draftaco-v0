@@ -24,7 +24,7 @@ import {
   type TeamPlayerProfile,
 } from '../PreMatchSection/PreMatchSection'
 import { useOddSelection } from '../../hooks/useOddSelection'
-import { createBetslipSelection, getBetslipEventId, getBetslipMarketGroupId } from '../../hooks/betslipUtils'
+import { createBetslipSelection, getBetslipEventId, getMatchOddBetslipKey } from '../../hooks/betslipUtils'
 import '../LiveSection/LiveSection.css'
 
 export interface LiveMatchCardMatch {
@@ -764,7 +764,6 @@ export function LiveMatchCard({
       awayScore: match.awayTeam.score,
     }))
     : []
-  const oddGroupId = getBetslipMarketGroupId({ eventId, marketId: activeMarket })
   const marketLabel = liveMarketLabels[activeMarket]
   const getMatchSelectionIcon = (outcomeId: string, label: ReactNode) => {
     if (outcomeId.startsWith('home') || label === match.homeTeam.name) return homeTeamIcon
@@ -782,14 +781,23 @@ export function LiveMatchCard({
       }
     }
 
+    const betslipKey = getMatchOddBetslipKey({
+      sport,
+      homeTeam: match.homeTeam.name,
+      awayTeam: match.awayTeam.name,
+      marketId: activeMarket,
+      outcomeId,
+      label,
+    })
+
     return getOddButtonProps(
-      `${oddGroupId}:${outcomeId}`,
-      oddGroupId,
+      `${betslipKey.groupId}:${betslipKey.outcomeId}`,
+      betslipKey.groupId,
       'live-section__odd-btn',
       createBetslipSelection({
         eventId,
-        marketId: activeMarket,
-        outcomeId,
+        marketId: betslipKey.marketId,
+        outcomeId: betslipKey.outcomeId,
         label,
         odd: value,
         marketLabel,

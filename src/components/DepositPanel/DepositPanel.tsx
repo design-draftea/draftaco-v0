@@ -740,8 +740,19 @@ export function DepositPanel({
                     </p>
                   </section>
 
-                  <button type="button" className="deposit-panel__pix-copy-button" onClick={handleCopyPixCode}>
+                  <button
+                    type="button"
+                    className="deposit-panel__pix-action-button deposit-panel__pix-action-button--primary"
+                    onClick={handleCopyPixCode}
+                  >
                     Copiar código Pix
+                  </button>
+
+                  <button
+                    type="button"
+                    className="deposit-panel__pix-action-button deposit-panel__pix-action-button--secondary"
+                  >
+                    Abrir aplicativo do banco
                   </button>
 
                   <div className="deposit-panel__pix-divider" />

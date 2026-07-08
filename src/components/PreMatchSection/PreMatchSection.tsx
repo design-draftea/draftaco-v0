@@ -3,7 +3,7 @@ import { CaretRightIcon, CaretUpIcon } from '@phosphor-icons/react'
 import './PreMatchSection.css'
 import { getTeamLogo } from '../../data/teamLogos'
 import { useHomeMarketStickyState } from '../../hooks/useHomeMarketStickyVisible'
-import { createBetslipSelection, getBetslipEventId, getBetslipMarketGroupId, getPlayerPropBetslipKey } from '../../hooks/betslipUtils'
+import { createBetslipSelection, getBetslipEventId, getMatchOddBetslipKey, getPlayerPropBetslipKey } from '../../hooks/betslipUtils'
 import { useOddSelection } from '../../hooks/useOddSelection'
 import { useSportsDbTeamLogo } from '../../hooks/useSportsDbTeamLogo'
 import { useSlidingActiveIndicator } from '../../hooks/useSlidingActiveIndicator'
@@ -2543,37 +2543,47 @@ export function PreMatchSection({
                           eventTimeLabel: match.dateTime,
                         }))
                         : []
-                      const oddGroupId = getBetslipMarketGroupId({ eventId, marketId: activeMarket })
-                      const renderOddButton = (outcomeId: string, label: ReactNode, value: ReactNode) => (
-                        <button
-                          {...(disableInteractions
-                            ? getDisabledOddButtonProps()
-                            : getOddButtonProps(
-                                `${oddGroupId}:${outcomeId}`,
-                                oddGroupId,
-                                'prematch-section__odd-btn',
-                                createBetslipSelection({
-                                  eventId,
-                                  marketId: activeMarket,
-                                  outcomeId,
-                                  label,
-                                  odd: value,
-                                  marketLabel,
-                                  eventStatus: 'prematch',
-                                  sport: league.sport,
-                                  leagueId: league.id,
-                                  leagueName: league.name,
-                                  homeTeam: match.homeTeam.name,
-                                  awayTeam: match.awayTeam.name,
-                                  eventTimeLabel: match.dateTime,
-                                  badgeType: 'boost',
-                                })
-                              ))}
-                        >
-                          <span className="prematch-section__odd-team">{label}</span>
-                          <span className="prematch-section__odd-value">{value}</span>
-                        </button>
-                      )
+                      const renderOddButton = (outcomeId: string, label: ReactNode, value: ReactNode) => {
+                        const betslipKey = getMatchOddBetslipKey({
+                          sport: league.sport,
+                          homeTeam: match.homeTeam.name,
+                          awayTeam: match.awayTeam.name,
+                          marketId: activeMarket,
+                          outcomeId,
+                          label,
+                        })
+
+                        return (
+                          <button
+                            {...(disableInteractions
+                              ? getDisabledOddButtonProps()
+                              : getOddButtonProps(
+                                  `${betslipKey.groupId}:${betslipKey.outcomeId}`,
+                                  betslipKey.groupId,
+                                  'prematch-section__odd-btn',
+                                  createBetslipSelection({
+                                    eventId,
+                                    marketId: betslipKey.marketId,
+                                    outcomeId: betslipKey.outcomeId,
+                                    label,
+                                    odd: value,
+                                    marketLabel,
+                                    eventStatus: 'prematch',
+                                    sport: league.sport,
+                                    leagueId: league.id,
+                                    leagueName: league.name,
+                                    homeTeam: match.homeTeam.name,
+                                    awayTeam: match.awayTeam.name,
+                                    eventTimeLabel: match.dateTime,
+                                    badgeType: 'boost',
+                                  })
+                                ))}
+                          >
+                            <span className="prematch-section__odd-team">{label}</span>
+                            <span className="prematch-section__odd-value">{value}</span>
+                          </button>
+                        )
+                      }
 
                       return (
                       <div

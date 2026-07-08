@@ -1,12 +1,19 @@
 .betslip-v2 {
+  --betslip-v2-keyboard-inset: 0px;
+  --betslip-v2-stable-height: var(--app-viewport-height);
+  --betslip-v2-viewport-top: 0px;
   position: fixed;
-  inset: 0;
+  top: var(--betslip-v2-viewport-top);
+  right: 0;
+  bottom: auto;
+  left: 0;
   z-index: 3200;
   display: flex;
   flex-direction: column;
   width: 100%;
   min-width: 320px;
-  min-height: var(--app-viewport-height);
+  height: var(--betslip-v2-stable-height);
+  min-height: 0;
   overflow: hidden;
   background: var(--ds-background-app, #000);
   color: var(--ds-fill-primary, #fbfbfb);
@@ -201,6 +208,26 @@
   padding: 8px 0;
 }
 
+.betslip-v2__selection-row--promo {
+  --betslip-v2-promo-gradient: linear-gradient(156deg, #f0abfc 0%, #6b47ff 100%);
+  --betslip-v2-promo-glow-rgb: 107 71 255;
+}
+
+.betslip-v2__selection-row--promo-garantida {
+  --betslip-v2-promo-gradient: linear-gradient(156deg, #f0abfc 0%, #6b47ff 100%);
+  --betslip-v2-promo-glow-rgb: 107 71 255;
+}
+
+.betslip-v2__selection-row--promo-aumentada {
+  --betslip-v2-promo-gradient: linear-gradient(186deg, #ffa34a 8.5%, #ff6b47 86%);
+  --betslip-v2-promo-glow-rgb: 255 107 71;
+}
+
+.betslip-v2__selection-row--promo-super-aumentada {
+  --betslip-v2-promo-gradient: linear-gradient(180deg, #d2ff72 0%, #56deea 100%);
+  --betslip-v2-promo-glow-rgb: 86 222 234;
+}
+
 .betslip-v2__sgp {
   width: 100%;
   padding: 8px 0;
@@ -315,6 +342,22 @@ article.betslip-v2__sgp-leg {
   color: var(--ds-fill-opacity-primary, rgb(251 251 251 / 0.32));
 }
 
+.betslip-v2__avatar--promo::before {
+  position: absolute;
+  z-index: 0;
+  inset: 4px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgb(var(--betslip-v2-promo-glow-rgb) / 0.76) 0%, rgb(var(--betslip-v2-promo-glow-rgb) / 0.32) 45%, transparent 72%);
+  content: '';
+  filter: blur(8px);
+  opacity: 0.9;
+  transform: scale(1.16);
+}
+
+.betslip-v2__avatar--promo img {
+  filter: drop-shadow(0 0 8px rgb(var(--betslip-v2-promo-glow-rgb) / 0.54));
+}
+
 .betslip-v2__avatar-versus-stack {
   position: relative;
   display: block;
@@ -426,6 +469,30 @@ article.betslip-v2__sgp-leg {
   line-height: 21px;
 }
 
+.betslip-v2__title-line .betslip-v2__promo-gradient-text {
+  background-image: var(--betslip-v2-promo-gradient);
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 6px rgb(var(--betslip-v2-promo-glow-rgb) / 0.32));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.betslip-v2__title-line .betslip-v2__player-choice--promo {
+  flex: 0 0 auto;
+}
+
+.betslip-v2__promo-value-icon {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  align-self: center;
+  margin-left: 2px;
+  filter: drop-shadow(0 0 6px rgb(var(--betslip-v2-promo-glow-rgb) / 0.52));
+  object-fit: contain;
+}
+
 .betslip-v2__event-line {
   color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
   font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
@@ -535,6 +602,15 @@ article.betslip-v2__sgp-leg {
   white-space: nowrap;
 }
 
+.betslip-v2__selection-row--promo .betslip-v2__row-odd {
+  background-image: var(--betslip-v2-promo-gradient);
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 8px rgb(var(--betslip-v2-promo-glow-rgb) / 0.48));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 .betslip-v2__sgp-match {
   display: flex;
   flex: 1 1 auto;
@@ -611,6 +687,9 @@ article.betslip-v2__sgp-leg {
   padding: 16px 12px 16px;
   border-top: 1px solid var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
   background: var(--ds-background-app, #000);
+  transform: translate3d(0, calc(var(--betslip-v2-keyboard-inset, 0px) * -1), 0);
+  transition: transform 180ms ease-out;
+  will-change: transform;
 }
 
 .betslip-v2__summary {
@@ -1039,6 +1118,7 @@ article.betslip-v2__sgp-leg {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 12px;
   opacity: 0;
   transform: translateY(2px) scale(0.92);
   pointer-events: none;
@@ -1060,6 +1140,7 @@ article.betslip-v2__sgp-leg {
 }
 
 .betslip-v2__swipe-spinner {
+  flex: 0 0 auto;
   width: 16px;
   height: 16px;
   border-radius: 999px;
@@ -1067,6 +1148,18 @@ article.betslip-v2__sgp-leg {
   mask: radial-gradient(farthest-side, transparent calc(100% - 2px), var(--ds-fill-dark, #000) calc(100% - 1.8px));
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), var(--ds-fill-dark, #000) calc(100% - 1.8px));
   animation: betslipV2SwipeSpinner 720ms linear infinite;
+}
+
+.betslip-v2__swipe-spinner-text {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .bottom-sheet__container.betslip-v2-info-sheet-container {

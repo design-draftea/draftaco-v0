@@ -30,7 +30,7 @@ import chutesIcon from '../../assets/iconsDraftaco/chutes.svg'
 import escanteiosIcon from '../../assets/iconsDraftaco/escanteios.svg'
 import chevronDown from '../../assets/iconsDraftaco/chevronDown.svg'
 import { useOddSelection } from '../../hooks/useOddSelection'
-import { createBetslipSelection, getBetslipEventId, getBetslipMarketGroupId, getPlayerPropBetslipKey } from '../../hooks/betslipUtils'
+import { createBetslipSelection, getBetslipEventId, getBetslipMarketGroupId, getMatchOddBetslipKey, getPlayerPropBetslipKey } from '../../hooks/betslipUtils'
 import { useSportsDbTeamLogo } from '../../hooks/useSportsDbTeamLogo'
 import { getTeamAbbreviation } from '../../utils/teamAbbreviations'
 import { TEAM_LOGO_FALLBACK, isTeamLogoFallback } from '../../utils/teamLogoFallback'
@@ -1827,19 +1827,27 @@ function LiveEventContent({
     labelClassName?: string,
     labelAriaLabel?: string
   ) => {
-    const groupId = getBetslipMarketGroupId({ eventId, marketId })
+    const betslipKey = getMatchOddBetslipKey({
+      sport: contentSport,
+      homeTeam: match.homeTeam.name,
+      awayTeam: match.awayTeam.name,
+      marketId,
+      outcomeId,
+      label,
+    })
+    const groupId = betslipKey.groupId
 
     return (
       <button
-        key={`${groupId}:${outcomeId}`}
+        key={`${groupId}:${betslipKey.outcomeId}`}
         {...getOddButtonProps(
-          `${groupId}:${outcomeId}`,
+          `${groupId}:${betslipKey.outcomeId}`,
           groupId,
           className,
           createBetslipSelection({
             eventId,
-            marketId,
-            outcomeId,
+            marketId: betslipKey.marketId,
+            outcomeId: betslipKey.outcomeId,
             label,
             odd,
             marketLabel: getMarketTitle(marketId),
@@ -3543,6 +3551,7 @@ type InlineOddButtonRenderer = (
   odd: ReactNode,
   className?: string,
   selectionDetails?: {
+    marketLabel?: string
     selectionLabel?: string
     selectionType?: 'team' | 'player' | 'market'
     playerName?: string
@@ -3629,6 +3638,7 @@ function LiveEventInlinePlayerPropCard({
           odd.value,
           context.className,
           {
+            marketLabel,
             selectionLabel: `${player.playerName} ${option?.label ?? odd.label}`,
             selectionType: 'player',
             playerName: player.playerName,
@@ -3819,12 +3829,24 @@ function LiveEventInlineMarkets({
     className = '',
     selectionDetails
   ) => {
-    const groupId = getBetslipMarketGroupId({ eventId, marketId })
+    const matchOddKey = selectionDetails?.selectionType === 'player'
+      ? null
+      : getMatchOddBetslipKey({
+        sport: contentSport,
+        homeTeam: match.homeTeam.name,
+        awayTeam: match.awayTeam.name,
+        marketId,
+        outcomeId,
+        label,
+      })
+    const groupId = matchOddKey?.groupId ?? getBetslipMarketGroupId({ eventId, marketId })
+    const betslipMarketId = matchOddKey?.marketId ?? marketId
+    const betslipOutcomeId = matchOddKey?.outcomeId ?? outcomeId
 
     if (!LIVE_EVENT_INLINE_ENABLE_ODD_ACTIONS) {
       return (
         <HomeCompetitionOddButton
-          key={`${groupId}:${outcomeId}`}
+          key={`${groupId}:${betslipOutcomeId}`}
           odd={{ label, value: odd }}
           className={className}
         />
@@ -3833,20 +3855,20 @@ function LiveEventInlineMarkets({
 
     return (
       <HomeCompetitionOddButton
-        key={`${groupId}:${outcomeId}`}
+        key={`${groupId}:${betslipOutcomeId}`}
         odd={{ label, value: odd }}
         disabled={false}
         {...getOddButtonProps(
-          `${groupId}:${outcomeId}`,
+          `${groupId}:${betslipOutcomeId}`,
           groupId,
           className,
           createBetslipSelection({
             eventId,
-            marketId,
-            outcomeId,
+            marketId: betslipMarketId,
+            outcomeId: betslipOutcomeId,
             label,
             odd,
-            marketLabel: getMarketTitle(marketId),
+            marketLabel: selectionDetails?.marketLabel ?? getMarketTitle(marketId),
             eventStatus: isLiveMatch ? 'live' : 'prematch',
             selectionType: selectionDetails?.selectionType,
             selectionLabel: selectionDetails?.selectionLabel,
