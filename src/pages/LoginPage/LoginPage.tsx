@@ -13,6 +13,7 @@ import iconClock from '../../assets/iconsDraftaco/iconClock.svg'
 import iconOferta from '../../assets/iconsDraftaco/iconOferta.svg'
 import iconLimiteJogoDiario from '../../assets/iconsDraftaco/iconLimiteJogoDiario.svg'
 import iconLimitePerdaDiario from '../../assets/iconsDraftaco/iconLimitePerdaDiario.svg'
+import iconLocalizacao from '../../assets/iconsDraftaco/iconLocalizacao.png'
 import iconPass from '../../assets/iconsDraftaco/iconPass.svg'
 import iconSenhaCorreta from '../../assets/iconsDraftaco/iconSenhaCorreta.svg'
 import iconSenhaDefault from '../../assets/iconsDraftaco/iconSenhaDefault.svg'
@@ -40,9 +41,10 @@ type AuthMode = 'login' | 'signup'
 type LoginMotionState = 'entering' | 'open' | 'exiting'
 type LoginSubmitMethod = 'email' | 'google' | 'apple'
 type SignupStep = 'account' | 'personal' | 'address' | 'verification'
+type AddressStage = 'cep' | 'details'
 type SignupStepMotionPhase = 'idle' | 'entering' | 'exiting'
 type SignupLoadingAction = 'personal' | 'phone-validation' | 'address' | 'verification-start' | 'limits-save' | 'custom-limit'
-type AddressLookupStatus = 'idle' | 'loading' | 'success' | 'error'
+type AddressLookupStatus = 'idle' | 'loading' | 'success' | 'not-found' | 'error'
 type VerificationStage = 'intro' | 'document-front' | 'document-back' | 'face' | 'loading' | 'limits'
 type VerificationCaptureStage = Extract<VerificationStage, 'document-front' | 'document-back' | 'face'>
 type VerificationCameraStatus = 'idle' | 'loading' | 'ready' | 'unavailable'
@@ -131,6 +133,7 @@ const phoneIncompleteErrorMessage = 'Insira o celular com DDD'
 const phoneInvalidErrorMessage = 'Insira um celular válido com DDD'
 const cepLookupErrorMessage = 'Verifique o CEP e tente novamente'
 const cityLookupErrorMessage = 'Não foi possível carregar as cidades'
+const correiosCepSearchUrl = 'https://buscacepinter.correios.com.br/app/localidade_logradouro/index.php'
 const signupSteps: SignupStep[] = ['account', 'personal', 'address']
 const phoneValidationCodeLength = 6
 const phoneValidationCountdownStart = 30
@@ -1119,6 +1122,7 @@ export function LoginPage({
   const authModeMotionTimerRef = useRef<number | null>(null)
   const authModeMotionPhaseRef = useRef<SignupStepMotionPhase>('idle')
   const signupStepMotionTimerRef = useRef<number | null>(null)
+  const addressStageMotionTimerRef = useRef<number | null>(null)
   const verificationStreamRef = useRef<MediaStream | null>(null)
   const verificationVideoRef = useRef<HTMLVideoElement | null>(null)
   const loginPageRef = useRef<HTMLElement | null>(null)
@@ -1126,6 +1130,8 @@ export function LoginPage({
   const [authModeMotionPhase, setAuthModeMotionPhase] = useState<SignupStepMotionPhase>('idle')
   const [signupStep, setSignupStep] = useState<SignupStep>('account')
   const [signupStepMotionPhase, setSignupStepMotionPhase] = useState<SignupStepMotionPhase>('idle')
+  const [addressStage, setAddressStage] = useState<AddressStage>('cep')
+  const [addressStageMotionPhase, setAddressStageMotionPhase] = useState<SignupStepMotionPhase>('idle')
   const [signupLoadingAction, setSignupLoadingAction] = useState<SignupLoadingAction | null>(null)
   const [verificationStage, setVerificationStage] = useState<VerificationStage>('intro')
   const [pendingVerificationStage, setPendingVerificationStage] = useState<VerificationStage | null>(null)
@@ -1158,6 +1164,7 @@ export function LoginPage({
   const [phoneValidationSeconds, setPhoneValidationSeconds] = useState(phoneValidationCountdownStart)
   const [acceptsPromos, setAcceptsPromos] = useState(true)
   const [cep, setCep] = useState('')
+  const [isUnknownCepSheetOpen, setIsUnknownCepSheetOpen] = useState(false)
   const [region, setRegion] = useState('')
   const [regionUf, setRegionUf] = useState('')
   const [isRegionSheetOpen, setIsRegionSheetOpen] = useState(false)
@@ -1192,16 +1199,32 @@ export function LoginPage({
   const cepDigits = onlyDigits(cep)
   const canContinuePersonal = isCpfAccepted && isPhoneAccepted
   const canConfirmPhoneValidation = phoneValidationDigits.length === phoneValidationCodeLength
-  const shouldShowAddressDetails = cepDigits.length === 8
-  const canConfirmAddress = shouldShowAddressDetails
+  const isAddressDetailsStage = addressStage === 'details'
+  const isAddressSummaryComplete = addressLookupStatus === 'success'
+    && street.trim().length > 0
+    && neighborhood.trim().length > 0
+    && city.trim().length > 0
+    && regionUf.trim().length > 0
+  const shouldShowManualAddressFields = isAddressDetailsStage && !isAddressSummaryComplete
+  const isManualAddressComplete = shouldShowManualAddressFields
     && regionUf.trim().length > 0
     && city.trim().length > 0
     && street.trim().length > 0
+  const isAddressBaseComplete = isAddressSummaryComplete || isManualAddressComplete
+  const canContinueCep = cepDigits.length === 8 && addressLookupStatus !== 'loading'
+  const canConfirmAddress = isAddressDetailsStage
+    && isAddressBaseComplete
     && (noAddressNumber || addressNumber.trim().length > 0)
     && addressLookupStatus !== 'loading'
-    && cityLookupStatus !== 'loading'
-    && cityLookupStatus !== 'error'
-  const isSignupBottomSheetOpen = isPhoneValidationOpen || isRegionSheetOpen || isCitySheetOpen || isCustomLimitSheetOpen
+    && (!shouldShowManualAddressFields || (
+      cityLookupStatus !== 'loading'
+      && cityLookupStatus !== 'error'
+    ))
+  const isSignupBottomSheetOpen = isPhoneValidationOpen
+    || isUnknownCepSheetOpen
+    || isRegionSheetOpen
+    || isCitySheetOpen
+    || isCustomLimitSheetOpen
   const showCpfError = cpfErrorMessage !== null
   const showPhoneError = phoneErrorMessage !== null
   const signupGarantidaCountdown = useMemo(() => (
@@ -1247,6 +1270,13 @@ export function LoginPage({
 
     window.clearTimeout(signupStepMotionTimerRef.current)
     signupStepMotionTimerRef.current = null
+  }, [])
+
+  const clearAddressStageMotionTimer = useCallback(() => {
+    if (addressStageMotionTimerRef.current === null) return
+
+    window.clearTimeout(addressStageMotionTimerRef.current)
+    addressStageMotionTimerRef.current = null
   }, [])
 
   const clearVerificationTimers = useCallback(() => {
@@ -1304,10 +1334,28 @@ export function LoginPage({
     }, signupStepExitDurationMs)
   }, [clearSignupStepMotionTimer, signupStep])
 
+  const goToAddressStage = useCallback((nextStage: AddressStage) => {
+    if (nextStage === addressStage) return
+
+    clearAddressStageMotionTimer()
+    setAddressStageMotionPhase('exiting')
+
+    addressStageMotionTimerRef.current = window.setTimeout(() => {
+      setAddressStage(nextStage)
+      setAddressStageMotionPhase('entering')
+
+      addressStageMotionTimerRef.current = window.setTimeout(() => {
+        addressStageMotionTimerRef.current = null
+        setAddressStageMotionPhase('idle')
+      }, verificationFadeDurationMs)
+    }, verificationFadeDurationMs)
+  }, [addressStage, clearAddressStageMotionTimer])
+
   const resetAuthPageState = useCallback(() => {
     clearAuthSubmitLoadingTimer()
     clearSignupActionLoadingTimer()
     clearSignupStepMotionTimer()
+    clearAddressStageMotionTimer()
     clearVerificationTimers()
     addressAbortRef.current?.abort()
     addressAbortRef.current = null
@@ -1317,6 +1365,8 @@ export function LoginPage({
 
     setSignupStep('account')
     setSignupStepMotionPhase('idle')
+    setAddressStage('cep')
+    setAddressStageMotionPhase('idle')
     setSignupLoadingAction(null)
     setVerificationStage('intro')
     setPendingVerificationStage(null)
@@ -1348,6 +1398,7 @@ export function LoginPage({
     setPhoneValidationSeconds(phoneValidationCountdownStart)
     setAcceptsPromos(true)
     setCep('')
+    setIsUnknownCepSheetOpen(false)
     setRegion('')
     setRegionUf('')
     setIsRegionSheetOpen(false)
@@ -1366,6 +1417,7 @@ export function LoginPage({
     clearAuthSubmitLoadingTimer,
     clearSignupActionLoadingTimer,
     clearSignupStepMotionTimer,
+    clearAddressStageMotionTimer,
     clearVerificationTimers,
     stopVerificationCamera,
   ])
@@ -1435,6 +1487,10 @@ export function LoginPage({
 
     if (signupStepMotionTimerRef.current !== null) {
       window.clearTimeout(signupStepMotionTimerRef.current)
+    }
+
+    if (addressStageMotionTimerRef.current !== null) {
+      window.clearTimeout(addressStageMotionTimerRef.current)
     }
 
     addressAbortRef.current?.abort()
@@ -1918,7 +1974,7 @@ export function LoginPage({
       setNoAddressNumber(false)
       setAddressLookupStatus('success')
       addressAbortRef.current = null
-      loadCityOptions(prototypeAllowedAddress.regionUf, prototypeAllowedAddress.city)
+      goToAddressStage('details')
       return
     }
 
@@ -1930,23 +1986,42 @@ export function LoginPage({
       })
       .then((data) => {
         if (abortController.signal.aborted) return
-        if (data.erro) throw new Error(cepLookupErrorMessage)
+        if (data.erro) {
+          resetAddressDetails()
+          setAddressLookupStatus('not-found')
+
+          if (addressAbortRef.current === abortController) {
+            addressAbortRef.current = null
+          }
+
+          goToAddressStage('details')
+          return
+        }
 
         const regionOption = getBrazilRegionOptionByUf(data.uf)
 
         if (!regionOption) throw new Error(cepLookupErrorMessage)
 
+        const nextCity = data.localidade?.trim() ?? ''
+        const nextNeighborhood = data.bairro?.trim() ?? ''
+        const nextStreet = data.logradouro?.trim() ?? ''
+
         setRegion(regionOption.label)
         setRegionUf(regionOption.uf)
-        setNeighborhood(data.bairro ?? '')
-        setStreet(data.logradouro ?? '')
+        setCity(nextCity)
+        setNeighborhood(nextNeighborhood)
+        setStreet(nextStreet)
         setAddressLookupStatus('success')
 
         if (addressAbortRef.current === abortController) {
           addressAbortRef.current = null
         }
 
-        loadCityOptions(regionOption.uf, data.localidade ?? '')
+        if (!nextCity || !nextNeighborhood || !nextStreet) {
+          loadCityOptions(regionOption.uf, nextCity)
+        }
+
+        goToAddressStage('details')
       })
       .catch(() => {
         if (abortController.signal.aborted) return
@@ -2115,12 +2190,32 @@ export function LoginPage({
   const handleAddressSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
+    if (addressStage === 'cep') {
+      if (!canContinueCep || isSignupActionLoading) return
+
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur()
+      }
+
+      lookupCep(cepDigits)
+      return
+    }
+
     if (!canConfirmAddress || isSignupActionLoading) return
 
     beginSignupActionLoading('address', () => {
       setVerificationStage('intro')
       goToSignupStep('verification')
     })
+  }
+
+  const handleAddressEdit = () => {
+    addressAbortRef.current?.abort()
+    addressAbortRef.current = null
+    setAddressLookupError(null)
+    setIsRegionSheetOpen(false)
+    setIsCitySheetOpen(false)
+    goToAddressStage('cep')
   }
 
   const handleVerificationStart = () => {
@@ -2628,6 +2723,44 @@ export function LoginPage({
     </BottomSheet>
   )
 
+  const renderUnknownCepBottomSheet = () => (
+    <BottomSheet
+      isOpen={isUnknownCepSheetOpen}
+      onClose={() => setIsUnknownCepSheetOpen(false)}
+      containerClassName="login-page__bottom-sheet-container"
+      sheetClassName="login-unknown-cep-sheet"
+      bodyClassName="login-unknown-cep-sheet__body"
+      footerContent={(
+        <a
+          className="login-page__submit login-page__submit--active login-unknown-cep__correios-link"
+          href={correiosCepSearchUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => setIsUnknownCepSheetOpen(false)}
+        >
+          Buscar CEP no site dos Correios
+        </a>
+      )}
+      blurBackdrop
+      hideScrollIndicator
+    >
+      <div className="login-unknown-cep">
+        <img src={iconLocalizacao} alt="" className="login-unknown-cep__icon" aria-hidden="true" />
+        <div className="login-unknown-cep__content">
+          <h2 className="login-unknown-cep__title">Não sei meu CEP</h2>
+          <div className="login-unknown-cep__description">
+            <p>
+              Para concluir seu cadastro conforme a regulamentação brasileira, precisamos que você informe um CEP válido.
+            </p>
+            <p>
+              Caso não saiba qual é o seu CEP, busque de forma rápida no site dos Correios.
+            </p>
+          </div>
+        </div>
+      </div>
+    </BottomSheet>
+  )
+
   const renderAddressSelectBottomSheet = ({
     isOpen,
     legend,
@@ -2710,15 +2843,147 @@ export function LoginPage({
     },
   })
 
+  const renderAddressManualFields = () => (
+    <>
+      <AddressSelect
+        id="signup-region"
+        label="Estado/Região"
+        placeholder="Insira o estado ou região"
+        value={region}
+        isOpen={isRegionSheetOpen}
+        onOpen={() => {
+          // Fecha o teclado antes de abrir a sheet para ela não ficar coberta.
+          if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur()
+          }
+
+          setIsRegionSheetOpen(true)
+        }}
+      />
+      <AddressSelect
+        id="signup-city"
+        label="Cidade"
+        placeholder={
+          !regionUf
+            ? 'Selecione o estado primeiro'
+            : cityLookupStatus === 'loading'
+              ? 'Carregando cidades...'
+              : 'Selecione a cidade'
+        }
+        value={city}
+        disabled={!regionUf || cityLookupStatus !== 'success' || cityOptions.length === 0}
+        isOpen={isCitySheetOpen}
+        onOpen={() => {
+          if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur()
+          }
+
+          setIsCitySheetOpen(true)
+        }}
+      />
+      {cityLookupStatus === 'loading' ? (
+        <div className="login-page__lookup-status" role="status">Carregando cidades...</div>
+      ) : null}
+      {cityLookupStatus === 'error' ? (
+        <div className="login-page__lookup-status login-page__lookup-status--error" role="status">
+          <span>{cityLookupErrorMessage}.</span>
+          <button
+            type="button"
+            className="login-page__lookup-retry"
+            onClick={() => loadCityOptions(regionUf, '', true)}
+          >
+            Tentar novamente
+          </button>
+        </div>
+      ) : null}
+      <LoginInput
+        id="signup-neighborhood"
+        label="Bairro"
+        placeholder="Insira o bairro"
+        value={neighborhood}
+        preventScrollOnFocus
+        onChange={setNeighborhood}
+      />
+      <LoginInput
+        id="signup-street"
+        label="Endereço - Rua, Avenida"
+        placeholder="Insira o endereço"
+        value={street}
+        preventScrollOnFocus
+        onChange={setStreet}
+      />
+    </>
+  )
+
+  const renderAddressNumberFields = () => (
+    <>
+      <LoginInput
+        id="signup-number"
+        label="Número"
+        placeholder="Insira o número"
+        value={addressNumber}
+        type="tel"
+        inputMode="numeric"
+        preventScrollOnFocus
+        onChange={(nextNumber) => setAddressNumber(onlyDigits(nextNumber).slice(0, 8))}
+      />
+      <SignupCheckbox checked={noAddressNumber} onChange={setNoAddressNumber}>
+        Endereço sem número
+      </SignupCheckbox>
+      <LoginInput
+        id="signup-complement"
+        label="Complemento"
+        placeholder="Insira o complemento (se tiver)"
+        value={addressComplement}
+        preventScrollOnFocus
+        onChange={setAddressComplement}
+      />
+    </>
+  )
+
+  const renderAddressSummary = () => {
+    const addressSummaryLines = isAddressSummaryComplete
+      ? [
+          `${street.trim()} - ${neighborhood.trim()}`,
+          `${city.trim()} - ${regionUf.trim()}`,
+          formatCep(cep),
+        ]
+      : [formatCep(cep)]
+
+    return (
+      <div className="login-page__address-summary" aria-label="Endereço informado">
+        <div className="login-page__address-summary-text">
+          {addressSummaryLines.map((line, index) => (
+            <span key={`${line}-${index}`} className="login-page__address-summary-line">
+              {line}
+            </span>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="login-page__address-edit"
+          onClick={handleAddressEdit}
+        >
+          Editar
+        </button>
+      </div>
+    )
+  }
+
+  const addressStageMotionClassName = [
+    'login-page__address-stage',
+    addressStageMotionPhase !== 'idle' ? `login-page__address-stage--${addressStageMotionPhase}` : '',
+  ].filter(Boolean).join(' ')
+
   const renderSignupAddress = () => (
     <section
       className={[
         'login-page__container',
         'login-page__container--signup',
         'login-page__container--address',
-        // Antes do CEP revelar os outros campos, não reserva espaço de scroll
+        // Antes de avançar do CEP, não reserva espaço de scroll
         // para o teclado: o conteúdo cabe na tela e nada deve rolar.
-        !shouldShowAddressDetails ? 'login-page__container--no-keyboard-inset' : '',
+        addressStage === 'cep' ? 'login-page__container--no-keyboard-inset' : '',
       ].filter(Boolean).join(' ')}
       aria-labelledby="signup-address-title"
     >
@@ -2727,141 +2992,65 @@ export function LoginPage({
       <h1 className="login-page__title" id="signup-address-title">Onde você mora?</h1>
 
       <form className="login-page__form-section login-page__form-section--signup" onSubmit={handleAddressSubmit} noValidate>
-        <div className="login-page__field-stack">
-          <LoginInput
-            id="signup-cep"
-            label="CEP"
-            placeholder="00000-000"
-            value={formatCep(cep)}
-            type="tel"
-            autoComplete="postal-code"
-            inputMode="numeric"
-            maxLength={9}
-            errorMessage={addressLookupError ?? undefined}
-            isInvalid={addressLookupStatus === 'error'}
-            preventScrollOnFocus
-            onChange={(nextCep) => {
-              const nextCepDigits = onlyDigits(nextCep).slice(0, 8)
+        <div className={addressStageMotionClassName}>
+          <div className="login-page__field-stack">
+            {addressStage === 'cep' ? (
+              <>
+                <LoginInput
+                  id="signup-cep"
+                  label="CEP"
+                  placeholder="00000-000"
+                  value={formatCep(cep)}
+                  type="tel"
+                  autoComplete="postal-code"
+                  inputMode="numeric"
+                  maxLength={9}
+                  errorMessage={addressLookupError ?? undefined}
+                  isInvalid={addressLookupStatus === 'error'}
+                  preventScrollOnFocus
+                  onChange={(nextCep) => {
+                    const nextCepDigits = onlyDigits(nextCep).slice(0, 8)
 
-              setCep(nextCepDigits)
-              setAddressLookupError(null)
-
-              if (nextCepDigits.length !== 8) {
-                addressAbortRef.current?.abort()
-                addressAbortRef.current = null
-                setAddressLookupStatus('idle')
-                resetAddressDetails()
-                return
-              }
-
-              lookupCep(nextCepDigits)
-            }}
-          />
-
-          {shouldShowAddressDetails ? (
-            <>
-              {addressLookupStatus === 'loading' ? (
-                <div className="login-page__lookup-status" role="status">Buscando endereço...</div>
-              ) : null}
-
-              <AddressSelect
-                id="signup-region"
-                label="Estado/Região"
-                placeholder="Insira o estado ou região"
-                value={region}
-                isOpen={isRegionSheetOpen}
-                onOpen={() => {
-                  // Fecha o teclado antes de abrir a sheet para ela não ficar coberta.
-                  if (document.activeElement instanceof HTMLElement) {
-                    document.activeElement.blur()
-                  }
-
-                  setIsRegionSheetOpen(true)
-                }}
-              />
-              <AddressSelect
-                id="signup-city"
-                label="Cidade"
-                placeholder={
-                  !regionUf
-                    ? 'Selecione o estado primeiro'
-                    : cityLookupStatus === 'loading'
-                      ? 'Carregando cidades...'
-                      : 'Selecione a cidade'
-                }
-                value={city}
-                disabled={!regionUf || cityLookupStatus !== 'success' || cityOptions.length === 0}
-                isOpen={isCitySheetOpen}
-                onOpen={() => {
-                  if (document.activeElement instanceof HTMLElement) {
-                    document.activeElement.blur()
-                  }
-
-                  setIsCitySheetOpen(true)
-                }}
-              />
-              {cityLookupStatus === 'loading' ? (
-                <div className="login-page__lookup-status" role="status">Carregando cidades...</div>
-              ) : null}
-              {cityLookupStatus === 'error' ? (
-                <div className="login-page__lookup-status login-page__lookup-status--error" role="status">
-                  <span>{cityLookupErrorMessage}.</span>
-                  <button
-                    type="button"
-                    className="login-page__lookup-retry"
-                    onClick={() => loadCityOptions(regionUf, '', true)}
-                  >
-                    Tentar novamente
-                  </button>
-                </div>
-              ) : null}
-              <LoginInput
-                id="signup-neighborhood"
-                label="Bairro"
-                placeholder="Insira o bairro"
-                value={neighborhood}
-                preventScrollOnFocus
-                onChange={setNeighborhood}
-              />
-              <LoginInput
-                id="signup-street"
-                label="Endereço - Rua, Avenida"
-                placeholder="Insira o endereço"
-                value={street}
-                preventScrollOnFocus
-                onChange={setStreet}
-              />
-              <LoginInput
-                id="signup-number"
-                label="Número"
-                placeholder="Insira o número"
-                value={addressNumber}
-                type="tel"
-                inputMode="numeric"
-                preventScrollOnFocus
-                onChange={(nextNumber) => setAddressNumber(onlyDigits(nextNumber).slice(0, 8))}
-              />
-              <SignupCheckbox checked={noAddressNumber} onChange={setNoAddressNumber}>
-                Endereço sem número
-              </SignupCheckbox>
-              <LoginInput
-                id="signup-complement"
-                label="Complemento"
-                placeholder="Insira o complemento (se tiver)"
-                value={addressComplement}
-                preventScrollOnFocus
-                onChange={setAddressComplement}
-              />
-            </>
-          ) : null}
+                    setCep(nextCepDigits)
+                    setAddressLookupError(null)
+                    addressAbortRef.current?.abort()
+                    addressAbortRef.current = null
+                    setAddressLookupStatus('idle')
+                    resetAddressDetails()
+                  }}
+                />
+                <button
+                  type="button"
+                  className="login-page__cep-help"
+                  onClick={() => setIsUnknownCepSheetOpen(true)}
+                >
+                  Não sei meu CEP
+                </button>
+              </>
+            ) : (
+              <>
+                {renderAddressSummary()}
+                {shouldShowManualAddressFields ? renderAddressManualFields() : null}
+                {renderAddressNumberFields()}
+              </>
+            )}
+          </div>
         </div>
 
         <PrimaryButton
           type="submit"
-          disabled={!canConfirmAddress || isSignupActionLoading}
-          isLoading={signupLoadingAction === 'address'}
+          disabled={
+            addressStage === 'cep'
+              ? (!canContinueCep || isSignupActionLoading)
+              : (!canConfirmAddress || isSignupActionLoading)
+          }
+          isLoading={
+            addressStage === 'cep'
+              ? addressLookupStatus === 'loading'
+              : signupLoadingAction === 'address'
+          }
         >
-          Confirmar endereço
+          {addressStage === 'cep' ? 'Continuar' : 'Confirmar endereço'}
         </PrimaryButton>
       </form>
     </section>
@@ -3322,6 +3511,7 @@ export function LoginPage({
         </div>
       </div>
       {displayedMode === 'signup' && signupStep === 'personal' ? renderPhoneValidationBottomSheet() : null}
+      {displayedMode === 'signup' && signupStep === 'address' ? renderUnknownCepBottomSheet() : null}
       {displayedMode === 'signup' && signupStep === 'address' ? renderRegionBottomSheet() : null}
       {displayedMode === 'signup' && signupStep === 'address' ? renderCityBottomSheet() : null}
       {displayedMode === 'signup' && signupStep === 'verification' && verificationStage === 'limits'

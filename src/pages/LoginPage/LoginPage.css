@@ -124,6 +124,8 @@
 .login-input__eye:focus-visible,
 .login-page__biometry:focus-visible,
 .login-page__link-button:focus-visible,
+.login-page__cep-help:focus-visible,
+.login-page__address-edit:focus-visible,
 .login-page__social-button:focus-visible,
 .login-page__signup-link:focus-visible,
 .login-page__support:focus-visible,
@@ -306,6 +308,85 @@
   flex-direction: column;
   gap: 16px;
   width: 100%;
+}
+
+.login-page__address-stage {
+  width: 100%;
+  opacity: 1;
+  will-change: opacity;
+}
+
+.login-page__address-stage--entering {
+  animation: login-signup-step-fade-in 180ms ease-out both;
+}
+
+.login-page__address-stage--exiting {
+  animation: login-signup-step-fade-out 180ms ease-in both;
+  pointer-events: none;
+}
+
+.login-page__cep-help {
+  display: inline-flex;
+  align-self: flex-start;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+  letter-spacing: 0;
+  text-decoration: underline;
+  text-underline-position: from-font;
+}
+
+.login-page__address-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+}
+
+.login-page__address-summary-text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  color: inherit;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: 0;
+}
+
+.login-page__address-summary-line {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.login-page__address-edit {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: 0;
+  text-align: right;
 }
 
 .login-input {
@@ -1205,6 +1286,103 @@
 .login-phone-validation-sheet .bottom-sheet__footer {
   padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
   border-top: 0;
+}
+
+.login-unknown-cep-sheet {
+  --bottom-sheet-top-offset: max(8px, env(safe-area-inset-top, 0px));
+
+  overflow: hidden;
+  border-radius: 24px 24px 0 0;
+  background: linear-gradient(180deg, #191919 0%, #0f0f0f 100%);
+}
+
+.login-unknown-cep-sheet .bottom-sheet__header {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  height: 56px;
+  padding: 8px;
+  border-bottom: 0;
+  background: transparent;
+}
+
+.login-unknown-cep-sheet .bottom-sheet__close {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+}
+
+.login-unknown-cep-sheet .bottom-sheet__body-wrapper {
+  background: transparent;
+}
+
+.login-unknown-cep-sheet .bottom-sheet__body {
+  overflow: hidden;
+  padding: 32px 16px 8px;
+}
+
+.login-unknown-cep-sheet .bottom-sheet__footer {
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  border-top: 0;
+  background: transparent;
+}
+
+.login-unknown-cep__correios-link {
+  text-decoration: none;
+}
+
+.login-unknown-cep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  text-align: center;
+}
+
+.login-unknown-cep__icon {
+  display: block;
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+}
+
+.login-unknown-cep__content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.login-unknown-cep__title {
+  width: 100%;
+  margin: 0;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 27px;
+  letter-spacing: 0;
+}
+
+.login-unknown-cep__description {
+  width: 100%;
+  color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: 0;
+}
+
+.login-unknown-cep__description p {
+  margin: 0 0 12px;
+}
+
+.login-unknown-cep__description p:last-child {
+  margin-bottom: 0;
 }
 
 .login-phone-validation {
@@ -2362,6 +2540,11 @@
   .login-page__auth-mode-motion--exiting,
   .login-page__signup-step-motion--exiting {
     animation: login-signup-step-fade-out 120ms ease-in both;
+  }
+
+  .login-page__address-stage--entering,
+  .login-page__address-stage--exiting {
+    animation: none;
   }
 }
 
