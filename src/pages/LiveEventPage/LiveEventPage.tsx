@@ -3313,14 +3313,12 @@ function LiveEventInlineTeamStats({
 
 interface LiveEventInlineScoreHeaderProps {
   match: LiveEventMatch
-  leagueName: string
   sport: string
   currentTime: string
 }
 
 function LiveEventInlineScoreHeader({
   match,
-  leagueName,
   sport,
   currentTime,
 }: LiveEventInlineScoreHeaderProps) {
@@ -3337,7 +3335,6 @@ function LiveEventInlineScoreHeader({
       ].filter(Boolean).join(' ')}
       aria-label={`${match.homeTeam.name} contra ${match.awayTeam.name}`}
     >
-      <div className="live-event-inline__score-league">{leagueName.toUpperCase()}</div>
       <div className="live-event-inline__score-main">
         <LiveEventInlineScoreTeam
           team={match.homeTeam}
@@ -4284,7 +4281,6 @@ export function LiveEventInlineHeader({
       </div>
       <LiveEventInlineScoreHeader
         match={selectedMatch}
-        leagueName={selectedMatch.leagueName ?? leagueName}
         sport={selectedMatch.sport ?? sport}
         currentTime={selectedDisplayTime}
       />

@@ -522,9 +522,11 @@ const getSwipeFillRatio = (trackWidth: number, progress: number) => (
 )
 
 function SwipeButton({
+  onLoadingChange,
   stakeLabel,
   onComplete,
 }: {
+  onLoadingChange?: (isLoading: boolean) => void
   stakeLabel: string
   onComplete: () => void
 }) {
@@ -619,6 +621,14 @@ function SwipeButton({
   useEffect(() => () => {
     clearCompleteTimer()
   }, [clearCompleteTimer])
+
+  useEffect(() => {
+    onLoadingChange?.(isLoadingVisible)
+
+    return () => {
+      if (isLoadingVisible) onLoadingChange?.(false)
+    }
+  }, [isLoadingVisible, onLoadingChange])
 
   const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
     if (isInteractionDisabled || event.button !== 0) return
@@ -729,6 +739,7 @@ export function BetslipPageV2({
   const [stakeInputValue, setStakeInputValue] = useState(() => formatStakeInputValue(DEFAULT_STAKE_CENTS))
   const [acceptsOddsChanges, setAcceptsOddsChanges] = useState(false)
   const [isTagInfoOpen, setIsTagInfoOpen] = useState(false)
+  const [isConfirmLoading, setIsConfirmLoading] = useState(false)
   const [removingRowId, setRemovingRowId] = useState<string | null>(null)
   const [removingLegId, setRemovingLegId] = useState<string | null>(null)
   const closeTimerRef = useRef<number | null>(null)
@@ -756,9 +767,11 @@ export function BetslipPageV2({
   const hasSgp = selectionGroups.some((group) => group.selections.length > 1)
   const isLoggedOut = authVariant === 'logged-out'
   const shouldShowDepositPrompt = !isLoggedOut && requiresDeposit
-  const isRemoveLocked = removingRowId !== null || removingLegId !== null
+  const isRemoveLocked = isConfirmLoading || removingRowId !== null || removingLegId !== null
 
   const handleStakeChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    if (isConfirmLoading) return
+
     const digits = event.target.value.replace(/\D/g, '')
 
     if (!digits) {
@@ -772,7 +785,7 @@ export function BetslipPageV2({
 
     setStakeInputValue(formatStakeInputValue(safeStakeCents))
     setStakeCents(safeStakeCents)
-  }, [])
+  }, [isConfirmLoading])
 
   const requestClose = useCallback((afterClose?: () => void) => {
     if (isLeaving) return
@@ -785,13 +798,16 @@ export function BetslipPageV2({
   }, [isLeaving, onClose])
 
   const handleClearAll = useCallback(() => {
+    if (isConfirmLoading) return
+
     onSelectionsEmptyExitStart?.()
     requestClose(clearSelections)
-  }, [clearSelections, onSelectionsEmptyExitStart, requestClose])
+  }, [clearSelections, isConfirmLoading, onSelectionsEmptyExitStart, requestClose])
 
   const handleRemoveGroup = useCallback((groupId: string, selectionIds: string[]) => {
     if (
-      removingRowId
+      isConfirmLoading
+      || removingRowId
       || removingLegId
       || rowRemoveTimerRef.current !== null
       || legRemoveTimerRef.current !== null
@@ -804,11 +820,12 @@ export function BetslipPageV2({
       setRemovingRowId(null)
       rowRemoveTimerRef.current = null
     }, SELECTION_REMOVE_ANIMATION_MS)
-  }, [removeSelection, removingLegId, removingRowId])
+  }, [isConfirmLoading, removeSelection, removingLegId, removingRowId])
 
   const handleRemoveSelection = useCallback((selectionId: string) => {
     if (
-      removingRowId
+      isConfirmLoading
+      || removingRowId
       || removingLegId
       || rowRemoveTimerRef.current !== null
       || legRemoveTimerRef.current !== null
@@ -820,11 +837,12 @@ export function BetslipPageV2({
       setRemovingRowId(null)
       rowRemoveTimerRef.current = null
     }, SELECTION_REMOVE_ANIMATION_MS)
-  }, [removeSelection, removingLegId, removingRowId])
+  }, [isConfirmLoading, removeSelection, removingLegId, removingRowId])
 
   const handleRemoveSgpLeg = useCallback((selectionId: string) => {
     if (
-      removingRowId
+      isConfirmLoading
+      || removingRowId
       || removingLegId
       || rowRemoveTimerRef.current !== null
       || legRemoveTimerRef.current !== null
@@ -836,7 +854,7 @@ export function BetslipPageV2({
       setRemovingLegId(null)
       legRemoveTimerRef.current = null
     }, SGP_LEG_REMOVE_ANIMATION_MS)
-  }, [removeSelection, removingLegId, removingRowId])
+  }, [isConfirmLoading, removeSelection, removingLegId, removingRowId])
 
   const handleConfirm = useCallback(() => {
     if (!summary.hasSelections || selections.length === 0) {
@@ -852,10 +870,8 @@ export function BetslipPageV2({
       createdAtMs: Date.now(),
     }
 
-    requestClose(() => {
-      clearSelections()
-      onBetSuccess?.(receipt)
-    })
+    onBetSuccess?.(receipt)
+    requestClose(clearSelections)
   }, [
     clearSelections,
     onBetSuccess,
@@ -868,8 +884,10 @@ export function BetslipPageV2({
   ])
 
   const handleTagInfoOpen = useCallback(() => {
+    if (isConfirmLoading) return
+
     setIsTagInfoOpen(true)
-  }, [])
+  }, [isConfirmLoading])
 
   const handleTagInfoClose = useCallback(() => {
     setIsTagInfoOpen(false)
@@ -883,6 +901,12 @@ export function BetslipPageV2({
       activeElement.blur()
     }
   }, [])
+
+  const handleConfirmLoadingChange = useCallback((nextIsLoading: boolean) => {
+    setIsConfirmLoading(nextIsLoading)
+
+    if (nextIsLoading) blurFocusedStakeInput()
+  }, [blurFocusedStakeInput])
 
   useLayoutEffect(() => {
     const page = pageRef.current
@@ -1223,13 +1247,17 @@ export function BetslipPageV2({
   useEffect(() => {
     if (selections.length > 0) {
       hadSelectionsRef.current = true
-      return
+      return undefined
     }
 
-    if (!hadSelectionsRef.current || isLeaving) return
+    if (!hadSelectionsRef.current || isLeaving) return undefined
 
-    onSelectionsEmptyExitStart?.()
-    requestClose()
+    const emptyExitTimer = window.setTimeout(() => {
+      onSelectionsEmptyExitStart?.()
+      requestClose()
+    }, 0)
+
+    return () => window.clearTimeout(emptyExitTimer)
   }, [isLeaving, onSelectionsEmptyExitStart, requestClose, selections.length])
 
   return (
@@ -1240,13 +1268,15 @@ export function BetslipPageV2({
           'betslip-v2',
           isLeaving ? 'betslip-v2--leaving' : 'betslip-v2--entering',
           isCoveredByEvent ? 'betslip-v2--covered-by-event' : '',
+          isConfirmLoading ? 'betslip-v2--confirm-loading' : '',
         ].filter(Boolean).join(' ')}
         aria-hidden={isCoveredByEvent ? true : undefined}
+        aria-busy={isConfirmLoading ? true : undefined}
         aria-labelledby="betslip-v2-title"
       >
         <div className="betslip-v2__light" aria-hidden="true" />
         <header className="betslip-v2__header">
-          <button type="button" className="betslip-v2__icon-button" aria-label="Eliminar todas las selecciones" onClick={handleClearAll}>
+          <button type="button" className="betslip-v2__icon-button" aria-label="Eliminar todas las selecciones" disabled={isConfirmLoading} onClick={handleClearAll}>
             <img className="betslip-v2__header-icon" src={trashIcon} alt="" aria-hidden="true" draggable="false" />
           </button>
 
@@ -1258,7 +1288,7 @@ export function BetslipPageV2({
           <p>Saldo disponível: {BALANCE_LABEL}</p>
         </div>
 
-        <button type="button" className="betslip-v2__icon-button" aria-label="Cerrar betslip" onClick={() => requestClose()}>
+        <button type="button" className="betslip-v2__icon-button" aria-label="Cerrar betslip" disabled={isConfirmLoading} onClick={() => requestClose()}>
           <img className="betslip-v2__header-icon" src={closeBetslipIcon} alt="" aria-hidden="true" draggable="false" />
         </button>
       </header>
@@ -1303,69 +1333,73 @@ export function BetslipPageV2({
       </section>
 
       <footer className="betslip-v2__footer">
-        <div className="betslip-v2__summary" aria-label="Resumen de valores">
-          <label className="betslip-v2__stake">
-            <span className="betslip-v2__stake-field">
-              <img className="betslip-v2__stake-icon" src={iconPencil} alt="" aria-hidden="true" draggable="false" />
-              <span className="betslip-v2__stake-value">
-                <span className="betslip-v2__stake-currency" aria-hidden="true">R$</span>
-                <input
-                  className="betslip-v2__stake-input"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  enterKeyHint="done"
-                  autoComplete="off"
-                  aria-label="Entrada"
-                  value={stakeInputValue}
-                  onChange={handleStakeChange}
-                  onFocus={(event) => {
-                    const input = event.currentTarget
+        <div className="betslip-v2__footer-content">
+          <div className="betslip-v2__summary" aria-label="Resumen de valores">
+            <label className="betslip-v2__stake">
+              <span className="betslip-v2__stake-field">
+                <img className="betslip-v2__stake-icon" src={iconPencil} alt="" aria-hidden="true" draggable="false" />
+                <span className="betslip-v2__stake-value">
+                  <span className="betslip-v2__stake-currency" aria-hidden="true">R$</span>
+                  <input
+                    className="betslip-v2__stake-input"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    enterKeyHint="done"
+                    autoComplete="off"
+                    aria-label="Entrada"
+                    disabled={isConfirmLoading}
+                    value={stakeInputValue}
+                    onChange={handleStakeChange}
+                    onFocus={(event) => {
+                      const input = event.currentTarget
 
-                    // Um frame depois: após a restauração do transform da
-                    // supressão do reveal iOS e do posicionamento default do
-                    // caret, que sobrescreveria o select() síncrono.
-                    window.requestAnimationFrame(() => {
-                      if (document.activeElement === input) input.select()
-                    })
-                  }}
-                />
+                      // Um frame depois: após a restauração do transform da
+                      // supressão do reveal iOS e do posicionamento default do
+                      // caret, que sobrescreveria o select() síncrono.
+                      window.requestAnimationFrame(() => {
+                        if (document.activeElement === input) input.select()
+                      })
+                    }}
+                  />
+                </span>
               </span>
-            </span>
-            <span className="betslip-v2__stake-label">Entrada</span>
-          </label>
+              <span className="betslip-v2__stake-label">Entrada</span>
+            </label>
 
-          <div className="betslip-v2__summary-item">
-            <span>Odds</span>
-            <strong>{animatedTotalOddsLabel}</strong>
-            {hasSgp ? <em>SGP</em> : null}
-          </div>
+            <div className="betslip-v2__summary-item">
+              <span>Odds</span>
+              <strong>{animatedTotalOddsLabel}</strong>
+              {hasSgp ? <em>SGP</em> : null}
+            </div>
 
-          <div className="betslip-v2__summary-item betslip-v2__summary-item--win" aria-label={`Para ganar ${potentialWinLabel}`}>
-            <span className="betslip-v2__win-label">Para ganar</span>
-            <div className="betslip-v2__win-field">
-              <strong>{animatedPotentialWinLabel}</strong>
+            <div className="betslip-v2__summary-item betslip-v2__summary-item--win" aria-label={`Para ganar ${potentialWinLabel}`}>
+              <span className="betslip-v2__win-label">Para ganar</span>
+              <div className="betslip-v2__win-field">
+                <strong>{animatedPotentialWinLabel}</strong>
+              </div>
             </div>
           </div>
-        </div>
 
-        <button
-          type="button"
-          className={[
-            'betslip-v2__odds-accept',
-            acceptsOddsChanges ? 'betslip-v2__odds-accept--checked' : '',
-          ].filter(Boolean).join(' ')}
-          role="checkbox"
-          aria-checked={acceptsOddsChanges}
-          onClick={() => setAcceptsOddsChanges((current) => !current)}
-        >
-          <span className="betslip-v2__odds-accept-box" aria-hidden="true">
-            {acceptsOddsChanges ? <span className="betslip-v2__odds-accept-check" /> : null}
-          </span>
-          <span className="betslip-v2__odds-accept-label">
-            Aceitar sempre alterações nas odds para agilizar a criação do seu bilhete. <span>Saiba mais.</span>
-          </span>
-        </button>
+          <button
+            type="button"
+            className={[
+              'betslip-v2__odds-accept',
+              acceptsOddsChanges ? 'betslip-v2__odds-accept--checked' : '',
+            ].filter(Boolean).join(' ')}
+            role="checkbox"
+            aria-checked={acceptsOddsChanges}
+            disabled={isConfirmLoading}
+            onClick={() => setAcceptsOddsChanges((current) => !current)}
+          >
+            <span className="betslip-v2__odds-accept-box" aria-hidden="true">
+              {acceptsOddsChanges ? <span className="betslip-v2__odds-accept-check" /> : null}
+            </span>
+            <span className="betslip-v2__odds-accept-label">
+              Aceitar sempre alterações nas odds para agilizar a criação do seu bilhete. <span>Saiba mais.</span>
+            </span>
+          </button>
+        </div>
 
         {isLoggedOut ? (
           <div className="betslip-v2__auth-prompt" aria-label="Acesse sua conta para apostar">
@@ -1399,7 +1433,11 @@ export function BetslipPageV2({
             </button>
           </div>
         ) : (
-          <SwipeButton stakeLabel={stakeLabel} onComplete={handleConfirm} />
+          <SwipeButton
+            stakeLabel={stakeLabel}
+            onLoadingChange={handleConfirmLoadingChange}
+            onComplete={handleConfirm}
+          />
         )}
         </footer>
       </main>

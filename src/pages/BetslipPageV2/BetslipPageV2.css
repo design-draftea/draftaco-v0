@@ -1,5 +1,6 @@
 .betslip-v2 {
   --betslip-v2-keyboard-inset: 0px;
+  --betslip-v2-confirm-overlay: rgb(0 0 0 / 0.56);
   --betslip-v2-stable-height: var(--app-viewport-height);
   --betslip-v2-viewport-top: 0px;
   position: fixed;
@@ -37,6 +38,20 @@
   animation: none;
 }
 
+.betslip-v2--confirm-loading .betslip-v2__header,
+.betslip-v2--confirm-loading .betslip-v2__content,
+.betslip-v2--confirm-loading .betslip-v2__footer-content {
+  pointer-events: none;
+}
+
+.betslip-v2--confirm-loading .betslip-v2__header {
+  border-bottom-color: transparent;
+}
+
+.betslip-v2--confirm-loading .betslip-v2__footer {
+  border-top-color: transparent;
+}
+
 .betslip-v2 button {
   border: 0;
   color: inherit;
@@ -66,6 +81,17 @@
   height: 56px;
   overflow: hidden;
   border-bottom: 1px solid var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
+}
+
+.betslip-v2--confirm-loading .betslip-v2__header::after,
+.betslip-v2--confirm-loading .betslip-v2__content::before,
+.betslip-v2--confirm-loading .betslip-v2__footer-content::after {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  background: var(--betslip-v2-confirm-overlay);
+  content: '';
+  pointer-events: none;
 }
 
 .betslip-v2__icon-button {
@@ -692,6 +718,14 @@ article.betslip-v2__sgp-leg {
   will-change: transform;
 }
 
+.betslip-v2__footer-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
 .betslip-v2__summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -789,6 +823,11 @@ article.betslip-v2__sgp-leg {
 
 .betslip-v2__stake-input::selection {
   background: rgb(138 44 255 / 0.4);
+}
+
+.betslip-v2__stake-input:disabled {
+  opacity: 1;
+  -webkit-text-fill-color: currentColor;
 }
 
 .betslip-v2__summary-item {

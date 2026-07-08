@@ -2793,23 +2793,6 @@
   box-sizing: border-box;
 }
 
-.live-event-inline__score-league {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 15px;
-  padding: 0 12px;
-  overflow: hidden;
-  color: rgb(var(--tokens-text-text-01-rgb) / 0.5);
-  font-family: 'Red Hat Display', 'Red Hat Text', sans-serif;
-  font-size: 10px;
-  font-weight: 500;
-  line-height: 15px;
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .live-event-inline__score-main {
   display: flex;
   align-items: center;
