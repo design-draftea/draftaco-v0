@@ -12,7 +12,7 @@ interface HeaderComponentProps {
   activeProduct?: ProductMode
   authVariant?: 'logged-in' | 'logged-out'
   balanceCents?: number
-  depositStatus?: 'deposit-pending'
+  depositStatus?: 'deposit-pending' | 'identity-pending' | 'limits-pending'
   changeProductOnPointerDown?: boolean
   disableProductToggle?: boolean
   disableMenuButton?: boolean
@@ -21,6 +21,8 @@ interface HeaderComponentProps {
   onLoginClick?: () => void
   onCreateAccountClick?: () => void
   onDepositOpen?: () => void
+  onIdentityOpen?: () => void
+  onLimitsOpen?: () => void
   children?: ReactNode
 }
 
@@ -28,13 +30,15 @@ interface PromotionsPageProps {
   activeProduct?: ProductMode
   authVariant?: 'logged-in' | 'logged-out'
   balanceCents?: number
-  depositStatus?: 'deposit-pending'
+  depositStatus?: 'deposit-pending' | 'identity-pending' | 'limits-pending'
   HeaderComponent?: ComponentType<HeaderComponentProps>
   onProductChange?: (product: ProductMode) => void
   onLogoDoubleClick?: () => void
   onLoginClick?: () => void
   onCreateAccountClick?: () => void
   onDepositOpen?: () => void
+  onIdentityOpen?: () => void
+  onLimitsOpen?: () => void
 }
 
 const HEADER_COMPACT_SCROLL_TOP = 28
@@ -76,6 +80,8 @@ export function PromotionsPage({
   onLoginClick,
   onCreateAccountClick,
   onDepositOpen,
+  onIdentityOpen,
+  onLimitsOpen,
 }: PromotionsPageProps = {}) {
   const pageRef = useRef<HTMLDivElement>(null)
   const tabsTrackRef = useRef<HTMLDivElement>(null)
@@ -257,6 +263,8 @@ export function PromotionsPage({
         disableProductToggle={true}
         disableMenuButton={true}
         onDepositOpen={onDepositOpen}
+        onIdentityOpen={onIdentityOpen}
+        onLimitsOpen={onLimitsOpen}
         onLogoDoubleClick={onLogoDoubleClick}
         onLoginClick={onLoginClick}
         onCreateAccountClick={onCreateAccountClick}

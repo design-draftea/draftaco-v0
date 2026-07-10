@@ -13,7 +13,7 @@ interface HeaderV2Props {
   rail?: ReactNode
   authVariant?: 'logged-in' | 'logged-out'
   balanceCents?: number
-  depositStatus?: 'deposit-pending'
+  depositStatus?: 'deposit-pending' | 'identity-pending' | 'limits-pending'
   showMenuButton?: boolean
   changeProductOnPointerDown?: boolean
   disableProductToggle?: boolean
@@ -24,6 +24,8 @@ interface HeaderV2Props {
   onLoginClick?: () => void
   onCreateAccountClick?: () => void
   onDepositOpen?: () => void
+  onIdentityOpen?: () => void
+  onLimitsOpen?: () => void
   children?: ReactNode
 }
 
@@ -53,6 +55,8 @@ export function HeaderV2({
   onLoginClick,
   onCreateAccountClick,
   onDepositOpen,
+  onIdentityOpen,
+  onLimitsOpen,
   children,
 }: HeaderV2Props = {}) {
   const { brandMode } = useFeatureFlags()
@@ -60,9 +64,22 @@ export function HeaderV2({
   const isLoggedOut = authVariant === 'logged-out'
   const isDrafteaBrand = brandMode === 'draftea'
   const isDepositPending = depositStatus === 'deposit-pending'
+  const isIdentityPending = depositStatus === 'identity-pending'
+  const isLimitsPending = depositStatus === 'limits-pending'
+  const hasPendingAccountAction = isDepositPending || isIdentityPending || isLimitsPending
   const balanceDisplayValue = formatBalanceDisplayValue(balanceCents)
-  const balanceLabel = isDepositPending ? 'DEPÓSITO PENDENTE' : 'SALDO'
-  const balanceAriaLabel = isDepositPending
+  const balanceLabel = isIdentityPending
+    ? 'VERIFICAR IDENTIDADE'
+    : isLimitsPending
+    ? 'DEFINIR LIMITES'
+    : isDepositPending
+      ? 'DEPÓSITO PENDENTE'
+      : 'SALDO'
+  const balanceAriaLabel = isIdentityPending
+    ? 'Verificar identidade'
+    : isLimitsPending
+    ? 'Definir limites de jogo'
+    : isDepositPending
     ? `Saldo disponível: ${balanceDisplayValue}; depósito pendente`
     : `Saldo disponível: ${balanceDisplayValue}`
   const logoAlt = isDrafteaBrand ? 'Draftea' : 'Rei do Pitaco'
@@ -150,7 +167,7 @@ export function HeaderV2({
         'header--liquid-glass-new',
         !showMenuButton ? 'header--balance-only' : '',
         isLoggedOut ? 'header--logged-out' : 'header--logged-in',
-        isDepositPending ? 'header--deposit-pending' : '',
+        hasPendingAccountAction ? 'header--deposit-pending' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -236,7 +253,7 @@ export function HeaderV2({
                 type="button"
                 className="header__balance"
                 aria-label={balanceAriaLabel}
-                onClick={onDepositOpen}
+                onClick={isIdentityPending ? onIdentityOpen : isLimitsPending ? onLimitsOpen : onDepositOpen}
               >
                 <span className="header__balance-content">
                   <span className="header__balance-value">{balanceDisplayValue}</span>

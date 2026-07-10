@@ -21,6 +21,7 @@ import iconShieldVersusPlaceholder from '../../assets/iconsDraftaco/iconShieldVe
 import iconBetslipAumentada from '../../assets/iconsDraftaco/iconBetslipAumentada.svg'
 import iconBetslipGarantida from '../../assets/iconsDraftaco/iconBetslipGarantida.svg'
 import iconBetslipSuperAumentada from '../../assets/iconsDraftaco/iconBetslipSuperAumentada.svg'
+import ilustraExcluirSelecoes from '../../assets/iconsDraftaco/ilustraExcluirSelecoes.svg'
 import imgAdebayoPromo from '../../assets/iconsDraftaco/imgAdebayoPromo.png'
 import imgDembelePromo from '../../assets/iconsDraftaco/imgDembelePromo.png'
 import lewandowskiCard from '../../assets/iconsDraftaco/LewandowskiCard.png'
@@ -63,11 +64,15 @@ interface BetslipPageV2Props {
   isCoveredByEvent?: boolean
   onCreateAccountClick?: () => void
   onDepositClick?: () => void
+  onIdentityClick?: () => void
+  onLimitsClick?: () => void
   onLoginClick?: () => void
   onClose?: () => void
   onBetSuccess?: (receipt: BetSuccessReceipt) => void
   onSelectionsEmptyExitStart?: () => void
+  requiresIdentity?: boolean
   requiresDeposit?: boolean
+  requiresLimits?: boolean
 }
 
 const DEFAULT_STAKE_CENTS = 1000
@@ -500,6 +505,58 @@ function BetslipTagInfoBottomSheet({
   )
 }
 
+function BetslipClearConfirmBottomSheet({
+  isOpen,
+  onCancel,
+  onConfirm,
+}: {
+  isOpen: boolean
+  onCancel: () => void
+  onConfirm: () => void
+}) {
+  return (
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={onCancel}
+      containerClassName="betslip-v2-clear-confirm-sheet-container"
+      sheetClassName="betslip-v2-clear-confirm-sheet"
+      bodyClassName="betslip-v2-clear-confirm-sheet__body"
+      hideScrollIndicator
+      blurBackdrop
+    >
+      <div className="betslip-v2-clear-confirm-sheet__content">
+        <img
+          className="betslip-v2-clear-confirm-sheet__illustration"
+          src={ilustraExcluirSelecoes}
+          alt=""
+          aria-hidden="true"
+          draggable="false"
+        />
+        <h3 className="betslip-v2-clear-confirm-sheet__heading">Excluir seleções</h3>
+        <p className="betslip-v2-clear-confirm-sheet__message">
+          Tem certeza que deseja excluir todas as seleções?
+        </p>
+        <div className="betslip-v2-clear-confirm-sheet__actions">
+          <button
+            type="button"
+            className="betslip-v2-clear-confirm-sheet__action betslip-v2-clear-confirm-sheet__action--primary"
+            onClick={onConfirm}
+          >
+            Sim, excluir
+          </button>
+          <button
+            type="button"
+            className="betslip-v2-clear-confirm-sheet__action betslip-v2-clear-confirm-sheet__action--secondary"
+            onClick={onCancel}
+          >
+            Não, continuar aqui
+          </button>
+        </div>
+      </div>
+    </BottomSheet>
+  )
+}
+
 const clampSwipeProgress = (progress: number) => Math.max(0, Math.min(progress, 1))
 
 const getSwipeInnerWidth = (trackWidth: number) => (
@@ -727,11 +784,15 @@ export function BetslipPageV2({
   isCoveredByEvent = false,
   onCreateAccountClick,
   onDepositClick,
+  onIdentityClick,
+  onLimitsClick,
   onLoginClick,
   onClose,
   onBetSuccess,
   onSelectionsEmptyExitStart,
+  requiresIdentity = false,
   requiresDeposit = false,
+  requiresLimits = false,
 }: BetslipPageV2Props) {
   const { selections, summary, removeSelection, clearSelections } = useBetslip()
   const [isLeaving, setIsLeaving] = useState(false)
@@ -739,6 +800,7 @@ export function BetslipPageV2({
   const [stakeInputValue, setStakeInputValue] = useState(() => formatStakeInputValue(DEFAULT_STAKE_CENTS))
   const [acceptsOddsChanges, setAcceptsOddsChanges] = useState(false)
   const [isTagInfoOpen, setIsTagInfoOpen] = useState(false)
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false)
   const [isConfirmLoading, setIsConfirmLoading] = useState(false)
   const [removingRowId, setRemovingRowId] = useState<string | null>(null)
   const [removingLegId, setRemovingLegId] = useState<string | null>(null)
@@ -766,8 +828,10 @@ export function BetslipPageV2({
   )
   const hasSgp = selectionGroups.some((group) => group.selections.length > 1)
   const isLoggedOut = authVariant === 'logged-out'
-  const shouldShowDepositPrompt = !isLoggedOut && requiresDeposit
-  const isRemoveLocked = isConfirmLoading || removingRowId !== null || removingLegId !== null
+  const shouldShowIdentityPrompt = !isLoggedOut && requiresIdentity
+  const shouldShowLimitsPrompt = !isLoggedOut && !requiresIdentity && requiresLimits
+  const shouldShowDepositPrompt = !isLoggedOut && !requiresIdentity && !requiresLimits && requiresDeposit
+  const isRemoveLocked = isConfirmLoading || isClearConfirmOpen || removingRowId !== null || removingLegId !== null
 
   const handleStakeChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     if (isConfirmLoading) return
@@ -798,8 +862,32 @@ export function BetslipPageV2({
   }, [isLeaving, onClose])
 
   const handleClearAll = useCallback(() => {
+    if (isConfirmLoading || isClearConfirmOpen) return
+
+    if (selections.length > 1) {
+      setIsClearConfirmOpen(true)
+      return
+    }
+
+    onSelectionsEmptyExitStart?.()
+    requestClose(clearSelections)
+  }, [
+    clearSelections,
+    isClearConfirmOpen,
+    isConfirmLoading,
+    onSelectionsEmptyExitStart,
+    requestClose,
+    selections.length,
+  ])
+
+  const handleClearConfirmCancel = useCallback(() => {
+    setIsClearConfirmOpen(false)
+  }, [])
+
+  const handleClearConfirmConfirm = useCallback(() => {
     if (isConfirmLoading) return
 
+    setIsClearConfirmOpen(false)
     onSelectionsEmptyExitStart?.()
     requestClose(clearSelections)
   }, [clearSelections, isConfirmLoading, onSelectionsEmptyExitStart, requestClose])
@@ -1276,7 +1364,7 @@ export function BetslipPageV2({
       >
         <div className="betslip-v2__light" aria-hidden="true" />
         <header className="betslip-v2__header">
-          <button type="button" className="betslip-v2__icon-button" aria-label="Eliminar todas las selecciones" disabled={isConfirmLoading} onClick={handleClearAll}>
+          <button type="button" className="betslip-v2__icon-button" aria-label="Eliminar todas las selecciones" disabled={isRemoveLocked} onClick={handleClearAll}>
             <img className="betslip-v2__header-icon" src={trashIcon} alt="" aria-hidden="true" draggable="false" />
           </button>
 
@@ -1421,6 +1509,28 @@ export function BetslipPageV2({
               </button>
             </div>
           </div>
+        ) : shouldShowIdentityPrompt ? (
+          <div className="betslip-v2__deposit-prompt" aria-label="Verifique sua identidade para apostar">
+            <p>Quase lá! Finalize seu cadastro para começar a jogar.</p>
+            <button
+              type="button"
+              className="betslip-v2__deposit-action"
+              onClick={onIdentityClick}
+            >
+              Verificar Identidade
+            </button>
+          </div>
+        ) : shouldShowLimitsPrompt ? (
+          <div className="betslip-v2__deposit-prompt" aria-label="Defina os limites de jogo para apostar">
+            <p>Quase lá! Finalize seu cadastro para começar a jogar.</p>
+            <button
+              type="button"
+              className="betslip-v2__deposit-action"
+              onClick={onLimitsClick}
+            >
+              Definir limites
+            </button>
+          </div>
         ) : shouldShowDepositPrompt ? (
           <div className="betslip-v2__deposit-prompt" aria-label="Adicione saldo para apostar">
             <p>Quase lá! Adicione saldo para começar a jogar.</p>
@@ -1442,6 +1552,11 @@ export function BetslipPageV2({
         </footer>
       </main>
       <BetslipTagInfoBottomSheet isOpen={isTagInfoOpen} onClose={handleTagInfoClose} />
+      <BetslipClearConfirmBottomSheet
+        isOpen={isClearConfirmOpen}
+        onCancel={handleClearConfirmCancel}
+        onConfirm={handleClearConfirmConfirm}
+      />
     </>
   )
 }

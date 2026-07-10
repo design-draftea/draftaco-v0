@@ -146,6 +146,7 @@ type AuthVariant = 'logged-in' | 'logged-out'
 type AuthOverlayOrigin = 'default' | 'betslip'
 type LoginMotionState = 'entering' | 'open' | 'exiting'
 type DepositPanelOrigin = 'standard' | 'signup'
+type SignupPendingRequirement = 'identity' | 'limits'
 type AuthScrollLockState = {
   scrollY: number
   bodyOverflow: string
@@ -204,6 +205,7 @@ function AppContent() {
   const [isDepositPanelOpen, setIsDepositPanelOpen] = useState(false)
   const [depositPanelOrigin, setDepositPanelOrigin] = useState<DepositPanelOrigin>('standard')
   const [signupPendingDepositAmountCents, setSignupPendingDepositAmountCents] = useState<number | null>(null)
+  const [signupPendingRequirement, setSignupPendingRequirement] = useState<SignupPendingRequirement | null>(null)
   const [isFeatureFlagsPanelOpen, setIsFeatureFlagsPanelOpen] = useState(false)
   const [liveEventUi, setLiveEventUi] = useState({
     isOpen: false,
@@ -217,7 +219,15 @@ function AppContent() {
   const activeProduct = isPromotionsPage ? promotionsProduct : productRoute.product
   const showSignupGarantidaBanner = isSignupPage && isSignupGarantidaBannerEnabled
   const hasSignupDepositPending = signupPendingDepositAmountCents !== null
-  const headerDepositStatus = hasSignupDepositPending ? 'deposit-pending' : undefined
+  const hasSignupIdentityPending = signupPendingRequirement === 'identity'
+  const hasSignupLimitsPending = signupPendingRequirement === 'limits'
+  const headerDepositStatus = hasSignupDepositPending
+    ? 'deposit-pending'
+    : hasSignupIdentityPending
+      ? 'identity-pending'
+      : hasSignupLimitsPending
+        ? 'limits-pending'
+        : undefined
   const depositConfirmationMode = depositPanelOrigin === 'signup' ? 'on-pix-copy' : 'on-pix-generated'
   const depositPanelInitialView = depositPanelOrigin === 'signup' && hasSignupDepositPending ? 'pix' : 'form'
   const depositPanelInitialAmountCents = depositPanelOrigin === 'signup'
@@ -330,12 +340,38 @@ function AppContent() {
     handleAuthOpen(buildSignupPath())
   }, [handleAuthOpen])
 
+  const handleSignupIdentityOpen = useCallback(() => {
+    if (!isAuthPath(window.location.pathname)) {
+      setAuthOverlayOrigin('default')
+    }
+
+    handleAuthOpen(buildSignupPath())
+  }, [handleAuthOpen])
+
+  const handleSignupLimitsOpen = useCallback(() => {
+    if (!isAuthPath(window.location.pathname)) {
+      setAuthOverlayOrigin('default')
+    }
+
+    handleAuthOpen(buildSignupPath())
+  }, [handleAuthOpen])
+
   const handleBetslipLoginOpen = useCallback(() => {
     setAuthOverlayOrigin('betslip')
     handleAuthOpen(buildLoginPath())
   }, [handleAuthOpen])
 
   const handleBetslipCreateAccountClick = useCallback(() => {
+    setAuthOverlayOrigin('betslip')
+    handleAuthOpen(buildSignupPath())
+  }, [handleAuthOpen])
+
+  const handleBetslipIdentityOpen = useCallback(() => {
+    setAuthOverlayOrigin('betslip')
+    handleAuthOpen(buildSignupPath())
+  }, [handleAuthOpen])
+
+  const handleBetslipLimitsOpen = useCallback(() => {
     setAuthOverlayOrigin('betslip')
     handleAuthOpen(buildSignupPath())
   }, [handleAuthOpen])
@@ -381,6 +417,39 @@ function AppContent() {
     setAuthVariant('logged-in')
     setBalanceCents(loggedInInitialBalanceCents)
     setSignupPendingDepositAmountCents(null)
+    setSignupPendingRequirement(null)
+    completeLoginExit(nextPath)
+  }, [completeLoginExit, loginMotionState])
+
+  const handleSignupIdentityExit = useCallback(() => {
+    if (loginMotionState === 'exiting') return
+
+    const fallbackPath = buildProductPath(defaultProduct)
+    const nextPath = loginReturnPathRef.current ?? fallbackPath
+
+    setAuthVariant('logged-in')
+    setBalanceCents(signupInitialBalanceCents)
+    setSignupPendingDepositAmountCents(null)
+    setSignupPendingRequirement('identity')
+    completeLoginExit(nextPath)
+  }, [completeLoginExit, loginMotionState])
+
+  const handleSignupIdentityVerificationStart = useCallback(() => {
+    setSignupPendingRequirement((currentRequirement) => (
+      currentRequirement === 'identity' ? null : currentRequirement
+    ))
+  }, [])
+
+  const handleSignupLimitsExit = useCallback(() => {
+    if (loginMotionState === 'exiting') return
+
+    const fallbackPath = buildProductPath(defaultProduct)
+    const nextPath = loginReturnPathRef.current ?? fallbackPath
+
+    setAuthVariant('logged-in')
+    setBalanceCents(signupInitialBalanceCents)
+    setSignupPendingDepositAmountCents(null)
+    setSignupPendingRequirement('limits')
     completeLoginExit(nextPath)
   }, [completeLoginExit, loginMotionState])
 
@@ -393,6 +462,7 @@ function AppContent() {
     setAuthVariant('logged-in')
     setBalanceCents(signupInitialBalanceCents)
     setSignupPendingDepositAmountCents(null)
+    setSignupPendingRequirement(null)
     setDepositPanelOrigin('signup')
     signupDepositExitPathRef.current = nextPath
     setIsDepositPanelOpen(true)
@@ -693,6 +763,8 @@ function AppContent() {
             onLoginClick={handleLoginOpen}
             onCreateAccountClick={handleCreateAccountClick}
             onDepositOpen={handleDepositPanelOpen}
+            onIdentityOpen={handleSignupIdentityOpen}
+            onLimitsOpen={handleSignupLimitsOpen}
             onProductChange={handleProductChange}
           />
         ) : (
@@ -706,6 +778,8 @@ function AppContent() {
             onLoginClick={handleLoginOpen}
             onCreateAccountClick={handleCreateAccountClick}
             onDepositOpen={handleDepositPanelOpen}
+            onIdentityOpen={handleSignupIdentityOpen}
+            onLimitsOpen={handleSignupLimitsOpen}
             onProductChange={handleProductChange}
             onLiveEventOpenChange={handleLiveEventOpenChange}
             onLiveEventOpenSettled={handleLiveEventOpenSettled}
@@ -722,8 +796,13 @@ function AppContent() {
           onCreateAccountClick={handleCreateAccountClick}
           onDepositOpen={handleSignupDepositOpen}
           onEnterComplete={handleLoginEnterComplete}
+          onIdentityExit={handleSignupIdentityExit}
+          onIdentityVerificationStart={handleSignupIdentityVerificationStart}
           onLoginClick={handleLoginOpen}
           onLoginSuccess={handleLoginSuccess}
+          onLimitsExit={handleSignupLimitsExit}
+          resumeSignupIdentity={hasSignupIdentityPending}
+          resumeSignupLimits={hasSignupLimitsPending}
           showSignupGarantidaBanner={showSignupGarantidaBanner}
         />
       ) : null}
@@ -734,11 +813,15 @@ function AppContent() {
             isCoveredByEvent={!!betslipOriginLiveEvent}
             onCreateAccountClick={handleBetslipCreateAccountClick}
             onDepositClick={handleDepositPanelOpen}
+            onIdentityClick={handleBetslipIdentityOpen}
+            onLimitsClick={handleBetslipLimitsOpen}
             onLoginClick={handleBetslipLoginOpen}
             onClose={handleBetslipClose}
             onBetSuccess={handleBetSuccess}
             onSelectionsEmptyExitStart={handleCompactBetslipSuppress}
+            requiresIdentity={hasSignupIdentityPending}
             requiresDeposit={isDepositRequiredForBetting}
+            requiresLimits={hasSignupLimitsPending}
           />
         </Suspense>
       ) : null}

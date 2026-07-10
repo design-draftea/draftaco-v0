@@ -766,7 +766,7 @@ interface HeaderComponentProps {
   rail?: ReactNode
   authVariant?: 'logged-in' | 'logged-out'
   balanceCents?: number
-  depositStatus?: 'deposit-pending'
+  depositStatus?: 'deposit-pending' | 'identity-pending' | 'limits-pending'
   disableProductToggle?: boolean
   disableMenuButton?: boolean
   onProductChange?: (product: ProductMode) => void
@@ -775,6 +775,8 @@ interface HeaderComponentProps {
   onLoginClick?: () => void
   onCreateAccountClick?: () => void
   onDepositOpen?: () => void
+  onIdentityOpen?: () => void
+  onLimitsOpen?: () => void
   children?: ReactNode
 }
 
@@ -782,7 +784,7 @@ interface HomeProps {
   activeProduct?: ProductMode
   authVariant?: 'logged-in' | 'logged-out'
   balanceCents?: number
-  depositStatus?: 'deposit-pending'
+  depositStatus?: 'deposit-pending' | 'identity-pending' | 'limits-pending'
   HeaderComponent?: ComponentType<HeaderComponentProps>
   isLiveEventSuppressed?: boolean
   onProductChange?: (product: ProductMode) => void
@@ -790,6 +792,8 @@ interface HomeProps {
   onLoginClick?: () => void
   onCreateAccountClick?: () => void
   onDepositOpen?: () => void
+  onIdentityOpen?: () => void
+  onLimitsOpen?: () => void
   onLiveEventOpenChange?: (isOpen: boolean) => void
   onLiveEventOpenSettled?: () => void
   onLiveEventCloseStart?: () => void
@@ -822,6 +826,8 @@ export function Home({
   onLoginClick,
   onCreateAccountClick,
   onDepositOpen,
+  onIdentityOpen,
+  onLimitsOpen,
   onLiveEventOpenChange,
 }: HomeProps = {}) {
   const { brandMode } = useFeatureFlags()
@@ -1821,6 +1827,8 @@ export function Home({
         disableProductToggle={!ENABLE_HOME_PRODUCT_TOGGLE}
         disableMenuButton={!ENABLE_HOME_MENU_BUTTON}
         onDepositOpen={onDepositOpen}
+        onIdentityOpen={onIdentityOpen}
+        onLimitsOpen={onLimitsOpen}
         onLogoClick={isInlineEventMode ? handleReturnToHighlights : undefined}
         onLogoDoubleClick={onLogoDoubleClick}
         onLoginClick={onLoginClick}

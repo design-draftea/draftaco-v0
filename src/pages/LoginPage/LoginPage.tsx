@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type AnimationEvent, type FormEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { flushSync } from 'react-dom'
 import backHeaderIcon from '../../assets/iconsDraftaco/backHeader.svg'
+import closeBSIcon from '../../assets/iconsDraftaco/closeBS.svg'
 import iconApple from '../../assets/iconsDraftaco/iconApple.svg'
 import iconBiometria from '../../assets/iconsDraftaco/iconBiometria.svg'
 import iconCPF from '../../assets/iconsDraftaco/iconCPF.svg'
@@ -14,6 +15,7 @@ import iconOferta from '../../assets/iconsDraftaco/iconOferta.svg'
 import iconLimiteJogoDiario from '../../assets/iconsDraftaco/iconLimiteJogoDiario.svg'
 import iconLimitePerdaDiario from '../../assets/iconsDraftaco/iconLimitePerdaDiario.svg'
 import iconLocalizacao from '../../assets/iconsDraftaco/iconLocalizacao.png'
+import ilustraModalAtencao from '../../assets/iconsDraftaco/ilustraModalAtencao.svg'
 import iconPass from '../../assets/iconsDraftaco/iconPass.svg'
 import iconSenhaCorreta from '../../assets/iconsDraftaco/iconSenhaCorreta.svg'
 import iconSenhaDefault from '../../assets/iconsDraftaco/iconSenhaDefault.svg'
@@ -49,6 +51,7 @@ type VerificationStage = 'intro' | 'document-front' | 'document-back' | 'face' |
 type VerificationCaptureStage = Extract<VerificationStage, 'document-front' | 'document-back' | 'face'>
 type VerificationCameraStatus = 'idle' | 'loading' | 'ready' | 'unavailable'
 type LimitCustomSheetType = 'time' | 'loss'
+type SignupExitRequirement = 'identity' | 'limits'
 
 interface LoginPageProps {
   mode?: AuthMode
@@ -58,8 +61,13 @@ interface LoginPageProps {
   onCreateAccountClick?: () => void
   onDepositOpen?: () => void
   onEnterComplete?: () => void
+  onIdentityExit?: () => void
+  onIdentityVerificationStart?: () => void
   onLoginClick?: () => void
   onLoginSuccess?: () => void
+  onLimitsExit?: () => void
+  resumeSignupIdentity?: boolean
+  resumeSignupLimits?: boolean
   showSignupGarantidaBanner?: boolean
 }
 
@@ -844,6 +852,60 @@ function PrimaryButton({
   )
 }
 
+function SignupExitConfirmModal({
+  isOpen,
+  onClose,
+  onExit,
+  primaryLabel,
+  message,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  onExit: () => void
+  primaryLabel: string
+  message: string
+}) {
+  return (
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      containerClassName="login-limits-exit-modal-container"
+      sheetClassName="login-limits-exit-modal"
+      bodyClassName="login-limits-exit-modal__body"
+      hideScrollIndicator
+      blurBackdrop
+    >
+      <div className="login-limits-exit-modal__content">
+        <img
+          className="login-limits-exit-modal__illustration"
+          src={ilustraModalAtencao}
+          alt=""
+          aria-hidden="true"
+          draggable="false"
+        />
+        <h2 className="login-limits-exit-modal__heading">Tem certeza?</h2>
+        <p className="login-limits-exit-modal__message">{message}</p>
+        <div className="login-limits-exit-modal__actions">
+          <button
+            type="button"
+            className="login-limits-exit-modal__action login-limits-exit-modal__action--primary"
+            onClick={onClose}
+          >
+            {primaryLabel}
+          </button>
+          <button
+            type="button"
+            className="login-limits-exit-modal__action login-limits-exit-modal__action--secondary"
+            onClick={onExit}
+          >
+            Sair
+          </button>
+        </div>
+      </div>
+    </BottomSheet>
+  )
+}
+
 function AuthHeader({
   activeStep,
   onBack,
@@ -1108,8 +1170,13 @@ export function LoginPage({
   onCreateAccountClick,
   onDepositOpen,
   onEnterComplete,
+  onIdentityExit,
+  onIdentityVerificationStart,
   onLoginClick,
   onLoginSuccess,
+  onLimitsExit,
+  resumeSignupIdentity = false,
+  resumeSignupLimits = false,
   showSignupGarantidaBanner = false,
 }: LoginPageProps) {
   const loginEnterFallbackTimerRef = useRef<number | null>(null)
@@ -1128,12 +1195,16 @@ export function LoginPage({
   const loginPageRef = useRef<HTMLElement | null>(null)
   const [displayedMode, setDisplayedMode] = useState<AuthMode>(mode)
   const [authModeMotionPhase, setAuthModeMotionPhase] = useState<SignupStepMotionPhase>('idle')
-  const [signupStep, setSignupStep] = useState<SignupStep>('account')
+  const [signupStep, setSignupStep] = useState<SignupStep>(() => (
+    mode === 'signup' && (resumeSignupIdentity || resumeSignupLimits) ? 'verification' : 'account'
+  ))
   const [signupStepMotionPhase, setSignupStepMotionPhase] = useState<SignupStepMotionPhase>('idle')
   const [addressStage, setAddressStage] = useState<AddressStage>('cep')
   const [addressStageMotionPhase, setAddressStageMotionPhase] = useState<SignupStepMotionPhase>('idle')
   const [signupLoadingAction, setSignupLoadingAction] = useState<SignupLoadingAction | null>(null)
-  const [verificationStage, setVerificationStage] = useState<VerificationStage>('intro')
+  const [verificationStage, setVerificationStage] = useState<VerificationStage>(() => (
+    mode === 'signup' && resumeSignupLimits ? 'limits' : 'intro'
+  ))
   const [pendingVerificationStage, setPendingVerificationStage] = useState<VerificationStage | null>(null)
   const [isVerificationFadingOut, setIsVerificationFadingOut] = useState(false)
   const [isVerificationMobile, setIsVerificationMobile] = useState(false)
@@ -1149,6 +1220,8 @@ export function LoginPage({
   const [customTimeLimitMinutes, setCustomTimeLimitMinutes] = useState('')
   const [customLossLimit, setCustomLossLimit] = useState('')
   const [isCustomLimitSheetOpen, setIsCustomLimitSheetOpen] = useState(false)
+  const [signupExitRequirement, setSignupExitRequirement] = useState<SignupExitRequirement>('limits')
+  const [isSignupExitConfirmOpen, setIsSignupExitConfirmOpen] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [emailErrorMessage, setEmailErrorMessage] = useState<string | null>(null)
@@ -2223,6 +2296,7 @@ export function LoginPage({
 
     clearVerificationTimers()
     beginSignupActionLoading('verification-start', () => {
+      onIdentityVerificationStart?.()
       setPendingVerificationStage(null)
       setIsVerificationFadingOut(false)
       setVerificationStage('document-front')
@@ -2308,6 +2382,40 @@ export function LoginPage({
     if (isSignupActionLoading) return
 
     beginSignupActionLoading('limits-save', () => onDepositOpen?.())
+  }
+
+  const handleSignupClose = () => {
+    cancelSignupActionLoading()
+    clearVerificationTimers()
+    setPendingVerificationStage(null)
+    setIsVerificationFadingOut(false)
+    onBack?.()
+  }
+
+  const handleSignupExitConfirmOpen = (requirement: SignupExitRequirement) => {
+    if (isSignupActionLoading) return
+
+    setSignupExitRequirement(requirement)
+    setIsSignupExitConfirmOpen(true)
+  }
+
+  const handleSignupExitConfirmClose = () => {
+    setIsSignupExitConfirmOpen(false)
+  }
+
+  const handleSignupExitConfirm = () => {
+    const requirement = signupExitRequirement
+
+    setIsSignupExitConfirmOpen(false)
+
+    const onExit = requirement === 'identity' ? onIdentityExit : onLimitsExit
+
+    if (onExit) {
+      onExit()
+      return
+    }
+
+    handleSignupClose()
   }
 
   const handleBack = () => {
@@ -3058,6 +3166,15 @@ export function LoginPage({
 
   const renderVerificationIntro = () => (
     <section className="login-page__verification" aria-labelledby="signup-verification-title">
+      <button
+        type="button"
+        className="login-page__verification-close"
+        aria-label="Fechar verificação de identidade"
+        onClick={() => handleSignupExitConfirmOpen('identity')}
+      >
+        <img src={closeBSIcon} alt="" aria-hidden="true" />
+      </button>
+
       <div className="login-page__verification-body">
         <div className="login-page__verification-card" aria-hidden="true">
           <div className="login-page__verification-visual">
@@ -3269,7 +3386,16 @@ export function LoginPage({
   const renderVerificationLimits = () => (
     <section className="login-page__verification login-page__verification--limits" aria-labelledby="signup-limits-title">
       <header className="login-page__limits-header">
+        <span className="login-page__limits-header-spacer" aria-hidden="true" />
         <h1 className="login-page__limits-header-title" id="signup-limits-title">Limites de jogo</h1>
+        <button
+          type="button"
+          className="login-page__limits-close"
+          aria-label="Fechar limites de jogo"
+          onClick={() => handleSignupExitConfirmOpen('limits')}
+        >
+          <img src={closeBSIcon} alt="" aria-hidden="true" />
+        </button>
       </header>
 
       <div className="login-page__limits-body">
@@ -3517,6 +3643,15 @@ export function LoginPage({
       {displayedMode === 'signup' && signupStep === 'verification' && verificationStage === 'limits'
         ? renderLimitsCustomBottomSheet()
         : null}
+      <SignupExitConfirmModal
+        isOpen={isSignupExitConfirmOpen}
+        onClose={handleSignupExitConfirmClose}
+        onExit={handleSignupExitConfirm}
+        primaryLabel={signupExitRequirement === 'identity' ? 'Verificar minha identidade' : 'Definir limites'}
+        message={signupExitRequirement === 'identity'
+          ? 'Para começar a jogar, você precisa verificar sua identidade. Sem isso, não é possível criar apostas ou jogar em cassino.'
+          : 'Para começar a jogar, você precisa definir limites de jogo. Sem isso, não é possível criar apostas ou jogar em cassino.'}
+      />
     </main>
   )
 }
