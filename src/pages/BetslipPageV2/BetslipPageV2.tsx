@@ -280,9 +280,11 @@ function Badges({
   onInfoClick,
 }: {
   labels: string[]
-  onInfoClick: () => void
+  onInfoClick: (labels: string[]) => void
 }) {
   if (labels.length === 0) return null
+
+  const infoLabels = labels.filter((label) => BETSLIP_INFO_BADGES.has(label))
 
   return (
     <>
@@ -296,7 +298,7 @@ function Badges({
               aria-label={`Abrir informações sobre ${label}`}
               onClick={(event) => {
                 event.stopPropagation()
-                onInfoClick()
+                onInfoClick(infoLabels)
               }}
             >
               {label}
@@ -358,7 +360,7 @@ function SimpleSelectionRow({
   isRemoving?: boolean
   selection: BetslipSelection
   onRemove: (selectionId: string) => void
-  onTagInfoOpen: () => void
+  onTagInfoOpen: (labels: string[]) => void
   showOdd?: boolean
 }) {
   const title = getSelectionTitle(selection)
@@ -410,7 +412,7 @@ function SgpGroup({
   isRemoving?: boolean
   onRemoveGroup: (groupId: string, selectionIds: string[]) => void
   onRemoveSelection: (selectionId: string) => void
-  onTagInfoOpen: () => void
+  onTagInfoOpen: (labels: string[]) => void
   removingSelectionId?: string | null
 }) {
   const headerSelection = getSgpHeaderSelection(group.selections)
@@ -476,9 +478,11 @@ function SgpGroup({
 }
 
 function BetslipTagInfoBottomSheet({
+  badgeLabels,
   isOpen,
   onClose,
 }: {
+  badgeLabels: string[]
   isOpen: boolean
   onClose: () => void
 }) {
@@ -494,7 +498,7 @@ function BetslipTagInfoBottomSheet({
       blurBackdrop
     >
       <div className="betslip-v2-info-sheet__content">
-        {betslipInfoItems.map((item) => (
+        {betslipInfoItems.filter((item) => badgeLabels.includes(item.label)).map((item) => (
           <div className="betslip-v2-info-sheet__row" key={item.label}>
             <span className="betslip-v2__badge betslip-v2-info-sheet__badge">{item.label}</span>
             <p>{item.text}</p>
@@ -799,7 +803,7 @@ export function BetslipPageV2({
   const [stakeCents, setStakeCents] = useState(DEFAULT_STAKE_CENTS)
   const [stakeInputValue, setStakeInputValue] = useState(() => formatStakeInputValue(DEFAULT_STAKE_CENTS))
   const [acceptsOddsChanges, setAcceptsOddsChanges] = useState(false)
-  const [isTagInfoOpen, setIsTagInfoOpen] = useState(false)
+  const [tagInfoBadgeLabels, setTagInfoBadgeLabels] = useState<string[]>([])
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false)
   const [isConfirmLoading, setIsConfirmLoading] = useState(false)
   const [removingRowId, setRemovingRowId] = useState<string | null>(null)
@@ -971,14 +975,14 @@ export function BetslipPageV2({
     totalOddsLabel,
   ])
 
-  const handleTagInfoOpen = useCallback(() => {
+  const handleTagInfoOpen = useCallback((badgeLabels: string[]) => {
     if (isConfirmLoading) return
 
-    setIsTagInfoOpen(true)
+    setTagInfoBadgeLabels(badgeLabels)
   }, [isConfirmLoading])
 
   const handleTagInfoClose = useCallback(() => {
-    setIsTagInfoOpen(false)
+    setTagInfoBadgeLabels([])
   }, [])
 
   const blurFocusedStakeInput = useCallback(() => {
@@ -1551,7 +1555,11 @@ export function BetslipPageV2({
         )}
         </footer>
       </main>
-      <BetslipTagInfoBottomSheet isOpen={isTagInfoOpen} onClose={handleTagInfoClose} />
+      <BetslipTagInfoBottomSheet
+        badgeLabels={tagInfoBadgeLabels}
+        isOpen={tagInfoBadgeLabels.length > 0}
+        onClose={handleTagInfoClose}
+      />
       <BetslipClearConfirmBottomSheet
         isOpen={isClearConfirmOpen}
         onCancel={handleClearConfirmCancel}

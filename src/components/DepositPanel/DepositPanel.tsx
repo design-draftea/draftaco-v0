@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal, flushSync } from 'react-dom'
-import { PixLogoIcon } from '@phosphor-icons/react'
+import { CheckIcon, PixLogoIcon } from '@phosphor-icons/react'
+import { BottomSheet } from '../BottomSheet'
 import backHeaderIcon from '../../assets/iconsDraftaco/backHeader.svg'
+import bradescoBankIcon from '../../assets/iconsDraftaco/bradesco.png'
 import closePixIcon from '../../assets/iconsDraftaco/closeBS.svg'
 import iconClock from '../../assets/iconsDraftaco/iconClock.svg'
 import iconIdeia from '../../assets/iconsDraftaco/iconIdeia.svg'
 import iconInfo from '../../assets/iconsDraftaco/iconInfo.svg'
 import iconPix from '../../assets/iconsDraftaco/iconPix.svg'
+import itauBankIcon from '../../assets/iconsDraftaco/itau.png'
+import nubankBankIcon from '../../assets/iconsDraftaco/nubank.png'
 import qrCodeImage from '../../assets/iconsDraftaco/qrCode.png'
 import { useTouchScrollFence } from '../../hooks/useTouchScrollFence'
 import './DepositPanel.css'
@@ -25,6 +29,7 @@ interface DepositPanelProps {
 type PanelMotionState = 'entering' | 'open' | 'closing'
 type DepositView = 'form' | 'pix'
 type DepositOptionId = '50' | '100' | '250' | '1000' | 'custom'
+type PixCopyFeedback = 'idle' | 'copied' | 'error'
 type DepositConfirmationMode = 'on-pix-generated' | 'on-pix-copy'
 
 interface QuickDepositOption {
@@ -42,12 +47,19 @@ const maxDepositCents = 99999999
 const animatedDepositAmountDurationMs = 520
 const defaultDepositAmountCents = 10000
 const pixCode = '00020101021226850014br.gov.bcb.pix0123deposito-teste-sem-link'
+const pixCopyFeedbackDurationMs = 2000
 const quickDepositOptions: QuickDepositOption[] = [
   { id: '50', label: 'R$ 50', amountCents: 5000 },
   { id: '100', label: 'R$ 100', amountCents: 10000, recommended: true },
   { id: '250', label: 'R$ 250', amountCents: 25000 },
   { id: '1000', label: 'R$ 1.000', amountCents: 100000 },
   { id: 'custom', label: 'Outro', amountCents: null },
+]
+
+const bankApps = [
+  { name: 'Itaú', icon: itauBankIcon },
+  { name: 'Nubank', icon: nubankBankIcon },
+  { name: 'Bradesco', icon: bradescoBankIcon },
 ]
 
 const formatDepositAmount = (amountCents: number) => (
@@ -83,6 +95,36 @@ const normalizeInitialDepositAmountCents = (amountCents: number | null | undefin
   if (typeof amountCents !== 'number' || !Number.isFinite(amountCents)) return defaultDepositAmountCents
 
   return Math.min(Math.max(0, Math.round(amountCents)), maxDepositCents)
+}
+
+const copyPixCodeToClipboard = async (code: string) => {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(code)
+      return true
+    }
+  } catch {
+    // Usa o fallback para navegadores que não disponibilizam a Clipboard API.
+  }
+
+  let textarea: HTMLTextAreaElement | null = null
+
+  try {
+    textarea = document.createElement('textarea')
+    textarea.value = code
+    textarea.setAttribute('readonly', '')
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+
+    const didCopy = document.execCommand('copy')
+    return didCopy
+  } catch {
+    return false
+  } finally {
+    textarea?.remove()
+  }
 }
 
 const getPresetOptionIdForAmount = (amountCents: number): DepositOptionId | null => (
@@ -154,6 +196,41 @@ function AnimatedDepositAmount({
   )
 }
 
+function BankAppsBottomSheet({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean
+  onClose: () => void
+}) {
+  return (
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Selecione o seu banco"
+      leadingContent={<span className="deposit-bank-apps-sheet__header-spacer" aria-hidden="true" />}
+      containerClassName="deposit-bank-apps-sheet-container"
+      sheetClassName="deposit-bank-apps-sheet"
+      bodyClassName="deposit-bank-apps-sheet__body"
+      hideScrollIndicator
+      blurBackdrop
+    >
+      <div className="deposit-bank-apps-sheet__options">
+        {bankApps.map((bank) => (
+          <button
+            key={bank.name}
+            type="button"
+            className="deposit-bank-apps-sheet__option"
+            aria-label={`Abrir ${bank.name}`}
+          >
+            <img src={bank.icon} alt="" aria-hidden="true" />
+          </button>
+        ))}
+      </div>
+    </BottomSheet>
+  )
+}
+
 export function DepositPanel({
   isOpen,
   onClose,
@@ -171,10 +248,14 @@ export function DepositPanel({
   const [amountAnimationKey, setAmountAnimationKey] = useState(0)
   const [selectedDepositOptionId, setSelectedDepositOptionId] = useState<DepositOptionId>('100')
   const [isGeneratingPix, setIsGeneratingPix] = useState(false)
+  const [isBankAppsSheetOpen, setIsBankAppsSheetOpen] = useState(false)
+  const [pixCopyFeedback, setPixCopyFeedback] = useState<PixCopyFeedback>('idle')
+  const [pixCopyFeedbackKey, setPixCopyFeedbackKey] = useState(0)
   const [isContentTransitioning, setIsContentTransitioning] = useState(false)
   const [pixCountdownSeconds, setPixCountdownSeconds] = useState(pixCountdownInitialSeconds)
   const closeTimerRef = useRef<number | null>(null)
   const generateTimerRef = useRef<number | null>(null)
+  const pixCopyFeedbackTimerRef = useRef<number | null>(null)
   const openTimerRef = useRef<number | null>(null)
   const openFrameRef = useRef<number | null>(null)
   const confirmationModeRef = useRef(confirmationMode)
@@ -222,12 +303,33 @@ export function DepositPanel({
     generateTimerRef.current = null
   }, [])
 
+  const clearPixCopyFeedbackTimer = useCallback(() => {
+    if (pixCopyFeedbackTimerRef.current === null) return
+
+    window.clearTimeout(pixCopyFeedbackTimerRef.current)
+    pixCopyFeedbackTimerRef.current = null
+  }, [])
+
   const clearSwapTimer = useCallback(() => {
     if (swapTimerRef.current === null) return
 
     window.clearTimeout(swapTimerRef.current)
     swapTimerRef.current = null
   }, [])
+
+  const showPixCopyFeedback = useCallback((feedback: Exclude<PixCopyFeedback, 'idle'>) => {
+    clearPixCopyFeedbackTimer()
+    setPixCopyFeedback(feedback)
+    setPixCopyFeedbackKey((current) => current + 1)
+    pixCopyFeedbackTimerRef.current = window.setTimeout(() => {
+      pixCopyFeedbackTimerRef.current = null
+      setPixCopyFeedback('idle')
+    }, pixCopyFeedbackDurationMs)
+  }, [clearPixCopyFeedbackTimer])
+
+  useEffect(() => {
+    if (!isOpen) setIsBankAppsSheetOpen(false)
+  }, [isOpen])
 
   const requestClose = useCallback(() => {
     if (motionState === 'closing') return
@@ -294,8 +396,15 @@ export function DepositPanel({
     startInlineAmountEditing()
   }
 
-  const handleCopyPixCode = () => {
-    navigator.clipboard?.writeText(pixCode).catch(() => undefined)
+  const handleCopyPixCode = async () => {
+    const didCopy = await copyPixCodeToClipboard(pixCode)
+
+    if (!didCopy) {
+      showPixCopyFeedback('error')
+      return
+    }
+
+    showPixCopyFeedback('copied')
 
     if (confirmationModeRef.current !== 'on-pix-copy') return
     if (isPixDepositConfirmedRef.current) return
@@ -373,6 +482,7 @@ export function DepositPanel({
   useEffect(() => {
     clearCloseTimer()
     clearGenerateTimer()
+    clearPixCopyFeedbackTimer()
     clearOpenFrame()
     clearOpenTimer()
     clearSwapTimer()
@@ -396,6 +506,7 @@ export function DepositPanel({
         setManualAmountInput(formatDepositAmount(openAmountCents))
         setSelectedDepositOptionId(matchingPreset ?? 'custom')
         setIsGeneratingPix(false)
+        setPixCopyFeedback('idle')
         setIsContentTransitioning(false)
         setPixCountdownSeconds(pixCountdownInitialSeconds)
         setShouldRender(true)
@@ -410,6 +521,7 @@ export function DepositPanel({
       return () => {
         clearCloseTimer()
         clearGenerateTimer()
+        clearPixCopyFeedbackTimer()
         clearOpenFrame()
         clearOpenTimer()
         clearSwapTimer()
@@ -431,6 +543,7 @@ export function DepositPanel({
         setManualAmountInput(formatDepositAmount(defaultDepositAmountCents))
         setSelectedDepositOptionId('100')
         setIsGeneratingPix(false)
+        setPixCopyFeedback('idle')
         setIsContentTransitioning(false)
         setPixCountdownSeconds(pixCountdownInitialSeconds)
         pixAmountCentsRef.current = null
@@ -443,19 +556,21 @@ export function DepositPanel({
     return () => {
       clearCloseTimer()
       clearGenerateTimer()
+      clearPixCopyFeedbackTimer()
       clearOpenFrame()
       clearOpenTimer()
       clearSwapTimer()
     }
-  }, [clearCloseTimer, clearGenerateTimer, clearOpenFrame, clearOpenTimer, clearSwapTimer, isOpen])
+  }, [clearCloseTimer, clearGenerateTimer, clearOpenFrame, clearOpenTimer, clearPixCopyFeedbackTimer, clearSwapTimer, isOpen])
 
   useEffect(() => () => {
     clearCloseTimer()
     clearGenerateTimer()
+    clearPixCopyFeedbackTimer()
     clearOpenFrame()
     clearOpenTimer()
     clearSwapTimer()
-  }, [clearCloseTimer, clearGenerateTimer, clearOpenFrame, clearOpenTimer, clearSwapTimer])
+  }, [clearCloseTimer, clearGenerateTimer, clearOpenFrame, clearOpenTimer, clearPixCopyFeedbackTimer, clearSwapTimer])
 
   useEffect(() => {
     if (!shouldRender) return undefined
@@ -742,15 +857,32 @@ export function DepositPanel({
 
                   <button
                     type="button"
-                    className="deposit-panel__pix-action-button deposit-panel__pix-action-button--primary"
+                    className={[
+                      'deposit-panel__pix-action-button',
+                      'deposit-panel__pix-action-button--primary',
+                      pixCopyFeedback === 'copied' ? 'deposit-panel__pix-action-button--copied' : '',
+                      pixCopyFeedback === 'error' ? 'deposit-panel__pix-action-button--error' : '',
+                    ].filter(Boolean).join(' ')}
                     onClick={handleCopyPixCode}
                   >
-                    Copiar código Pix
+                    <span
+                      className="deposit-panel__pix-action-label"
+                      key={`${pixCopyFeedback}:${pixCopyFeedbackKey}`}
+                      aria-live="polite"
+                    >
+                      {pixCopyFeedback === 'copied' ? (
+                        <>
+                          <CheckIcon aria-hidden="true" weight="bold" />
+                          Código copiado
+                        </>
+                      ) : pixCopyFeedback === 'error' ? 'Não foi possível copiar' : 'Copiar código Pix'}
+                    </span>
                   </button>
 
                   <button
                     type="button"
                     className="deposit-panel__pix-action-button deposit-panel__pix-action-button--secondary"
+                    onClick={() => setIsBankAppsSheetOpen(true)}
                   >
                     Abrir aplicativo do banco
                   </button>
@@ -784,6 +916,10 @@ export function DepositPanel({
           </div>
         </div>
       </aside>
+      <BankAppsBottomSheet
+        isOpen={isBankAppsSheetOpen}
+        onClose={() => setIsBankAppsSheetOpen(false)}
+      />
     </div>,
     document.body
   )

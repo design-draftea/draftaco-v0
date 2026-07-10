@@ -792,8 +792,122 @@
   transform: scale(0.98);
 }
 
+.deposit-panel__pix-action-button--copied {
+  background: linear-gradient(98deg, #2e9d62 0%, #48bd79 100%);
+}
+
+.deposit-panel__pix-action-button--error {
+  background: linear-gradient(98deg, #b80e2a 0%, #dc2e4d 100%);
+}
+
+.deposit-panel__pix-action-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  animation: deposit-panel-pix-copy-feedback-in 180ms ease-out both;
+}
+
+.deposit-panel__pix-action-label svg {
+  width: 20px;
+  height: 20px;
+}
+
+@keyframes deposit-panel-pix-copy-feedback-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .deposit-panel__pix-action-button--secondary:active {
   background: var(--ds-action-secondary-pressed, rgb(251 251 251 / 0.14));
+}
+
+.bottom-sheet__container.deposit-bank-apps-sheet-container {
+  z-index: 6500;
+}
+
+.bottom-sheet.deposit-bank-apps-sheet {
+  max-height: none;
+  overflow: hidden;
+  border-radius: 24px 24px 0 0;
+  background: linear-gradient(180deg, #191919 0%, #0f0f0f 100%);
+}
+
+.bottom-sheet.deposit-bank-apps-sheet .bottom-sheet__header {
+  height: 56px;
+  min-height: 56px;
+  justify-content: initial;
+  padding: 8px;
+  border-bottom-color: var(--ds-fill-opacity-quaternary, rgb(251 251 251 / 0.12));
+}
+
+.bottom-sheet.deposit-bank-apps-sheet .bottom-sheet__leading,
+.deposit-bank-apps-sheet__header-spacer,
+.bottom-sheet.deposit-bank-apps-sheet .bottom-sheet__close {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+}
+
+.bottom-sheet.deposit-bank-apps-sheet .bottom-sheet__title {
+  flex: 1 1 auto;
+  justify-content: center;
+  min-width: 0;
+}
+
+.bottom-sheet.deposit-bank-apps-sheet .bottom-sheet__title span {
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+}
+
+.bottom-sheet.deposit-bank-apps-sheet .bottom-sheet__body-wrapper,
+.bottom-sheet__body.deposit-bank-apps-sheet__body {
+  flex: 0 0 auto;
+}
+
+.bottom-sheet__body.deposit-bank-apps-sheet__body {
+  padding: 40px 20px;
+  overflow: visible;
+}
+
+.deposit-bank-apps-sheet__options {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.deposit-bank-apps-sheet__option {
+  display: inline-flex;
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.deposit-bank-apps-sheet__option img {
+  display: block;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  object-fit: cover;
 }
 
 .deposit-panel__pix-divider {
