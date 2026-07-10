@@ -1,4 +1,8 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import closePixIcon from '../../assets/iconsDraftaco/closeBS.svg'
+import locationIcon from '../../assets/iconsDraftaco/iconLocalizacaoGde.png'
+import { LOCATION_PERMISSION_REQUIRED_EVENT } from '../../utils/locationPermissionGate'
+import './LocationPermissionGate.css'
 
 interface LocationPermissionGateProps {
   isEnabled: boolean
@@ -12,14 +16,6 @@ const locationRequestOptions: PositionOptions = {
 
 let hasRequestedLocationPermission = false
 
-const requestBrowserLocationPermission = () => {
-  navigator.geolocation.getCurrentPosition(
-    () => undefined,
-    () => undefined,
-    locationRequestOptions
-  )
-}
-
 const getGeolocationPermissionStatus = async () => {
   if (!navigator.permissions?.query) return null
 
@@ -31,24 +27,132 @@ const getGeolocationPermissionStatus = async () => {
 }
 
 export function LocationPermissionGate({ isEnabled }: LocationPermissionGateProps) {
+  const [isPermissionDenied, setIsPermissionDenied] = useState(false)
+  const [isPermissionScreenDismissed, setIsPermissionScreenDismissed] = useState(false)
+
+  const requestBrowserLocationPermission = useCallback(() => {
+    if (!navigator.geolocation) return
+
+    navigator.geolocation.getCurrentPosition(
+      () => {
+        setIsPermissionDenied(false)
+        setIsPermissionScreenDismissed(false)
+      },
+      (error) => {
+        if (error.code === 1) {
+          setIsPermissionDenied(true)
+          setIsPermissionScreenDismissed(false)
+        }
+      },
+      locationRequestOptions
+    )
+  }, [])
+
   useEffect(() => {
     if (!isEnabled) return
-    if (hasRequestedLocationPermission) return
     if (!window.isSecureContext) return
     if (!navigator.geolocation) return
 
-    hasRequestedLocationPermission = true
+    let isCurrent = true
+    let permissionStatus: PermissionStatus | null = null
+
+    const syncPermissionState = () => {
+      if (!permissionStatus) return
+
+      const isDenied = permissionStatus.state === 'denied'
+      setIsPermissionDenied(isDenied)
+
+      if (!isDenied) {
+        setIsPermissionScreenDismissed(false)
+      }
+    }
 
     const requestLocation = async () => {
-      const permissionStatus = await getGeolocationPermissionStatus()
+      permissionStatus = await getGeolocationPermissionStatus()
 
+      if (!isCurrent) return
+
+      permissionStatus?.addEventListener('change', syncPermissionState)
+
+      if (permissionStatus?.state === 'denied') {
+        syncPermissionState()
+        return
+      }
+
+      if (hasRequestedLocationPermission) return
       if (permissionStatus && permissionStatus.state !== 'prompt') return
 
+      hasRequestedLocationPermission = true
       requestBrowserLocationPermission()
     }
 
     void requestLocation()
-  }, [isEnabled])
 
-  return null
+    return () => {
+      isCurrent = false
+      permissionStatus?.removeEventListener('change', syncPermissionState)
+    }
+  }, [isEnabled, requestBrowserLocationPermission])
+
+  useEffect(() => {
+    if (!isEnabled || !isPermissionDenied) return
+
+    const handleLocationPermissionRequired = (event: Event) => {
+      event.preventDefault()
+      setIsPermissionScreenDismissed(false)
+    }
+
+    window.addEventListener(LOCATION_PERMISSION_REQUIRED_EVENT, handleLocationPermissionRequired)
+    return () => window.removeEventListener(LOCATION_PERMISSION_REQUIRED_EVENT, handleLocationPermissionRequired)
+  }, [isEnabled, isPermissionDenied])
+
+  if (!isEnabled || !isPermissionDenied || isPermissionScreenDismissed) return null
+
+  return (
+    <section className="location-permission-gate" aria-labelledby="location-permission-title">
+      <header className="location-permission-gate__header">
+        <button
+          className="location-permission-gate__close"
+          type="button"
+          aria-label="Fechar"
+          onClick={() => setIsPermissionScreenDismissed(true)}
+        >
+          <img src={closePixIcon} alt="" aria-hidden="true" />
+        </button>
+      </header>
+
+      <div className="location-permission-gate__body">
+        <div className="location-permission-gate__content">
+          <img
+            className="location-permission-gate__icon"
+            src={locationIcon}
+            alt=""
+          />
+          <div className="location-permission-gate__copy">
+            <h1 id="location-permission-title">Habilite sua localização</h1>
+            <div className="location-permission-gate__description">
+              <p>
+                Precisamos verificar sua localização para manter sua conta segura e conferir se
+                apostas e jogos são permitidos na sua região.
+              </p>
+              <p>
+                No seu dispositivo, vá em Ajustes › Aplicativos › Pitaco › Permissões ›
+                Localização › Permitir sempre › Localização precisa.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer className="location-permission-gate__footer">
+        <button
+          className="location-permission-gate__settings-button"
+          type="button"
+          onClick={requestBrowserLocationPermission}
+        >
+          Ir para configurações
+        </button>
+      </footer>
+    </section>
+  )
 }

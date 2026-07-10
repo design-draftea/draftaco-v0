@@ -1,6 +1,7 @@
 import { useCallback, useState, type ButtonHTMLAttributes, type MouseEvent } from 'react'
 import { BETSLIP_ODD_INTERACTION_EVENT, isSameBetslipSelection, type BetslipSelection } from './betslipUtils'
 import { useBetslip } from './useBetslip'
+import { requestLocationPermissionGate } from '../utils/locationPermissionGate'
 
 type OddButtonProps = Pick<
   ButtonHTMLAttributes<HTMLButtonElement>,
@@ -27,6 +28,9 @@ export function useOddSelection(defaultClassName: string) {
       'aria-pressed': isSelected,
       onClick: (event: MouseEvent<HTMLButtonElement>) => {
         event.stopPropagation()
+
+        if (requestLocationPermissionGate()) return
+
         window.dispatchEvent(new CustomEvent(BETSLIP_ODD_INTERACTION_EVENT))
 
         if (betslipSelection) {

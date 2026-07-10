@@ -11,6 +11,7 @@ import {
   type BetslipPromoVariant,
   type BetslipSelection,
 } from '../../hooks/betslipUtils'
+import { requestLocationPermissionGate } from '../../utils/locationPermissionGate'
 import { useBetslip } from '../../hooks/useBetslip'
 import { useOddSelection } from '../../hooks/useOddSelection'
 import { useSlidingActiveIndicator } from '../../hooks/useSlidingActiveIndicator'
@@ -1505,6 +1506,9 @@ export function OffersSection({
         'aria-pressed': isSelected,
         onClick: (event: MouseEvent<HTMLButtonElement>) => {
           event.stopPropagation()
+
+          if (requestLocationPermissionGate()) return
+
           window.dispatchEvent(new CustomEvent(BETSLIP_ODD_INTERACTION_EVENT))
           toggleSelections(comboEntries)
         },

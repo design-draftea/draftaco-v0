@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 
 import { BetslipContext, type BetslipContextValue } from './betslipContext'
+import { requestLocationPermissionGate } from '../utils/locationPermissionGate'
 import {
   BETSLIP_STAKE,
   EMPTY_BETSLIP_SUMMARY,
@@ -115,10 +116,14 @@ export function BetslipProvider({ children }: { children: ReactNode }) {
   const [{ selectionsById, selectedSelectionIdsByGroup }, setBetslipState] = useState<BetslipState>(EMPTY_BETSLIP_STATE)
 
   const addSelection = useCallback((groupId: string, selection: BetslipSelection) => {
+    if (requestLocationPermissionGate()) return
+
     setBetslipState((current) => addSelectionToState(current, groupId, selection))
   }, [])
 
   const toggleSelections = useCallback((entries: BetslipSelectionEntry[]) => {
+    if (requestLocationPermissionGate()) return
+
     setBetslipState((current) => {
       if (entries.length === 0) return current
 
@@ -155,6 +160,8 @@ export function BetslipProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const toggleSelection = useCallback((groupId: string, selection: BetslipSelection) => {
+    if (requestLocationPermissionGate()) return
+
     setBetslipState((current) => {
       const selectedEntries = Object.entries(current.selectedSelectionIdsByGroup)
       const isRemoving = selectedEntries.some(([, selectionId]) => (
