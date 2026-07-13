@@ -15,5 +15,7 @@
 
 ## Validação
 
+- Para mudanças de interface ou fluxo, implemente primeiro na branch e apresente a versão local para validação da pessoa responsável pelo protótipo.
+- Não abra Pull Request antes de receber aprovação explícita da versão local. Depois da aprovação, execute as verificações técnicas, abra a Pull Request e aguarde nova autorização explícita antes do merge.
 - Antes de abrir uma Pull Request, execute `npm ci` e `npm run build`.
 - `npm run lint` existe, mas contém erros preexistentes e não é um bloqueio de merge. Não desabilite regras para contorná-los; trate a limpeza em uma tarefa separada.
