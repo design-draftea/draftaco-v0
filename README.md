@@ -6,8 +6,10 @@ O projeto também funciona como uma camada prática de validação dos tokens ex
 
 ## Como rodar
 
+Use Node.js 20.
+
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -32,10 +34,18 @@ npm run dev      # servidor local
 npm run build    # typecheck + build de produção
 npm run lint     # ESLint
 npm run preview  # preview do build
-npm run deploy   # publica dist via gh-pages
 ```
 
-Em produção, o app usa o base path `/pitaquinho`.
+Em produção, o app usa o base path `/draftaco-v0`.
+
+## Fluxo de colaboração e deploy
+
+- `main` é a versão oficial e publicada do protótipo.
+- Cada mudança deve começar em uma branch própria e chegar à `main` por Pull Request.
+- Pull Requests para `main` executam o build no GitHub Actions.
+- O merge na `main` publica automaticamente no GitHub Pages. Não existe deploy manual por `gh-pages`.
+
+O lint permanece disponível para acompanhamento, mas ainda possui erros preexistentes e não é bloqueio de merge. A correção deve acontecer em uma tarefa de manutenção dedicada, sem misturar mudanças funcionais.
 
 ## Rotas principais
 
