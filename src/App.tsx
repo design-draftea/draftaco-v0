@@ -810,6 +810,7 @@ function AppContent() {
         <Suspense fallback={null}>
           <BetslipPageV2
             authVariant={authVariant}
+            balanceCents={balanceCents}
             isCoveredByEvent={!!betslipOriginLiveEvent}
             onCreateAccountClick={handleBetslipCreateAccountClick}
             onDepositClick={handleDepositPanelOpen}

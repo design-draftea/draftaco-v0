@@ -1,6 +1,6 @@
 import { createContext } from 'react'
 
-export type FeatureFlagId = 'freeBetsAvailable'
+export type FeatureFlagId = 'freeBetsAvailable' | 'unifiedSportsBottomSheetV2'
 export type BrandMode = 'draftea' | 'pitaco'
 
 export interface FeatureFlagDefinition {
@@ -18,6 +18,12 @@ export interface BrandModeDefinition {
 }
 
 export const featureFlagDefinitions: FeatureFlagDefinition[] = [
+  {
+    id: 'unifiedSportsBottomSheetV2',
+    title: 'Esportes e favoritos V2',
+    description: 'Alterna entre o novo bottom sheet unificado e a versão atual.',
+    defaultEnabled: true,
+  },
   {
     id: 'freeBetsAvailable',
     title: 'Apostas Gratis disponivel',

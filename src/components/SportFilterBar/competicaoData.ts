@@ -26,6 +26,7 @@ export interface CompeticaoConfig {
   sportIcon: string
   featuredCompetitions: Competition[]
   topCompetitions: Competition[]
+  unifiedTopCompetitions?: Competition[]
   countries: CompetitionCountry[]
 }
 
@@ -46,6 +47,13 @@ const futebolConfig: CompeticaoConfig = {
     { id: 'fut-champions', name: 'Champions League' },
     { id: 'fut-sul-americana', name: 'Sul-Americana' },
     { id: 'fut-uefa-liga-europa', name: 'UEFA - Liga Europa' },
+  ],
+  unifiedTopCompetitions: [
+    { id: 'fut-brasileiro', name: 'Brasileirão Série A' },
+    { id: 'fut-champions', name: 'Champions League' },
+    { id: 'fut-premier-league', name: 'Premier League' },
+    { id: 'fut-libertadores', name: 'Libertadores' },
+    { id: 'fut-bundesliga', name: 'Bundesliga' },
   ],
   countries: [
     {
@@ -149,6 +157,9 @@ const basqueteConfig: CompeticaoConfig = {
     { id: 'bsq-ncaab', name: 'NCAAB' },
     { id: 'bsq-nbb', name: 'NBB' },
     { id: 'bsq-euro-cup', name: 'Euro Cup' },
+  ],
+  unifiedTopCompetitions: [
+    { id: 'bsq-nba', name: 'NBA' },
   ],
   countries: [
     {
@@ -272,6 +283,7 @@ const enabledCompetitionIds = new Set([
   'fut-brasileirao-a',
   'fut-champions',
   'fut-premier-league',
+  'fut-libertadores',
   'fut-laliga',
   'fut-mls',
   'fut-bundesliga',
@@ -289,6 +301,10 @@ const enabledCompetitionIds = new Set([
 
 export function isCompetitionEnabled(id: string): boolean {
   return enabledCompetitionIds.has(id)
+}
+
+export function isCompetitionRailClickable(sportId: string): boolean {
+  return sportId !== 'tenis'
 }
 
 export function findCompetition(

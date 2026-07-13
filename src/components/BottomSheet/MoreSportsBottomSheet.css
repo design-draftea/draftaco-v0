@@ -154,7 +154,7 @@
   min-height: 64px;
   overflow: hidden;
   border: 1px solid var(--tokens-border-border-02);
-  border-radius: 12px;
+  border-radius: 16px;
   background: transparent;
 }
 

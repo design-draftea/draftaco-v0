@@ -504,52 +504,57 @@
 
 .sport-rail__live-indicator {
   position: absolute;
-  top: 1px;
-  right: 1px;
-  display: flex;
+  top: -3px;
+  right: 0;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 13px;
-  height: 13px;
-  isolation: isolate;
+  width: 14px;
+  height: 14px;
 }
 
-.sport-rail__live-indicator::before {
-  content: '';
+.sport-rail__favorite-indicator {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  right: 2px;
+  bottom: -2px;
+  left: 2px;
+  z-index: 2;
+  display: block;
+  height: 13px;
+  pointer-events: none;
+}
+
+.sport-rail__favorite-indicator img,
+.sport-rail--competitions .sport-rail__favorite-indicator img,
+.header--v2 .sport-rail--competitions .sport-rail__icon .sport-rail__favorite-indicator img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+.sport-rail__live-dot {
+  display: block;
   width: 6px;
   height: 6px;
-  border: 0.5px solid var(--tokens-feedback-feedback-error-icon);
   border-radius: 50%;
-  background: transparent;
-  transform: translate(-50%, -50%);
-  animation: sport-rail-ping-live 2s linear infinite;
-  z-index: 0;
+  background: #ff3f68;
+  box-shadow: 0 0 0 0 rgb(255 63 104 / 0.45);
+  animation: sport-rail-live-dot-pulse 1.8s ease-out infinite;
 }
 
-.sport-rail__live-icon {
-  width: 13px !important;
-  height: 13px !important;
-  object-fit: contain;
-  position: relative;
-  z-index: 1;
-  filter: invert(62%) sepia(60%) saturate(600%) hue-rotate(314deg) brightness(100%) contrast(95%);
+.sport-rail__live-dot--syncing {
+  animation: none;
 }
 
-@keyframes sport-rail-ping-live {
+@keyframes sport-rail-live-dot-pulse {
   0% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
+    box-shadow: 0 0 0 0 rgb(255 63 104 / 0.45);
   }
-  33.33% {
-    transform: translate(-50%, -50%) scale(3);
-    opacity: 0;
-  }
+
+  70%,
   100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0;
+    box-shadow: 0 0 0 6px rgb(255 63 104 / 0);
   }
 }
 

@@ -3325,7 +3325,6 @@ function LiveEventInlineScoreHeader({
   const contentSport = match.sport ?? sport
   const isBasketball = contentSport === 'basquete'
   const isLiveMatch = match.isLive ?? true
-  const scheduledDateTime = match.dateTime ?? match.time ?? currentTime
 
   return (
     <section
@@ -3343,22 +3342,22 @@ function LiveEventInlineScoreHeader({
         />
         <div className="live-event-inline__score-center">
           {isLiveMatch ? (
-            <span className="live-event-inline__score-row">
-              <strong>{match.homeTeam.score}</strong>
-              <span>:</span>
-              <strong>{match.awayTeam.score}</strong>
-            </span>
+            <>
+              <span className="live-event-inline__score-row">
+                <strong>{match.homeTeam.score}</strong>
+                <span>:</span>
+                <strong>{match.awayTeam.score}</strong>
+              </span>
+              <span className="live-event-inline__score-time">
+                <span className="live-event-inline__score-live-dot-wrap" aria-hidden="true">
+                  <span className="live-event-inline__score-live-dot" />
+                </span>
+                <span>{getInlineMatchHeaderClockLabel(currentTime)}</span>
+              </span>
+            </>
           ) : (
             <span className="live-event-inline__score-matchup">vs</span>
           )}
-          <span className="live-event-inline__score-time">
-            {isLiveMatch && (
-              <span className="live-event-inline__score-live-dot-wrap" aria-hidden="true">
-                <span className="live-event-inline__score-live-dot" />
-              </span>
-            )}
-            <span>{isLiveMatch ? getInlineMatchHeaderClockLabel(currentTime) : scheduledDateTime}</span>
-          </span>
         </div>
         <LiveEventInlineScoreTeam
           team={match.awayTeam}

@@ -1,7 +1,8 @@
+import iconWta from '../assets/iconSports/wta.png'
 import { getTennisCompetitionCountryIcon } from './tennisCountryIcons'
 
 const ATP_BADGE = 'https://r2.thesportsdb.com/images/media/league/badge/q7aej51769857150.png'
-const WTA_BADGE = 'https://r2.thesportsdb.com/images/media/league/badge/bddhun1768230678.png'
+const WTA_BADGE = iconWta
 
 export const COMPETITION_BADGES: Record<string, string> = {
   'fut-brasileiro': 'https://r2.thesportsdb.com/images/media/league/badge/lywv7t1766787179.png',

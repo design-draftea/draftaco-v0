@@ -61,6 +61,7 @@ type BetslipAuthVariant = 'logged-in' | 'logged-out'
 
 interface BetslipPageV2Props {
   authVariant?: BetslipAuthVariant
+  balanceCents: number
   isCoveredByEvent?: boolean
   onCreateAccountClick?: () => void
   onDepositClick?: () => void
@@ -76,7 +77,6 @@ interface BetslipPageV2Props {
 }
 
 const DEFAULT_STAKE_CENTS = 1000
-const BALANCE_LABEL = 'R$250,00'
 const CLOSE_ANIMATION_MS = 320
 const BET_CONFIRM_LOADING_MS = 3000
 const SWIPE_COMPLETE_RATIO = 0.6
@@ -785,6 +785,7 @@ function SwipeButton({
 
 export function BetslipPageV2({
   authVariant = 'logged-in',
+  balanceCents,
   isCoveredByEvent = false,
   onCreateAccountClick,
   onDepositClick,
@@ -832,6 +833,7 @@ export function BetslipPageV2({
   )
   const hasSgp = selectionGroups.some((group) => group.selections.length > 1)
   const isLoggedOut = authVariant === 'logged-out'
+  const balanceDisplayValue = formatMoney(Math.max(0, Number.isFinite(balanceCents) ? balanceCents : 0))
   const shouldShowIdentityPrompt = !isLoggedOut && requiresIdentity
   const shouldShowLimitsPrompt = !isLoggedOut && !requiresIdentity && requiresLimits
   const shouldShowDepositPrompt = !isLoggedOut && !requiresIdentity && !requiresLimits && requiresDeposit
@@ -1377,7 +1379,7 @@ export function BetslipPageV2({
             <h1 id="betslip-v2-title">Resumo da sua entrada</h1>
             <span>{Math.max(summary.selectionCount, selections.length)}</span>
           </div>
-          <p>Saldo disponível: {BALANCE_LABEL}</p>
+          {!isLoggedOut ? <p>Saldo disponível: {balanceDisplayValue}</p> : null}
         </div>
 
         <button type="button" className="betslip-v2__icon-button" aria-label="Cerrar betslip" disabled={isConfirmLoading} onClick={() => requestClose()}>

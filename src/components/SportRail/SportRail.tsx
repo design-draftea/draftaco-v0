@@ -2,7 +2,6 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { CaretRightIcon } from '@phosphor-icons/react'
 import './SportRail.css'
 
-import iconAoVivo from '../../assets/iconAoVivo.png'
 import iconDestaque from '../../assets/iconSports/fire.png'
 import iconBasquete from '../../assets/iconSports/basketball.png'
 import iconBrasileirao from '../../assets/iconSports/brasileirao.png'
@@ -15,13 +14,18 @@ import iconLibertadores from '../../assets/iconSports/libertadores.png'
 import iconMore from '../../assets/iconSports/more.png'
 import iconPremier from '../../assets/iconSports/premier.png'
 import iconTenis from '../../assets/iconSports/tennis.png'
+import lineFavorito from '../../assets/iconsDraftaco/lineFavorito.svg'
 import { getCompetitionRailBadge } from '../../data/competitionBadges'
+import { useFavoriteCompetitions } from '../../hooks/useFavoriteCompetitions'
+import { useFeatureFlags } from '../../hooks/useFeatureFlags'
+import { isCompetitionRailClickable } from '../SportFilterBar/competicaoData'
 import type { ProductRailBaseItem, ProductRailSection } from '../../types/home'
 import type { CompetitionLinkTarget } from '../../utils/competitionNavigation'
-import { MoreSportsBottomSheet } from '../BottomSheet'
+import { MoreSportsBottomSheet, MoreSportsBottomSheetV2 } from '../BottomSheet'
 
 interface SportRailBaseItem extends ProductRailBaseItem {
   type: 'sport' | 'competition' | 'more'
+  isFavorite?: boolean
 }
 
 interface SportRailSportItem extends SportRailBaseItem {
@@ -65,6 +69,7 @@ interface ProductRailProps<TItem extends ProductRailBaseItem> {
   renderAfter?: ReactNode
   getScrollAnchorId?: (item: TItem | undefined) => string | null
   hasLiveIndicator?: (item: TItem) => boolean
+  hasFavoriteIndicator?: (item: TItem) => boolean
   onSelectItem?: (item: TItem) => void
 }
 
@@ -332,7 +337,7 @@ const createDynamicCompetitionItem = (
   competitionName,
   icon: getCompetitionRailBadge(competitionId, getSportRailFallbackIcon(sportId)),
   label: getDynamicCompetitionLabel(competitionName),
-  clickable: sportId !== 'tenis',
+  clickable: isCompetitionRailClickable(sportId),
 })
 
 export function ProductRail<TItem extends ProductRailBaseItem>({
@@ -345,6 +350,7 @@ export function ProductRail<TItem extends ProductRailBaseItem>({
   renderAfter,
   getScrollAnchorId = getDefaultProductRailScrollAnchorId,
   hasLiveIndicator,
+  hasFavoriteIndicator,
   onSelectItem,
 }: ProductRailProps<TItem>) {
   const [gap, setGap] = useState(() => getProductRailGap())
@@ -361,6 +367,17 @@ export function ProductRail<TItem extends ProductRailBaseItem>({
     () => sections.flatMap((section) => section.items),
     [sections]
   )
+  const railItemsKey = useMemo(
+    () => flatRailItems.map((item) => item.id).join('|'),
+    [flatRailItems]
+  )
+  const liveIndicatorKey = useMemo(
+    () => flatRailItems
+      .filter((item) => hasLiveIndicator?.(item))
+      .map((item) => item.id)
+      .join('|'),
+    [flatRailItems, hasLiveIndicator]
+  )
   const activeRailItemIndex = flatRailItems.findIndex((item) => item.id === activeItemId)
   const activeScrollAnchorItemId = getScrollAnchorId(flatRailItems[activeRailItemIndex])
   const activeScrollAnchorIndex = flatRailItems.findIndex((item) => item.id === activeScrollAnchorItemId)
@@ -370,6 +387,18 @@ export function ProductRail<TItem extends ProductRailBaseItem>({
     setHasUserScrolledRail(false)
     setHasMoreItemsLeft(false)
   }, [])
+
+  useLayoutEffect(() => {
+    const railList = listRef.current
+    if (!railList || !liveIndicatorKey) return
+
+    const liveDots = Array.from(railList.querySelectorAll<HTMLElement>('.sport-rail__live-dot'))
+    if (liveDots.length === 0) return
+
+    liveDots.forEach((liveDot) => liveDot.classList.add('sport-rail__live-dot--syncing'))
+    void railList.offsetWidth
+    liveDots.forEach((liveDot) => liveDot.classList.remove('sport-rail__live-dot--syncing'))
+  }, [liveIndicatorKey, railItemsKey])
 
   const updateActiveIndicator = useCallback(() => {
     const isReady = setProductRailActiveIndicator(
@@ -577,8 +606,16 @@ export function ProductRail<TItem extends ProductRailBaseItem>({
         />
       )}
       {hasLiveIndicator?.(item) && (
-        <span className="sport-rail__live-indicator" aria-label="Ao vivo">
-          <img src={iconAoVivo} alt="" className="sport-rail__live-icon" />
+        <span
+          className="sport-rail__live-indicator"
+          aria-label="Ao vivo"
+        >
+          <span className="sport-rail__live-dot" aria-hidden="true" />
+        </span>
+      )}
+      {hasFavoriteIndicator?.(item) && (
+        <span className="sport-rail__favorite-indicator" aria-hidden="true">
+          <img src={lineFavorito} alt="" />
         </span>
       )}
     </div>
@@ -704,6 +741,13 @@ export function SportRail({
   onOpenCompetition,
 }: SportRailProps = {}) {
   const [isMoreSportsOpen, setIsMoreSportsOpen] = useState(false)
+  const { isFeatureEnabled } = useFeatureFlags()
+  const {
+    favorites: favoriteCompetitions,
+    moveFavorite,
+    toggleFavorite,
+  } = useFavoriteCompetitions()
+  const isUnifiedSportsBottomSheetEnabled = isFeatureEnabled('unifiedSportsBottomSheetV2')
   const activeSportId = activeSport ?? 'destaques'
   const defaultFlatRailItems = useMemo(
     () => competitionRailSections.flatMap((section) => section.items),
@@ -749,21 +793,95 @@ export function SportRail({
     return [...extraCompetitionItems, dynamicCompetitionItem]
   }, [dynamicCompetitionItem, extraCompetitionItems])
 
-  const railSections = useMemo(() => {
-    if (visibleCustomCompetitionItems.length === 0) return competitionRailSections
+  const defaultCompetitionItemsByKey = useMemo(() => {
+    const itemsByKey = new Map<string, SportRailCompetitionItem>()
 
-    return competitionRailSections.map((section) => (
-      visibleCustomCompetitionItems.some((item) => item.sportId === section.id)
-        ? {
-            ...section,
-            items: [
-              ...section.items,
-              ...visibleCustomCompetitionItems.filter((item) => item.sportId === section.id),
-            ],
-          }
-        : section
-    ))
-  }, [visibleCustomCompetitionItems])
+    defaultFlatRailItems.forEach((item) => {
+      if (item.type !== 'competition') return
+      itemsByKey.set(`${item.sportId}:${item.competitionId}`, item)
+    })
+
+    return itemsByKey
+  }, [defaultFlatRailItems])
+
+  const favoriteCompetitionItems = useMemo(() => {
+    const seenIds = new Set<string>()
+
+    return favoriteCompetitions
+      .map((competition) => (
+        {
+          ...(
+            defaultCompetitionItemsByKey.get(`${competition.sport}:${competition.id}`) ??
+            createDynamicCompetitionItem(competition.id, competition.name, competition.sport)
+          ),
+          isFavorite: true,
+        }
+      ))
+      .filter((item) => {
+        const hasParentSection = competitionRailSections.some((section) => section.id === item.sportId)
+        if (!hasParentSection || seenIds.has(item.id)) return false
+
+        seenIds.add(item.id)
+        return true
+      })
+  }, [defaultCompetitionItemsByKey, favoriteCompetitions])
+
+  const railSections = useMemo(() => {
+    if (!isUnifiedSportsBottomSheetEnabled) {
+      if (visibleCustomCompetitionItems.length === 0) return competitionRailSections
+
+      return competitionRailSections.map((section) => (
+        visibleCustomCompetitionItems.some((item) => item.sportId === section.id)
+          ? {
+              ...section,
+              items: [
+                ...section.items,
+                ...visibleCustomCompetitionItems.filter((item) => item.sportId === section.id),
+              ],
+            }
+          : section
+      ))
+    }
+
+    const favoriteIds = new Set(favoriteCompetitionItems.map((item) => item.id))
+    const sectionsWithoutFavoriteDuplicates = competitionRailSections.map((section) => {
+      const staticItems = section.items.filter((item) => item.type !== 'competition')
+      const remainingDefaultCompetitions = section.items.filter((item) => (
+        item.type === 'competition' && !favoriteIds.has(item.id)
+      ))
+      const remainingCustomCompetitions = visibleCustomCompetitionItems.filter((item) => (
+        item.sportId === section.id && !favoriteIds.has(item.id)
+      ))
+
+      const hadFavoriteCompetition = section.items.some((item) => (
+        item.type === 'competition' && favoriteIds.has(item.id)
+      ))
+      if (!hadFavoriteCompetition && remainingCustomCompetitions.length === 0) return section
+
+      return {
+        ...section,
+        items: [
+          ...staticItems,
+          ...remainingDefaultCompetitions,
+          ...remainingCustomCompetitions,
+        ],
+      }
+    })
+
+    if (favoriteCompetitionItems.length === 0) return sectionsWithoutFavoriteDuplicates
+
+    const favoriteSection: ProductRailSection<SportRailItem> = {
+      id: 'favoritos',
+      className: 'sport-rail__section--favorites',
+      items: favoriteCompetitionItems,
+    }
+
+    return [
+      sectionsWithoutFavoriteDuplicates[0],
+      favoriteSection,
+      ...sectionsWithoutFavoriteDuplicates.slice(1),
+    ]
+  }, [favoriteCompetitionItems, isUnifiedSportsBottomSheetEnabled, visibleCustomCompetitionItems])
   const flatRailItems = useMemo(
     () => railSections.flatMap((section) => section.items),
     [railSections]
@@ -806,15 +924,29 @@ export function SportRail({
       )}
       getScrollAnchorId={getSportRailScrollAnchorId}
       hasLiveIndicator={hasSportRailLiveIndicator}
+      hasFavoriteIndicator={(item) => item.type === 'competition' && item.isFavorite === true}
       onSelectItem={handleSelectItem}
       renderAfter={(
-        <MoreSportsBottomSheet
-          isOpen={isMoreSportsOpen}
-          onClose={() => setIsMoreSportsOpen(false)}
-          activeSport={activeSport}
-          onSelectSport={disableInteractions ? undefined : onSportChange}
-          onSelectCompetition={disableInteractions ? undefined : onOpenCompetition}
-        />
+        isUnifiedSportsBottomSheetEnabled ? (
+          <MoreSportsBottomSheetV2
+            isOpen={isMoreSportsOpen}
+            onClose={() => setIsMoreSportsOpen(false)}
+            activeSport={activeSport}
+            favoriteCompetitions={favoriteCompetitions}
+            onMoveFavorite={moveFavorite}
+            onSelectSport={disableInteractions ? undefined : onSportChange}
+            onSelectCompetition={disableInteractions ? undefined : onOpenCompetition}
+            onToggleFavorite={toggleFavorite}
+          />
+        ) : (
+          <MoreSportsBottomSheet
+            isOpen={isMoreSportsOpen}
+            onClose={() => setIsMoreSportsOpen(false)}
+            activeSport={activeSport}
+            onSelectSport={disableInteractions ? undefined : onSportChange}
+            onSelectCompetition={disableInteractions ? undefined : onOpenCompetition}
+          />
+        )
       )}
     />
   )

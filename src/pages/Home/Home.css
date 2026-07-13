@@ -174,11 +174,6 @@
 
 .home--event-inline-active .header--v2 {
   --header-v2-background-size: 100% 220px;
-
-  background-color: transparent;
-  background-position: center top, center top;
-  background-size: var(--header-v2-background-size), 100% 100%;
-  background-repeat: no-repeat, no-repeat;
 }
 
 .home--novo-trilho.home--competition-active.home--content-event-rail-active:not(.home--event-inline-active) .header--v2 {
@@ -191,16 +186,16 @@
   background-attachment: fixed;
 }
 
-/* In competition header-stack mode the rail + chips live in the header. The
-   header is short (and shorter still when collapsed), so the fixed-height
-   lightHeader image covers the background's fade tail and the content hard-cuts
-   under the chips ("barra seca"). Render the header background on a masked
-   ::before so it fades out at the bottom — letting content scroll under softly
-   like the live-event header — without fading the rail/chips themselves. */
+/* Header stacks can be shorter than the fixed-height lightHeader image, which
+   would cover the fade tail and hard-cut below the chips ("barra seca"). Render
+   the background on a masked ::before so the fade follows the header's actual
+   height without fading the rail, score, or chips themselves. */
+.home--event-inline-active .header--v2,
 .home--novo-trilho.home--competition-active.home--competition-header-active.home--content-event-rail-active:not(.home--event-inline-active) .header--v2 {
   background: transparent;
 }
 
+.home--event-inline-active .header--v2::before,
 .home--novo-trilho.home--competition-active.home--competition-header-active.home--content-event-rail-active:not(.home--event-inline-active) .header--v2::before {
   content: '';
   position: absolute;
