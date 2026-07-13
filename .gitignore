@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Local environment variables. Keep only a documented template in Git.
+.env
+.env.*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
