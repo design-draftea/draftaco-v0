@@ -1,0 +1,84 @@
+.offline-retry {
+  display: flex;
+  min-height: 36px;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.offline-retry__button {
+  display: inline-flex;
+  width: 126px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--ds-radius-medium, 10px);
+  background: var(--ds-action-secondary-default, rgb(251 251 251 / 0.12));
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.offline-retry__button:hover:not(:disabled) {
+  background: var(--ds-action-secondary-pressed, rgb(251 251 251 / 0.14));
+}
+
+.offline-retry__button:active:not(:disabled) {
+  background: var(--ds-action-secondary-pressed, rgb(251 251 251 / 0.14));
+}
+
+.offline-retry__button:focus-visible {
+  outline: 2px solid var(--ds-fill-primary, #fbfbfb);
+  outline-offset: 3px;
+}
+
+.offline-retry__button:disabled {
+  cursor: progress;
+}
+
+.offline-retry__spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    var(--ds-fill-primary, #fbfbfb) 0deg,
+    rgb(var(--ds-fill-primary-rgb, 251 251 251) / 0.78) 210deg,
+    rgb(var(--ds-fill-primary-rgb, 251 251 251) / 0) 330deg,
+    rgb(var(--ds-fill-primary-rgb, 251 251 251) / 0) 360deg
+  );
+  -webkit-mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 2px),
+    var(--ds-fill-dark, #000) calc(100% - 1.8px)
+  );
+  mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 2px),
+    var(--ds-fill-dark, #000) calc(100% - 1.8px)
+  );
+  animation: offline-retry-spinner 720ms linear infinite;
+}
+
+.offline-retry__status {
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.72));
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+@keyframes offline-retry-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .offline-retry__spinner {
+    animation-duration: 1600ms;
+  }
+}

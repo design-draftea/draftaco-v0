@@ -1,0 +1,277 @@
+.pong-page {
+  display: flex;
+  width: 100%;
+  height: var(--app-viewport-height, 100dvh);
+  min-height: 0;
+  justify-content: center;
+  overflow: hidden;
+  background: #1c1c1c;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+}
+
+.pong-page__surface {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--ds-background-app, #000);
+}
+
+.pong-page__glow {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  background: linear-gradient(45.0933deg, #4b20ff 0%, #9730ff 100%);
+  filter: blur(50px);
+  opacity: 0.48;
+  pointer-events: none;
+}
+
+.pong-page__header-space {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 24px;
+  flex: 0 0 24px;
+}
+
+.pong-page__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pong-page__intro {
+  display: flex;
+  width: 100%;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+  text-align: center;
+}
+
+.pong-page__connection-icon {
+  position: relative;
+  display: block;
+  width: 80px;
+  height: 80px;
+  flex: 0 0 80px;
+  overflow: hidden;
+}
+
+.pong-page__connection-icon img {
+  display: block;
+  width: 80px;
+  height: 80px;
+  max-width: none;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
+.pong-page__intro h1,
+.pong-page__intro p {
+  margin: 0;
+}
+
+.pong-page__intro h1 {
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 27px;
+  white-space: nowrap;
+}
+
+.pong-page__intro p {
+  width: 100%;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+}
+
+.pong-game {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  padding: 20px;
+}
+
+.pong-game__field {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  border: 2px solid var(--ds-fill-opacity-quaternary, rgb(251 251 251 / 0.12));
+  border-radius: 40px;
+  background: var(--ds-background-app, #000);
+  outline: none;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pong-game__center-line {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  right: 0;
+  left: 0;
+  border-top: 2px dashed var(--ds-fill-opacity-quaternary, rgb(251 251 251 / 0.12));
+  transform: translateY(-1px);
+  pointer-events: none;
+}
+
+.pong-game__score {
+  position: absolute;
+  z-index: 1;
+  color: var(--ds-fill-opacity-quaternary, rgb(251 251 251 / 0.12));
+  font-family: 'Micro 5', ui-monospace, monospace;
+  font-size: 64px;
+  font-weight: 400;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.pong-game__score--machine {
+  top: calc(20% + 3px);
+  right: 20px;
+  text-align: right;
+}
+
+.pong-game__score--player {
+  bottom: calc(20% + 2px);
+  left: 18px;
+}
+
+.pong-game__level {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  right: 8px;
+  padding: 0 8px;
+  background: var(--ds-background-app, #000);
+  color: var(--ds-fill-opacity-quaternary, rgb(251 251 251 / 0.12));
+  font-family: 'Micro 5', ui-monospace, monospace;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.pong-game__center-mark {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  width: 88px;
+  height: 88px;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--ds-fill-opacity-quaternary, rgb(251 251 251 / 0.12));
+  border-radius: 50%;
+  background: var(--ds-background-app, #000);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.pong-game__center-mark img {
+  display: block;
+  width: 29px;
+  height: 32px;
+  max-width: none;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.pong-game__paddle,
+.pong-game__ball,
+.pong-game__trail-particle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  background: var(--ds-fill-primary, #fbfbfb);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.pong-game__paddle {
+  z-index: 4;
+  width: 54px;
+  height: 6px;
+}
+
+.pong-game__ball {
+  z-index: 5;
+  width: 6px;
+  height: 6px;
+}
+
+.pong-game__ball-trail {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.pong-game__trail-particle {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  opacity: 0;
+  box-shadow: 0 0 6px rgb(var(--ds-fill-primary-rgb, 251 251 251) / 0.48);
+}
+
+.pong-game__announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+@media (max-height: 620px) {
+  .pong-game {
+    padding-top: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pong-game__paddle,
+  .pong-game__ball,
+  .pong-game__trail-particle {
+    will-change: auto;
+  }
+
+}
