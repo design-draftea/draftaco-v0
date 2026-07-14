@@ -1,0 +1,1 @@
+export { MemoriaPage } from './MemoriaPage'

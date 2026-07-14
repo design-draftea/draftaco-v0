@@ -24,6 +24,9 @@ const BetslipPageV2 = lazy(() => import('./pages/BetslipPageV2').then((m) => ({ 
 const BetSuccessPage = lazy(() => import('./pages/BetSuccessPage').then((m) => ({ default: m.BetSuccessPage })))
 const LiveEventPage = lazy(() => import('./pages/LiveEventPage').then((m) => ({ default: m.LiveEventPage })))
 const HandoffPage = lazy(() => import('./pages/Handoff').then((m) => ({ default: m.HandoffPage })))
+const EmbaixadinhaPage = lazy(() => import('./pages/EmbaixadinhaPage').then((m) => ({ default: m.EmbaixadinhaPage })))
+const MemoriaPage = lazy(() => import('./pages/MemoriaPage').then((m) => ({ default: m.MemoriaPage })))
+const PongPage = lazy(() => import('./pages/PongPage').then((m) => ({ default: m.PongPage })))
 
 const RouteFallback = () => (
   <div
@@ -36,6 +39,9 @@ const defaultProduct: ProductMode = 'apostas'
 const productRoutes: ProductMode[] = ['apostas', 'cassino']
 const promotionsRouteSegment = 'promocoes'
 const handoffRouteSegment = 'handoff'
+const embaixadinhaRouteSegment = 'embaixadinha'
+const memoriaRouteSegment = 'memoria'
+const pongRouteSegment = 'pong'
 const loginRouteSegment = 'entrar'
 const signupRouteSegment = 'criar-conta'
 const deployedBasePath = '/draftaco-v0'
@@ -79,6 +85,24 @@ const isHandoffPath = (pathname: string) => {
   const routeSegments = getRouteSegments(pathname)
 
   return routeSegments.length === 1 && routeSegments[0] === handoffRouteSegment
+}
+
+const isEmbaixadinhaPath = (pathname: string) => {
+  const routeSegments = getRouteSegments(pathname)
+
+  return routeSegments.length === 1 && routeSegments[0] === embaixadinhaRouteSegment
+}
+
+const isMemoriaPath = (pathname: string) => {
+  const routeSegments = getRouteSegments(pathname)
+
+  return routeSegments.length === 1 && routeSegments[0] === memoriaRouteSegment
+}
+
+const isPongPath = (pathname: string) => {
+  const routeSegments = getRouteSegments(pathname)
+
+  return routeSegments.length === 1 && routeSegments[0] === pongRouteSegment
 }
 
 const isLoginPath = (pathname: string) => {
@@ -190,6 +214,10 @@ function AppContent() {
   const actualProductRoute = useMemo(() => resolveProductFromPath(pathname), [pathname])
   const isCurrentPromotionsPage = useMemo(() => isPromotionsPath(pathname), [pathname])
   const isHandoffPage = useMemo(() => isHandoffPath(pathname), [pathname])
+  const isEmbaixadinhaPage = useMemo(() => isEmbaixadinhaPath(pathname), [pathname])
+  const isMemoriaPage = useMemo(() => isMemoriaPath(pathname), [pathname])
+  const isPongPage = useMemo(() => isPongPath(pathname), [pathname])
+  const isStandalonePage = isHandoffPage || isEmbaixadinhaPage || isMemoriaPage || isPongPage
   const isLoginPage = useMemo(() => isLoginPath(pathname), [pathname])
   const isSignupPage = useMemo(() => isSignupPath(pathname), [pathname])
   const isAuthPage = isLoginPage || isSignupPage
@@ -249,7 +277,7 @@ function AppContent() {
 
   useEffect(() => {
     if (isCurrentPromotionsPage) return
-    if (isHandoffPage) return
+    if (isStandalonePage) return
     if (isAuthPage) return
     if (actualProductRoute.isCanonicalProductRoute) return
 
@@ -260,7 +288,7 @@ function AppContent() {
     }, 0)
 
     return () => window.clearTimeout(timer)
-  }, [actualProductRoute, isCurrentPromotionsPage, isAuthPage, isHandoffPage, search, syncBrowserLocation])
+  }, [actualProductRoute, isCurrentPromotionsPage, isAuthPage, isStandalonePage, search, syncBrowserLocation])
 
   useEffect(() => {
     if (!isCurrentPromotionsPage) return
@@ -688,14 +716,14 @@ function AppContent() {
 
   const showCompactBetslip = activeProduct === 'apostas'
     && !isPromotionsPage
-    && !isHandoffPage
+    && !isStandalonePage
     && !isAuthPage
     && betslipSummary.hasSelections
     && !isCompactBetslipSuppressed
   const shouldShowEventBetslip = showCompactBetslip && liveEventUi.isOpen && liveEventUi.isEventBetslipVisible
   const showFreeBetTag = isFeatureEnabled('freeBetsAvailable') && hasOnlyBrasileiraoSelections
-  const isAuthOverlayOpen = !isHandoffPage && (isAuthPage || loginMotionState !== null)
-  const shouldRenderFullBetslip = !isHandoffPage
+  const isAuthOverlayOpen = !isStandalonePage && (isAuthPage || loginMotionState !== null)
+  const shouldRenderFullBetslip = !isStandalonePage
     && isFullBetslipOpen
     && (!isAuthPage || authOverlayOrigin === 'betslip')
 
@@ -748,11 +776,17 @@ function AppContent() {
   return (
     <div className="app-shell">
       <BrandLocalizationEffect brandMode={brandMode} />
-      <LocationPermissionGate isEnabled={!isHandoffPage} />
+      <LocationPermissionGate isEnabled={!isStandalonePage} />
       {!isHandoffPage ? <MobileOnly /> : null}
       <Suspense fallback={<RouteFallback />}>
         {isHandoffPage ? (
           <HandoffPage />
+        ) : isEmbaixadinhaPage ? (
+          <EmbaixadinhaPage />
+        ) : isMemoriaPage ? (
+          <MemoriaPage />
+        ) : isPongPage ? (
+          <PongPage />
         ) : isPromotionsPage ? (
           <PromotionsPage
             activeProduct={activeProduct}
@@ -787,7 +821,7 @@ function AppContent() {
           />
         )}
       </Suspense>
-      {!isHandoffPage && isAuthPage ? (
+      {!isStandalonePage && isAuthPage ? (
         <LoginPage
           mode={isSignupPage ? 'signup' : 'login'}
           motionState={loginMotionState ?? 'open'}
@@ -826,7 +860,7 @@ function AppContent() {
           />
         </Suspense>
       ) : null}
-      {!isHandoffPage && betSuccessReceipt ? (
+      {!isStandalonePage && betSuccessReceipt ? (
         <Suspense fallback={null}>
           <BetSuccessPage
             receipt={betSuccessReceipt}
@@ -835,7 +869,7 @@ function AppContent() {
           />
         </Suspense>
       ) : null}
-      {!isHandoffPage && !isAuthPage && betslipOriginLiveEvent ? (
+      {!isStandalonePage && !isAuthPage && betslipOriginLiveEvent ? (
         <Suspense fallback={null}>
           <LiveEventPage
             isOpen={betslipOriginLiveEvent.isOpen}
@@ -852,7 +886,7 @@ function AppContent() {
           />
         </Suspense>
       ) : null}
-      {!isHandoffPage && (!isAuthPage || isDepositPanelOpen) ? (
+      {!isStandalonePage && (!isAuthPage || isDepositPanelOpen) ? (
         <DepositPanel
           isOpen={isDepositPanelOpen}
           onClose={handleDepositPanelClose}
@@ -864,10 +898,10 @@ function AppContent() {
           onDepositPending={depositPanelOrigin === 'signup' ? handleSignupDepositPending : undefined}
         />
       ) : null}
-      {!isHandoffPage && !isAuthPage ? (
+      {!isStandalonePage && !isAuthPage ? (
         <FeatureFlagsPanel isOpen={isFeatureFlagsPanelOpen} onClose={handleFeatureFlagsPanelClose} />
       ) : null}
-      {!isHandoffPage && !isAuthPage ? (
+      {!isStandalonePage && !isAuthPage ? (
         <>
           <Betslip
             visible={showCompactBetslip}
@@ -888,7 +922,7 @@ function AppContent() {
           />
         </>
       ) : null}
-      {!isHandoffPage ? (
+      {!isStandalonePage ? (
         <Navbar
           activeProduct={activeProduct}
           activeItemId={isPromotionsPage ? promotionsRouteSegment : undefined}

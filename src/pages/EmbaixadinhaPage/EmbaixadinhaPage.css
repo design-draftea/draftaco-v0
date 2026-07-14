@@ -1,0 +1,316 @@
+.embaixadinha-page {
+  display: flex;
+  width: 100%;
+  height: var(--app-viewport-height, 100dvh);
+  min-height: 0;
+  justify-content: center;
+  overflow: hidden;
+  background: #1c1c1c;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+}
+
+.embaixadinha-page__surface {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--ds-background-app, #000);
+}
+
+.embaixadinha-page__glow {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  background: linear-gradient(45.0933deg, #4b20ff 0%, #9730ff 100%);
+  filter: blur(50px);
+  opacity: 0.48;
+  pointer-events: none;
+}
+
+.embaixadinha-page__header-space {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 24px;
+  flex: 0 0 24px;
+}
+
+.embaixadinha-page__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.embaixadinha-page__intro {
+  display: flex;
+  width: 100%;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+  text-align: center;
+}
+
+.embaixadinha-page__connection-icon {
+  position: relative;
+  display: block;
+  width: 80px;
+  height: 80px;
+  flex: 0 0 80px;
+  overflow: hidden;
+}
+
+.embaixadinha-page__connection-icon img {
+  display: block;
+  width: 80px;
+  height: 80px;
+  max-width: none;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
+.embaixadinha-page__intro h1,
+.embaixadinha-page__intro p {
+  margin: 0;
+}
+
+.embaixadinha-page__intro h1 {
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 27px;
+  white-space: nowrap;
+}
+
+.embaixadinha-page__intro p {
+  width: 100%;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+}
+
+.embaixadinha-game {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  padding: 20px 0 0;
+}
+
+.embaixadinha-game__scoreboard {
+  position: absolute;
+  z-index: 2;
+  right: 20px;
+  bottom: 20px;
+  left: 20px;
+  display: flex;
+  width: auto;
+  height: 23px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin: 0;
+}
+
+.embaixadinha-game__score-pair {
+  display: flex;
+  align-items: flex-start;
+}
+
+.embaixadinha-game__tag {
+  display: flex;
+  min-width: 0;
+  height: 23px;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  background: var(--ds-fill-opacity-quinary, rgb(251 251 251 / 0.08));
+  font-size: 10px;
+  line-height: 15px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.embaixadinha-game__tag:first-child {
+  border-radius: 100px 0 0 100px;
+}
+
+.embaixadinha-game__tag:last-child {
+  border-radius: 0 100px 100px 0;
+}
+
+.embaixadinha-game__tag--label {
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-weight: 700;
+}
+
+.embaixadinha-game__tag--label:first-child {
+  border-right: 1px solid var(--ds-background-app, #000);
+}
+
+.embaixadinha-game__tag--label:last-child {
+  border-left: 1px solid var(--ds-background-app, #000);
+}
+
+.embaixadinha-game__tag--score {
+  min-width: 38px;
+  background: var(--ds-fill-opacity-quinary, rgb(251 251 251 / 0.08));
+  font-weight: 900;
+}
+
+.embaixadinha-game__score-value {
+  background-image: linear-gradient(180deg, #d2ff72 0%, #56deea 100%);
+  background-clip: text;
+  color: transparent;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.embaixadinha-game__arena {
+  position: relative;
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.embaixadinha-game__ball {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 62px;
+  height: 62px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+  touch-action: none;
+  transform-origin: center;
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.embaixadinha-game__ball:focus-visible {
+  outline: 2px solid rgb(var(--ds-fill-primary-rgb, 251 251 251) / 0.82);
+  outline-offset: 3px;
+}
+
+.embaixadinha-game__ball img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.embaixadinha-game__ball--idle img {
+  animation: embaixadinha-ball-bounce-in 680ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.embaixadinha-game__instructions {
+  position: absolute;
+  z-index: 1;
+  top: calc(50% - 13px);
+  left: 0;
+  width: 100%;
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
+  font-weight: 500;
+  text-align: center;
+  pointer-events: none;
+  animation: embaixadinha-instructions-fade-in 400ms ease-out 160ms both;
+}
+
+.embaixadinha-game__instructions p {
+  width: 100%;
+  margin: 0;
+}
+
+.embaixadinha-game__instructions p:first-child {
+  font-size: 14px;
+  line-height: 21px;
+}
+
+.embaixadinha-game__instructions p:last-child {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.embaixadinha-game__announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+@keyframes embaixadinha-ball-bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+
+  45% {
+    opacity: 1;
+    transform: scale(1.42);
+  }
+
+  66% {
+    transform: scale(0.82);
+  }
+
+  82% {
+    transform: scale(1.14);
+  }
+
+  92% {
+    transform: scale(0.96);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes embaixadinha-instructions-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

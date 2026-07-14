@@ -1,0 +1,1 @@
+export { PongPage } from './PongPage'
