@@ -613,6 +613,7 @@ export function ProductRail<TItem extends ProductRailBaseItem>({
           <span className="sport-rail__live-dot" aria-hidden="true" />
         </span>
       )}
+      {hasFavoriteIndicator?.(item) && <span className="sport-rail__favorite-star" aria-hidden="true" />}
       {hasFavoriteIndicator?.(item) && (
         <span className="sport-rail__favorite-indicator" aria-hidden="true">
           <img src={lineFavorito} alt="" />
