@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import closePixIcon from '../../assets/iconsDraftaco/closeBS.svg'
-import locationIcon from '../../assets/iconsDraftaco/iconLocalizacaoGde.png'
+import locationAndroidImage from '../../assets/imgAndroid.png'
+import locationIOSImage from '../../assets/imgiOS.png'
 import { LOCATION_PERMISSION_REQUIRED_EVENT } from '../../utils/locationPermissionGate'
 import './LocationPermissionGate.css'
 
@@ -26,9 +26,18 @@ const getGeolocationPermissionStatus = async () => {
   }
 }
 
+const getLocationInstructionsImage = () => {
+  const isIOSDevice = (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  )
+
+  return isIOSDevice ? locationIOSImage : locationAndroidImage
+}
+
 export function LocationPermissionGate({ isEnabled }: LocationPermissionGateProps) {
   const [isPermissionDenied, setIsPermissionDenied] = useState(false)
-  const [isPermissionScreenDismissed, setIsPermissionScreenDismissed] = useState(false)
+  const locationInstructionsImage = getLocationInstructionsImage()
 
   const requestBrowserLocationPermission = useCallback(() => {
     if (!navigator.geolocation) return
@@ -36,12 +45,10 @@ export function LocationPermissionGate({ isEnabled }: LocationPermissionGateProp
     navigator.geolocation.getCurrentPosition(
       () => {
         setIsPermissionDenied(false)
-        setIsPermissionScreenDismissed(false)
       },
       (error) => {
         if (error.code === 1) {
           setIsPermissionDenied(true)
-          setIsPermissionScreenDismissed(false)
         }
       },
       locationRequestOptions
@@ -61,10 +68,6 @@ export function LocationPermissionGate({ isEnabled }: LocationPermissionGateProp
 
       const isDenied = permissionStatus.state === 'denied'
       setIsPermissionDenied(isDenied)
-
-      if (!isDenied) {
-        setIsPermissionScreenDismissed(false)
-      }
     }
 
     const requestLocation = async () => {
@@ -99,47 +102,44 @@ export function LocationPermissionGate({ isEnabled }: LocationPermissionGateProp
 
     const handleLocationPermissionRequired = (event: Event) => {
       event.preventDefault()
-      setIsPermissionScreenDismissed(false)
     }
 
     window.addEventListener(LOCATION_PERMISSION_REQUIRED_EVENT, handleLocationPermissionRequired)
     return () => window.removeEventListener(LOCATION_PERMISSION_REQUIRED_EVENT, handleLocationPermissionRequired)
   }, [isEnabled, isPermissionDenied])
 
-  if (!isEnabled || !isPermissionDenied || isPermissionScreenDismissed) return null
+  if (!isEnabled || !isPermissionDenied) return null
 
   return (
     <section className="location-permission-gate" aria-labelledby="location-permission-title">
-      <header className="location-permission-gate__header">
-        <button
-          className="location-permission-gate__close"
-          type="button"
-          aria-label="Fechar"
-          onClick={() => setIsPermissionScreenDismissed(true)}
-        >
-          <img src={closePixIcon} alt="" aria-hidden="true" />
-        </button>
-      </header>
-
       <div className="location-permission-gate__body">
         <div className="location-permission-gate__content">
-          <img
-            className="location-permission-gate__icon"
-            src={locationIcon}
-            alt=""
-          />
+          <div className="location-permission-gate__visual" aria-hidden="true">
+            <img src={locationInstructionsImage} alt="" />
+          </div>
+
           <div className="location-permission-gate__copy">
-            <h1 id="location-permission-title">Habilite sua localização</h1>
-            <div className="location-permission-gate__description">
-              <p>
-                Precisamos verificar sua localização para manter sua conta segura e conferir se
-                apostas e jogos são permitidos na sua região.
-              </p>
-              <p>
-                No seu dispositivo, vá em Ajustes › Aplicativos › Pitaco › Permissões ›
-                Localização › Permitir sempre › Localização precisa.
-              </p>
-            </div>
+            <h1 id="location-permission-title">
+              Para jogar, precisamos que você ative suas permissões de localização
+            </h1>
+            <p>No seu dispositivo, você deve acessar:</p>
+          </div>
+
+          <div className="location-permission-gate__steps-wrapper">
+            <ol className="location-permission-gate__steps">
+              <li>
+                <span className="location-permission-gate__step-number">1</span>
+                <span>Configurações →Aplicativos</span>
+              </li>
+              <li>
+                <span className="location-permission-gate__step-number">2</span>
+                <span>Pitaco → Permissões</span>
+              </li>
+              <li>
+                <span className="location-permission-gate__step-number">3</span>
+                <span>Localização → Permitir</span>
+              </li>
+            </ol>
           </div>
         </div>
       </div>
