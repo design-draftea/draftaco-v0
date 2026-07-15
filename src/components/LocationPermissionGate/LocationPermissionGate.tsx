@@ -37,6 +37,7 @@ const getLocationInstructionsImage = () => {
 
 export function LocationPermissionGate({ isEnabled }: LocationPermissionGateProps) {
   const [isPermissionDenied, setIsPermissionDenied] = useState(false)
+  const [isLocationFallbackEnabled, setIsLocationFallbackEnabled] = useState(false)
   const locationInstructionsImage = getLocationInstructionsImage()
 
   const requestBrowserLocationPermission = useCallback(() => {
@@ -98,7 +99,7 @@ export function LocationPermissionGate({ isEnabled }: LocationPermissionGateProp
   }, [isEnabled, requestBrowserLocationPermission])
 
   useEffect(() => {
-    if (!isEnabled || !isPermissionDenied) return
+    if (!isEnabled || !isPermissionDenied || isLocationFallbackEnabled) return
 
     const handleLocationPermissionRequired = (event: Event) => {
       event.preventDefault()
@@ -106,9 +107,9 @@ export function LocationPermissionGate({ isEnabled }: LocationPermissionGateProp
 
     window.addEventListener(LOCATION_PERMISSION_REQUIRED_EVENT, handleLocationPermissionRequired)
     return () => window.removeEventListener(LOCATION_PERMISSION_REQUIRED_EVENT, handleLocationPermissionRequired)
-  }, [isEnabled, isPermissionDenied])
+  }, [isEnabled, isLocationFallbackEnabled, isPermissionDenied])
 
-  if (!isEnabled || !isPermissionDenied) return null
+  if (!isEnabled || !isPermissionDenied || isLocationFallbackEnabled) return null
 
   return (
     <section className="location-permission-gate" aria-labelledby="location-permission-title">
@@ -151,6 +152,13 @@ export function LocationPermissionGate({ isEnabled }: LocationPermissionGateProp
           onClick={requestBrowserLocationPermission}
         >
           Ir para configurações
+        </button>
+        <button
+          className="location-permission-gate__fallback-button"
+          type="button"
+          onClick={() => setIsLocationFallbackEnabled(true)}
+        >
+          Ativar localização
         </button>
       </footer>
     </section>
