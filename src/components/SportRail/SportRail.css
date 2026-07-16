@@ -679,10 +679,10 @@
 .header--v2 .sport-rail--competitions .sport-rail__active-indicator::after {
   content: '';
   position: absolute;
-  inset: 0;
+  inset: -1px;
   z-index: 2;
   border-radius: inherit;
-  padding: 1px;
+  padding: 2px;
   background: var(--ds-action-primary-default);
   pointer-events: none;
   -webkit-mask:
