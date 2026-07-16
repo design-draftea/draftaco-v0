@@ -488,7 +488,7 @@ const pitacoReplacements: [RegExp, string][] = [
   [/GAMING/g, 'CASSINO'],
   [/Promociones/g, 'Promoções'],
   [/PROMOCIONES/g, 'PROMOÇÕES'],
-  [/Live/g, 'Ao Vivo'],
+  [/\bLive\b/g, 'Ao Vivo'],
   [/Moneyline/g, 'RESULTADO FINAL'],
   [/Fútbol/g, 'Futebol'],
   [/FÚTBOL/g, 'FUTEBOL'],

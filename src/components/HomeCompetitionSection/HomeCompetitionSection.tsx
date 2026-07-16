@@ -186,9 +186,13 @@ const getAvailableMarketChips = (
   competition: HomeCompetitionHighlight,
   marketChips: HomeCompetitionMarketChip[],
   liveTimes: Record<string, string>
-) => marketChips.filter((chip) => (
-  competition.matches.some((match) => isMarketAvailableForMatch(chip.id, match, liveTimes[match.id]))
-))
+) => marketChips.filter((chip) => {
+  if (playerPropsMarketIds.has(chip.id)) {
+    return competition.playerProps.some((prop) => !prop.marketId || prop.marketId === chip.id)
+  }
+
+  return competition.matches.some((match) => isMarketAvailableForMatch(chip.id, match, liveTimes[match.id]))
+})
 
 const formatMarketLine = (line: number) => `${line > 0 ? '+' : ''}${line}`
 

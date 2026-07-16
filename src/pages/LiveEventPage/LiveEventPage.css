@@ -2407,7 +2407,7 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  min-height: calc(100vh - 64px);
+  min-height: 0;
   background: var(--ds-background-app, var(--tokens-background-background));
   color: var(--tokens-text-text-01);
   font-family: 'Red Hat Text', sans-serif;

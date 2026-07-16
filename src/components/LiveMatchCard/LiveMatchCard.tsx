@@ -238,6 +238,18 @@ const liveFootballFinishingPlayersByTeam: Record<string, TeamPlayerProfile[]> = 
     { name: 'Jackson', position: 'ATA' },
     { name: 'Nkunku', position: 'ATA' },
   ],
+  Tottenham: [
+    { name: 'Son', position: 'ATA' },
+    { name: 'Solanke', position: 'ATA' },
+    { name: 'Maddison', position: 'MEI' },
+    { name: 'Kulusevski', position: 'MEI' },
+  ],
+  Wolves: [
+    { name: 'Cunha', position: 'ATA' },
+    { name: 'Hwang', position: 'ATA' },
+    { name: 'Neto', position: 'ATA' },
+    { name: 'Larsen', position: 'ATA' },
+  ],
   Getafe: [
     { name: 'Mayoral', position: 'ATA' },
     { name: 'Greenwood', position: 'ATA' },
@@ -766,6 +778,9 @@ export function LiveMatchCard({
       awayScore: match.awayTeam.score,
     }))
     : []
+
+  if (isPlayerProps && matchPlayerProps.length === 0) return null
+
   const marketLabel = liveMarketLabels[activeMarket]
   const getMatchSelectionIcon = (outcomeId: string, label: ReactNode) => {
     if (outcomeId.startsWith('home') || label === match.homeTeam.name) return homeTeamIcon
