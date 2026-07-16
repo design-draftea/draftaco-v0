@@ -114,6 +114,7 @@ const addSelectionToState = (
 
 export function BetslipProvider({ children }: { children: ReactNode }) {
   const [{ selectionsById, selectedSelectionIdsByGroup }, setBetslipState] = useState<BetslipState>(EMPTY_BETSLIP_STATE)
+  const [isTurboBoostEnabled, setTurboBoostEnabled] = useState(true)
 
   const addSelection = useCallback((groupId: string, selection: BetslipSelection) => {
     if (requestLocationPermissionGate()) return
@@ -274,12 +275,14 @@ export function BetslipProvider({ children }: { children: ReactNode }) {
     selections,
     selectedSelectionIdsByGroup,
     summary,
+    isTurboBoostEnabled,
     addSelection,
     toggleSelections,
     toggleSelection,
     removeSelection,
+    setTurboBoostEnabled,
     clearSelections,
-  }), [addSelection, clearSelections, removeSelection, selections, selectedSelectionIdsByGroup, summary, toggleSelection, toggleSelections])
+  }), [addSelection, clearSelections, isTurboBoostEnabled, removeSelection, selections, selectedSelectionIdsByGroup, summary, toggleSelection, toggleSelections])
 
   return (
     <BetslipContext.Provider value={value}>

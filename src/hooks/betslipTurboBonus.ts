@@ -96,11 +96,13 @@ export const getBetslipTurboBonusCents = ({
   potentialWinCents: number
   stakeCents: number
 }) => {
-  if (!bonusPercent || stakeCents <= 0 || potentialWinCents <= stakeCents) return 0
+  if (!bonusPercent || stakeCents <= 0 || potentialWinCents <= 0) return 0
 
-  const profitCents = potentialWinCents - stakeCents
+  const boostedPotentialWinCents = Math.round(
+    potentialWinCents * (1 + bonusPercent / 100)
+  )
 
-  return Math.floor(profitCents * (bonusPercent / 100))
+  return Math.max(0, boostedPotentialWinCents - potentialWinCents)
 }
 
 export const getBetslipTurboMaxSelectionCount = () => turboBonusMaxSelectionCount

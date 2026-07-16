@@ -10,6 +10,7 @@ import {
   normalizeBetslipIdPart,
   type BetslipSelection,
 } from '../../hooks/betslipUtils'
+import { advanceLiveClock } from '../../utils/liveClock'
 import { getTeamAbbreviation } from '../../utils/teamAbbreviations'
 import { TEAM_LOGO_FALLBACK } from '../../utils/teamLogoFallback'
 
@@ -254,8 +255,15 @@ const getAbbreviatedEventMatchup = (selection: BetslipSelection) => {
   return eventName
 }
 
-export const getSelectionTimeLabel = (selection: BetslipSelection) => {
-  if (selection.eventStatus === 'live') return selection.liveClock ?? selection.eventTimeLabel ?? '18:00'
+export const getSelectionTimeLabel = (selection: BetslipSelection, nowMs?: number) => {
+  if (selection.eventStatus === 'live') {
+    const initialLiveClock = selection.liveClock ?? selection.eventTimeLabel ?? '18:00'
+    if (nowMs === undefined) return initialLiveClock
+
+    const elapsedSeconds = Math.max(0, Math.floor((nowMs - selection.createdAtMs) / 1000))
+    return advanceLiveClock(initialLiveClock, elapsedSeconds)
+  }
+
   return selection.eventTimeLabel ?? 'Hoje (20:00)'
 }
 
@@ -556,7 +564,7 @@ export const getSgpHeaderSelection = (selections: BetslipSelection[]) => (
   selections.find((selection) => selection.homeTeam && selection.awayTeam) ?? selections[0]
 )
 
-export const getSgpHeaderParts = (selection: BetslipSelection | undefined) => {
+export const getSgpHeaderParts = (selection: BetslipSelection | undefined, nowMs?: number) => {
   if (!selection) {
     return {
       homeLabel: 'ABC',
@@ -571,7 +579,7 @@ export const getSgpHeaderParts = (selection: BetslipSelection | undefined) => {
   return {
     homeLabel: homeTeam ? getTeamAbbreviation(homeTeam) : 'ABC',
     awayLabel: awayTeam ? getTeamAbbreviation(awayTeam) : 'XYZ',
-    timeLabel: getSelectionTimeLabel(selection),
+    timeLabel: getSelectionTimeLabel(selection, nowMs),
     eventLabel: getSelectionEventName(selection),
   }
 }

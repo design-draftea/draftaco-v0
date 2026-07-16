@@ -243,11 +243,25 @@
 }
 
 .betslip__metric--bets {
+  flex: 0 1 50px;
+  width: 50px;
+  min-width: 0;
+}
+
+.betslip__metric--odds,
+.betslip__metric--stake {
   flex: 0 0 auto;
 }
 
-.betslip__metric--stake {
+.betslip__metric--bets .betslip__label {
+  width: 100%;
   min-width: 0;
+}
+
+.betslip__metric--odds .betslip__value,
+.betslip__metric--stake .betslip__value {
+  max-width: none;
+  overflow: visible;
 }
 
 .betslip__label,
@@ -272,6 +286,22 @@
   font-weight: var(--betslip-compact-secondary-font-weight);
   line-height: var(--betslip-compact-secondary-line-height);
   opacity: 1;
+}
+
+.betslip__label--boost {
+  height: 18px;
+  padding: 0 6px;
+  overflow: visible;
+  border-radius: 12px;
+  background: var(--ds-booster);
+  color: var(--ds-fill-dark);
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 12px;
+  font-style: italic;
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+  line-height: 18px;
+  text-transform: uppercase;
 }
 
 .betslip__payout-label {
@@ -369,67 +399,29 @@
   line-height: var(--betslip-compact-rolling-line-height);
 }
 
-.betslip__turbo-tag {
-  display: inline-flex;
+.betslip__odds-value {
+  display: flex;
   align-items: center;
-  gap: 3px;
-  width: fit-content;
-  min-width: 52px;
-  height: 16px;
-  padding: 0 8px;
-  overflow: hidden;
-  border: 0;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    var(--tokens-layer-layer-gradient-03) 0%,
-    var(--tokens-layer-layer-gradient-04) 100%
-  );
-  box-shadow: inset 0 0 0 1px rgb(var(--tokens-text-text-on-color-white-rgb) / 0.18);
-  color: var(--tokens-text-text-on-color-black);
-  cursor: pointer;
+  gap: 4px;
+  overflow: visible;
+}
+
+.betslip__odds-original {
+  color: var(--ds-fill-primary);
   font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
-  font-size: var(--typography-font-size-12);
-  font-weight: 900;
-  line-height: 1;
-  white-space: nowrap;
-  animation: betslipTurboReveal 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  will-change: clip-path, opacity;
-}
-
-.betslip__turbo-tag:focus-visible {
-  outline: 2px solid rgb(var(--tokens-text-text-on-color-white-rgb) / 0.84);
-  outline-offset: 2px;
-}
-
-.betslip__turbo-value {
-  min-width: 0;
-  font-variant-numeric: tabular-nums;
-  animation: betslipTurboValueIn 180ms 45ms ease-out both;
-}
-
-.betslip__turbo-icon {
-  display: block;
-  flex: 0 0 20px;
-  width: 20px;
-  height: 12px;
-  object-fit: contain;
-  pointer-events: none;
-  user-select: none;
-  transform-origin: 50% 50%;
-  animation: betslipTurboIconBounce 280ms 90ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.betslip__turbo-icon--pulse {
-  animation: betslipTurboIconPulse 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 16px;
+  text-decoration-line: line-through;
 }
 
 .betslip__payout {
   display: flex;
-  flex: 0 0 140px;
+  flex: 0 0 130px;
   align-items: center;
   justify-content: center;
-  width: 140px;
+  width: 130px;
   height: 100%;
   min-width: 0;
   padding: calc(var(--spacing-12) / 2);
@@ -472,20 +464,11 @@
   line-height: 18px;
 }
 
-.betslip__payout-label--turbo {
-  padding-left: 0;
-  overflow: visible;
-}
-
 .betslip__payout-label span {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.betslip__payout-label--turbo .betslip__turbo-tag {
-  max-width: 100%;
 }
 
 .betslip__icon {
@@ -567,61 +550,6 @@
     color: var(--tokens-text-text-01);
     opacity: 1;
     text-shadow: none;
-    transform: scale(1);
-  }
-}
-
-@keyframes betslipTurboReveal {
-  0% {
-    clip-path: inset(0 50% 0 50% round 999px);
-    opacity: 0;
-  }
-
-  100% {
-    clip-path: inset(0 0 0 0 round 999px);
-    opacity: 1;
-  }
-}
-
-@keyframes betslipTurboValueIn {
-  from {
-    opacity: 0;
-    transform: translateY(1px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes betslipTurboIconBounce {
-  0% {
-    opacity: 0;
-    transform: translate3d(-2px, 1px, 0) scale(0.72);
-  }
-
-  62% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1.08);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes betslipTurboIconPulse {
-  0% {
-    transform: scale(1);
-  }
-
-  48% {
-    transform: translateY(-0.5px) scale(1.08);
-  }
-
-  100% {
     transform: scale(1);
   }
 }

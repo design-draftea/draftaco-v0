@@ -22,6 +22,9 @@ const Home = lazy(() => import('./pages/Home').then((m) => ({ default: m.Home })
 const PromotionsPage = lazy(() => import('./pages/PromotionsPage').then((m) => ({ default: m.PromotionsPage })))
 const BetslipPageV2 = lazy(() => import('./pages/BetslipPageV2').then((m) => ({ default: m.BetslipPageV2 })))
 const BetSuccessPage = lazy(() => import('./pages/BetSuccessPage').then((m) => ({ default: m.BetSuccessPage })))
+const CamisaPremiadaStaticPreviewPage = lazy(() => import('./pages/BetSuccessPage').then((m) => ({
+  default: m.CamisaPremiadaStaticPreviewPage,
+})))
 const LiveEventPage = lazy(() => import('./pages/LiveEventPage').then((m) => ({ default: m.LiveEventPage })))
 const HandoffPage = lazy(() => import('./pages/Handoff').then((m) => ({ default: m.HandoffPage })))
 const EmbaixadinhaPage = lazy(() => import('./pages/EmbaixadinhaPage').then((m) => ({ default: m.EmbaixadinhaPage })))
@@ -42,6 +45,7 @@ const handoffRouteSegment = 'handoff'
 const embaixadinhaRouteSegment = 'embaixadinha'
 const memoriaRouteSegment = 'memoria'
 const pongRouteSegment = 'pong'
+const camisaPremiadaRouteSegment = 'camisa-premiada'
 const loginRouteSegment = 'entrar'
 const signupRouteSegment = 'criar-conta'
 const deployedBasePath = '/draftaco-v0'
@@ -105,6 +109,12 @@ const isPongPath = (pathname: string) => {
   return routeSegments.length === 1 && routeSegments[0] === pongRouteSegment
 }
 
+const isCamisaPremiadaPath = (pathname: string) => {
+  const routeSegments = getRouteSegments(pathname)
+
+  return routeSegments.length === 1 && routeSegments[0] === camisaPremiadaRouteSegment
+}
+
 const isLoginPath = (pathname: string) => {
   const routeSegments = getRouteSegments(pathname)
 
@@ -164,6 +174,14 @@ const hasGarantidaBannerParam = (search: string) => new URLSearchParams(search).
 
 const getGarantidaBannerSearch = (search: string) => (hasGarantidaBannerParam(search) ? '?banner=garantida' : '')
 
+const getCamisaPremiadaOutcomeOverride = (search: string) => {
+  const outcome = new URLSearchParams(search).get('resultado')
+
+  return outcome === 'ganhou' || outcome === 'perdeu' ? outcome : undefined
+}
+
+const hasCamisaPremiadaStaticParam = (search: string) => new URLSearchParams(search).has('estatico')
+
 const withSearch = (path: string, search: string) => `${path}${search}`
 
 type AuthVariant = 'logged-in' | 'logged-out'
@@ -217,7 +235,13 @@ function AppContent() {
   const isEmbaixadinhaPage = useMemo(() => isEmbaixadinhaPath(pathname), [pathname])
   const isMemoriaPage = useMemo(() => isMemoriaPath(pathname), [pathname])
   const isPongPage = useMemo(() => isPongPath(pathname), [pathname])
-  const isStandalonePage = isHandoffPage || isEmbaixadinhaPage || isMemoriaPage || isPongPage
+  const isCurrentCamisaPremiadaPage = useMemo(() => isCamisaPremiadaPath(pathname), [pathname])
+  const isCamisaPremiadaStaticPreview = isCurrentCamisaPremiadaPage && hasCamisaPremiadaStaticParam(search)
+  const isStandalonePage = isHandoffPage
+    || isEmbaixadinhaPage
+    || isMemoriaPage
+    || isPongPage
+    || isCamisaPremiadaStaticPreview
   const isLoginPage = useMemo(() => isLoginPath(pathname), [pathname])
   const isSignupPage = useMemo(() => isSignupPath(pathname), [pathname])
   const isAuthPage = isLoginPage || isSignupPage
@@ -226,6 +250,11 @@ function AppContent() {
     : pathname
   const productRoute = useMemo(() => resolveProductFromPath(renderedPathname), [renderedPathname])
   const isPromotionsPage = useMemo(() => isPromotionsPath(renderedPathname), [renderedPathname])
+  const isCamisaPremiadaMode = useMemo(() => isCamisaPremiadaPath(renderedPathname), [renderedPathname])
+  const camisaPremiadaOutcomeOverride = useMemo(
+    () => isCamisaPremiadaMode ? getCamisaPremiadaOutcomeOverride(search) : undefined,
+    [isCamisaPremiadaMode, search]
+  )
   const [promotionsProduct, setPromotionsProduct] = useState<ProductMode>(() => productRoute.product)
   const [isFullBetslipOpen, setIsFullBetslipOpen] = useState(false)
   const [betSuccessReceipt, setBetSuccessReceipt] = useState<BetSuccessReceipt | null>(null)
@@ -279,6 +308,7 @@ function AppContent() {
     if (isCurrentPromotionsPage) return
     if (isStandalonePage) return
     if (isAuthPage) return
+    if (isCurrentCamisaPremiadaPage) return
     if (actualProductRoute.isCanonicalProductRoute) return
 
     const nextPath = withSearch(buildProductPath(actualProductRoute.product), getGarantidaBannerSearch(search))
@@ -288,7 +318,7 @@ function AppContent() {
     }, 0)
 
     return () => window.clearTimeout(timer)
-  }, [actualProductRoute, isCurrentPromotionsPage, isAuthPage, isStandalonePage, search, syncBrowserLocation])
+  }, [actualProductRoute, isCurrentCamisaPremiadaPage, isCurrentPromotionsPage, isAuthPage, isStandalonePage, search, syncBrowserLocation])
 
   useEffect(() => {
     if (!isCurrentPromotionsPage) return
@@ -578,6 +608,11 @@ function AppContent() {
     setBetSuccessReceipt(null)
     setIsCompactBetslipSuppressed(false)
 
+    if (isCamisaPremiadaMode) {
+      syncBrowserLocation()
+      return
+    }
+
     const nextPath = withSearch(buildProductPath(defaultProduct), getGarantidaBannerSearch(search))
 
     if (getCurrentPathWithSearch() !== nextPath) {
@@ -585,7 +620,7 @@ function AppContent() {
     }
 
     syncBrowserLocation()
-  }, [search, syncBrowserLocation])
+  }, [isCamisaPremiadaMode, search, syncBrowserLocation])
 
   const handleBetslipOpen = useCallback(() => {
     setIsCompactBetslipSuppressed(false)
@@ -777,9 +812,11 @@ function AppContent() {
     <div className="app-shell">
       <BrandLocalizationEffect brandMode={brandMode} />
       <LocationPermissionGate isEnabled={!isStandalonePage} />
-      {!isHandoffPage ? <MobileOnly /> : null}
+      {!isHandoffPage && !isCamisaPremiadaStaticPreview ? <MobileOnly /> : null}
       <Suspense fallback={<RouteFallback />}>
-        {isHandoffPage ? (
+        {isCamisaPremiadaStaticPreview ? (
+          <CamisaPremiadaStaticPreviewPage />
+        ) : isHandoffPage ? (
           <HandoffPage />
         ) : isEmbaixadinhaPage ? (
           <EmbaixadinhaPage />
@@ -845,6 +882,8 @@ function AppContent() {
           <BetslipPageV2
             authVariant={authVariant}
             balanceCents={balanceCents}
+            camisaPremiadaOutcomeOverride={camisaPremiadaOutcomeOverride}
+            isCamisaPremiadaMode={isCamisaPremiadaMode}
             isCoveredByEvent={!!betslipOriginLiveEvent}
             onCreateAccountClick={handleBetslipCreateAccountClick}
             onDepositClick={handleDepositPanelOpen}
@@ -906,6 +945,7 @@ function AppContent() {
           <Betslip
             visible={showCompactBetslip}
             summary={betslipSummary}
+            suppressTurboBoost={isCamisaPremiadaMode}
             turboEligibleSelectionCount={betslipTurboEligibleSelectionCount}
             showFreeBetTag={showFreeBetTag && !shouldShowEventBetslip}
             presentationKey="base"
@@ -914,6 +954,7 @@ function AppContent() {
           <Betslip
             visible={shouldShowEventBetslip}
             summary={betslipSummary}
+            suppressTurboBoost={isCamisaPremiadaMode}
             turboEligibleSelectionCount={betslipTurboEligibleSelectionCount}
             compactOnly={true}
             showFreeBetTag={showFreeBetTag && shouldShowEventBetslip}
