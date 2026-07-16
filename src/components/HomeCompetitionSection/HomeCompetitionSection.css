@@ -801,6 +801,11 @@
   object-fit: contain;
 }
 
+.home-competition__player-photo--real img {
+  width: 64px;
+  height: 64px;
+}
+
 .home-competition__player-info {
   position: absolute;
   top: 72px;

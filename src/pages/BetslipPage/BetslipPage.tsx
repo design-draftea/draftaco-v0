@@ -66,6 +66,7 @@ import {
 import { BETSLIP_LIVE_EVENT_OPEN_EVENT } from '../../utils/betslipLiveEvent'
 import { advanceLiveClock } from '../../utils/liveClock'
 import { TEAM_LOGO_FALLBACK, normalizeTeamLogoSource } from '../../utils/teamLogoFallback'
+import { getBetslipPlayerImage, getPlayerAvatarFallbackSrc } from '../BetslipPageV2/betslipDisplayUtils'
 
 interface BetslipPageProps {
   isCoveredByEvent?: boolean
@@ -768,7 +769,8 @@ const getSelectionIconSrc = (selection: BetslipSelection) => {
   const selectionTitle = getSelectionTitle(selection)
 
   if (selection.selectionType === 'player') {
-    return selection.playerImage
+    return getBetslipPlayerImage(selection)
+      ?? getPlayerAvatarFallbackSrc(selection)
       ?? selection.selectionIcon
       ?? getTeamIconSource(selection.homeTeam, selection.homeTeamIcon)
   }

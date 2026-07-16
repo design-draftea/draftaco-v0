@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { CaretRightIcon, MonitorPlayIcon } from '@phosphor-icons/react'
 import iconAoVivo from '../../assets/iconAoVivo.png'
 import { getTennisPlayerCountryIcon } from '../../data/tennisCountryIcons'
+import { getLocalPlayerImage } from '../../data/playerImages'
 import { useSportsDbTeamLogo } from '../../hooks/useSportsDbTeamLogo'
 import playerAvatarFutebol from '../../assets/playerAvatarFutebol.svg'
 import playerAvatarBasquete from '../../assets/playerAvatarBasquete.svg'
@@ -156,7 +157,8 @@ const livePlayerImagesByName: Record<string, string> = {
   'stephen-curry': playerStephenCurry,
 }
 
-const getLivePlayerImage = (playerName: string, sport: string) =>
+const getLivePlayerImage = (playerName: string, teamName: string, sport: string) =>
+  getLocalPlayerImage(teamName, playerName) ??
   livePlayerImagesByName[normalizeLivePlayerImageKey(playerName)] ??
   (sport === 'basquete' ? playerAvatarBasquete : playerAvatarFutebol)
 
@@ -711,7 +713,7 @@ export const getLivePlayerProps = (
       teamSide: player.teamSide,
       sport,
       position: player.position,
-      image: getLivePlayerImage(player.name, sport),
+      image: getLivePlayerImage(player.name, player.teamName, sport),
       options: optionSets[players.length % optionSets.length],
     })
     return players

@@ -12,6 +12,7 @@ import {
   MissionTimer 
 } from '../BottomSheet'
 import { sportsBanners } from '../../data/homeProducts'
+import { getLocalPlayerImage } from '../../data/playerImages'
 import {
   BETSLIP_ODD_INTERACTION_EVENT,
   createBetslipSelection,
@@ -1799,10 +1800,17 @@ export function BannerCarousel({
 
         {playerProps.length > 0 && (
           <div className="banner-live-highlight__props" aria-label="Player props em destaque">
-            {playerProps.map((prop) => (
+            {playerProps.map((prop) => {
+              const localPlayerImage = getLocalPlayerImage(prop.teamName, prop.playerName)
+
+              return (
               <div className="banner-live-highlight__prop" key={prop.id}>
-                <span className="banner-live-highlight__prop-avatar-shell">
-                  <span className={`banner-live-highlight__prop-avatar banner-live-highlight__prop-avatar--${marketBanner.sport === 'basquete' ? 'basketball' : 'football'}`} />
+                <span className={`banner-live-highlight__prop-avatar-shell${localPlayerImage ? ' banner-live-highlight__prop-avatar-shell--real' : ''}`}>
+                  {localPlayerImage ? (
+                    <img className="banner-live-highlight__prop-avatar-photo" src={localPlayerImage} alt="" />
+                  ) : (
+                    <span className={`banner-live-highlight__prop-avatar banner-live-highlight__prop-avatar--${marketBanner.sport === 'basquete' ? 'basketball' : 'football'}`} />
+                  )}
                 </span>
                 <span className="banner-live-highlight__prop-stat-icon" />
                 <span className="banner-live-highlight__prop-team-code">{getBannerTeamCode(prop.teamName)}</span>
@@ -1839,7 +1847,8 @@ export function BannerCarousel({
                   />
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         )}
 

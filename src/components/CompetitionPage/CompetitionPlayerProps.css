@@ -162,6 +162,11 @@
   z-index: 1;
 }
 
+.competition-players__player-image--real {
+  width: 64px;
+  height: 64px;
+}
+
 .competition-players__card-name {
   padding: 0 12px;
   font-family: 'Red Hat Text', sans-serif;

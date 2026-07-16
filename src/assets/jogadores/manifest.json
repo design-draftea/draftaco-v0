@@ -1,0 +1,3525 @@
+{
+  "provider": "Sofascore",
+  "processedAt": "2026-07-15",
+  "format": "PNG with transparent background",
+  "players": [
+    {
+      "team": "Arsenal",
+      "name": "Bukayo Saka",
+      "providerId": "934235",
+      "file": "arsenal/saka.png"
+    },
+    {
+      "team": "Arsenal",
+      "name": "Kai Havertz",
+      "providerId": "836705",
+      "file": "arsenal/havertz.png"
+    },
+    {
+      "team": "Arsenal",
+      "name": "Gabriel Martinelli",
+      "providerId": "922573",
+      "file": "arsenal/martinelli.png"
+    },
+    {
+      "team": "Arsenal",
+      "name": "Thomas Partey",
+      "providerId": "316148",
+      "file": "arsenal/partey.png"
+    },
+    {
+      "team": "Chelsea",
+      "name": "Cole Palmer",
+      "providerId": "982780",
+      "file": "chelsea/palmer.png"
+    },
+    {
+      "team": "Chelsea",
+      "name": "Nicolas Jackson",
+      "providerId": "1085381",
+      "file": "chelsea/jackson.png"
+    },
+    {
+      "team": "Chelsea",
+      "name": "Christopher Nkunku",
+      "providerId": "769333",
+      "file": "chelsea/nkunku.png"
+    },
+    {
+      "team": "Paris Saint-Germain",
+      "name": "Ousmane Dembélé",
+      "providerId": "818244",
+      "file": "psg/dembele.png"
+    },
+    {
+      "team": "Manchester City",
+      "name": "Erling Haaland",
+      "providerId": "839956",
+      "file": "manchester-city/haaland.png"
+    },
+    {
+      "team": "Manchester City",
+      "name": "Phil Foden",
+      "providerId": "859765",
+      "file": "manchester-city/foden.png"
+    },
+    {
+      "team": "Real Madrid",
+      "name": "Vinícius Júnior",
+      "providerId": "868812",
+      "file": "real-madrid/vinicius-junior.png"
+    },
+    {
+      "team": "Real Madrid",
+      "name": "Kylian Mbappé",
+      "providerId": "826643",
+      "file": "real-madrid/mbappe.png"
+    },
+    {
+      "team": "Bayern",
+      "name": "Harry Kane",
+      "providerId": "108579",
+      "file": "bayern/kane.png"
+    },
+    {
+      "team": "Barcelona",
+      "name": "Robert Lewandowski",
+      "providerId": "41789",
+      "file": "barcelona/lewandowski.png"
+    },
+    {
+      "team": "Barcelona",
+      "name": "Raphinha",
+      "providerId": "831005",
+      "file": "barcelona/raphinha.png"
+    },
+    {
+      "team": "Barcelona",
+      "name": "Lamine Yamal",
+      "providerId": "1402912",
+      "file": "barcelona/yamal.png"
+    },
+    {
+      "team": "Inter",
+      "name": "Lautaro Martínez",
+      "providerId": "823984",
+      "file": "inter/lautaro-martinez.png"
+    },
+    {
+      "team": "Liverpool",
+      "name": "Mohamed Salah",
+      "providerId": "159665",
+      "file": "liverpool/salah.png"
+    },
+    {
+      "team": "Tottenham",
+      "name": "Son Heung-min",
+      "providerId": "111505",
+      "file": "tottenham/son.png"
+    },
+    {
+      "team": "Newcastle",
+      "name": "Alexander Isak",
+      "providerId": "823941",
+      "file": "newcastle/isak.png"
+    },
+    {
+      "team": "Newcastle",
+      "name": "Anthony Gordon",
+      "providerId": "914902",
+      "file": "newcastle/gordon.png"
+    },
+    {
+      "team": "Aston Villa",
+      "name": "Ollie Watkins",
+      "providerId": "555386",
+      "file": "aston-villa/watkins.png"
+    },
+    {
+      "team": "Flamengo",
+      "name": "Giorgian de Arrascaeta",
+      "providerId": "333587",
+      "file": "flamengo/arrascaeta.png"
+    },
+    {
+      "team": "Flamengo",
+      "name": "Pedro",
+      "providerId": "840219",
+      "file": "flamengo/pedro.png"
+    },
+    {
+      "team": "Fluminense",
+      "name": "Germán Cano",
+      "providerId": "33238",
+      "file": "fluminense/cano.png"
+    },
+    {
+      "team": "Corinthians",
+      "name": "Memphis Depay",
+      "providerId": "138833",
+      "file": "corinthians/memphis-depay.png"
+    },
+    {
+      "team": "Corinthians",
+      "name": "Yuri Alberto",
+      "providerId": "905463",
+      "file": "corinthians/yuri-alberto.png"
+    },
+    {
+      "team": "Utah Jazz",
+      "name": "Lauri Markkanen",
+      "providerId": "885207",
+      "file": "utah-jazz/markkanen.png"
+    },
+    {
+      "team": "Oklahoma City Thunder",
+      "name": "Shai Gilgeous-Alexander",
+      "providerId": "940794",
+      "file": "oklahoma-city-thunder/gilgeous-alexander.png"
+    },
+    {
+      "team": "New York Knicks",
+      "name": "Jalen Brunson",
+      "providerId": "940803",
+      "file": "new-york-knicks/brunson.png"
+    },
+    {
+      "team": "New York Knicks",
+      "name": "Julius Randle",
+      "providerId": "817338",
+      "file": "new-york-knicks/randle.png"
+    },
+    {
+      "team": "Orlando Magic",
+      "name": "Paolo Banchero",
+      "providerId": "1181231",
+      "file": "orlando-magic/banchero.png"
+    },
+    {
+      "team": "Chicago Bulls",
+      "name": "Zach LaVine",
+      "providerId": "817218",
+      "file": "chicago-bulls/lavine.png"
+    },
+    {
+      "team": "Miami Heat",
+      "name": "Jimmy Butler",
+      "providerId": "817017",
+      "file": "miami-heat/butler.png"
+    },
+    {
+      "team": "Miami Heat",
+      "name": "Tyler Herro",
+      "providerId": "988789",
+      "file": "miami-heat/herro.png"
+    },
+    {
+      "team": "Palmeiras",
+      "name": "José Manuel López",
+      "aliases": [
+        "Flaco Lopez",
+        "Flaco López"
+      ],
+      "file": "palmeiras/flaco-lopez.png"
+    },
+    {
+      "team": "Los Angeles Lakers",
+      "name": "LeBron James",
+      "aliases": [
+        "L. James"
+      ],
+      "file": "los-angeles-lakers/lebron-james.png"
+    },
+    {
+      "team": "Golden State Warriors",
+      "name": "Stephen Curry",
+      "aliases": [
+        "S. Curry"
+      ],
+      "file": "golden-state-warriors/stephen-curry.png"
+    },
+    {
+      "team": "Dallas Mavericks",
+      "name": "Luka Doncic",
+      "aliases": [
+        "L. Doncic"
+      ],
+      "file": "dallas-mavericks/luka-doncic.png"
+    },
+    {
+      "team": "Flamengo",
+      "name": "Bruno Henrique",
+      "aliases": [
+        "Bruno Henrique",
+        "B. Henrique"
+      ],
+      "providerId": "795291",
+      "file": "flamengo/bruno-henrique.png"
+    },
+    {
+      "team": "Cruzeiro",
+      "name": "Kaio Jorge",
+      "aliases": [
+        "Kaio Jorge",
+        "K. Jorge"
+      ],
+      "providerId": "954888",
+      "file": "cruzeiro/kaio-jorge.png"
+    },
+    {
+      "team": "Mirassol",
+      "name": "Negueba",
+      "aliases": [
+        "Negueba"
+      ],
+      "providerId": "872007",
+      "file": "mirassol/negueba.png"
+    },
+    {
+      "team": "Mirassol",
+      "name": "Fernandinho",
+      "aliases": [
+        "Fernandinho"
+      ],
+      "providerId": "871219",
+      "file": "mirassol/fernandinho.png"
+    },
+    {
+      "team": "São Paulo",
+      "name": "Jonathan Calleri",
+      "aliases": [
+        "Calleri",
+        "J. Calleri"
+      ],
+      "providerId": "340519",
+      "file": "sao-paulo/calleri.png"
+    },
+    {
+      "team": "São Paulo",
+      "name": "Luciano",
+      "aliases": [
+        "Luciano"
+      ],
+      "providerId": "282557",
+      "file": "sao-paulo/luciano.png"
+    },
+    {
+      "team": "São Paulo",
+      "name": "Lucas Moura",
+      "aliases": [
+        "Lucas Moura",
+        "L. Moura"
+      ],
+      "providerId": "149710",
+      "file": "sao-paulo/lucas-moura.png"
+    },
+    {
+      "team": "Palmeiras",
+      "name": "Vitor Roque",
+      "aliases": [
+        "Vitor Roque",
+        "V. Roque"
+      ],
+      "providerId": "1150391",
+      "file": "palmeiras/vitor-roque.png"
+    },
+    {
+      "team": "Fluminense",
+      "name": "Germán Cano",
+      "aliases": [
+        "Cano",
+        "G. Cano"
+      ],
+      "providerId": "33238",
+      "file": "fluminense/cano.png"
+    },
+    {
+      "team": "Cruzeiro",
+      "name": "Lautaro Díaz",
+      "aliases": [
+        "Lautaro Diaz",
+        "L. Díaz"
+      ],
+      "providerId": "992093",
+      "file": "cruzeiro/lautaro-diaz.png"
+    },
+    {
+      "team": "Internacional",
+      "name": "Rafael Borré",
+      "aliases": [
+        "Rafael Borre",
+        "R. Borré"
+      ],
+      "providerId": "560116",
+      "file": "internacional/rafael-borre.png"
+    },
+    {
+      "team": "Internacional",
+      "name": "Enner Valencia",
+      "aliases": [
+        "Enner Valencia",
+        "E. Valencia"
+      ],
+      "providerId": "106456",
+      "file": "internacional/enner-valencia.png"
+    },
+    {
+      "team": "Internacional",
+      "name": "Wesley",
+      "aliases": [
+        "Wesley"
+      ],
+      "providerId": "1134200",
+      "file": "internacional/wesley.png"
+    },
+    {
+      "team": "Bragantino",
+      "name": "Eduardo Sasha",
+      "aliases": [
+        "Eduardo Sasha",
+        "E. Sasha"
+      ],
+      "providerId": "143846",
+      "file": "bragantino/eduardo-sasha.png"
+    },
+    {
+      "team": "Bragantino",
+      "name": "Helinho",
+      "aliases": [
+        "Helinho"
+      ],
+      "providerId": "906837",
+      "file": "bragantino/helinho.png"
+    },
+    {
+      "team": "Bragantino",
+      "name": "Thiago Borbas",
+      "aliases": [
+        "Thiago Borbas",
+        "T. Borbas"
+      ],
+      "providerId": "1018547",
+      "file": "bragantino/thiago-borbas.png"
+    },
+    {
+      "team": "Mirassol",
+      "name": "Dellatorre",
+      "aliases": [
+        "Dellatorre"
+      ],
+      "providerId": "166503",
+      "file": "mirassol/dellatorre.png"
+    },
+    {
+      "team": "Palmeiras",
+      "name": "Raphael Veiga",
+      "aliases": [
+        "Raphael Veiga",
+        "R. Veiga"
+      ],
+      "providerId": "840020",
+      "file": "palmeiras/raphael-veiga.png"
+    },
+    {
+      "team": "Fluminense",
+      "name": "Keno",
+      "aliases": [
+        "Keno"
+      ],
+      "providerId": "787607",
+      "file": "fluminense/keno.png"
+    },
+    {
+      "team": "Botafogo",
+      "name": "Igor Jesus",
+      "aliases": [
+        "Igor Jesus",
+        "I. Jesus"
+      ],
+      "providerId": "981619",
+      "file": "botafogo/igor-jesus.png"
+    },
+    {
+      "team": "Botafogo",
+      "name": "Tiquinho Soares",
+      "aliases": [
+        "Tiquinho Soares",
+        "T. Soares"
+      ],
+      "providerId": "789100",
+      "file": "botafogo/tiquinho-soares.png"
+    },
+    {
+      "team": "Bahia",
+      "name": "Everaldo",
+      "aliases": [
+        "Everaldo"
+      ],
+      "providerId": "386212",
+      "file": "bahia/everaldo.png"
+    },
+    {
+      "team": "Bahia",
+      "name": "Cauly",
+      "aliases": [
+        "Cauly"
+      ],
+      "providerId": "255873",
+      "file": "bahia/cauly.png"
+    },
+    {
+      "team": "Bahia",
+      "name": "Biel",
+      "aliases": [
+        "Biel"
+      ],
+      "providerId": "1106140",
+      "file": "bahia/biel.png"
+    },
+    {
+      "team": "Atl. Mineiro",
+      "name": "Hulk",
+      "aliases": [
+        "Hulk"
+      ],
+      "providerId": "34705",
+      "file": "atl-mineiro/hulk.png"
+    },
+    {
+      "team": "Cruzeiro",
+      "name": "Gabriel Barbosa",
+      "aliases": [
+        "Gabigol",
+        "G. Barbosa"
+      ],
+      "providerId": "358554",
+      "file": "cruzeiro/gabigol.png"
+    },
+    {
+      "team": "Santos",
+      "name": "Guilherme",
+      "aliases": [
+        "Guilherme"
+      ],
+      "providerId": "844605",
+      "file": "santos/guilherme.png"
+    },
+    {
+      "team": "PSG",
+      "name": "Ousmane Dembélé",
+      "aliases": [
+        "Dembele",
+        "O. Dembélé"
+      ],
+      "providerId": "818244",
+      "file": "psg/dembele.png"
+    },
+    {
+      "team": "PSG",
+      "name": "Khvicha Kvaratskhelia",
+      "aliases": [
+        "Kvaratskhelia",
+        "K. Kvaratskhelia"
+      ],
+      "providerId": "889259",
+      "file": "psg/kvaratskhelia.png"
+    },
+    {
+      "team": "PSG",
+      "name": "Gonçalo Ramos",
+      "aliases": [
+        "Goncalo Ramos",
+        "G. Ramos"
+      ],
+      "providerId": "934510",
+      "file": "psg/goncalo-ramos.png"
+    },
+    {
+      "team": "Paris Saint-Germain",
+      "name": "Gonçalo Ramos",
+      "aliases": [
+        "Goncalo Ramos",
+        "G. Ramos"
+      ],
+      "providerId": "934510",
+      "file": "paris-saint-germain/goncalo-ramos.png"
+    },
+    {
+      "team": "Fluminense",
+      "name": "Jhon Arias",
+      "aliases": [
+        "Arias",
+        "J. Arias"
+      ],
+      "providerId": "844096",
+      "file": "fluminense/arias.png"
+    },
+    {
+      "team": "Botafogo",
+      "name": "Jefferson Savarino",
+      "aliases": [
+        "Savarino",
+        "J. Savarino"
+      ],
+      "providerId": "874739",
+      "file": "botafogo/savarino.png"
+    },
+    {
+      "team": "Atl. Mineiro",
+      "name": "Paulinho",
+      "aliases": [
+        "Paulinho"
+      ],
+      "providerId": "885179",
+      "file": "atl-mineiro/paulinho.png"
+    },
+    {
+      "team": "Atl. Mineiro",
+      "name": "Gustavo Scarpa",
+      "aliases": [
+        "Gustavo Scarpa",
+        "G. Scarpa"
+      ],
+      "providerId": "559036",
+      "file": "atl-mineiro/gustavo-scarpa.png"
+    },
+    {
+      "team": "Atlético Madrid",
+      "name": "Julián Alvarez",
+      "aliases": [
+        "Julian Alvarez",
+        "J. Álvarez"
+      ],
+      "providerId": "944656",
+      "file": "atletico-madrid/julian-alvarez.png"
+    },
+    {
+      "team": "Atlético Madrid",
+      "name": "Alexander Sørloth",
+      "aliases": [
+        "Sorloth",
+        "A. Sørloth"
+      ],
+      "providerId": "309078",
+      "file": "atletico-madrid/sorloth.png"
+    },
+    {
+      "team": "Inter",
+      "name": "Marcus Thuram",
+      "aliases": [
+        "Thuram",
+        "M. Thuram"
+      ],
+      "providerId": "791702",
+      "file": "inter/thuram.png"
+    },
+    {
+      "team": "Paris Saint-Germain",
+      "name": "Ousmane Dembélé",
+      "aliases": [
+        "Dembele",
+        "O. Dembélé"
+      ],
+      "providerId": "818244",
+      "file": "paris-saint-germain/dembele.png"
+    },
+    {
+      "team": "Paris Saint-Germain",
+      "name": "Khvicha Kvaratskhelia",
+      "aliases": [
+        "Kvaratskhelia",
+        "K. Kvaratskhelia"
+      ],
+      "providerId": "889259",
+      "file": "paris-saint-germain/kvaratskhelia.png"
+    },
+    {
+      "team": "Real Madrid",
+      "name": "Vinícius Júnior",
+      "aliases": [
+        "Vini Jr",
+        "Vinícius Jr."
+      ],
+      "providerId": "868812",
+      "file": "real-madrid/vini-jr.png"
+    },
+    {
+      "team": "Benfica",
+      "name": "Di María",
+      "aliases": [
+        "Di Maria",
+        "D. María"
+      ],
+      "providerId": "975336",
+      "file": "benfica/di-maria.png"
+    },
+    {
+      "team": "Real Madrid",
+      "name": "Jude Bellingham",
+      "aliases": [
+        "Bellingham",
+        "J. Bellingham"
+      ],
+      "providerId": "991011",
+      "file": "real-madrid/bellingham.png"
+    },
+    {
+      "team": "Liverpool",
+      "name": "Darwin Núñez",
+      "aliases": [
+        "Núñez",
+        "D. Núñez"
+      ],
+      "providerId": "924871",
+      "file": "liverpool/nunez.png"
+    },
+    {
+      "team": "Liverpool",
+      "name": "Luis Díaz",
+      "aliases": [
+        "Diaz",
+        "L. Díaz"
+      ],
+      "providerId": "883537",
+      "file": "liverpool/diaz.png"
+    },
+    {
+      "team": "Man. City",
+      "name": "Erling Haaland",
+      "aliases": [
+        "Haaland",
+        "E. Haaland"
+      ],
+      "providerId": "839956",
+      "file": "man-city/haaland.png"
+    },
+    {
+      "team": "Man. City",
+      "name": "Phil Foden",
+      "aliases": [
+        "Foden",
+        "P. Foden"
+      ],
+      "providerId": "859765",
+      "file": "man-city/foden.png"
+    },
+    {
+      "team": "Benfica",
+      "name": "Vangelis Pavlidis",
+      "aliases": [
+        "Pavlidis",
+        "V. Pavlidis"
+      ],
+      "providerId": "795236",
+      "file": "benfica/pavlidis.png"
+    },
+    {
+      "team": "Wolves",
+      "name": "Neto",
+      "aliases": [
+        "Neto"
+      ],
+      "providerId": "84844",
+      "file": "wolves/neto.png"
+    },
+    {
+      "team": "Napoli",
+      "name": "Victor Osimhen",
+      "aliases": [
+        "Osimhen",
+        "V. Osimhen"
+      ],
+      "providerId": "822471",
+      "file": "napoli/osimhen.png"
+    },
+    {
+      "team": "Napoli",
+      "name": "Matteo Politano",
+      "aliases": [
+        "Politano",
+        "M. Politano"
+      ],
+      "providerId": "235672",
+      "file": "napoli/politano.png"
+    },
+    {
+      "team": "Napoli",
+      "name": "Giacomo Raspadori",
+      "aliases": [
+        "Raspadori",
+        "G. Raspadori"
+      ],
+      "providerId": "865651",
+      "file": "napoli/raspadori.png"
+    },
+    {
+      "team": "Man. City",
+      "name": "Kevin De Bruyne",
+      "aliases": [
+        "De Bruyne",
+        "K. De Bruyne"
+      ],
+      "providerId": "70996",
+      "file": "man-city/de-bruyne.png"
+    },
+    {
+      "team": "Manchester City",
+      "name": "Kevin De Bruyne",
+      "aliases": [
+        "De Bruyne",
+        "K. De Bruyne"
+      ],
+      "providerId": "70996",
+      "file": "manchester-city/de-bruyne.png"
+    },
+    {
+      "team": "Benfica",
+      "name": "Andreas Schjelderup",
+      "aliases": [
+        "Schjelderup",
+        "A. Schjelderup"
+      ],
+      "providerId": "1100952",
+      "file": "benfica/schjelderup.png"
+    },
+    {
+      "team": "Atlético Madrid",
+      "name": "Antoine Griezmann",
+      "aliases": [
+        "Griezmann",
+        "A. Griezmann"
+      ],
+      "providerId": "85859",
+      "file": "atletico-madrid/griezmann.png"
+    },
+    {
+      "team": "Burnley",
+      "name": "Lyle Foster",
+      "aliases": [
+        "Foster",
+        "L. Foster"
+      ],
+      "providerId": "901907",
+      "file": "burnley/foster.png"
+    },
+    {
+      "team": "Santos",
+      "name": "Yeferson Soteldo",
+      "aliases": [
+        "Soteldo",
+        "Y. Soteldo"
+      ],
+      "providerId": "789960",
+      "file": "santos/soteldo.png"
+    },
+    {
+      "team": "Inter",
+      "name": "Mehdi Taremi",
+      "aliases": [
+        "Taremi",
+        "M. Taremi"
+      ],
+      "providerId": "812533",
+      "file": "inter/taremi.png"
+    },
+    {
+      "team": "Lyon",
+      "name": "Alexandre Lacazette",
+      "aliases": [
+        "Lacazette",
+        "A. Lacazette"
+      ],
+      "providerId": "50070",
+      "file": "lyon/lacazette.png"
+    },
+    {
+      "team": "Santos",
+      "name": "Neymar",
+      "aliases": [
+        "Neymar Jr",
+        "Neymar"
+      ],
+      "providerId": "124712",
+      "file": "santos/neymar-jr.png"
+    },
+    {
+      "team": "Lyon",
+      "name": "Georges Mikautadze",
+      "aliases": [
+        "Mikautadze",
+        "G. Mikautadze"
+      ],
+      "providerId": "1009372",
+      "file": "lyon/mikautadze.png"
+    },
+    {
+      "team": "Lyon",
+      "name": "Ernest Nuamah",
+      "aliases": [
+        "Nuamah",
+        "E. Nuamah"
+      ],
+      "providerId": "1202024",
+      "file": "lyon/nuamah.png"
+    },
+    {
+      "team": "Newcastle",
+      "name": "Harvey Barnes",
+      "aliases": [
+        "Barnes",
+        "H. Barnes"
+      ],
+      "providerId": "855647",
+      "file": "newcastle/barnes.png"
+    },
+    {
+      "team": "Brighton",
+      "name": "João Pedro",
+      "aliases": [
+        "Joao Pedro",
+        "J. Pedro"
+      ],
+      "providerId": "975079",
+      "file": "brighton/joao-pedro.png"
+    },
+    {
+      "team": "Getafe",
+      "name": "Borja Mayoral",
+      "aliases": [
+        "Mayoral",
+        "B. Mayoral"
+      ],
+      "providerId": "604954",
+      "file": "getafe/mayoral.png"
+    },
+    {
+      "team": "Elche",
+      "name": "Pere Milla",
+      "aliases": [
+        "Pere Milla",
+        "P. Milla"
+      ],
+      "providerId": "175185",
+      "file": "elche/pere-milla.png"
+    },
+    {
+      "team": "Sevilla",
+      "name": "Isaac Romero",
+      "aliases": [
+        "Isaac Romero",
+        "I. Romero"
+      ],
+      "providerId": "1018190",
+      "file": "sevilla/isaac-romero.png"
+    },
+    {
+      "team": "Villarreal",
+      "name": "Ayoze Pérez",
+      "aliases": [
+        "Ayoze Perez",
+        "A. Pérez"
+      ],
+      "providerId": "345195",
+      "file": "villarreal/ayoze-perez.png"
+    },
+    {
+      "team": "Villarreal",
+      "name": "Gerard Moreno",
+      "aliases": [
+        "Gerard Moreno",
+        "G. Moreno"
+      ],
+      "providerId": "146866",
+      "file": "villarreal/gerard-moreno.png"
+    },
+    {
+      "team": "Alavés",
+      "name": "Carlos Vicente",
+      "aliases": [
+        "Carlos Vicente",
+        "C. Vicente"
+      ],
+      "providerId": "1084399",
+      "file": "alaves/carlos-vicente.png"
+    },
+    {
+      "team": "Espanyol",
+      "name": "Javi Puado",
+      "aliases": [
+        "Puado",
+        "J. Puado"
+      ],
+      "providerId": "891511",
+      "file": "espanyol/puado.png"
+    },
+    {
+      "team": "Espanyol",
+      "name": "Joselu",
+      "aliases": [
+        "Joselu"
+      ],
+      "providerId": "69418",
+      "file": "espanyol/joselu.png"
+    },
+    {
+      "team": "Mallorca",
+      "name": "Sergi Darder",
+      "aliases": [
+        "Darder",
+        "S. Darder"
+      ],
+      "providerId": "110783",
+      "file": "mallorca/darder.png"
+    },
+    {
+      "team": "B. Leverkusen",
+      "name": "Victor Okoh Boniface",
+      "aliases": [
+        "Boniface",
+        "V. O. Boniface"
+      ],
+      "providerId": "978521",
+      "file": "b-leverkusen/boniface.png"
+    },
+    {
+      "team": "RB Leipzig",
+      "name": "Xavi Simons",
+      "aliases": [
+        "Xavi Simons",
+        "X. Simons"
+      ],
+      "providerId": "997183",
+      "file": "rb-leipzig/xavi-simons.png"
+    },
+    {
+      "team": "Ajax",
+      "name": "Brian Brobbey",
+      "aliases": [
+        "Brobbey",
+        "B. Brobbey"
+      ],
+      "providerId": "910048",
+      "file": "ajax/brobbey.png"
+    },
+    {
+      "team": "Ajax",
+      "name": "Steven Berghuis",
+      "aliases": [
+        "Berghuis",
+        "S. Berghuis"
+      ],
+      "providerId": "100386",
+      "file": "ajax/berghuis.png"
+    },
+    {
+      "team": "Ajax",
+      "name": "Jordan Henderson",
+      "aliases": [
+        "Henderson",
+        "J. Henderson"
+      ],
+      "providerId": "42694",
+      "file": "ajax/henderson.png"
+    },
+    {
+      "team": "Tottenham",
+      "name": "Dominic Solanke",
+      "aliases": [
+        "Solanke",
+        "D. Solanke"
+      ],
+      "providerId": "361420",
+      "file": "tottenham/solanke.png"
+    },
+    {
+      "team": "Tottenham",
+      "name": "James Maddison",
+      "aliases": [
+        "Maddison",
+        "J. Maddison"
+      ],
+      "providerId": "356398",
+      "file": "tottenham/maddison.png"
+    },
+    {
+      "team": "Wolves",
+      "name": "Matheus Cunha",
+      "aliases": [
+        "Cunha",
+        "M. Cunha"
+      ],
+      "providerId": "886363",
+      "file": "wolves/cunha.png"
+    },
+    {
+      "team": "Wolves",
+      "name": "Hwang In-beom",
+      "aliases": [
+        "Hwang",
+        "H. In-beom"
+      ],
+      "providerId": "889689",
+      "file": "wolves/hwang.png"
+    },
+    {
+      "team": "Brighton",
+      "name": "Danny Welbeck",
+      "aliases": [
+        "Welbeck",
+        "D. Welbeck"
+      ],
+      "providerId": "33902",
+      "file": "brighton/welbeck.png"
+    },
+    {
+      "team": "Brighton",
+      "name": "Kaoru Mitoma",
+      "aliases": [
+        "Mitoma",
+        "K. Mitoma"
+      ],
+      "providerId": "936849",
+      "file": "brighton/mitoma.png"
+    },
+    {
+      "team": "West Ham",
+      "name": "Jarrod Bowen",
+      "aliases": [
+        "Bowen",
+        "J. Bowen"
+      ],
+      "providerId": "552884",
+      "file": "west-ham/bowen.png"
+    },
+    {
+      "team": "Leeds",
+      "name": "LeBron James",
+      "aliases": [
+        "James",
+        "L. James"
+      ],
+      "providerId": "817181",
+      "file": "leeds/james.png"
+    },
+    {
+      "team": "Burnley",
+      "name": "Josh Brownhill",
+      "aliases": [
+        "Brownhill",
+        "J. Brownhill"
+      ],
+      "providerId": "358394",
+      "file": "burnley/brownhill.png"
+    },
+    {
+      "team": "Getafe",
+      "name": "Mason Greenwood",
+      "aliases": [
+        "Greenwood",
+        "M. Greenwood"
+      ],
+      "providerId": "942116",
+      "file": "getafe/greenwood.png"
+    },
+    {
+      "team": "West Ham",
+      "name": "Mohammed Kudus",
+      "aliases": [
+        "Kudus",
+        "M. Kudus"
+      ],
+      "providerId": "905163",
+      "file": "west-ham/kudus.png"
+    },
+    {
+      "team": "Leeds",
+      "name": "Georginio Rutter",
+      "aliases": [
+        "Rutter",
+        "G. Rutter"
+      ],
+      "providerId": "946695",
+      "file": "leeds/rutter.png"
+    },
+    {
+      "team": "Getafe",
+      "name": "Juanmi Latasa",
+      "aliases": [
+        "Latasa",
+        "J. Latasa"
+      ],
+      "providerId": "966679",
+      "file": "getafe/latasa.png"
+    },
+    {
+      "team": "Elche",
+      "name": "Lucas Boyé",
+      "aliases": [
+        "Boye",
+        "L. Boyé"
+      ],
+      "providerId": "814385",
+      "file": "elche/boye.png"
+    },
+    {
+      "team": "Sevilla",
+      "name": "Dodi Lukebakio",
+      "aliases": [
+        "Lukebakio",
+        "D. Lukebakio"
+      ],
+      "providerId": "823631",
+      "file": "sevilla/lukebakio.png"
+    },
+    {
+      "team": "Sevilla",
+      "name": "Lucas Ocampos",
+      "aliases": [
+        "Ocampos",
+        "L. Ocampos"
+      ],
+      "providerId": "155702",
+      "file": "sevilla/ocampos.png"
+    },
+    {
+      "team": "Villarreal",
+      "name": "Alex Baena",
+      "aliases": [
+        "Baena",
+        "A. Baena"
+      ],
+      "providerId": "910031",
+      "file": "villarreal/baena.png"
+    },
+    {
+      "team": "Espanyol",
+      "name": "Keidi Bare",
+      "aliases": [
+        "Bare",
+        "K. Bare"
+      ],
+      "providerId": "862480",
+      "file": "espanyol/bare.png"
+    },
+    {
+      "team": "Levante",
+      "name": "Mohamed Bouldini",
+      "aliases": [
+        "Bouldini",
+        "M. Bouldini"
+      ],
+      "providerId": "942111",
+      "file": "levante/bouldini.png"
+    },
+    {
+      "team": "Burnley",
+      "name": "James Rodríguez",
+      "aliases": [
+        "Rodriguez",
+        "J. Rodríguez"
+      ],
+      "providerId": "107414",
+      "file": "burnley/rodriguez.png"
+    },
+    {
+      "team": "Elche",
+      "name": "Johan Mojica",
+      "aliases": [
+        "Mojica",
+        "J. Mojica"
+      ],
+      "providerId": "344847",
+      "file": "elche/mojica.png"
+    },
+    {
+      "team": "B. Leverkusen",
+      "name": "Florian Wirtz",
+      "aliases": [
+        "Wirtz",
+        "F. Wirtz"
+      ],
+      "providerId": "1019322",
+      "file": "b-leverkusen/wirtz.png"
+    },
+    {
+      "team": "B. Leverkusen",
+      "name": "Alejandro Grimaldo",
+      "aliases": [
+        "Grimaldo",
+        "A. Grimaldo"
+      ],
+      "providerId": "177177",
+      "file": "b-leverkusen/grimaldo.png"
+    },
+    {
+      "team": "Bayern",
+      "name": "Jamal Musiala",
+      "aliases": [
+        "Musiala",
+        "J. Musiala"
+      ],
+      "providerId": "1010231",
+      "file": "bayern/musiala.png"
+    },
+    {
+      "team": "Hamburger",
+      "name": "Ransford Yeboah Königsdörffer",
+      "aliases": [
+        "Königsdörffer",
+        "R. Y. Königsdörffer"
+      ],
+      "providerId": "1012235",
+      "file": "hamburger/konigsdorffer.png"
+    },
+    {
+      "team": "Vitória",
+      "name": "Osvaldo",
+      "aliases": [
+        "Osvaldo"
+      ],
+      "providerId": "90468",
+      "file": "vitoria/osvaldo.png"
+    },
+    {
+      "team": "Vitória",
+      "name": "Alerrandro",
+      "aliases": [
+        "Alerrandro"
+      ],
+      "providerId": "923948",
+      "file": "vitoria/alerrandro.png"
+    },
+    {
+      "team": "Vitória",
+      "name": "Matheuzinho",
+      "aliases": [
+        "Matheuzinho"
+      ],
+      "providerId": "795266",
+      "file": "vitoria/matheuzinho.png"
+    },
+    {
+      "team": "Sport",
+      "name": "Chrystian Barletta",
+      "aliases": [
+        "Barletta",
+        "C. Barletta"
+      ],
+      "providerId": "1035765",
+      "file": "sport/barletta.png"
+    },
+    {
+      "team": "Eintracht",
+      "name": "Ansgar Knauff",
+      "aliases": [
+        "Knauff",
+        "A. Knauff"
+      ],
+      "providerId": "997012",
+      "file": "eintracht/knauff.png"
+    },
+    {
+      "team": "Sport",
+      "name": "Lucas Lima",
+      "aliases": [
+        "Lucas Lima",
+        "L. Lima"
+      ],
+      "providerId": "244589",
+      "file": "sport/lucas-lima.png"
+    },
+    {
+      "team": "Grêmio",
+      "name": "Martin Braithwaite",
+      "aliases": [
+        "Braithwaite",
+        "M. Braithwaite"
+      ],
+      "providerId": "66471",
+      "file": "gremio/braithwaite.png"
+    },
+    {
+      "team": "Grêmio",
+      "name": "Franco Cristaldo",
+      "aliases": [
+        "Cristaldo",
+        "F. Cristaldo"
+      ],
+      "providerId": "558820",
+      "file": "gremio/cristaldo.png"
+    },
+    {
+      "team": "Grêmio",
+      "name": "Cristian Pavón",
+      "aliases": [
+        "Pavon",
+        "C. Pavón"
+      ],
+      "providerId": "358956",
+      "file": "gremio/pavon.png"
+    },
+    {
+      "team": "Juventude",
+      "name": "Gilberto",
+      "aliases": [
+        "Gilberto"
+      ],
+      "providerId": "1435399",
+      "file": "juventude/gilberto.png"
+    },
+    {
+      "team": "Juventude",
+      "name": "Marcelinho",
+      "aliases": [
+        "Marcelinho"
+      ],
+      "providerId": "1046439",
+      "file": "juventude/marcelinho.png"
+    },
+    {
+      "team": "Juventude",
+      "name": "Nenê",
+      "aliases": [
+        "Nenê"
+      ],
+      "providerId": "5672",
+      "file": "juventude/nene.png"
+    },
+    {
+      "team": "Deportes Tolima",
+      "name": "Kevin Pérez",
+      "aliases": [
+        "Kevin Perez",
+        "K. Pérez"
+      ],
+      "providerId": "991859",
+      "file": "deportes-tolima/kevin-perez.png"
+    },
+    {
+      "team": "Independiente del Valle",
+      "name": "Michael Hoyos",
+      "aliases": [
+        "Michael Hoyos",
+        "M. Hoyos"
+      ],
+      "providerId": "105717",
+      "file": "independiente-del-valle/michael-hoyos.png"
+    },
+    {
+      "team": "Independiente del Valle",
+      "name": "Junior Sornoza",
+      "aliases": [
+        "Junior Sornoza",
+        "J. Sornoza"
+      ],
+      "providerId": "155786",
+      "file": "independiente-del-valle/junior-sornoza.png"
+    },
+    {
+      "team": "Independiente del Valle",
+      "name": "Lautaro Díaz",
+      "aliases": [
+        "Lautaro Diaz",
+        "L. Díaz"
+      ],
+      "providerId": "992093",
+      "file": "independiente-del-valle/lautaro-diaz.png"
+    },
+    {
+      "team": "Universidad Católica",
+      "name": "Gonzalo Tapia",
+      "aliases": [
+        "Gonzalo Tapia",
+        "G. Tapia"
+      ],
+      "providerId": "1002947",
+      "file": "universidad-catolica/gonzalo-tapia.png"
+    },
+    {
+      "team": "Platense",
+      "name": "Mateo Pellegrino",
+      "aliases": [
+        "Mateo Pellegrino",
+        "M. Pellegrino"
+      ],
+      "providerId": "1099296",
+      "file": "platense/mateo-pellegrino.png"
+    },
+    {
+      "team": "Estudiantes de La Plata",
+      "name": "Pablo Piatti",
+      "aliases": [
+        "Pablo Piatti",
+        "P. Piatti"
+      ],
+      "providerId": "33959",
+      "file": "estudiantes-de-la-plata/pablo-piatti.png"
+    },
+    {
+      "team": "Platense",
+      "name": "Vicente Taborda",
+      "aliases": [
+        "Vicente Taborda",
+        "V. Taborda"
+      ],
+      "providerId": "1131037",
+      "file": "platense/vicente-taborda.png"
+    },
+    {
+      "team": "Coquimbo Unido",
+      "name": "Andrés Chávez",
+      "aliases": [
+        "Andres Chavez",
+        "A. Chávez"
+      ],
+      "providerId": "239254",
+      "file": "coquimbo-unido/andres-chavez.png"
+    },
+    {
+      "team": "Alianza Lima",
+      "name": "Paolo Guerrero",
+      "aliases": [
+        "Paolo Guerrero",
+        "P. Guerrero"
+      ],
+      "providerId": "338",
+      "file": "alianza-lima/paolo-guerrero.png"
+    },
+    {
+      "team": "Deportivo Táchira",
+      "name": "Anthony Uribe",
+      "aliases": [
+        "Anthony Uribe",
+        "A. Uribe"
+      ],
+      "providerId": "133991",
+      "file": "deportivo-tachira/anthony-uribe.png"
+    },
+    {
+      "team": "Whitecaps",
+      "name": "Ryan Gauld",
+      "aliases": [
+        "Ryan Gauld",
+        "R. Gauld"
+      ],
+      "providerId": "233288",
+      "file": "whitecaps/ryan-gauld.png"
+    },
+    {
+      "team": "Whitecaps",
+      "name": "Pedro Vite",
+      "aliases": [
+        "Pedro Vite",
+        "P. Vite"
+      ],
+      "providerId": "1002524",
+      "file": "whitecaps/pedro-vite.png"
+    },
+    {
+      "team": "Cincinnati",
+      "name": "Luciano Acosta",
+      "aliases": [
+        "Luciano Acosta",
+        "L. Acosta"
+      ],
+      "providerId": "548030",
+      "file": "cincinnati/luciano-acosta.png"
+    },
+    {
+      "team": "Chicago Fire",
+      "name": "Hugo Cuypers",
+      "aliases": [
+        "Hugo Cuypers",
+        "H. Cuypers"
+      ],
+      "providerId": "836289",
+      "file": "chicago-fire/hugo-cuypers.png"
+    },
+    {
+      "team": "Chicago Fire",
+      "name": "Philip Zinckernagel",
+      "aliases": [
+        "Philip Zinckernagel",
+        "P. Zinckernagel"
+      ],
+      "providerId": "328247",
+      "file": "chicago-fire/philip-zinckernagel.png"
+    },
+    {
+      "team": "Chicago Fire",
+      "name": "Brian Gutiérrez",
+      "aliases": [
+        "Brian Gutierrez",
+        "B. Gutiérrez"
+      ],
+      "providerId": "1023088",
+      "file": "chicago-fire/brian-gutierrez.png"
+    },
+    {
+      "team": "Nashville",
+      "name": "Sam Surridge",
+      "aliases": [
+        "Sam Surridge",
+        "S. Surridge"
+      ],
+      "providerId": "817567",
+      "file": "nashville/sam-surridge.png"
+    },
+    {
+      "team": "Portland Timbers",
+      "name": "Santiago Moreno",
+      "aliases": [
+        "Santiago Moreno",
+        "S. Moreno"
+      ],
+      "providerId": "100203",
+      "file": "portland-timbers/santiago-moreno.png"
+    },
+    {
+      "team": "Augsburg",
+      "name": "Obed Vargas",
+      "aliases": [
+        "Vargas",
+        "O. Vargas"
+      ],
+      "providerId": "1119345",
+      "file": "augsburg/vargas.png"
+    },
+    {
+      "team": "Cincinnati",
+      "name": "Yuya Kubo",
+      "aliases": [
+        "Yuya Kubo",
+        "Y. Kubo"
+      ],
+      "providerId": "152132",
+      "file": "cincinnati/yuya-kubo.png"
+    },
+    {
+      "team": "Atlanta United",
+      "name": "Saba Lobjanidze",
+      "aliases": [
+        "Saba Lobjanidze",
+        "S. Lobjanidze"
+      ],
+      "providerId": "1965298",
+      "file": "atlanta-united/saba-lobjanidze.png"
+    },
+    {
+      "team": "Atlanta United",
+      "name": "Jamal Thiaré",
+      "aliases": [
+        "Jamal Thiare",
+        "J. Thiaré"
+      ],
+      "providerId": "316024",
+      "file": "atlanta-united/jamal-thiare.png"
+    },
+    {
+      "team": "Portland Timbers",
+      "name": "Jonathan Rodríguez",
+      "aliases": [
+        "Jonathan Rodriguez",
+        "J. Rodríguez"
+      ],
+      "providerId": "340395",
+      "file": "portland-timbers/jonathan-rodriguez.png"
+    },
+    {
+      "team": "Portland Timbers",
+      "name": "Felipe Mora",
+      "aliases": [
+        "Felipe Mora",
+        "F. Mora"
+      ],
+      "providerId": "333415",
+      "file": "portland-timbers/felipe-mora.png"
+    },
+    {
+      "team": "Orlando City",
+      "name": "Martín Ojeda",
+      "aliases": [
+        "Martin Ojeda",
+        "M. Ojeda"
+      ],
+      "providerId": "888812",
+      "file": "orlando-city/martin-ojeda.png"
+    },
+    {
+      "team": "Orlando City",
+      "name": "Luis Muriel",
+      "aliases": [
+        "Luis Muriel",
+        "L. Muriel"
+      ],
+      "providerId": "119242",
+      "file": "orlando-city/luis-muriel.png"
+    },
+    {
+      "team": "Orlando City",
+      "name": "Duncan McGuire",
+      "aliases": [
+        "Duncan McGuire",
+        "D. McGuire"
+      ],
+      "providerId": "1469179",
+      "file": "orlando-city/duncan-mcguire.png"
+    },
+    {
+      "team": "FC Dallas",
+      "name": "Petar Musa",
+      "aliases": [
+        "Petar Musa",
+        "P. Musa"
+      ],
+      "providerId": "827668",
+      "file": "fc-dallas/petar-musa.png"
+    },
+    {
+      "team": "FC Dallas",
+      "name": "Jesús Ferreira",
+      "aliases": [
+        "Jesus Ferreira",
+        "J. Ferreira"
+      ],
+      "providerId": "869853",
+      "file": "fc-dallas/jesus-ferreira.png"
+    },
+    {
+      "team": "FC Dallas",
+      "name": "Paul Arriola",
+      "aliases": [
+        "Paul Arriola",
+        "P. Arriola"
+      ],
+      "providerId": "155953",
+      "file": "fc-dallas/paul-arriola.png"
+    },
+    {
+      "team": "Houston Dynamo",
+      "name": "Ezequiel Ponce",
+      "aliases": [
+        "Ezequiel Ponce",
+        "E. Ponce"
+      ],
+      "providerId": "356444",
+      "file": "houston-dynamo/ezequiel-ponce.png"
+    },
+    {
+      "team": "Houston Dynamo",
+      "name": "Ibrahim Aliyu",
+      "aliases": [
+        "Ibrahim Aliyu",
+        "I. Aliyu"
+      ],
+      "providerId": "982466",
+      "file": "houston-dynamo/ibrahim-aliyu.png"
+    },
+    {
+      "team": "Houston Dynamo",
+      "name": "Amine Bassi",
+      "aliases": [
+        "Amine Bassi",
+        "A. Bassi"
+      ],
+      "providerId": "879780",
+      "file": "houston-dynamo/amine-bassi.png"
+    },
+    {
+      "team": "Charlotte FC",
+      "name": "Patrick Agyemang",
+      "aliases": [
+        "Patrick Agyemang",
+        "P. Agyemang"
+      ],
+      "providerId": "1470298",
+      "file": "charlotte-fc/patrick-agyemang.png"
+    },
+    {
+      "team": "Wolfsburg",
+      "name": "Patrick Wimmer",
+      "aliases": [
+        "Wimmer",
+        "P. Wimmer"
+      ],
+      "providerId": "987504",
+      "file": "wolfsburg/wimmer.png"
+    },
+    {
+      "team": "Eintracht",
+      "name": "Omar Marmoush",
+      "aliases": [
+        "Marmoush",
+        "O. Marmoush"
+      ],
+      "providerId": "873554",
+      "file": "eintracht/marmoush.png"
+    },
+    {
+      "team": "Augsburg",
+      "name": "Ermedin Demirović",
+      "aliases": [
+        "Demirovic",
+        "E. Demirović"
+      ],
+      "providerId": "878081",
+      "file": "augsburg/demirovic.png"
+    },
+    {
+      "team": "Augsburg",
+      "name": "Phillip Tietz",
+      "aliases": [
+        "Tietz",
+        "P. Tietz"
+      ],
+      "providerId": "822340",
+      "file": "augsburg/tietz.png"
+    },
+    {
+      "team": "Hamburger",
+      "name": "Robert Glatzel",
+      "aliases": [
+        "Glatzel",
+        "R. Glatzel"
+      ],
+      "providerId": "168987",
+      "file": "hamburger/glatzel.png"
+    },
+    {
+      "team": "Hamburger",
+      "name": "Davie Selke",
+      "aliases": [
+        "Selke",
+        "D. Selke"
+      ],
+      "providerId": "187437",
+      "file": "hamburger/selke.png"
+    },
+    {
+      "team": "Sport",
+      "name": "Gustavo Coutinho",
+      "aliases": [
+        "Gustavo Coutinho"
+      ],
+      "providerId": "981595",
+      "file": "sport/gustavo-coutinho.png"
+    },
+    {
+      "team": "Deportes Tolima",
+      "name": "Brayan Gil",
+      "aliases": [
+        "Brayan Gil",
+        "B. Gil"
+      ],
+      "providerId": "1065361",
+      "file": "deportes-tolima/brayan-gil.png"
+    },
+    {
+      "team": "Deportes Tolima",
+      "name": "Yeison Guzmán",
+      "aliases": [
+        "Yeison Guzman",
+        "Y. Guzmán"
+      ],
+      "providerId": "870359",
+      "file": "deportes-tolima/yeison-guzman.png"
+    },
+    {
+      "team": "Universidad Católica",
+      "name": "Fernando Zampedri",
+      "aliases": [
+        "Fernando Zampedri",
+        "F. Zampedri"
+      ],
+      "providerId": "828952",
+      "file": "universidad-catolica/fernando-zampedri.png"
+    },
+    {
+      "team": "Universidad Católica",
+      "name": "Clemente Montes",
+      "aliases": [
+        "Clemente Montes",
+        "C. Montes"
+      ],
+      "providerId": "995388",
+      "file": "universidad-catolica/clemente-montes.png"
+    },
+    {
+      "team": "Estudiantes de La Plata",
+      "name": "Guido Carrillo",
+      "aliases": [
+        "Guido Carrillo",
+        "G. Carrillo"
+      ],
+      "providerId": "174519",
+      "file": "estudiantes-de-la-plata/guido-carrillo.png"
+    },
+    {
+      "team": "Estudiantes de La Plata",
+      "name": "Tiago Palacios",
+      "aliases": [
+        "Tiago Palacios",
+        "T. Palacios"
+      ],
+      "providerId": "1018468",
+      "file": "estudiantes-de-la-plata/tiago-palacios.png"
+    },
+    {
+      "team": "Platense",
+      "name": "Ronaldo Martinez",
+      "aliases": [
+        "Ronaldo Martinez",
+        "R. Martinez"
+      ],
+      "providerId": "874452",
+      "file": "platense/ronaldo-martinez.png"
+    },
+    {
+      "team": "Coquimbo Unido",
+      "name": "Nicolás Johansen",
+      "aliases": [
+        "Nicolas Johansen",
+        "N. Johansen"
+      ],
+      "providerId": "1643443",
+      "file": "coquimbo-unido/nicolas-johansen.png"
+    },
+    {
+      "team": "Coquimbo Unido",
+      "name": "Matías Palavecino",
+      "aliases": [
+        "Matias Palavecino",
+        "M. Palavecino"
+      ],
+      "providerId": "973560",
+      "file": "coquimbo-unido/matias-palavecino.png"
+    },
+    {
+      "team": "Bolívar",
+      "name": "Francisco da Costa",
+      "aliases": [
+        "Francisco da Costa",
+        "F. da Costa"
+      ],
+      "providerId": "1144108",
+      "file": "bolivar/francisco-da-costa.png"
+    },
+    {
+      "team": "Bolívar",
+      "name": "Patricio Rodríguez",
+      "aliases": [
+        "Patricio Rodriguez",
+        "P. Rodríguez"
+      ],
+      "providerId": "37952",
+      "file": "bolivar/patricio-rodriguez.png"
+    },
+    {
+      "team": "Bolívar",
+      "name": "Ramiro Vaca",
+      "aliases": [
+        "Ramiro Vaca",
+        "R. Vaca"
+      ],
+      "providerId": "876307",
+      "file": "bolivar/ramiro-vaca.png"
+    },
+    {
+      "team": "Cerro Porteño",
+      "name": "Diego Churin",
+      "aliases": [
+        "Diego Churin",
+        "Churin"
+      ],
+      "providerId": "249137",
+      "file": "cerro-porteno/diego-churin.png"
+    },
+    {
+      "team": "LDU Quito",
+      "name": "Alex Arce",
+      "aliases": [
+        "Alex Arce",
+        "A. Arce"
+      ],
+      "providerId": "1167312",
+      "file": "ldu-quito/alex-arce.png"
+    },
+    {
+      "team": "LDU Quito",
+      "name": "Michael Estrada",
+      "aliases": [
+        "Michael Estrada",
+        "M. Estrada"
+      ],
+      "providerId": "860561",
+      "file": "ldu-quito/michael-estrada.png"
+    },
+    {
+      "team": "LDU Quito",
+      "name": "Lisandro Alzugaray",
+      "aliases": [
+        "Lisandro Alzugaray",
+        "L. Alzugaray"
+      ],
+      "providerId": "897059",
+      "file": "ldu-quito/lisandro-alzugaray.png"
+    },
+    {
+      "team": "Atlético Nacional",
+      "name": "Kevin Viveros",
+      "aliases": [
+        "Kevin Viveros",
+        "K. Viveros"
+      ],
+      "providerId": "925124",
+      "file": "atletico-nacional/kevin-viveros.png"
+    },
+    {
+      "team": "Barcelona SC",
+      "name": "Janner Corozo",
+      "aliases": [
+        "Janner Corozo",
+        "J. Corozo"
+      ],
+      "providerId": "868275",
+      "file": "barcelona-sc/janner-corozo.png"
+    },
+    {
+      "team": "Deportivo Táchira",
+      "name": "Bryan Castillo",
+      "aliases": [
+        "Bryan Castillo",
+        "B. Castillo"
+      ],
+      "providerId": "985007",
+      "file": "deportivo-tachira/bryan-castillo.png"
+    },
+    {
+      "team": "Melgar",
+      "name": "Bernardo Cuesta",
+      "aliases": [
+        "Bernardo Cuesta",
+        "B. Cuesta"
+      ],
+      "providerId": "339855",
+      "file": "melgar/bernardo-cuesta.png"
+    },
+    {
+      "team": "New York City",
+      "name": "Alonso Martínez",
+      "aliases": [
+        "Alonso Martinez",
+        "A. Martínez"
+      ],
+      "providerId": "971232",
+      "file": "new-york-city/alonso-martinez.png"
+    },
+    {
+      "team": "New York City",
+      "name": "Hannes Wolf",
+      "aliases": [
+        "Hannes Wolf",
+        "H. Wolf"
+      ],
+      "providerId": "832411",
+      "file": "new-york-city/hannes-wolf.png"
+    },
+    {
+      "team": "LA Galaxy",
+      "name": "Riqui Puig",
+      "aliases": [
+        "Riqui Puig",
+        "R. Puig"
+      ],
+      "providerId": "901842",
+      "file": "la-galaxy/riqui-puig.png"
+    },
+    {
+      "team": "Charlotte FC",
+      "name": "Pep Biel",
+      "aliases": [
+        "Pep Biel",
+        "P. Biel"
+      ],
+      "providerId": "914857",
+      "file": "charlotte-fc/pep-biel.png"
+    },
+    {
+      "team": "Internacional",
+      "name": "Alan Patrick",
+      "aliases": [
+        "Alan Patrick",
+        "A. Patrick"
+      ],
+      "providerId": "124997",
+      "file": "internacional/alan-patrick.png"
+    },
+    {
+      "team": "Palmeiras",
+      "name": "Richard Ríos",
+      "aliases": [
+        "Richard Rios",
+        "R. Ríos"
+      ],
+      "providerId": "1015292",
+      "file": "palmeiras/richard-rios.png"
+    },
+    {
+      "team": "Atl. Mineiro",
+      "name": "Bernard",
+      "aliases": [
+        "Bernard"
+      ],
+      "providerId": "241488",
+      "file": "atl-mineiro/bernard.png"
+    },
+    {
+      "team": "Inter",
+      "name": "Hakan Çalhanoğlu",
+      "aliases": [
+        "Calhanoglu",
+        "H. Çalhanoğlu"
+      ],
+      "providerId": "135700",
+      "file": "inter/calhanoglu.png"
+    },
+    {
+      "team": "Paris Saint-Germain",
+      "name": "Warren Zaïre-Emery",
+      "aliases": [
+        "Zaire-Emery",
+        "W. Zaïre-Emery"
+      ],
+      "providerId": "1142672",
+      "file": "paris-saint-germain/zaire-emery.png"
+    },
+    {
+      "team": "Mallorca",
+      "name": "Antonio Sánchez",
+      "aliases": [
+        "Antonio Sanchez",
+        "A. Sánchez"
+      ],
+      "providerId": "949722",
+      "file": "mallorca/antonio-sanchez.png"
+    },
+    {
+      "team": "Bulls",
+      "name": "Ayo Dosunmu",
+      "aliases": [
+        "Ayo Dosunmu",
+        "A. Dosunmu"
+      ],
+      "providerId": "1133911",
+      "file": "bulls/ayo-dosunmu.png"
+    },
+    {
+      "team": "Leeds",
+      "name": "Joël Piroe",
+      "aliases": [
+        "Piroe",
+        "J. Piroe"
+      ],
+      "providerId": "850823",
+      "file": "leeds/piroe.png"
+    },
+    {
+      "team": "West Ham",
+      "name": "Lucas Paquetá",
+      "aliases": [
+        "Paqueta",
+        "L. Paquetá"
+      ],
+      "providerId": "839981",
+      "file": "west-ham/paqueta.png"
+    },
+    {
+      "team": "Alavés",
+      "name": "Luis Rioja",
+      "aliases": [
+        "Rioja",
+        "L. Rioja"
+      ],
+      "providerId": "900433",
+      "file": "alaves/rioja.png"
+    },
+    {
+      "team": "Mallorca",
+      "name": "Vedat Muriqi",
+      "aliases": [
+        "Muriqi",
+        "V. Muriqi"
+      ],
+      "providerId": "310874",
+      "file": "mallorca/muriqi.png"
+    },
+    {
+      "team": "Flamengo",
+      "name": "Everton",
+      "aliases": [
+        "Everton Cebolinha",
+        "Everton"
+      ],
+      "providerId": "386198",
+      "file": "flamengo/everton-cebolinha.png"
+    },
+    {
+      "team": "Alavés",
+      "name": "Samu Aghehowa",
+      "aliases": [
+        "Samu Omorodion",
+        "S. Aghehowa"
+      ],
+      "providerId": "1503836",
+      "file": "alaves/samu-omorodion.png"
+    },
+    {
+      "team": "Mallorca",
+      "name": "Cyle Larin",
+      "aliases": [
+        "Larin",
+        "C. Larin"
+      ],
+      "providerId": "790179",
+      "file": "mallorca/larin.png"
+    },
+    {
+      "team": "Levante",
+      "name": "Roger Brugué",
+      "aliases": [
+        "Brugué",
+        "R. Brugué"
+      ],
+      "providerId": "909554",
+      "file": "levante/brugue.png"
+    },
+    {
+      "team": "Levante",
+      "name": "Vicente Iborra",
+      "aliases": [
+        "Iborra",
+        "V. Iborra"
+      ],
+      "providerId": "32690",
+      "file": "levante/iborra.png"
+    },
+    {
+      "team": "Bayern",
+      "name": "Leroy Sané",
+      "aliases": [
+        "Sane",
+        "L. Sané"
+      ],
+      "providerId": "293519",
+      "file": "bayern/sane.png"
+    },
+    {
+      "team": "B. Dortmund",
+      "name": "Karim Adeyemi",
+      "aliases": [
+        "Adeyemi",
+        "K. Adeyemi"
+      ],
+      "providerId": "940054",
+      "file": "b-dortmund/adeyemi.png"
+    },
+    {
+      "team": "B. Dortmund",
+      "name": "Serhou Guirassy",
+      "aliases": [
+        "Guirassy",
+        "S. Guirassy"
+      ],
+      "providerId": "328027",
+      "file": "b-dortmund/guirassy.png"
+    },
+    {
+      "team": "B. Dortmund",
+      "name": "Julian Brandt",
+      "aliases": [
+        "Brandt",
+        "J. Brandt"
+      ],
+      "providerId": "226978",
+      "file": "b-dortmund/brandt.png"
+    },
+    {
+      "team": "RB Leipzig",
+      "name": "Benjamin Šeško",
+      "aliases": [
+        "Sesko",
+        "B. Šeško"
+      ],
+      "providerId": "986397",
+      "file": "rb-leipzig/sesko.png"
+    },
+    {
+      "team": "RB Leipzig",
+      "name": "Loïs Openda",
+      "aliases": [
+        "Openda",
+        "L. Openda"
+      ],
+      "providerId": "835480",
+      "file": "rb-leipzig/openda.png"
+    },
+    {
+      "team": "Wolfsburg",
+      "name": "Lovro Majer",
+      "aliases": [
+        "Majer",
+        "L. Majer"
+      ],
+      "providerId": "841947",
+      "file": "wolfsburg/majer.png"
+    },
+    {
+      "team": "Wolfsburg",
+      "name": "Jonas Wind",
+      "aliases": [
+        "Wind",
+        "J. Wind"
+      ],
+      "providerId": "826069",
+      "file": "wolfsburg/wind.png"
+    },
+    {
+      "team": "Eintracht",
+      "name": "Hugo Ekitiké",
+      "aliases": [
+        "Ekitike",
+        "H. Ekitiké"
+      ],
+      "providerId": "1048422",
+      "file": "eintracht/ekitike.png"
+    },
+    {
+      "team": "Cerro Porteño",
+      "name": "Robert Morales",
+      "aliases": [
+        "Robert Morales",
+        "R. Morales"
+      ],
+      "providerId": "1087734",
+      "file": "cerro-porteno/robert-morales.png"
+    },
+    {
+      "team": "Cerro Porteño",
+      "name": "Juan Iturbe",
+      "aliases": [
+        "Juan Iturbe",
+        "J. Iturbe"
+      ],
+      "providerId": "146415",
+      "file": "cerro-porteno/juan-iturbe.png"
+    },
+    {
+      "team": "Atlético Nacional",
+      "name": "Alfredo Morelos",
+      "aliases": [
+        "Alfredo Morelos",
+        "A. Morelos"
+      ],
+      "providerId": "831085",
+      "file": "atletico-nacional/alfredo-morelos.png"
+    },
+    {
+      "team": "Atlético Nacional",
+      "name": "Edwin Cardona",
+      "aliases": [
+        "Edwin Cardona",
+        "E. Cardona"
+      ],
+      "providerId": "153793",
+      "file": "atletico-nacional/edwin-cardona.png"
+    },
+    {
+      "team": "Peñarol",
+      "name": "Maximiliano Silvera",
+      "aliases": [
+        "Maximiliano Silvera",
+        "M. Silvera"
+      ],
+      "providerId": "1121489",
+      "file": "penarol/maximiliano-silvera.png"
+    },
+    {
+      "team": "Peñarol",
+      "name": "Leonardo Fernández",
+      "aliases": [
+        "Leonardo Fernandez",
+        "L. Fernández"
+      ],
+      "providerId": "846411",
+      "file": "penarol/leonardo-fernandez.png"
+    },
+    {
+      "team": "Peñarol",
+      "name": "Jaime Báez",
+      "aliases": [
+        "Jaime Baez",
+        "J. Báez"
+      ],
+      "providerId": "796443",
+      "file": "penarol/jaime-baez.png"
+    },
+    {
+      "team": "Alianza Lima",
+      "name": "Hernán Barcos",
+      "aliases": [
+        "Hernan Barcos",
+        "H. Barcos"
+      ],
+      "providerId": "31175",
+      "file": "alianza-lima/hernan-barcos.png"
+    },
+    {
+      "team": "Alianza Lima",
+      "name": "Kevin Quevedo",
+      "aliases": [
+        "Kevin Quevedo",
+        "K. Quevedo"
+      ],
+      "providerId": "876929",
+      "file": "alianza-lima/kevin-quevedo.png"
+    },
+    {
+      "team": "Universitario",
+      "name": "Alex Valera",
+      "aliases": [
+        "Alex Valera",
+        "A. Valera"
+      ],
+      "providerId": "1016972",
+      "file": "universitario/alex-valera.png"
+    },
+    {
+      "team": "Universitario",
+      "name": "Edison Flores",
+      "aliases": [
+        "Edison Flores",
+        "E. Flores"
+      ],
+      "providerId": "176139",
+      "file": "universitario/edison-flores.png"
+    },
+    {
+      "team": "Universitario",
+      "name": "Andy Polo",
+      "aliases": [
+        "Andy Polo",
+        "A. Polo"
+      ],
+      "providerId": "176159",
+      "file": "universitario/andy-polo.png"
+    },
+    {
+      "team": "Sporting Cristal",
+      "name": "Martín Cauteruccio",
+      "aliases": [
+        "Martin Cauteruccio",
+        "M. Cauteruccio"
+      ],
+      "providerId": "47435",
+      "file": "sporting-cristal/martin-cauteruccio.png"
+    },
+    {
+      "team": "Sporting Cristal",
+      "name": "Santiago González",
+      "aliases": [
+        "Santiago Gonzalez",
+        "S. González"
+      ],
+      "providerId": "937859",
+      "file": "sporting-cristal/santiago-gonzalez.png"
+    },
+    {
+      "team": "Sporting Cristal",
+      "name": "Joao Grimaldo",
+      "aliases": [
+        "Joao Grimaldo",
+        "J. Grimaldo"
+      ],
+      "providerId": "1018072",
+      "file": "sporting-cristal/joao-grimaldo.png"
+    },
+    {
+      "team": "Barcelona SC",
+      "name": "Octavio Rivero",
+      "aliases": [
+        "Octavio Rivero",
+        "O. Rivero"
+      ],
+      "providerId": "790149",
+      "file": "barcelona-sc/octavio-rivero.png"
+    },
+    {
+      "team": "Barcelona SC",
+      "name": "Damián Díaz",
+      "aliases": [
+        "Damián Diaz",
+        "D. Díaz"
+      ],
+      "providerId": "42454",
+      "file": "barcelona-sc/damian-diaz.png"
+    },
+    {
+      "team": "Deportivo Táchira",
+      "name": "Maurice Cova",
+      "aliases": [
+        "Maurice Cova",
+        "M. Cova"
+      ],
+      "providerId": "147347",
+      "file": "deportivo-tachira/maurice-cova.png"
+    },
+    {
+      "team": "Carabobo",
+      "name": "Edson Tortolero",
+      "aliases": [
+        "Edson Tortolero",
+        "E. Tortolero"
+      ],
+      "providerId": "861173",
+      "file": "carabobo/edson-tortolero.png"
+    },
+    {
+      "team": "Carabobo",
+      "name": "Jose Balza",
+      "aliases": [
+        "Jose Balza",
+        "J. Balza"
+      ],
+      "providerId": "908522",
+      "file": "carabobo/jose-balza.png"
+    },
+    {
+      "team": "Carabobo",
+      "name": "Gustavo Gonzalez",
+      "aliases": [
+        "Gustavo Gonzalez",
+        "G. Gonzalez"
+      ],
+      "providerId": "805045",
+      "file": "carabobo/gustavo-gonzalez.png"
+    },
+    {
+      "team": "Melgar",
+      "name": "Tomás Martínez",
+      "aliases": [
+        "Tomas Martinez",
+        "T. Martínez"
+      ],
+      "providerId": "330867",
+      "file": "melgar/tomas-martinez.png"
+    },
+    {
+      "team": "Melgar",
+      "name": "Cristian Bordacahar",
+      "aliases": [
+        "Cristian Bordacahar",
+        "C. Bordacahar"
+      ],
+      "providerId": "340553",
+      "file": "melgar/cristian-bordacahar.png"
+    },
+    {
+      "team": "Inter Miami",
+      "name": "Lionel Messi",
+      "aliases": [
+        "Lionel Messi",
+        "L. Messi"
+      ],
+      "providerId": "12994",
+      "file": "inter-miami/lionel-messi.png"
+    },
+    {
+      "team": "Inter Miami",
+      "name": "Luis Suárez",
+      "aliases": [
+        "Luis Suarez",
+        "L. Suárez"
+      ],
+      "providerId": "16943",
+      "file": "inter-miami/luis-suarez.png"
+    },
+    {
+      "team": "Inter Miami",
+      "name": "Tadeo Allende",
+      "aliases": [
+        "Tadeo Allende",
+        "T. Allende"
+      ],
+      "providerId": "1108451",
+      "file": "inter-miami/tadeo-allende.png"
+    },
+    {
+      "team": "Jazz",
+      "name": "Keyonte George",
+      "aliases": [
+        "Keyonte George",
+        "K. George"
+      ],
+      "providerId": "1430963",
+      "file": "jazz/keyonte-george.png"
+    },
+    {
+      "team": "Jazz",
+      "name": "Collin Sexton",
+      "aliases": [
+        "Collin Sexton",
+        "C. Sexton"
+      ],
+      "providerId": "940769",
+      "file": "jazz/collin-sexton.png"
+    },
+    {
+      "team": "Jazz",
+      "name": "Walker Kessler",
+      "aliases": [
+        "Walker Kessler",
+        "W. Kessler"
+      ],
+      "providerId": "1178591",
+      "file": "jazz/walker-kessler.png"
+    },
+    {
+      "team": "Thunder",
+      "name": "Jalen Williams",
+      "aliases": [
+        "Jalen Williams",
+        "J. Williams"
+      ],
+      "providerId": "1178085",
+      "file": "thunder/jalen-williams.png"
+    },
+    {
+      "team": "Thunder",
+      "name": "Chet Holmgren",
+      "aliases": [
+        "Chet Holmgren",
+        "C. Holmgren"
+      ],
+      "providerId": "1181394",
+      "file": "thunder/chet-holmgren.png"
+    },
+    {
+      "team": "Thunder",
+      "name": "Luguentz Dort",
+      "aliases": [
+        "Luguentz Dort",
+        "L. Dort"
+      ],
+      "providerId": "989021",
+      "file": "thunder/luguentz-dort.png"
+    },
+    {
+      "team": "Knicks",
+      "name": "Karl-Anthony Towns",
+      "aliases": [
+        "Karl-Anthony Towns",
+        "K. Towns"
+      ],
+      "providerId": "817410",
+      "file": "knicks/karl-anthony-towns.png"
+    },
+    {
+      "team": "Knicks",
+      "name": "Mikal Bridges",
+      "aliases": [
+        "Mikal Bridges",
+        "M. Bridges"
+      ],
+      "providerId": "940807",
+      "file": "knicks/mikal-bridges.png"
+    },
+    {
+      "team": "Knicks",
+      "name": "OG Anunoby",
+      "aliases": [
+        "OG Anunoby",
+        "O. Anunoby"
+      ],
+      "providerId": "885250",
+      "file": "knicks/og-anunoby.png"
+    },
+    {
+      "team": "Magic",
+      "name": "Franz Wagner",
+      "aliases": [
+        "Franz Wagner",
+        "F. Wagner"
+      ],
+      "providerId": "905191",
+      "file": "magic/franz-wagner.png"
+    },
+    {
+      "team": "Magic",
+      "name": "Jalen Suggs",
+      "aliases": [
+        "Jalen Suggs",
+        "J. Suggs"
+      ],
+      "providerId": "1134017",
+      "file": "magic/jalen-suggs.png"
+    },
+    {
+      "team": "Magic",
+      "name": "Wendell Carter Jr.",
+      "aliases": [
+        "Wendell Carter Jr.",
+        "W. Carter Jr."
+      ],
+      "providerId": "940800",
+      "file": "magic/wendell-carter-jr.png"
+    },
+    {
+      "team": "Bulls",
+      "name": "Coby White",
+      "aliases": [
+        "Coby White",
+        "C. White"
+      ],
+      "providerId": "989015",
+      "file": "bulls/coby-white.png"
+    },
+    {
+      "team": "Bulls",
+      "name": "Josh Giddey",
+      "aliases": [
+        "Josh Giddey",
+        "J. Giddey"
+      ],
+      "providerId": "1133812",
+      "file": "bulls/josh-giddey.png"
+    },
+    {
+      "team": "Bulls",
+      "name": "Nikola Vučević",
+      "aliases": [
+        "Nikola Vucevic",
+        "N. Vučević"
+      ],
+      "providerId": "817423",
+      "file": "bulls/nikola-vucevic.png"
+    },
+    {
+      "team": "Heat",
+      "name": "Bam Adebayo",
+      "aliases": [
+        "Bam Adebayo",
+        "B. Adebayo"
+      ],
+      "providerId": "885218",
+      "file": "heat/bam-adebayo.png"
+    },
+    {
+      "team": "Heat",
+      "name": "Jaime Jaquez Jr.",
+      "aliases": [
+        "Jaime Jaquez Jr.",
+        "J. Jaquez Jr."
+      ],
+      "providerId": "1178018",
+      "file": "heat/jaime-jaquez-jr.png"
+    },
+    {
+      "team": "Heat",
+      "name": "Andrew Wiggins",
+      "aliases": [
+        "Andrew Wiggins",
+        "A. Wiggins"
+      ],
+      "providerId": "817442",
+      "file": "heat/andrew-wiggins.png"
+    },
+    {
+      "team": "76ers",
+      "name": "Tyrese Maxey",
+      "aliases": [
+        "Tyrese Maxey",
+        "T. Maxey"
+      ],
+      "providerId": "1092926",
+      "file": "76ers/tyrese-maxey.png"
+    },
+    {
+      "team": "76ers",
+      "name": "Joel Embiid",
+      "aliases": [
+        "Joel Embiid",
+        "J. Embiid"
+      ],
+      "providerId": "817081",
+      "file": "76ers/joel-embiid.png"
+    },
+    {
+      "team": "76ers",
+      "name": "Paul George",
+      "aliases": [
+        "Paul George",
+        "P. George"
+      ],
+      "providerId": "817108",
+      "file": "76ers/paul-george.png"
+    },
+    {
+      "team": "76ers",
+      "name": "Kelly Oubre Jr.",
+      "aliases": [
+        "Kelly Oubre Jr.",
+        "K. Oubre"
+      ],
+      "providerId": "817307",
+      "file": "76ers/kelly-oubre-jr.png"
+    },
+    {
+      "team": "Celtics",
+      "name": "Jayson Tatum",
+      "aliases": [
+        "Jayson Tatum",
+        "J. Tatum"
+      ],
+      "providerId": "885203",
+      "file": "celtics/jayson-tatum.png"
+    },
+    {
+      "team": "Celtics",
+      "name": "Jaylen Brown",
+      "aliases": [
+        "Jaylen Brown",
+        "J. Brown"
+      ],
+      "providerId": "846898",
+      "file": "celtics/jaylen-brown.png"
+    },
+    {
+      "team": "Celtics",
+      "name": "Derrick White",
+      "aliases": [
+        "Derrick White",
+        "D. White"
+      ],
+      "providerId": "885248",
+      "file": "celtics/derrick-white.png"
+    },
+    {
+      "team": "Celtics",
+      "name": "Jrue Holiday",
+      "aliases": [
+        "Jrue Holiday",
+        "J. Holiday"
+      ],
+      "providerId": "817159",
+      "file": "celtics/jrue-holiday.png"
+    },
+    {
+      "team": "Nuggets",
+      "name": "Nikola Jokić",
+      "aliases": [
+        "Nikola Jokic",
+        "N. Jokić"
+      ],
+      "providerId": "817199",
+      "file": "nuggets/nikola-jokic.png"
+    },
+    {
+      "team": "Nuggets",
+      "name": "Jamal Murray",
+      "aliases": [
+        "Jamal Murray",
+        "J. Murray"
+      ],
+      "providerId": "846917",
+      "file": "nuggets/jamal-murray.png"
+    },
+    {
+      "team": "Nuggets",
+      "name": "Michael Porter Jr.",
+      "aliases": [
+        "Michael Porter Jr.",
+        "M. Porter Jr."
+      ],
+      "providerId": "940773",
+      "file": "nuggets/michael-porter-jr.png"
+    },
+    {
+      "team": "Nuggets",
+      "name": "Aaron Gordon",
+      "aliases": [
+        "Aaron Gordon",
+        "A. Gordon"
+      ],
+      "providerId": "817114",
+      "file": "nuggets/aaron-gordon.png"
+    },
+    {
+      "team": "Suns",
+      "name": "Devin Booker",
+      "aliases": [
+        "Devin Booker",
+        "D. Booker"
+      ],
+      "providerId": "817000",
+      "file": "suns/devin-booker.png"
+    },
+    {
+      "team": "Suns",
+      "name": "Kevin Durant",
+      "aliases": [
+        "Kevin Durant",
+        "K. Durant"
+      ],
+      "providerId": "817074",
+      "file": "suns/kevin-durant.png"
+    },
+    {
+      "team": "Suns",
+      "name": "Bradley Beal",
+      "aliases": [
+        "Bradley Beal",
+        "B. Beal"
+      ],
+      "providerId": "816985",
+      "file": "suns/bradley-beal.png"
+    },
+    {
+      "team": "Suns",
+      "name": "Tyus Jones",
+      "aliases": [
+        "Tyus Jones",
+        "T. Jones"
+      ],
+      "providerId": "817204",
+      "file": "suns/tyus-jones.png"
+    },
+    {
+      "team": "Mavericks",
+      "name": "Kyrie Irving",
+      "aliases": [
+        "Kyrie Irving",
+        "K. Irving"
+      ],
+      "providerId": "817177",
+      "file": "mavericks/kyrie-irving.png"
+    },
+    {
+      "team": "Mavericks",
+      "name": "Anthony Davis",
+      "aliases": [
+        "Anthony Davis",
+        "A. Davis"
+      ],
+      "providerId": "817054",
+      "file": "mavericks/anthony-davis.png"
+    },
+    {
+      "team": "Mavericks",
+      "name": "Klay Thompson",
+      "aliases": [
+        "Klay Thompson",
+        "K. Thompson"
+      ],
+      "providerId": "817404",
+      "file": "mavericks/klay-thompson.png"
+    },
+    {
+      "team": "Mavericks",
+      "name": "P.J. Washington Jr.",
+      "aliases": [
+        "P.J. Washington",
+        "P. Washington"
+      ],
+      "providerId": "987613",
+      "file": "mavericks/p-j-washington.png"
+    },
+    {
+      "team": "Spurs",
+      "name": "Victor Wembanyama",
+      "aliases": [
+        "Victor Wembanyama",
+        "V. Wembanyama"
+      ],
+      "providerId": "998725",
+      "file": "spurs/victor-wembanyama.png"
+    },
+    {
+      "team": "Spurs",
+      "name": "Devin Vassell",
+      "aliases": [
+        "Devin Vassell",
+        "D. Vassell"
+      ],
+      "providerId": "1092880",
+      "file": "spurs/devin-vassell.png"
+    },
+    {
+      "team": "Spurs",
+      "name": "Stephon Castle",
+      "aliases": [
+        "Stephon Castle",
+        "S. Castle"
+      ],
+      "providerId": "1599025",
+      "file": "spurs/stephon-castle.png"
+    },
+    {
+      "team": "Spurs",
+      "name": "De'Aaron Fox",
+      "aliases": [
+        "DeAaron Fox",
+        "D. Fox"
+      ],
+      "providerId": "885244",
+      "file": "spurs/deaaron-fox.png"
+    },
+    {
+      "team": "Clippers",
+      "name": "Kawhi Leonard",
+      "aliases": [
+        "Kawhi Leonard",
+        "K. Leonard"
+      ],
+      "providerId": "817229",
+      "file": "clippers/kawhi-leonard.png"
+    },
+    {
+      "team": "Clippers",
+      "name": "James Harden",
+      "aliases": [
+        "James Harden",
+        "J. Harden"
+      ],
+      "providerId": "817133",
+      "file": "clippers/james-harden.png"
+    },
+    {
+      "team": "Clippers",
+      "name": "Norman Powell",
+      "aliases": [
+        "Norman Powell",
+        "N. Powell"
+      ],
+      "providerId": "817332",
+      "file": "clippers/norman-powell.png"
+    },
+    {
+      "team": "Clippers",
+      "name": "Ivica Zubac",
+      "aliases": [
+        "Ivica Zubac",
+        "I. Zubac"
+      ],
+      "providerId": "846927",
+      "file": "clippers/ivica-zubac.png"
+    },
+    {
+      "team": "Kings",
+      "name": "DeMar DeRozan",
+      "aliases": [
+        "DeMar DeRozan",
+        "D. DeRozan"
+      ],
+      "providerId": "817057",
+      "file": "kings/demar-derozan.png"
+    },
+    {
+      "team": "Kings",
+      "name": "Zach LaVine",
+      "aliases": [
+        "Zach LaVine",
+        "Z. LaVine"
+      ],
+      "providerId": "817218",
+      "file": "kings/zach-lavine.png"
+    },
+    {
+      "team": "Kings",
+      "name": "Malik Monk",
+      "aliases": [
+        "Malik Monk",
+        "M. Monk"
+      ],
+      "providerId": "885258",
+      "file": "kings/malik-monk.png"
+    },
+    {
+      "team": "Jazz",
+      "name": "Isaiah Collier",
+      "aliases": [
+        "Isaiah Collier",
+        "I. Collier"
+      ],
+      "providerId": "1600527",
+      "file": "jazz/isaiah-collier.png"
+    },
+    {
+      "team": "Thunder",
+      "name": "Alex Caruso",
+      "aliases": [
+        "Alex Caruso",
+        "A. Caruso"
+      ],
+      "providerId": "855801",
+      "file": "thunder/alex-caruso.png"
+    },
+    {
+      "team": "Kings",
+      "name": "Domantas Sabonis",
+      "aliases": [
+        "Domantas Sabonis",
+        "D. Sabonis"
+      ],
+      "providerId": "846968",
+      "file": "kings/domantas-sabonis.png"
+    },
+    {
+      "team": "Knicks",
+      "name": "Josh Hart",
+      "aliases": [
+        "Josh Hart",
+        "J. Hart"
+      ],
+      "providerId": "885214",
+      "file": "knicks/josh-hart.png"
+    },
+    {
+      "team": "Knicks",
+      "name": "Miles McBride",
+      "aliases": [
+        "Miles McBride",
+        "M. McBride"
+      ],
+      "providerId": "1133771",
+      "file": "knicks/miles-mcbride.png"
+    },
+    {
+      "team": "Magic",
+      "name": "Anthony Black",
+      "aliases": [
+        "Anthony Black",
+        "A. Black"
+      ],
+      "providerId": "1458552",
+      "file": "magic/anthony-black.png"
+    },
+    {
+      "team": "Heat",
+      "name": "Terry Rozier",
+      "aliases": [
+        "Terry Rozier",
+        "T. Rozier"
+      ],
+      "providerId": "817353",
+      "file": "heat/terry-rozier.png"
+    },
+    {
+      "team": "Mavericks",
+      "name": "Spencer Dinwiddie",
+      "aliases": [
+        "Spencer Dinwiddie",
+        "S. Dinwiddie"
+      ],
+      "providerId": "817065",
+      "file": "mavericks/spencer-dinwiddie.png"
+    },
+    {
+      "team": "Clippers",
+      "name": "Kris Dunn",
+      "aliases": [
+        "Kris Dunn",
+        "K. Dunn"
+      ],
+      "providerId": "846933",
+      "file": "clippers/kris-dunn.png"
+    },
+    {
+      "team": "Whitecaps",
+      "name": "Brian White",
+      "aliases": [
+        "Brian White",
+        "B. White"
+      ],
+      "providerId": "937110",
+      "file": "whitecaps/brian-white.png"
+    },
+    {
+      "team": "Cincinnati",
+      "name": "Kévin Denkey",
+      "aliases": [
+        "Kevin Denkey",
+        "K. Denkey"
+      ],
+      "providerId": "862470",
+      "file": "cincinnati/kevin-denkey.png"
+    },
+    {
+      "team": "Nashville",
+      "name": "Hany Mukhtar",
+      "aliases": [
+        "Hany Mukhtar",
+        "H. Mukhtar"
+      ],
+      "providerId": "221350",
+      "file": "nashville/hany-mukhtar.png"
+    },
+    {
+      "team": "Nashville",
+      "name": "Jacob Shaffelburg",
+      "aliases": [
+        "Jacob Shaffelburg",
+        "J. Shaffelburg"
+      ],
+      "providerId": "976313",
+      "file": "nashville/jacob-shaffelburg.png"
+    },
+    {
+      "team": "New York City",
+      "name": "Santiago Rodríguez",
+      "aliases": [
+        "Santiago Rodriguez",
+        "S. Rodríguez"
+      ],
+      "providerId": "975216",
+      "file": "new-york-city/santiago-rodriguez.png"
+    },
+    {
+      "team": "Seattle Sounders",
+      "name": "Jordan Morris",
+      "aliases": [
+        "Jordan Morris",
+        "J. Morris"
+      ],
+      "providerId": "772421",
+      "file": "seattle-sounders/jordan-morris.png"
+    },
+    {
+      "team": "Seattle Sounders",
+      "name": "Pedro de la Vega",
+      "aliases": [
+        "Pedro de la Vega",
+        "P. De la Vega"
+      ],
+      "providerId": "953844",
+      "file": "seattle-sounders/pedro-de-la-vega.png"
+    },
+    {
+      "team": "Seattle Sounders",
+      "name": "Albert Rusnák",
+      "aliases": [
+        "Albert Rusnak",
+        "A. Rusnák"
+      ],
+      "providerId": "134903",
+      "file": "seattle-sounders/albert-rusnak.png"
+    },
+    {
+      "team": "LA Galaxy",
+      "name": "Gabriel Pec",
+      "aliases": [
+        "Gabriel Pec",
+        "G. Pec"
+      ],
+      "providerId": "995072",
+      "file": "la-galaxy/gabriel-pec.png"
+    },
+    {
+      "team": "LA Galaxy",
+      "name": "Joseph Paintsil",
+      "aliases": [
+        "Joseph Paintsil",
+        "J. Paintsil"
+      ],
+      "providerId": "901285",
+      "file": "la-galaxy/joseph-paintsil.png"
+    },
+    {
+      "team": "Atlanta United",
+      "name": "Miguel Almirón",
+      "aliases": [
+        "Miguel Almiron",
+        "M. Almirón"
+      ],
+      "providerId": "333373",
+      "file": "atlanta-united/miguel-almiron.png"
+    },
+    {
+      "team": "Charlotte FC",
+      "name": "Karol Świderski",
+      "aliases": [
+        "Karol Swiderski",
+        "K. Świderski"
+      ],
+      "providerId": "576438",
+      "file": "charlotte-fc/karol-swiderski.png"
+    },
+    {
+      "team": "Flamengo",
+      "name": "Gerson",
+      "aliases": [
+        "Gerson"
+      ],
+      "providerId": "611876",
+      "file": "flamengo/gerson.png"
+    },
+    {
+      "team": "Flamengo",
+      "name": "Nicolás de la Cruz",
+      "aliases": [
+        "De la Cruz",
+        "N. De la Cruz"
+      ],
+      "providerId": "877513",
+      "file": "flamengo/de-la-cruz.png"
+    },
+    {
+      "team": "Cruzeiro",
+      "name": "Matheus Pereira",
+      "aliases": [
+        "Matheus Pereira",
+        "M. Pereira"
+      ],
+      "providerId": "377238",
+      "file": "cruzeiro/matheus-pereira.png"
+    },
+    {
+      "team": "Cruzeiro",
+      "name": "Lucas Silva",
+      "aliases": [
+        "Lucas Silva",
+        "L. Silva"
+      ],
+      "providerId": "245159",
+      "file": "cruzeiro/lucas-silva.png"
+    },
+    {
+      "team": "Cruzeiro",
+      "name": "Ramiro",
+      "aliases": [
+        "Ramiro"
+      ],
+      "providerId": "330693",
+      "file": "cruzeiro/ramiro.png"
+    },
+    {
+      "team": "Internacional",
+      "name": "Bruno Henrique",
+      "aliases": [
+        "Bruno Henrique",
+        "B. Henrique"
+      ],
+      "providerId": "345113",
+      "file": "internacional/bruno-henrique.png"
+    },
+    {
+      "team": "Internacional",
+      "name": "Wanderson",
+      "aliases": [
+        "Wanderson"
+      ],
+      "providerId": "247483",
+      "file": "internacional/wanderson.png"
+    },
+    {
+      "team": "Bragantino",
+      "name": "Lincoln",
+      "aliases": [
+        "Lincoln"
+      ],
+      "providerId": "794928",
+      "file": "bragantino/lincoln.png"
+    },
+    {
+      "team": "Bragantino",
+      "name": "Jadsom",
+      "aliases": [
+        "Jadsom"
+      ],
+      "providerId": "964127",
+      "file": "bragantino/jadsom.png"
+    },
+    {
+      "team": "Bragantino",
+      "name": "Eric Ramires",
+      "aliases": [
+        "Eric Ramires",
+        "E. Ramires"
+      ],
+      "providerId": "950545",
+      "file": "bragantino/eric-ramires.png"
+    },
+    {
+      "team": "Mirassol",
+      "name": "Gabriel Martinelli",
+      "aliases": [
+        "Gabriel",
+        "G. Martinelli"
+      ],
+      "providerId": "922573",
+      "file": "mirassol/gabriel.png"
+    },
+    {
+      "team": "Mirassol",
+      "name": "Danielzinho",
+      "aliases": [
+        "Danielzinho"
+      ],
+      "providerId": "356514",
+      "file": "mirassol/danielzinho.png"
+    },
+    {
+      "team": "Mirassol",
+      "name": "Chico Kim",
+      "aliases": [
+        "Chico Kim"
+      ],
+      "providerId": "880132",
+      "file": "mirassol/chico-kim.png"
+    },
+    {
+      "team": "São Paulo",
+      "name": "Alisson",
+      "aliases": [
+        "Alisson"
+      ],
+      "providerId": "243609",
+      "file": "sao-paulo/alisson.png"
+    },
+    {
+      "team": "Palmeiras",
+      "name": "Mauricio",
+      "aliases": [
+        "Mauricio"
+      ],
+      "providerId": "986233",
+      "file": "palmeiras/mauricio.png"
+    },
+    {
+      "team": "Fluminense",
+      "name": "Ganso",
+      "aliases": [
+        "Ganso"
+      ],
+      "providerId": "116853",
+      "file": "fluminense/ganso.png"
+    },
+    {
+      "team": "Fluminense",
+      "name": "Pedro Lima",
+      "aliases": [
+        "Lima",
+        "P. Lima"
+      ],
+      "providerId": "1597270",
+      "file": "fluminense/lima.png"
+    },
+    {
+      "team": "Botafogo",
+      "name": "Thiago Almada",
+      "aliases": [
+        "Almada",
+        "T. Almada"
+      ],
+      "providerId": "944660",
+      "file": "botafogo/almada.png"
+    },
+    {
+      "team": "Botafogo",
+      "name": "Marlon Freitas",
+      "aliases": [
+        "Marlon Freitas",
+        "M. Freitas"
+      ],
+      "providerId": "840202",
+      "file": "botafogo/marlon-freitas.png"
+    },
+    {
+      "team": "Bahia",
+      "name": "Everton Ribeiro",
+      "aliases": [
+        "Everton Ribeiro",
+        "E. Ribeiro"
+      ],
+      "providerId": "145063",
+      "file": "bahia/everton-ribeiro.png"
+    },
+    {
+      "team": "Bahia",
+      "name": "Jean Lucas",
+      "aliases": [
+        "Jean Lucas",
+        "J. Lucas"
+      ],
+      "providerId": "927975",
+      "file": "bahia/jean-lucas.png"
+    },
+    {
+      "team": "Atl. Mineiro",
+      "name": "Matías Zaracho",
+      "aliases": [
+        "Zaracho",
+        "M. Zaracho"
+      ],
+      "providerId": "859970",
+      "file": "atl-mineiro/zaracho.png"
+    },
+    {
+      "team": "Santos",
+      "name": "Lucas Lima",
+      "aliases": [
+        "Lucas Lima",
+        "L. Lima"
+      ],
+      "providerId": "244589",
+      "file": "santos/lucas-lima.png"
+    },
+    {
+      "team": "Santos",
+      "name": "Pituca",
+      "aliases": [
+        "Pituca"
+      ],
+      "providerId": "241458",
+      "file": "santos/pituca.png"
+    },
+    {
+      "team": "Atlético Madrid",
+      "name": "Rodrigo De Paul",
+      "aliases": [
+        "De Paul",
+        "R. De Paul"
+      ],
+      "providerId": "249399",
+      "file": "atletico-madrid/de-paul.png"
+    },
+    {
+      "team": "Atlético Madrid",
+      "name": "Koke",
+      "aliases": [
+        "Koke"
+      ],
+      "providerId": "84539",
+      "file": "atletico-madrid/koke.png"
+    },
+    {
+      "team": "Inter",
+      "name": "Nicolò Barella",
+      "aliases": [
+        "Barella",
+        "N. Barella"
+      ],
+      "providerId": "363856",
+      "file": "inter/barella.png"
+    },
+    {
+      "team": "Inter",
+      "name": "Henrikh Mkhitaryan",
+      "aliases": [
+        "Mkhitaryan",
+        "H. Mkhitaryan"
+      ],
+      "providerId": "37151",
+      "file": "inter/mkhitaryan.png"
+    }
+  ]
+}

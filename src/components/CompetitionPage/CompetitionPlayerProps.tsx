@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type MouseEvent, type WheelEvent } from 'react'
 import './CompetitionPlayerProps.css'
+import { getLocalPlayerImageByName } from '../../data/playerImages'
 import { useSlidingActiveIndicator } from '../../hooks/useSlidingActiveIndicator'
 
 import type { PlayerPropCard, PlayerPropOption } from './competitionData'
@@ -36,8 +37,8 @@ const renderMatchLabel = (card: PlayerPropCard) => {
   )
 }
 
-const getPlayerImageStyle = (card: PlayerPropCard) => {
-  const adjustment = card.playerImageAdjustment ?? { scale: 0.6, x: 0, y: 0 }
+const getPlayerImageStyle = (card: PlayerPropCard, isLocalPlayerImage: boolean) => {
+  const adjustment = card.playerImageAdjustment ?? { scale: isLocalPlayerImage ? 1 : 0.6, x: 0, y: 0 }
 
   return {
     '--player-scale': adjustment.scale,
@@ -314,6 +315,7 @@ export function CompetitionPlayerProps({ statChips, cards }: CompetitionPlayerPr
           const options = getCardOptions(card, activeStat)
           const optionKey = getOptionKey(card.id, activeStat)
           const activeOptionIndex = activeOptionByKey[optionKey] ?? getInitialOptionIndex(options)
+          const localPlayerImage = getLocalPlayerImageByName(card.playerName)
 
           return (
           <div key={card.id} className="competition-players__card">
@@ -324,10 +326,10 @@ export function CompetitionPlayerProps({ statChips, cards }: CompetitionPlayerPr
               </div>
               <div className="competition-players__player-image-wrapper">
                 <img
-                  src={card.playerImage}
+                  src={localPlayerImage ?? card.playerImage}
                   alt=""
-                  className="competition-players__player-image"
-                  style={getPlayerImageStyle(card)}
+                  className={`competition-players__player-image${localPlayerImage ? ' competition-players__player-image--real' : ''}`}
+                  style={getPlayerImageStyle(card, Boolean(localPlayerImage))}
                 />
               </div>
             </div>

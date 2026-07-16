@@ -13,6 +13,7 @@ import {
   type WheelEvent,
 } from 'react'
 import { homeCompetitionHighlight } from '../../data/homeProducts'
+import { getLocalPlayerImage } from '../../data/playerImages'
 import { getTeamLogo } from '../../data/teamLogos'
 import {
   createBetslipSelection,
@@ -1292,6 +1293,8 @@ export function HomeCompetitionPlayerPropCard({
   renderOddButton?: HomeCompetitionPlayerPropOddRenderer
 }) {
   const resolvedTimeLabel = timeLabel ?? prop.timeLabel
+  const localPlayerImage = getLocalPlayerImage(prop.teamName, prop.playerName)
+  const playerImage = localPlayerImage ?? prop.playerImage ?? getPlayerPropAvatar(prop.sport)
   const playerTimeLabel = typeof resolvedTimeLabel === 'string'
     ? renderPlayerPropTimeLabel(resolvedTimeLabel)
     : <span>{resolvedTimeLabel}</span>
@@ -1305,8 +1308,8 @@ export function HomeCompetitionPlayerPropCard({
         <span className="home-competition__player-match-label">{matchLabel ?? renderPlayerPropMatchLabel(prop)}</span>
         {showTimeLabel && playerTimeLabel}
       </div>
-      <div className="home-competition__player-photo">
-        <img src={getPlayerPropAvatar(prop.sport)} alt="" />
+      <div className={`home-competition__player-photo${localPlayerImage ? ' home-competition__player-photo--real' : ''}`}>
+        <img src={playerImage} alt="" />
       </div>
       <div className="home-competition__player-info">
         <p>

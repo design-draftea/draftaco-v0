@@ -517,6 +517,12 @@
   overflow: hidden;
 }
 
+.banner-live-highlight__prop-avatar-shell--real {
+  width: 56px;
+  height: 56px;
+  flex-basis: 56px;
+}
+
 .banner-live-highlight__prop-avatar-shell::after {
   content: '';
   position: absolute;
@@ -542,6 +548,13 @@
 .banner-live-highlight__prop-avatar--basketball {
   mask-image: url('../../assets/playerAvatarBasquete.svg');
   -webkit-mask-image: url('../../assets/playerAvatarBasquete.svg');
+}
+
+.banner-live-highlight__prop-avatar-photo {
+  display: block;
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
 }
 
 .banner-live-highlight__prop-stat-icon {
