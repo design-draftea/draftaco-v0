@@ -11,7 +11,7 @@ import iconCsgo from '../../assets/iconSports/csgo.png'
 import iconEsoccer from '../../assets/iconSports/e-soccer.png'
 import iconFutebol from '../../assets/iconSports/soccer.png'
 import iconLibertadores from '../../assets/iconSports/libertadores.png'
-import iconMore from '../../assets/iconSports/more.png'
+import iconMore from '../../assets/iconsDraftaco/iconDotDefault.png'
 import iconPremier from '../../assets/iconSports/premier.png'
 import iconTenis from '../../assets/iconSports/tennis.png'
 import lineFavorito from '../../assets/iconsDraftaco/lineFavorito.svg'
@@ -590,7 +590,7 @@ export function ProductRail<TItem extends ProductRailBaseItem>({
   }
 
   const renderIcon = (item: TItem, isActive: boolean) => (
-    <div className={`sport-rail__icon${isActive ? ' sport-rail__icon--active' : ''}`}>
+    <div className={`sport-rail__icon${isActive ? ' sport-rail__icon--active' : ''}${item.isMore ? ' sport-rail__icon--more' : ''}`}>
       {item.icon && (
         <img
           src={item.icon}
