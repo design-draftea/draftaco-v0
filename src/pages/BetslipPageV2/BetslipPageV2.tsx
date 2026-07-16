@@ -40,6 +40,7 @@ import {
   formatMoney,
   formatStakeInputValue,
   getPlayerAvatarFallbackSrc,
+  getBetslipPlayerImage,
   getPlayerSelectionValueLabel,
   getSelectionAvatarDrawContext,
   getSelectionAvatarFallback,
@@ -201,7 +202,7 @@ function SelectionAvatar({
     { useCurrentLogoFallback: true }
   )
   const iconSrc = isPlayerSelection
-    ? selection.playerImage || (promoVariant ? promoPlayerImageFallbackByVariant[promoVariant] : undefined) || getPlayerAvatarFallbackSrc(selection)
+    ? getBetslipPlayerImage(selection) || (promoVariant ? promoPlayerImageFallbackByVariant[promoVariant] : undefined) || getPlayerAvatarFallbackSrc(selection)
     : resolvedTeamLogo || teamContext?.fallbackLogo || getSelectionAvatarFallback(selection)
 
   if (drawContext) {

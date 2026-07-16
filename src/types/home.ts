@@ -241,6 +241,7 @@ export interface HomeCompetitionPlayerProp {
   homeTeam?: string
   awayTeam?: string
   playerName: string
+  playerImage?: string
   position: string
   marketLabel: string
   matchLabel: string

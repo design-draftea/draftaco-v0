@@ -7,6 +7,7 @@ import { createBetslipSelection, getBetslipEventId, getMatchOddBetslipKey, getPl
 import { useOddSelection } from '../../hooks/useOddSelection'
 import { useSportsDbTeamLogo } from '../../hooks/useSportsDbTeamLogo'
 import { useSlidingActiveIndicator } from '../../hooks/useSlidingActiveIndicator'
+import { getLocalPlayerImage } from '../../data/playerImages'
 import {
   getCompetitionLinkTarget,
   type CompetitionLinkTarget,
@@ -1107,8 +1108,10 @@ const playerPropImagesByName: Record<string, string> = {
   'stephen-curry': playerStephenCurry,
 }
 
-const getPlayerPropImage = (playerName: string, sport: string) =>
-  playerPropImagesByName[normalizePlayerPropImageKey(playerName)] ?? getPlayerPropAvatar(sport)
+const getPlayerPropImage = (playerName: string, teamName: string, sport: string) =>
+  getLocalPlayerImage(teamName, playerName) ??
+  playerPropImagesByName[normalizePlayerPropImageKey(playerName)] ??
+  getPlayerPropAvatar(sport)
 
 const isPlayerPropAvatarPlaceholder = (image: string) =>
   image === playerAvatarFutebol || image === playerAvatarBasquete
@@ -1192,7 +1195,7 @@ export const getMatchPlayerProps = (
       teamSide: player.teamSide,
       sport,
       position: player.position,
-      image: getPlayerPropImage(player.name, sport),
+      image: getPlayerPropImage(player.name, player.teamName, sport),
       options: optionSets[players.length % optionSets.length],
     })
     return players

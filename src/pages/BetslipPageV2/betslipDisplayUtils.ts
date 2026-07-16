@@ -4,6 +4,7 @@ import placeholderSoccer from '../../assets/iconsDraftaco/placeholderSoccer.svg'
 import placeholderTenis from '../../assets/iconsDraftaco/placeholderTenis.svg'
 import playerAvatarBasquete from '../../assets/playerAvatarBasquete.svg'
 import playerAvatarFutebol from '../../assets/playerAvatarFutebol.svg'
+import { getLocalPlayerImage } from '../../data/playerImages'
 import { getTeamLogo } from '../../data/teamLogos'
 import {
   normalizeBetslipIdPart,
@@ -478,6 +479,11 @@ export const getPlayerAvatarFallbackSrc = (selection: BetslipSelection) => {
 
   return getSportPlaceholderSrc(selection) || playerAvatarFutebol
 }
+
+export const getBetslipPlayerImage = (selection: BetslipSelection) => (
+  getLocalPlayerImage(selection.selectionTeamName ?? '', selection.playerName ?? '')
+  ?? selection.playerImage
+)
 
 const getSelectionBadge = (selection: BetslipSelection) => {
   const marketKey = normalizeBetslipIdPart(selection.marketLabel || selection.marketId)

@@ -12,6 +12,7 @@ import {
 } from '../PreMatchSection/PreMatchSection'
 import type { LiveEventMatch, LiveEventOpenPayload } from '../../pages/LiveEventPage'
 import { getTeamLogo } from '../../data/teamLogos'
+import { getLocalPlayerImage } from '../../data/playerImages'
 import { useHomeMarketStickyState } from '../../hooks/useHomeMarketStickyVisible'
 import { createBetslipSelection, getBetslipEventId, getMatchOddBetslipKey } from '../../hooks/betslipUtils'
 import { useOddSelection } from '../../hooks/useOddSelection'
@@ -1477,7 +1478,7 @@ const getCalendarFootballPlayerProps = (
       teamSide: player.teamSide,
       sport: 'futebol',
       position: player.position,
-      image: playerAvatarFutebol,
+      image: getLocalPlayerImage(player.teamName, player.name) ?? playerAvatarFutebol,
       options: optionSets[players.length % optionSets.length],
     })
     return players
@@ -1530,7 +1531,7 @@ const getCalendarBasketballPlayerProps = (
       teamSide: player.teamSide,
       sport: 'basquete',
       position: player.position,
-      image: playerAvatarBasquete,
+      image: getLocalPlayerImage(player.teamName, player.name) ?? playerAvatarBasquete,
       options: optionSets[players.length % optionSets.length],
     })
     return players

@@ -8,6 +8,7 @@ import { HomeCompetitionOddButton, HomeCompetitionPlayerPropCard } from '../../c
 import { PreMatchPlayerPropCard, getMatchPlayerProps, type MatchPlayerProp } from '../../components/PreMatchSection/PreMatchSection'
 import { getLivePlayerProps } from '../../components/LiveMatchCard'
 import type { HomeCompetitionOdd, HomeCompetitionPlayerProp } from '../../types/home'
+import { getLocalPlayerImage } from '../../data/playerImages'
 import iconAoVivo from '../../assets/iconAoVivo.png'
 import iconCloseEvents from '../../assets/iconsDraftaco/iconCloseEvents.svg'
 import pagamentoAntecipado from '../../assets/pagamentoAntecipado.png'
@@ -618,19 +619,6 @@ const basketballTeamPlayers: Record<string, string[]> = {
   Girona: ['Marianna Tolo', 'Regan Magarity', 'Laura Pena', 'Carolina Guerrero'],
 }
 
-const BASKETBALL_FALLBACK_PLAYERS = [
-  'Lauri Markkanen',
-  'Shai Gilgeous-Alexander',
-  'Jalen Brunson',
-  'Paolo Banchero',
-  'Coby White',
-  'Tyler Herro',
-  'Stephen Curry',
-  'LeBron James',
-  'Nikola Jokic',
-  'Devin Booker',
-]
-
 function slugifyTeamName(teamName: string): string {
   return teamName
     .normalize('NFD')
@@ -640,18 +628,28 @@ function slugifyTeamName(teamName: string): string {
     .replace(/^-|-$/g, '')
 }
 
+function getFootballTeamPlayers(teamName: string): string[] {
+  const teamKey = getLiveEventPlayerTeamKey(teamName)
+  const marketPlayers = [
+    ...(teamShotMarkets[teamName] ?? []),
+    ...(teamKey !== teamName ? teamShotMarkets[teamKey] ?? [] : []),
+  ].map((market) => market.player)
+  const eventPlayers = (getMappedTeamEvents(teamName) ?? []).map((event) => event.player)
+
+  return Array.from(new Set([...marketPlayers, ...eventPlayers]))
+}
+
 function buildFallbackShotMarkets(teamName: string): PlayerShotMarket[] {
   const slug = slugifyTeamName(teamName)
-  const teamKey = getLiveEventPlayerTeamKey(teamName)
-  const mappedPlayers = Array.from(
-    new Set((TEAM_EVENTS[teamName] ?? TEAM_EVENTS[teamKey] ?? []).map((event) => event.player))
-  )
-  const [primaryPlayer = 'Jogador', secondaryPlayer = 'Atacante'] = mappedPlayers
 
-  return [
-    { id: `${slug}-principal`, player: primaryPlayer, team: teamName, outcomes: shotOutcomes([['0.5+', '1.78x'], ['1.5+', '2.60x'], ['2.5+', '5.75x']]) },
-    { id: `${slug}-atacante`, player: secondaryPlayer, team: teamName, outcomes: shotOutcomes([['0.5+', '1.88x'], ['1.5+', '2.85x'], ['2.5+', '6.40x']]) },
-  ]
+  return getFootballTeamPlayers(teamName).slice(0, 2).map((player, index) => ({
+    id: `${slug}-${slugifyTeamName(player)}`,
+    player,
+    team: teamName,
+    outcomes: shotOutcomes(index === 0
+      ? [['0.5+', '1.78x'], ['1.5+', '2.60x'], ['2.5+', '5.75x']]
+      : [['0.5+', '1.88x'], ['1.5+', '2.85x'], ['2.5+', '6.40x']]),
+  }))
 }
 
 const supplementalShotOutcomes = [
@@ -704,9 +702,7 @@ function getTeamShotMarketRows(teamName: string, playerLimit = 4): PlayerShotMar
     id: row.team === teamName ? row.id : `${slugifyTeamName(teamName)}-${row.id}`,
     team: teamName,
   }))
-  const mappedPlayers = Array.from(new Set((TEAM_EVENTS[teamName] ?? TEAM_EVENTS[teamKey] ?? []).map((event) => event.player)))
-  const fallbackPlayers = FALLBACK_PLAYERS.map((player) => `${player}`)
-  const candidates = [...mappedPlayers, ...fallbackPlayers]
+  const candidates = getFootballTeamPlayers(teamName)
 
   for (const playerName of candidates) {
     if (rows.length >= playerLimit) break
@@ -737,8 +733,7 @@ function getBasketballTeamPlayers(teamName: string, playerLimit?: number): strin
     ...(basketballTeamPlayers[teamName] ?? []),
     ...(teamKey !== teamName ? basketballTeamPlayers[teamKey] ?? [] : []),
   ]
-  const candidates = mappedPlayers.length > 0 ? mappedPlayers : BASKETBALL_FALLBACK_PLAYERS
-  const players = Array.from(new Set(candidates))
+  const players = Array.from(new Set(mappedPlayers))
 
   return typeof playerLimit === 'number' ? players.slice(0, playerLimit) : players
 }
@@ -775,13 +770,9 @@ function getBasketballPlayerPointRows(match: LiveEventMatch, isExpanded: boolean
 }
 
 function getTeamAssistMarketRows(teamName: string, isBasketball: boolean, playerLimit = 4): PlayerShotMarket[] {
-  const teamKey = getLiveEventPlayerTeamKey(teamName)
   const playerCandidates = isBasketball
     ? getBasketballTeamPlayers(teamName, playerLimit)
-    : [
-      ...Array.from(new Set((TEAM_EVENTS[teamName] ?? TEAM_EVENTS[teamKey] ?? []).map((event) => event.player))),
-      ...FALLBACK_PLAYERS,
-    ]
+    : getFootballTeamPlayers(teamName)
   const rows: PlayerShotMarket[] = []
 
   for (const playerName of playerCandidates) {
@@ -1394,16 +1385,9 @@ const TEAM_EVENTS: Record<string, MatchEvent[]> = {
   'New York City':    [{ type: 'yellow', player: 'Martins', minute: 20 }, { type: 'goal', player: 'Talles Magno', minute: 39 }, { type: 'goal', player: 'Wolf', minute: 57 }, { type: 'goal', player: 'Rodríguez', minute: 74 }],
 }
 
-// Generic player names used for unmapped teams
-const FALLBACK_PLAYERS = ['Silva', 'Rodríguez', 'Martínez', 'García', 'López', 'Müller', 'Schmidt', 'Smith', 'Johnson']
-
 const FOOTBALL_MATCH_MINUTES = 90
 const FOOTBALL_SECOND_HALF_OFFSET = 45
 const FALLBACK_LIVE_MATCH_PROGRESS = 0.55
-
-const TEAM_EVENT_ALIASES: Record<string, string> = {
-  'Paris Saint-Germain': 'PSG',
-}
 
 function getStableTeamSeed(teamName: string): number {
   let seed = 0
@@ -1412,7 +1396,8 @@ function getStableTeamSeed(teamName: string): number {
 }
 
 function getMappedTeamEvents(teamName: string): MatchEvent[] | undefined {
-  return TEAM_EVENTS[teamName] ?? TEAM_EVENTS[TEAM_EVENT_ALIASES[teamName] ?? '']
+  const teamKey = getLiveEventPlayerTeamKey(teamName)
+  return TEAM_EVENTS[teamName] ?? TEAM_EVENTS[teamKey]
 }
 
 function getFootballPeriodMinute(time?: string): number | null {
@@ -1511,9 +1496,12 @@ function getTeamEvents(teamName: string, score: number, currentTime?: string): M
 }
 
 function buildFallbackEvents(teamName: string, score: number): MatchEvent[] {
-  // deterministic seed from team name so the same team always gets the same names
+  const players = getFootballTeamPlayers(teamName)
+  if (players.length === 0) return []
+
+  // Deterministic ordering preserves the mock's stable timeline without inventing athletes.
   const seed = getStableTeamSeed(teamName)
-  const pick = (offset: number) => FALLBACK_PLAYERS[(seed + offset) % FALLBACK_PLAYERS.length]
+  const pick = (offset: number) => players[(seed + offset) % players.length]
   const events: MatchEvent[] = [{ type: 'yellow', player: pick(0), minute: 18 + (seed % 10) }]
   const goals = Math.max(score, 0)
   const baseMinute = 25
@@ -1729,7 +1717,7 @@ function LiveEventContent({
         teamSide,
         sport: contentSport,
         position: row.position ?? getPlayerPropCardPosition(row.player, isBasketball),
-        image: row.image ?? playerAvatarFallback,
+        image: row.image ?? getLocalPlayerImage(row.team, row.player) ?? playerAvatarFallback,
         options: row.outcomes.map((outcome, outcomeIndex) => ({
           label: outcome.label,
           odd: outcome.odd,
@@ -3585,6 +3573,7 @@ function getInlineHomePlayerProp(player: MatchPlayerProp, marketLabel: string, t
     homeTeam: player.homeTeam ?? player.teamName,
     awayTeam: player.awayTeam ?? player.teamName,
     playerName: player.playerName,
+    playerImage: player.image,
     position: player.position,
     marketLabel,
     matchLabel: player.teamName,
@@ -3736,7 +3725,7 @@ function LiveEventInlineMarkets({
         teamSide,
         sport: contentSport,
         position: row.position ?? getPlayerPropCardPosition(row.player, isBasketball),
-        image: row.image ?? playerAvatarFallback,
+        image: row.image ?? getLocalPlayerImage(row.team, row.player) ?? playerAvatarFallback,
         options: row.outcomes.map((outcome, outcomeIndex) => ({
           label: outcome.label,
           odd: outcome.odd,
