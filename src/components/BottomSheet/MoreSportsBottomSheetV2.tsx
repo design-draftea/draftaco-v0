@@ -33,22 +33,17 @@ import iconUfc from '../../assets/iconSports/ufc.png'
 import iconValorant from '../../assets/iconSports/valorant.png'
 import iconVolleyball from '../../assets/iconSports/volleyball.png'
 import iconVirtuais from '../../assets/iconVirtuais.png'
-import chevronLeftHeader from '../../assets/iconsDraftaco/chevronLeftHeader.svg'
-import chevronRight from '../../assets/iconsDraftaco/chevronRight.svg'
 import chevronUp from '../../assets/iconsDraftaco/chevronUp.svg'
+import iconCloseEvents from '../../assets/iconsDraftaco/iconCloseEvents.svg'
 import iconFavorito from '../../assets/iconsDraftaco/iconFavorito.svg'
 import iconFavoritoAtivo from '../../assets/iconsDraftaco/iconFavoritoAtivo.svg'
-import iconCloseEvents from '../../assets/iconsDraftaco/iconCloseEvents.svg'
 import iconOrdenacao from '../../assets/iconsDraftaco/iconOrdenacao.svg'
 import marcacao from '../../assets/iconsDraftaco/marcacao.svg'
 import type { CompetitionLinkTarget } from '../../utils/competitionNavigation'
 import {
-  competicaoConfigBySport,
   isCompetitionEnabled,
   isCompetitionRailClickable,
-  type CompeticaoConfig,
 } from '../SportFilterBar/competicaoData'
-import type { Competition, CompetitionCountry } from './CompeticaoBottomSheet'
 import { BottomSheet } from './BottomSheet'
 import './MoreSportsBottomSheetV2.css'
 
@@ -63,19 +58,15 @@ interface MoreSportsBottomSheetV2Props {
   onToggleFavorite: (competition: CompetitionLinkTarget) => void
 }
 
+interface MenuCompetition extends CompetitionLinkTarget {
+  gameCount: number
+}
+
 interface SportItem {
   id: string
   label: string
   icon: string
-}
-
-type SheetView = 'sports' | 'competitions'
-
-interface SheetTransition {
-  to: SheetView
-  direction: 'forward' | 'backward'
-  key: number
-  phase: 'idle' | 'active'
+  competitions: MenuCompetition[]
 }
 
 interface AccordionCollapseProps {
@@ -106,58 +97,321 @@ interface FavoriteAnimation {
   action: 'adding' | 'removing'
 }
 
-const selectableSports = new Set(['futebol', 'basquete'])
-const configuredCompetitionSports = new Set(Object.keys(competicaoConfigBySport))
 const favoriteOrderRowHeight = 61
+const accordionScrollDuration = 160
+const accordionLayoutDuration = 320
+const selectableSportIds = new Set(['futebol', 'basquete'])
+
+// Contagens que refletem os jogos modelados no protótipo.
+const availableGameCounts: Record<string, number> = {
+  'fut-brasileiro': 8,
+  'fut-libertadores': 9,
+  'fut-champions': 7,
+  'fut-premier-league': 4,
+  'fut-bundesliga': 4,
+  'fut-laliga': 4,
+  'bsq-nba': 7,
+  'bsq-ncaab': 4,
+  'bsq-nbb': 4,
+  'bsq-euro-cup': 3,
+  'ten-roma-masters': 3,
+  'ten-roma-f': 3,
+  'ten-parma-f': 3,
+  'ten-bordeaux': 3,
+}
+
+const competitionRegionById: Record<string, string> = {
+  'fut-brasileiro': 'Brasil',
+  'fut-libertadores': 'América do Sul',
+  'fut-champions': 'Europa',
+  'fut-sul-americana': 'América do Sul',
+  'fut-uefa-champions': 'Europa',
+  'fut-premier-league': 'Inglaterra',
+  'fut-bundesliga': 'Alemanha',
+  'fut-laliga': 'Espanha',
+  'fut-serie-a': 'Itália',
+  'fut-brasileirao-b': 'Brasil',
+  'fut-copa-do-brasil': 'Brasil',
+  'fut-liga-mx': 'México',
+  'fut-arg-liga-profesional': 'Argentina',
+  'bsq-nba': 'Estados Unidos',
+  'bsq-ncaab': 'Estados Unidos',
+  'bsq-nbb': 'Brasil',
+  'bsq-euro-cup': 'Europa',
+  'ten-roma-masters': 'Itália',
+  'ten-roma-f': 'Itália',
+  'ten-parma-f': 'Itália',
+  'ten-bordeaux': 'França',
+  'eso-fifa-cup': 'Mundo',
+  'eso-efl-cup': 'Inglaterra',
+  'fa-nfl': 'Estados Unidos',
+  'fa-ncaa': 'Estados Unidos',
+  'vol-superliga': 'Brasil',
+  'vol-vnl': 'Mundo',
+  'tm-setka-cup': 'Ucrânia',
+  'tm-elite-series': 'Mundo',
+  'val-vct-americas': 'Américas',
+  'val-challengers-br': 'Brasil',
+  'vir-esoccer-battle': 'Mundo',
+  'vir-ebasket-h2h': 'Mundo',
+  'eb-nba-2k': 'Estados Unidos',
+  'eb-cyberbasket': 'Mundo',
+  'han-champions': 'Europa',
+  'han-bundesliga': 'Alemanha',
+  'base-mlb': 'Estados Unidos',
+  'base-npb': 'Japão',
+  'cs-esl-pro-league': 'Europa',
+  'cs-blast-premier': 'Mundo',
+  'ufc-fight-night': 'Estados Unidos',
+  'ufc-ppv': 'Estados Unidos',
+  'dota-dreamleague': 'Mundo',
+  'dota-pgl-wallachia': 'Romênia',
+  'kings-brasil': 'Brasil',
+  'kings-espanha': 'Espanha',
+  'lol-lck': 'Coreia do Sul',
+  'lol-lpl': 'China',
+  'hoc-nhl': 'Estados Unidos e Canadá',
+  'hoc-khl': 'Rússia',
+  'dados-pdc-world-series': 'Mundo',
+  'dados-premier-league': 'Inglaterra',
+  'r6-invitational': 'Mundo',
+  'r6-north-america': 'América do Norte',
+  'box-top-rank': 'Estados Unidos',
+  'box-matchroom': 'Inglaterra',
+  'gol-pga-tour': 'Estados Unidos',
+  'gol-dp-world-tour': 'Europa',
+}
+
+const getCompetitionListLabel = (competition: MenuCompetition) => {
+  const region = competitionRegionById[competition.id]
+  return region && !competition.name.startsWith(`${region} -`)
+    ? `${region} - ${competition.name}`
+    : competition.name
+}
+
+const createCompetition = (
+  sport: string,
+  id: string,
+  name: string,
+  gameCount: number
+): MenuCompetition => ({
+  sport,
+  id,
+  name,
+  gameCount: availableGameCounts[id] ?? gameCount,
+})
 
 const sports: SportItem[] = [
-  { id: 'futebol', label: 'Futebol', icon: iconSoccer },
-  { id: 'basquete', label: 'Basquete', icon: iconBasketball },
-  { id: 'tenis', label: 'Tênis', icon: iconTennis },
-  { id: 'f1', label: 'Fórmula 1', icon: iconF1 },
-  { id: 'esoccer', label: 'Esoccer', icon: iconESoccer },
-  { id: 'futebol-americano', label: 'Fut. Americano', icon: iconFootball },
-  { id: 'volei', label: 'Vôlei', icon: iconVolleyball },
-  { id: 'tenis-mesa', label: 'Tênis de Mesa', icon: iconTableTennis },
-  { id: 'valorant', label: 'Valorant', icon: iconValorant },
-  { id: 'virtuais', label: 'Virtuais', icon: iconVirtuais },
-  { id: 'ebasketball', label: 'Ebasketball', icon: iconEBasketball },
-  { id: 'handebol', label: 'Handebol', icon: iconHandball },
-  { id: 'beisebol', label: 'Beisebol', icon: iconBaseball },
-  { id: 'cs', label: 'CS', icon: iconCsgo },
-  { id: 'ufc', label: 'UFC', icon: iconUfc },
-  { id: 'dota', label: 'Dota 2', icon: iconDota },
-  { id: 'kings-of-league', label: 'Kings of League', icon: iconKingsLeague },
-  { id: 'lol', label: 'LoL', icon: iconLol },
-  { id: 'hoquei', label: 'Hoquei', icon: iconHockey },
-  { id: 'dados', label: 'Dados', icon: iconDarts },
-  { id: 'rainbow-six', label: 'Rainbow Six', icon: iconRainbowSix },
-  { id: 'boxe', label: 'Boxe', icon: iconBoxing },
-  { id: 'golfe', label: 'Golfe', icon: iconGolf },
+  {
+    id: 'futebol',
+    label: 'Futebol',
+    icon: iconSoccer,
+    competitions: [
+      createCompetition('futebol', 'fut-brasileiro', 'Brasil - Brasileirão Série A', 8),
+      createCompetition('futebol', 'fut-libertadores', 'Libertadores', 9),
+      createCompetition('futebol', 'fut-champions', 'Champions League', 7),
+      createCompetition('futebol', 'fut-sul-americana', 'Sul-Americana', 4),
+      createCompetition('futebol', 'fut-uefa-champions', 'UEFA Champions League', 7),
+      createCompetition('futebol', 'fut-premier-league', 'Inglaterra - Premier League', 4),
+      createCompetition('futebol', 'fut-bundesliga', 'Alemanha - Bundesliga', 4),
+      createCompetition('futebol', 'fut-laliga', 'Espanha - LaLiga', 4),
+      createCompetition('futebol', 'fut-serie-a', 'Itália - Serie A', 6),
+      createCompetition('futebol', 'fut-brasileirao-b', 'Brasil - Brasileirão Série B', 5),
+      createCompetition('futebol', 'fut-copa-do-brasil', 'Brasil - Copa do Brasil', 4),
+      createCompetition('futebol', 'fut-liga-mx', 'México - Liga MX', 5),
+      createCompetition('futebol', 'fut-arg-liga-profesional', 'Argentina - Liga Profesional', 4),
+    ],
+  },
+  {
+    id: 'basquete',
+    label: 'Basquete',
+    icon: iconBasketball,
+    competitions: [
+      createCompetition('basquete', 'bsq-nba', 'NBA', 6),
+      createCompetition('basquete', 'bsq-ncaab', 'NCAAB', 4),
+      createCompetition('basquete', 'bsq-nbb', 'NBB', 3),
+      createCompetition('basquete', 'bsq-euro-cup', 'Euro Cup', 2),
+    ],
+  },
+  {
+    id: 'tenis',
+    label: 'Tênis',
+    icon: iconTennis,
+    competitions: [
+      createCompetition('tenis', 'ten-roma-masters', 'Roma Masters', 5),
+      createCompetition('tenis', 'ten-roma-f', 'Roma (F)', 4),
+      createCompetition('tenis', 'ten-parma-f', 'Parma (F)', 3),
+      createCompetition('tenis', 'ten-bordeaux', 'Bordeaux', 2),
+    ],
+  },
+  {
+    id: 'f1',
+    label: 'Fórmula 1',
+    icon: iconF1,
+    competitions: [],
+  },
+  {
+    id: 'esoccer',
+    label: 'Esoccer',
+    icon: iconESoccer,
+    competitions: [
+      createCompetition('esoccer', 'eso-fifa-cup', 'FIFA Cup', 7),
+      createCompetition('esoccer', 'eso-efl-cup', 'EFL Cup', 5),
+    ],
+  },
+  {
+    id: 'futebol-americano',
+    label: 'Fut. Americano',
+    icon: iconFootball,
+    competitions: [
+      createCompetition('futebol-americano', 'fa-nfl', 'NFL', 4),
+      createCompetition('futebol-americano', 'fa-ncaa', 'NCAA', 6),
+    ],
+  },
+  {
+    id: 'volei',
+    label: 'Vôlei',
+    icon: iconVolleyball,
+    competitions: [
+      createCompetition('volei', 'vol-superliga', 'Superliga', 5),
+      createCompetition('volei', 'vol-vnl', 'VNL', 4),
+    ],
+  },
+  {
+    id: 'tenis-mesa',
+    label: 'Tênis de Mesa',
+    icon: iconTableTennis,
+    competitions: [
+      createCompetition('tenis-mesa', 'tm-setka-cup', 'Setka Cup', 9),
+      createCompetition('tenis-mesa', 'tm-elite-series', 'TT Elite Series', 7),
+    ],
+  },
+  {
+    id: 'valorant',
+    label: 'Valorant',
+    icon: iconValorant,
+    competitions: [],
+  },
+  {
+    id: 'virtuais',
+    label: 'Virtuais',
+    icon: iconVirtuais,
+    competitions: [
+      createCompetition('virtuais', 'vir-esoccer-battle', 'eSoccer Battle', 12),
+      createCompetition('virtuais', 'vir-ebasket-h2h', 'eBasketball H2H', 10),
+    ],
+  },
+  {
+    id: 'ebasketball',
+    label: 'Ebasketball',
+    icon: iconEBasketball,
+    competitions: [
+      createCompetition('ebasketball', 'eb-nba-2k', 'NBA 2K League', 8),
+      createCompetition('ebasketball', 'eb-cyberbasket', 'CyberBasketball', 6),
+    ],
+  },
+  {
+    id: 'handebol',
+    label: 'Handebol',
+    icon: iconHandball,
+    competitions: [
+      createCompetition('handebol', 'han-champions', 'Liga dos Campeões', 3),
+      createCompetition('handebol', 'han-bundesliga', 'Handebol Bundesliga', 5),
+    ],
+  },
+  {
+    id: 'beisebol',
+    label: 'Beisebol',
+    icon: iconBaseball,
+    competitions: [
+      createCompetition('beisebol', 'base-mlb', 'MLB', 7),
+      createCompetition('beisebol', 'base-npb', 'NPB', 4),
+    ],
+  },
+  {
+    id: 'cs',
+    label: 'CS',
+    icon: iconCsgo,
+    competitions: [
+      createCompetition('cs', 'cs-esl-pro-league', 'ESL Pro League', 6),
+      createCompetition('cs', 'cs-blast-premier', 'BLAST Premier', 5),
+    ],
+  },
+  {
+    id: 'ufc',
+    label: 'UFC',
+    icon: iconUfc,
+    competitions: [],
+  },
+  {
+    id: 'dota',
+    label: 'Dota 2',
+    icon: iconDota,
+    competitions: [
+      createCompetition('dota', 'dota-dreamleague', 'DreamLeague', 4),
+      createCompetition('dota', 'dota-pgl-wallachia', 'PGL Wallachia', 3),
+    ],
+  },
+  {
+    id: 'kings-of-league',
+    label: 'Kings of League',
+    icon: iconKingsLeague,
+    competitions: [
+      createCompetition('kings-of-league', 'kings-brasil', 'Kings League Brasil', 5),
+      createCompetition('kings-of-league', 'kings-espanha', 'Kings League Spain', 4),
+    ],
+  },
+  {
+    id: 'lol',
+    label: 'LoL',
+    icon: iconLol,
+    competitions: [
+      createCompetition('lol', 'lol-lck', 'LCK', 6),
+      createCompetition('lol', 'lol-lpl', 'LPL', 7),
+    ],
+  },
+  {
+    id: 'hoquei',
+    label: 'Hoquei',
+    icon: iconHockey,
+    competitions: [
+      createCompetition('hoquei', 'hoc-nhl', 'NHL', 5),
+      createCompetition('hoquei', 'hoc-khl', 'KHL', 3),
+    ],
+  },
+  {
+    id: 'dados',
+    label: 'Dados',
+    icon: iconDarts,
+    competitions: [
+      createCompetition('dados', 'dados-pdc-world-series', 'PDC World Series', 2),
+      createCompetition('dados', 'dados-premier-league', 'Premier League Darts', 4),
+    ],
+  },
+  {
+    id: 'rainbow-six',
+    label: 'Rainbow Six',
+    icon: iconRainbowSix,
+    competitions: [
+      createCompetition('rainbow-six', 'r6-invitational', 'Six Invitational', 3),
+      createCompetition('rainbow-six', 'r6-north-america', 'R6 North America', 5),
+    ],
+  },
+  {
+    id: 'boxe',
+    label: 'Boxe',
+    icon: iconBoxing,
+    competitions: [],
+  },
+  {
+    id: 'golfe',
+    label: 'Golfe',
+    icon: iconGolf,
+    competitions: [],
+  },
 ]
 
 const sportsById = new Map(sports.map((sport) => [sport.id, sport]))
-
-const getCompetitionConfig = (sportId: string): CompeticaoConfig | null => (
-  configuredCompetitionSports.has(sportId) ? competicaoConfigBySport[sportId] : null
-)
-
-const getCompetitionTarget = (
-  competition: Competition,
-  sportId: string
-): CompetitionLinkTarget => {
-  const config = getCompetitionConfig(sportId)
-  const canonicalCompetition = [
-    ...(config?.featuredCompetitions ?? []),
-    ...(config?.topCompetitions ?? []),
-  ].find((candidate) => candidate.name === competition.name)
-
-  return {
-    id: canonicalCompetition?.id ?? competition.id,
-    name: competition.name,
-    sport: sportId,
-  }
-}
 
 const getCompetitionKey = (competition: CompetitionLinkTarget) => (
   `${competition.sport}:${competition.id}`
@@ -174,7 +428,6 @@ const moveArrayItem = <T,>(items: T[], fromIndex: number, toIndex: number) => {
 function AccordionCollapse({ isOpen, children }: AccordionCollapseProps) {
   const collapseRef = useRef<HTMLDivElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
-  const readyFrameRef = useRef<number | null>(null)
 
   useLayoutEffect(() => {
     const collapseEl = collapseRef.current
@@ -195,23 +448,6 @@ function AccordionCollapse({ isOpen, children }: AccordionCollapseProps) {
     resizeObserver.observe(innerEl)
     return () => resizeObserver.disconnect()
   }, [children])
-
-  useEffect(() => {
-    const collapseEl = collapseRef.current
-    if (!collapseEl) return
-
-    readyFrameRef.current = window.requestAnimationFrame(() => {
-      readyFrameRef.current = window.requestAnimationFrame(() => {
-        readyFrameRef.current = null
-        collapseEl.dataset.ready = 'true'
-      })
-    })
-
-    return () => {
-      if (readyFrameRef.current !== null) window.cancelAnimationFrame(readyFrameRef.current)
-      delete collapseEl.dataset.ready
-    }
-  }, [])
 
   return (
     <div
@@ -236,11 +472,7 @@ export function MoreSportsBottomSheetV2({
   onSelectCompetition,
   onToggleFavorite,
 }: MoreSportsBottomSheetV2Props) {
-  const [currentView, setCurrentView] = useState<SheetView>('sports')
-  const [transition, setTransition] = useState<SheetTransition | null>(null)
-  const [selectedSportId, setSelectedSportId] = useState<string | null>(null)
-  const [topOpen, setTopOpen] = useState(true)
-  const [openCountries, setOpenCountries] = useState<string[]>([])
+  const [openSportId, setOpenSportId] = useState<string | null>(null)
   const [isOrderingFavorites, setIsOrderingFavorites] = useState(false)
   const [favoriteDrag, setFavoriteDrag] = useState<FavoriteDragState | null>(null)
   const [favoriteDrop, setFavoriteDrop] = useState<FavoriteDragState | null>(null)
@@ -249,12 +481,15 @@ export function MoreSportsBottomSheetV2({
   const [sortAnnouncement, setSortAnnouncement] = useState('')
   const [favoriteAnimation, setFavoriteAnimation] = useState<FavoriteAnimation | null>(null)
   const [removingFavoriteKey, setRemovingFavoriteKey] = useState<string | null>(null)
-  const transitionTimerRef = useRef<number | null>(null)
-  const transitionFrameRef = useRef<number | null>(null)
+  const [isFavoritesEmptyEntering, setIsFavoritesEmptyEntering] = useState(false)
+  const [isOpenSportSticky, setIsOpenSportSticky] = useState(false)
   const resetTimerRef = useRef<number | null>(null)
   const favoriteRemovalTimerRef = useRef<number | null>(null)
   const favoriteDropTimerRef = useRef<number | null>(null)
   const favoriteCommitTimerRef = useRef<number | null>(null)
+  const accordionScrollStartFrameRef = useRef<number | null>(null)
+  const accordionScrollFrameRef = useRef<number | null>(null)
+  const accordionScrollTargetRef = useRef<string | null>(null)
   const favoriteDragFrameRef = useRef<number | null>(null)
   const favoriteDragRef = useRef<FavoriteDragState | null>(null)
   const favoriteDragOverlayRef = useRef<HTMLDivElement>(null)
@@ -262,10 +497,6 @@ export function MoreSportsBottomSheetV2({
   const favoriteOrderListRef = useRef<HTMLUListElement>(null)
   const favoriteOrderItemRefs = useRef(new Map<string, HTMLLIElement>())
 
-  const selectedSport = selectedSportId ? sportsById.get(selectedSportId) ?? null : null
-  const selectedConfig = selectedSportId ? getCompetitionConfig(selectedSportId) : null
-  const selectedTopCompetitions = selectedConfig?.unifiedTopCompetitions ?? selectedConfig?.topCompetitions ?? []
-  const displayView = transition?.to ?? currentView
   const favoriteKeys = useMemo(
     () => new Set(favoriteCompetitions.map(getCompetitionKey)),
     [favoriteCompetitions]
@@ -282,27 +513,24 @@ export function MoreSportsBottomSheetV2({
     : null
 
   const resetSheetState = () => {
-    if (transitionTimerRef.current !== null) window.clearTimeout(transitionTimerRef.current)
-    if (transitionFrameRef.current !== null) window.cancelAnimationFrame(transitionFrameRef.current)
     if (resetTimerRef.current !== null) window.clearTimeout(resetTimerRef.current)
     if (favoriteRemovalTimerRef.current !== null) window.clearTimeout(favoriteRemovalTimerRef.current)
     if (favoriteDropTimerRef.current !== null) window.clearTimeout(favoriteDropTimerRef.current)
     if (favoriteCommitTimerRef.current !== null) window.clearTimeout(favoriteCommitTimerRef.current)
+    if (accordionScrollStartFrameRef.current !== null) window.cancelAnimationFrame(accordionScrollStartFrameRef.current)
+    if (accordionScrollFrameRef.current !== null) window.cancelAnimationFrame(accordionScrollFrameRef.current)
     if (favoriteDragFrameRef.current !== null) window.cancelAnimationFrame(favoriteDragFrameRef.current)
 
-    transitionTimerRef.current = null
-    transitionFrameRef.current = null
     resetTimerRef.current = null
     favoriteRemovalTimerRef.current = null
     favoriteDropTimerRef.current = null
     favoriteCommitTimerRef.current = null
+    accordionScrollStartFrameRef.current = null
+    accordionScrollFrameRef.current = null
+    accordionScrollTargetRef.current = null
     favoriteDragFrameRef.current = null
     favoriteDragRef.current = null
-    setCurrentView('sports')
-    setTransition(null)
-    setSelectedSportId(null)
-    setTopOpen(true)
-    setOpenCountries([])
+    setOpenSportId(null)
     setIsOrderingFavorites(false)
     setFavoriteDrag(null)
     setFavoriteDrop(null)
@@ -311,11 +539,20 @@ export function MoreSportsBottomSheetV2({
     setSortAnnouncement('')
     setFavoriteAnimation(null)
     setRemovingFavoriteKey(null)
+    setIsFavoritesEmptyEntering(false)
+    setIsOpenSportSticky(false)
   }
 
   const handleCloseSheet = () => {
     resetSheetState()
     onClose()
+  }
+
+  const handleSelectSport = (sportId: string) => {
+    if (!onSelectSport) return
+
+    onSelectSport(sportId)
+    closeAndResetAfterAnimation()
   }
 
   const closeAndResetAfterAnimation = () => {
@@ -329,72 +566,118 @@ export function MoreSportsBottomSheetV2({
   }
 
   useEffect(() => () => {
-    if (transitionTimerRef.current !== null) window.clearTimeout(transitionTimerRef.current)
-    if (transitionFrameRef.current !== null) window.cancelAnimationFrame(transitionFrameRef.current)
     if (resetTimerRef.current !== null) window.clearTimeout(resetTimerRef.current)
     if (favoriteRemovalTimerRef.current !== null) window.clearTimeout(favoriteRemovalTimerRef.current)
     if (favoriteDropTimerRef.current !== null) window.clearTimeout(favoriteDropTimerRef.current)
     if (favoriteCommitTimerRef.current !== null) window.clearTimeout(favoriteCommitTimerRef.current)
+    if (accordionScrollStartFrameRef.current !== null) window.cancelAnimationFrame(accordionScrollStartFrameRef.current)
+    if (accordionScrollFrameRef.current !== null) window.cancelAnimationFrame(accordionScrollFrameRef.current)
     if (favoriteDragFrameRef.current !== null) window.cancelAnimationFrame(favoriteDragFrameRef.current)
   }, [])
 
-  useEffect(() => {
-    const scrollableBody = contentRef.current?.closest<HTMLElement>('.bottom-sheet__body')
-    scrollableBody?.scrollTo({ top: 0, behavior: 'auto' })
-  }, [displayView, selectedSportId])
-
-  const completeTransition = (nextView: SheetView) => {
-    if (transitionTimerRef.current !== null) window.clearTimeout(transitionTimerRef.current)
-    if (transitionFrameRef.current !== null) window.cancelAnimationFrame(transitionFrameRef.current)
-    transitionTimerRef.current = null
-    transitionFrameRef.current = null
-    setCurrentView(nextView)
-    setTransition(null)
+  const toggleSportAccordion = (sportId: string) => {
+    const willOpen = openSportId !== sportId
+    setOpenSportId(willOpen ? sportId : null)
   }
 
-  const navigateTo = (nextView: SheetView) => {
-    if (nextView === displayView || transition) return
+  useLayoutEffect(() => {
+    if (!isOpen || !openSportId) return
 
-    if (transitionTimerRef.current !== null) window.clearTimeout(transitionTimerRef.current)
-    if (transitionFrameRef.current !== null) window.cancelAnimationFrame(transitionFrameRef.current)
+    const sportId = openSportId
+    accordionScrollTargetRef.current = sportId
 
-    const nextTransition: SheetTransition = {
-      to: nextView,
-      direction: nextView === 'competitions' ? 'forward' : 'backward',
-      key: Date.now(),
-      phase: 'idle',
-    }
-    setTransition(nextTransition)
+    accordionScrollStartFrameRef.current = window.requestAnimationFrame(() => {
+      accordionScrollStartFrameRef.current = null
 
-    transitionFrameRef.current = window.requestAnimationFrame(() => {
-      transitionFrameRef.current = window.requestAnimationFrame(() => {
-        transitionFrameRef.current = null
-        setTransition((current) => (
-          current?.key === nextTransition.key ? { ...current, phase: 'active' } : current
-        ))
-      })
+      const content = contentRef.current
+      const scrollContainer = content?.closest<HTMLElement>('.bottom-sheet__body')
+      const sportRow = content?.querySelector<HTMLElement>(
+        `[data-sport-id="${sportId}"].more-sports-v2__sport-row--open`
+      )
+      if (!scrollContainer || !sportRow || accordionScrollTargetRef.current !== sportId) return
+
+      const initialSportTop = sportRow.getBoundingClientRect().top
+      const startTime = window.performance.now()
+
+      const correctScrollPosition = (targetTop: number) => {
+        const sportTop = sportRow.getBoundingClientRect().top
+        const correction = sportTop - targetTop
+        if (Math.abs(correction) < 0.5) return
+
+        const maxScrollTop = Math.max(0, scrollContainer.scrollHeight - scrollContainer.clientHeight)
+        scrollContainer.scrollTop = Math.max(0, Math.min(scrollContainer.scrollTop + correction, maxScrollTop))
+      }
+
+      const step = (currentTime: number) => {
+        if (accordionScrollTargetRef.current !== sportId) {
+          accordionScrollFrameRef.current = null
+          return
+        }
+
+        const elapsed = currentTime - startTime
+        const scrollProgress = Math.min(elapsed / accordionScrollDuration, 1)
+        const easedProgress = 1 - Math.pow(1 - scrollProgress, 3)
+        const stickyTop = scrollContainer.getBoundingClientRect().top
+        const desiredTop = initialSportTop + (stickyTop - initialSportTop) * easedProgress
+
+        correctScrollPosition(desiredTop)
+
+        if (elapsed < accordionLayoutDuration) {
+          accordionScrollFrameRef.current = window.requestAnimationFrame(step)
+          return
+        }
+
+        correctScrollPosition(scrollContainer.getBoundingClientRect().top)
+        accordionScrollFrameRef.current = null
+      }
+
+      accordionScrollFrameRef.current = window.requestAnimationFrame(step)
     })
 
-    transitionTimerRef.current = window.setTimeout(() => completeTransition(nextView), 560)
-  }
+    return () => {
+      if (accordionScrollStartFrameRef.current !== null) {
+        window.cancelAnimationFrame(accordionScrollStartFrameRef.current)
+        accordionScrollStartFrameRef.current = null
+      }
+      if (accordionScrollFrameRef.current !== null) {
+        window.cancelAnimationFrame(accordionScrollFrameRef.current)
+        accordionScrollFrameRef.current = null
+      }
+      if (accordionScrollTargetRef.current === sportId) {
+        accordionScrollTargetRef.current = null
+      }
+    }
+  }, [isOpen, openSportId])
 
-  const handleSelectSport = (sportId: string, enabled: boolean) => {
-    if (!enabled) return
-    onSelectSport?.(sportId)
-    closeAndResetAfterAnimation()
-  }
+  useEffect(() => {
+    const content = contentRef.current
+    const scrollContainer = content?.closest<HTMLElement>('.bottom-sheet__body')
+    if (!isOpen || !openSportId || !content || !scrollContainer) {
+      setIsOpenSportSticky(false)
+      return
+    }
 
-  const handleOpenCompetitions = (sportId: string) => {
-    if (!getCompetitionConfig(sportId)) return
+    const updateStickyState = () => {
+      const sportActions = content.querySelector<HTMLElement>(
+        '.more-sports-v2__sport-row--open .more-sports-v2__sport-actions'
+      )
+      if (!sportActions) return setIsOpenSportSticky(false)
 
-    setSelectedSportId(sportId)
-    setTopOpen(true)
-    setOpenCountries([])
-    setIsOrderingFavorites(false)
-    setFavoriteDrag(null)
-    setKeyboardSort(null)
-    navigateTo('competitions')
-  }
+      const scrollTop = scrollContainer.getBoundingClientRect().top
+      const actionsRect = sportActions.getBoundingClientRect()
+      const isSticky = actionsRect.top <= scrollTop + 1 && actionsRect.bottom > scrollTop + 1
+      setIsOpenSportSticky((current) => current === isSticky ? current : isSticky)
+    }
+
+    updateStickyState()
+    scrollContainer.addEventListener('scroll', updateStickyState, { passive: true })
+    window.addEventListener('resize', updateStickyState)
+
+    return () => {
+      scrollContainer.removeEventListener('scroll', updateStickyState)
+      window.removeEventListener('resize', updateStickyState)
+    }
+  }, [isOpen, openSportId])
 
   const handleSelectCompetition = (target: CompetitionLinkTarget) => {
     if (
@@ -402,25 +685,33 @@ export function MoreSportsBottomSheetV2({
       || !isCompetitionEnabled(target.id)
       || !isCompetitionRailClickable(target.sport)
     ) return
+
     onSelectCompetition(target)
     closeAndResetAfterAnimation()
   }
 
   const handleToggleFavorite = (target: CompetitionLinkTarget) => {
-    const isAlreadyFavorite = favoriteKeys.has(getCompetitionKey(target))
-    if (!isAlreadyFavorite && (!onSelectCompetition || !isCompetitionEnabled(target.id))) return
+    const key = getCompetitionKey(target)
+    const isAlreadyFavorite = favoriteKeys.has(key)
 
     setFavoriteAnimation({
-      key: getCompetitionKey(target),
+      key,
       action: isAlreadyFavorite ? 'removing' : 'adding',
     })
     onToggleFavorite(target)
   }
 
-  const renderStarButton = (target: CompetitionLinkTarget, className: string) => {
+  const getSportLabel = (sportId: string) => (
+    sportsById.get(sportId)?.label ?? sportId
+  )
+
+  const renderStarButton = (
+    target: CompetitionLinkTarget,
+    className: string,
+    labelPrefix?: string
+  ) => {
     const key = getCompetitionKey(target)
     const isFavorite = favoriteKeys.has(key)
-    const canToggle = isFavorite || (!!onSelectCompetition && isCompetitionEnabled(target.id))
     const animationClass = favoriteAnimation?.key === key
       ? ` more-sports-v2__favorite-star--${favoriteAnimation.action}`
       : ''
@@ -429,14 +720,10 @@ export function MoreSportsBottomSheetV2({
       <button
         type="button"
         className={`${className}${isFavorite ? ` ${className}--active` : ''}${animationClass}`}
-        aria-label={`${isFavorite ? 'Remover' : 'Adicionar'} ${target.name} ${isFavorite ? 'dos' : 'aos'} favoritos`}
+        aria-label={labelPrefix ?? `${isFavorite ? 'Remover' : 'Adicionar'} ${target.name} ${isFavorite ? 'dos' : 'aos'} favoritos`}
         aria-pressed={isFavorite}
-        disabled={!canToggle}
-        onPointerDown={(event) => event.stopPropagation()}
-        onClick={(event) => {
-          event.stopPropagation()
-          handleToggleFavorite(target)
-        }}
+        disabled={isFavorite && removingFavoriteKey !== null}
+        onClick={() => isFavorite ? requestFavoriteRemoval(target) : handleToggleFavorite(target)}
         onAnimationEnd={() => {
           if (favoriteAnimation?.key === key) setFavoriteAnimation(null)
         }}
@@ -445,10 +732,6 @@ export function MoreSportsBottomSheetV2({
       </button>
     )
   }
-
-  const getSportLabel = (sportId: string) => (
-    sportsById.get(sportId)?.label ?? competicaoConfigBySport[sportId]?.sportLabel ?? sportId
-  )
 
   const setDropTargetFromClientY = (clientY: number) => {
     const drag = favoriteDragRef.current
@@ -644,10 +927,8 @@ export function MoreSportsBottomSheetV2({
   }
 
   const toggleOrderingMode = () => {
-    if (isOrderingFavorites && keyboardSort) {
-      if (keyboardSort.startIndex !== keyboardSort.targetIndex) {
-        onMoveFavorite(keyboardSort.startIndex, keyboardSort.targetIndex)
-      }
+    if (isOrderingFavorites && keyboardSort && keyboardSort.startIndex !== keyboardSort.targetIndex) {
+      onMoveFavorite(keyboardSort.startIndex, keyboardSort.targetIndex)
     }
     setFavoriteDrag(null)
     setKeyboardSort(null)
@@ -659,6 +940,7 @@ export function MoreSportsBottomSheetV2({
     if (removingFavoriteKey || favoriteRemovalTimerRef.current !== null) return
 
     setRemovingFavoriteKey(key)
+    setFavoriteAnimation(null)
     if (favoriteDrag?.key === key) setFavoriteDrag(null)
     if (keyboardSort?.key === key) setKeyboardSort(null)
     setSortAnnouncement(`Removendo ${competition.name} dos favoritos.`)
@@ -666,60 +948,45 @@ export function MoreSportsBottomSheetV2({
     favoriteRemovalTimerRef.current = window.setTimeout(() => {
       favoriteRemovalTimerRef.current = null
       onToggleFavorite(competition)
-      if (favoriteCompetitions.length === 1) setIsOrderingFavorites(false)
+      if (favoriteCompetitions.length === 1) {
+        setIsOrderingFavorites(false)
+        setIsFavoritesEmptyEntering(true)
+      }
       setRemovingFavoriteKey(null)
       setSortAnnouncement(`${competition.name} foi removida dos favoritos.`)
     }, 240)
   }
 
-  const renderSportsList = (items: SportItem[] = sports) => (
-    <div className="more-sports-v2__sport-list" aria-label="Esportes">
-      {items.map((sport) => {
-        const enabled = !!onSelectSport && selectableSports.has(sport.id)
-        const isActive = activeSport === sport.id
-        const hasCompetitionConfig = !!getCompetitionConfig(sport.id)
+  const getFavoriteDragOffset = (index: number, key: string) => {
+    if (!favoriteDrag) return 0
+    const { startIndex, targetIndex } = favoriteDrag
 
-        return (
-          <div
-            key={sport.id}
-            className={`more-sports-v2__sport-row${isActive ? ' more-sports-v2__sport-row--active' : ''}`}
-          >
-            <button
-              type="button"
-              className="more-sports-v2__sport-main"
-              onClick={() => handleSelectSport(sport.id, enabled)}
-              disabled={!enabled}
-              aria-current={isActive ? 'true' : undefined}
-            >
-              <img src={sport.icon} alt="" className="more-sports-v2__sport-icon" />
-              <span className="more-sports-v2__sport-label">{sport.label}</span>
-            </button>
-
-            {hasCompetitionConfig ? (
-              <button
-                type="button"
-                className="more-sports-v2__sport-link"
-                onClick={() => handleOpenCompetitions(sport.id)}
-                aria-label={`Ver todas as competições de ${sport.label}`}
-              >
-                <span>Ver todas competições</span>
-                <img src={chevronRight} alt="" />
-              </button>
-            ) : null}
-          </div>
-        )
-      })}
-    </div>
-  )
+    if (key === favoriteDrag.key) return (targetIndex - startIndex) * favoriteOrderRowHeight
+    if (startIndex < targetIndex && index > startIndex && index <= targetIndex) return -favoriteOrderRowHeight
+    if (startIndex > targetIndex && index >= targetIndex && index < startIndex) return favoriteOrderRowHeight
+    return 0
+  }
 
   const renderFavoriteCard = (competition: CompetitionLinkTarget) => {
+    const key = getCompetitionKey(competition)
     const canOpen = (
       !!onSelectCompetition
       && isCompetitionEnabled(competition.id)
       && isCompetitionRailClickable(competition.sport)
     )
+    const isAdding = favoriteAnimation?.key === key && favoriteAnimation.action === 'adding'
+    const isRemoving = removingFavoriteKey === key
+
     return (
-      <li className="more-sports-v2__favorite-card" key={getCompetitionKey(competition)}>
+      <li
+        className={`more-sports-v2__favorite-card${isAdding ? ' more-sports-v2__favorite-card--adding' : ''}${isRemoving ? ' more-sports-v2__favorite-card--removing' : ''}`}
+        key={key}
+      >
+        {renderStarButton(
+          competition,
+          'more-sports-v2__favorite-card-star',
+          `Remover ${competition.name} dos favoritos`
+        )}
         <button
           type="button"
           className="more-sports-v2__favorite-card-main"
@@ -727,9 +994,6 @@ export function MoreSportsBottomSheetV2({
           onClick={() => handleSelectCompetition(competition)}
           aria-label={`Abrir ${competition.name}`}
         >
-          <span className="more-sports-v2__favorite-card-star" aria-hidden="true">
-            <img src={iconFavoritoAtivo} alt="" />
-          </span>
           <span className="more-sports-v2__favorite-card-copy">
             <span className="more-sports-v2__favorite-card-name">{competition.name}</span>
             <span className="more-sports-v2__favorite-card-sport">{getSportLabel(competition.sport)}</span>
@@ -737,22 +1001,6 @@ export function MoreSportsBottomSheetV2({
         </button>
       </li>
     )
-  }
-
-  const getFavoriteDragOffset = (index: number, key: string) => {
-    if (!favoriteDrag) return 0
-    const { startIndex, targetIndex } = favoriteDrag
-
-    if (key === favoriteDrag.key) {
-      return (targetIndex - startIndex) * favoriteOrderRowHeight
-    }
-    if (startIndex < targetIndex && index > startIndex && index <= targetIndex) {
-      return -favoriteOrderRowHeight
-    }
-    if (startIndex > targetIndex && index >= targetIndex && index < startIndex) {
-      return favoriteOrderRowHeight
-    }
-    return 0
   }
 
   const renderFavoriteOrdering = () => (
@@ -765,10 +1013,9 @@ export function MoreSportsBottomSheetV2({
         const isDragging = favoriteDrag?.key === key
         const isKeyboardPicked = keyboardSort?.key === key
         const isRemoving = removingFavoriteKey === key
-        const isDropTarget = isDragging && favoriteDrag
-          ? favoriteDrag.targetIndex !== favoriteDrag.startIndex
-          : false
         const dragOffset = getFavoriteDragOffset(index, key)
+        const originalIndex = favoriteCompetitions.findIndex((favorite) => getCompetitionKey(favorite) === key)
+
         return (
           <li
             key={key}
@@ -776,7 +1023,7 @@ export function MoreSportsBottomSheetV2({
               if (element) favoriteOrderItemRefs.current.set(key, element)
               else favoriteOrderItemRefs.current.delete(key)
             }}
-            className={`more-sports-v2__favorite-order-item${isDragging ? ' more-sports-v2__favorite-order-item--dragging' : ''}${isKeyboardPicked ? ' more-sports-v2__favorite-order-item--keyboard' : ''}${isDropTarget ? ' more-sports-v2__favorite-order-item--drop-target' : ''}${isRemoving ? ' more-sports-v2__favorite-order-item--removing' : ''}`}
+            className={`more-sports-v2__favorite-order-item${isDragging ? ' more-sports-v2__favorite-order-item--dragging' : ''}${isKeyboardPicked ? ' more-sports-v2__favorite-order-item--keyboard' : ''}${isRemoving ? ' more-sports-v2__favorite-order-item--removing' : ''}`}
             style={favoriteDrag ? { transform: `translate3d(0, ${dragOffset}px, 0)` } : undefined}
           >
             <button
@@ -794,15 +1041,11 @@ export function MoreSportsBottomSheetV2({
               aria-label={`Reordenar ${competition.name}. Posição ${index + 1} de ${favoriteCompetitions.length}`}
               aria-pressed={isDragging || isKeyboardPicked}
               disabled={isRemoving}
-              onPointerDown={(event) => handleFavoritePointerDown(event, competition, favoriteCompetitions.findIndex((favorite) => getCompetitionKey(favorite) === key))}
+              onPointerDown={(event) => handleFavoritePointerDown(event, competition, originalIndex)}
               onPointerMove={handleFavoritePointerMove}
               onPointerUp={finishFavoritePointerSort}
               onPointerCancel={cancelFavoritePointerSort}
-              onKeyDown={(event) => handleFavoriteSortKeyDown(
-                event,
-                competition,
-                favoriteCompetitions.findIndex((favorite) => getCompetitionKey(favorite) === key)
-              )}
+              onKeyDown={(event) => handleFavoriteSortKeyDown(event, competition, originalIndex)}
             >
               <span className="more-sports-v2__favorite-order-copy">
                 <span>{competition.name}</span>
@@ -819,7 +1062,10 @@ export function MoreSportsBottomSheetV2({
   const renderFavorites = () => {
     if (favoriteCompetitions.length === 0) {
       return (
-        <div className="more-sports-v2__favorites-empty">
+        <div
+          className={`more-sports-v2__favorites-empty${isFavoritesEmptyEntering ? ' more-sports-v2__favorites-empty--entering' : ''}`}
+          onAnimationEnd={() => setIsFavoritesEmptyEntering(false)}
+        >
           <p>Toque na estrela de uma competição para adicioná-la aos favoritos.</p>
           <span className="more-sports-v2__favorites-empty-illustration" aria-hidden="true">
             <img src={marcacao} alt="" className="more-sports-v2__favorites-empty-mark" />
@@ -838,191 +1084,126 @@ export function MoreSportsBottomSheetV2({
     )
   }
 
-  const renderCompetitionRows = (
-    competitions: Competition[],
-    sportId: string,
-    nested = false
-  ) => {
-    if (competitions.length === 0) return null
+  const renderCompetitionRows = (competitions: MenuCompetition[]) => {
+    const orderedCompetitions = [
+      ...competitions.filter((competition) => isCompetitionEnabled(competition.id)),
+      ...competitions.filter((competition) => !isCompetitionEnabled(competition.id)),
+    ]
 
     return (
-      <ul className={`more-sports-v2__competition-list${nested ? ' more-sports-v2__competition-list--nested' : ''}`}>
-        {competitions.map((competition) => {
-          const target = getCompetitionTarget(competition, sportId)
-          const enabled = (
-            !!onSelectCompetition
-            && isCompetitionEnabled(competition.id)
-            && isCompetitionRailClickable(sportId)
-          )
+      <ul className="more-sports-v2__competition-list">
+        {orderedCompetitions.map((competition) => {
+        const competitionListLabel = getCompetitionListLabel(competition)
+        const canOpen = (
+          !!onSelectCompetition
+          && isCompetitionEnabled(competition.id)
+          && isCompetitionRailClickable(competition.sport)
+        )
 
-          return (
-            <li key={competition.id} className="more-sports-v2__competition-item">
-              {renderStarButton(target, 'more-sports-v2__competition-star')}
-              <button
-                type="button"
-                className={`more-sports-v2__competition-main${enabled ? '' : ' more-sports-v2__competition-main--disabled'}`}
-                disabled={!enabled}
-                onClick={() => handleSelectCompetition(target)}
-              >
-                <span className="more-sports-v2__competition-name">{competition.name}</span>
-                {enabled ? (
-                  <img src={chevronRight} alt="" className="more-sports-v2__competition-chevron-right" />
-                ) : null}
-              </button>
-            </li>
-          )
+        return (
+          <li key={competition.id} className="more-sports-v2__competition-item">
+            {renderStarButton(competition, 'more-sports-v2__competition-star')}
+            <button
+              type="button"
+              className={`more-sports-v2__competition-main${canOpen ? '' : ' more-sports-v2__competition-main--disabled'}`}
+              disabled={!canOpen}
+              onClick={() => handleSelectCompetition(competition)}
+              aria-label={`Abrir ${competitionListLabel}`}
+            >
+              <span className="more-sports-v2__competition-name">{competitionListLabel}</span>
+              <span className="more-sports-v2__competition-count" aria-label={`${competition.gameCount} jogos disponíveis`}>
+                {competition.gameCount}
+              </span>
+            </button>
+          </li>
+        )
         })}
       </ul>
     )
   }
 
-  const renderCountry = (country: CompetitionCountry) => {
-    if (!selectedSportId) return null
-    const isOpenCountry = openCountries.includes(country.id)
+  const renderSportsList = () => (
+    <ul className="more-sports-v2__sport-list" aria-label="Esportes">
+      {sports.map((sport) => {
+        const isOpen = openSportId === sport.id
+        const hasCompetitions = sport.competitions.length > 0
+        const canSelectSport = !!onSelectSport && selectableSportIds.has(sport.id)
+        const isActive = activeSport === sport.id
 
-    return (
-      <li
-        key={country.id}
-        className={`more-sports-v2__country${isOpenCountry ? ' more-sports-v2__country--open' : ''}`}
-      >
-        <button
-          type="button"
-          className="more-sports-v2__country-header"
-          aria-expanded={isOpenCountry}
-          onClick={() => setOpenCountries((current) => (
-            current.includes(country.id)
-              ? current.filter((id) => id !== country.id)
-              : [...current, country.id]
-          ))}
-        >
-          <img src={country.flag} alt="" className="more-sports-v2__country-flag" />
-          <span>{country.name}</span>
-          <img
-            src={chevronUp}
-            alt=""
-            className={`more-sports-v2__section-chevron${isOpenCountry ? ' more-sports-v2__section-chevron--open' : ''}`}
-          />
-        </button>
-
-        {country.competitions.length > 0 ? (
-          <AccordionCollapse isOpen={isOpenCountry}>
-            {renderCompetitionRows(country.competitions, selectedSportId, true)}
-          </AccordionCollapse>
-        ) : null}
-      </li>
-    )
-  }
-
-  const renderSportsView = () => (
-    <div className="more-sports-v2__root">
-      <section className="more-sports-v2__favorites">
-        <div className="more-sports-v2__section-heading">
-          <h2>Favoritos</h2>
-          {canConfigureFavorites ? (
-            <button type="button" onClick={toggleOrderingMode}>
-              {isOrderingFavorites ? 'Concluir' : 'Configurar'}
-            </button>
-          ) : null}
-        </div>
-        {renderFavorites()}
-      </section>
-
-      <section className="more-sports-v2__all-sports">
-        <div className="more-sports-v2__section-heading">
-          <h2>Todos os esportes</h2>
-        </div>
-        {renderSportsList()}
-      </section>
-      <span className="more-sports-v2__sr-only" aria-live="polite">{sortAnnouncement}</span>
-    </div>
-  )
-
-  const renderCompetitionView = () => {
-    if (!selectedConfig || !selectedSportId) {
-      return <p className="more-sports-v2__empty">Nenhuma competição disponível.</p>
-    }
-
-    return (
-      <div className="more-sports-v2__competitions" aria-label={`Competições de ${selectedConfig.sportLabel}`}>
-        <section className={`more-sports-v2__competition-group${topOpen ? ' more-sports-v2__competition-group--open' : ''}`}>
-          <button
-            type="button"
-            className="more-sports-v2__competition-header"
-            aria-expanded={topOpen}
-            onClick={() => setTopOpen((open) => !open)}
+        return (
+          <li
+            key={sport.id}
+            data-sport-id={sport.id}
+            className={`more-sports-v2__sport-row${isOpen ? ' more-sports-v2__sport-row--open' : ''}`}
           >
-            <img src={selectedConfig.sportIcon} alt="" />
-            <span>Principais escolhas</span>
-            <img
-              src={chevronUp}
-              alt=""
-              className={`more-sports-v2__section-chevron${topOpen ? ' more-sports-v2__section-chevron--open' : ''}`}
-            />
-          </button>
-          <AccordionCollapse isOpen={topOpen}>
-            {renderCompetitionRows(selectedTopCompetitions, selectedSportId)}
-          </AccordionCollapse>
-        </section>
-
-        {selectedConfig.countries.length > 0 ? (
-          <ul className="more-sports-v2__countries">
-            {selectedConfig.countries.map(renderCountry)}
-          </ul>
-        ) : null}
-      </div>
-    )
-  }
-
-  const renderContent = (view: SheetView) => (
-    view === 'sports' ? renderSportsView() : renderCompetitionView()
+            <div className={`more-sports-v2__sport-actions${hasCompetitions ? '' : ' more-sports-v2__sport-actions--no-competitions'}${isOpen && isOpenSportSticky ? ' more-sports-v2__sport-actions--stuck' : ''}`}>
+              <button
+                type="button"
+                className="more-sports-v2__sport-main"
+                disabled={!canSelectSport}
+                onClick={() => handleSelectSport(sport.id)}
+                aria-current={isActive ? 'true' : undefined}
+              >
+                <img src={sport.icon} alt="" className="more-sports-v2__sport-icon" />
+                <span className="more-sports-v2__sport-label">{sport.label}</span>
+              </button>
+              {hasCompetitions ? (
+                <button
+                  type="button"
+                  className="more-sports-v2__sport-toggle"
+                  aria-expanded={isOpen}
+                  aria-label={`${isOpen ? 'Fechar' : 'Ver'} competições de ${sport.label}`}
+                  onClick={() => toggleSportAccordion(sport.id)}
+                >
+                  <img
+                    src={chevronUp}
+                    alt=""
+                    className={`more-sports-v2__sport-chevron${isOpen ? ' more-sports-v2__sport-chevron--open' : ''}`}
+                  />
+                </button>
+              ) : null}
+            </div>
+            {hasCompetitions ? (
+              <AccordionCollapse isOpen={isOpen}>
+                {renderCompetitionRows(sport.competitions)}
+              </AccordionCollapse>
+            ) : null}
+          </li>
+        )
+      })}
+    </ul>
   )
-
-  const sheetTitle = displayView === 'competitions'
-    ? selectedConfig?.sportLabel ?? selectedSport?.label ?? 'Competições'
-    : 'Esportes e competições'
 
   return (
     <>
       <BottomSheet
         isOpen={isOpen}
         onClose={handleCloseSheet}
-        title={sheetTitle}
-        leadingContent={displayView === 'competitions' ? (
-          <button
-            type="button"
-            className="more-sports-v2__back"
-            onClick={() => navigateTo('sports')}
-            aria-label="Voltar para esportes"
-          >
-            <img src={chevronLeftHeader} alt="" />
-          </button>
-        ) : undefined}
+        title="Esportes e competições"
         sheetClassName="more-sports-v2"
         bodyClassName="more-sports-v2__body"
         blurBackdrop
       >
-        <div ref={contentRef} className="more-sports-v2__transition-shell">
-          {transition ? (
-            <div
-              key={transition.key}
-              className={`more-sports-v2__transition-track more-sports-v2__transition-track--${transition.direction} more-sports-v2__transition-track--${transition.phase}`}
-              onTransitionEnd={(event) => {
-                if (event.target !== event.currentTarget || event.propertyName !== 'transform') return
-                completeTransition(transition.to)
-              }}
-            >
-              <div className="more-sports-v2__content" aria-hidden={displayView !== 'sports'}>
-                {renderSportsView()}
-              </div>
-              <div className="more-sports-v2__content" aria-hidden={displayView !== 'competitions'}>
-                {renderCompetitionView()}
-              </div>
+        <div ref={contentRef} className="more-sports-v2__root">
+          <section className="more-sports-v2__favorites">
+            <div className="more-sports-v2__section-heading">
+              <h2>Favoritos</h2>
+              {canConfigureFavorites ? (
+                <button type="button" onClick={toggleOrderingMode}>
+                  {isOrderingFavorites ? 'Concluir' : 'Ordenar'}
+                </button>
+              ) : null}
             </div>
-          ) : (
-            <div className="more-sports-v2__content more-sports-v2__content--single">
-              {renderContent(currentView)}
+            {renderFavorites()}
+          </section>
+
+          <section className="more-sports-v2__all-sports">
+            <div className="more-sports-v2__section-heading">
+              <h2>Todos os esportes</h2>
             </div>
-          )}
+            {renderSportsList()}
+          </section>
+          <span className="more-sports-v2__sr-only" aria-live="polite">{sortAnnouncement}</span>
         </div>
       </BottomSheet>
 
@@ -1031,10 +1212,10 @@ export function MoreSportsBottomSheetV2({
           ref={favoriteDragOverlayRef}
           className={`more-sports-v2__favorite-drag-overlay${favoriteDrop ? ' more-sports-v2__favorite-drag-overlay--dropping' : ''}`}
           style={{
-            top: activeDragOverlay!.clientY - activeDragOverlay!.grabOffsetY,
-            left: activeDragOverlay!.left,
-            width: activeDragOverlay!.width,
-            height: activeDragOverlay!.height,
+            top: activeDragOverlay.clientY - activeDragOverlay.grabOffsetY,
+            left: activeDragOverlay.left,
+            width: activeDragOverlay.width,
+            height: activeDragOverlay.height,
           }}
           aria-hidden="true"
         >

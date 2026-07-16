@@ -18,7 +18,7 @@ import lineFavorito from '../../assets/iconsDraftaco/lineFavorito.svg'
 import { getCompetitionRailBadge } from '../../data/competitionBadges'
 import { useFavoriteCompetitions } from '../../hooks/useFavoriteCompetitions'
 import { useFeatureFlags } from '../../hooks/useFeatureFlags'
-import { isCompetitionRailClickable } from '../SportFilterBar/competicaoData'
+import { isCompetitionEnabled, isCompetitionRailClickable } from '../SportFilterBar/competicaoData'
 import type { ProductRailBaseItem, ProductRailSection } from '../../types/home'
 import type { CompetitionLinkTarget } from '../../utils/competitionNavigation'
 import { MoreSportsBottomSheet, MoreSportsBottomSheetV2 } from '../BottomSheet'
@@ -809,6 +809,10 @@ export function SportRail({
     const seenIds = new Set<string>()
 
     return favoriteCompetitions
+      .filter((competition) => (
+        isCompetitionEnabled(competition.id)
+        && isCompetitionRailClickable(competition.sport)
+      ))
       .map((competition) => (
         {
           ...(
