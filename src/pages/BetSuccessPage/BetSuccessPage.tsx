@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
+import confetti from 'canvas-confetti'
 import './BetSuccessPage.css'
 
 import backgroundTextPitaco from '../../assets/iconsDraftaco/backgroundTextPitaco.svg'
+import camisaFrente from '../../assets/iconsDraftaco/camisaFrente.png'
+import camisaVersoGanhou from '../../assets/iconsDraftaco/camisaVersoGanhou.png'
+import camisaVersoPerdeu from '../../assets/iconsDraftaco/camisaVersoPerdeu.png'
+import camisaPremiadaIcon from '../../assets/iconsDraftaco/iconeCamisaPremiada.png'
+import lightCamisaPremiada from '../../assets/iconsDraftaco/lightCamisaPremiada.png'
 import iconBetslipAumentada from '../../assets/iconsDraftaco/iconBetslipAumentada.svg'
 import iconBetslipGarantida from '../../assets/iconsDraftaco/iconBetslipGarantida.svg'
 import iconBetslipSuperAumentada from '../../assets/iconsDraftaco/iconBetslipSuperAumentada.svg'
@@ -46,6 +52,16 @@ export interface BetSuccessReceipt {
   stakeCents: number
   totalOddsLabel: string
   potentialWinLabel: string
+  turboBoost?: {
+    bonusPercent: number
+    originalTotalOddsLabel: string
+  }
+  camisaPremiada?: {
+    entryFeeCents: number
+    jackpotCents: number
+    selectedShirtIndex: 0 | 1 | 2
+    winningShirtIndex: 0 | 1 | 2
+  }
   createdAtMs: number
 }
 
@@ -87,6 +103,18 @@ const ticketFrameCornerRadiusPx = 24
 const ticketFrameNotchCenterYPx = 122
 const ticketFrameNotchRadiusPx = 20
 const ticketFrameStrokeWidthPx = 4
+const betSuccessEnterDurationMs = 360
+const camisaPremiadaIntroDurationMs = 1700
+const camisaPremiadaIntroExitDurationMs = 800
+const camisaPremiadaRevealDurationMs = 700
+const camisaPremiadaRevealBackSwapDurationMs = 350
+const camisaPremiadaRevealHoldDurationMs = 1000
+const camisaPremiadaFocusDurationMs = 600
+const camisaPremiadaResultDurationMs = 5000
+const camisaPremiadaExitDurationMs = 620
+const camisaPremiadaSequenceLength = 17
+const camisaPremiadaSequenceIntervalsMs = [85, 90, 100, 110, 120, 135, 155, 180, 210, 250, 300, 350, 400, 460, 520, 575] as const
+const camisaPremiadaStopSettleDurationMs = 305
 
 interface BetSuccessPullState {
   hasMoved: boolean
@@ -305,7 +333,7 @@ function BetSuccessSelectionAvatar({
   )
 }
 
-function BetSuccessTicketFrame() {
+function BetSuccessTicketFrame({ isBoosted }: { isBoosted: boolean }) {
   const frameRef = useRef<SVGSVGElement | null>(null)
   const [frameSize, setFrameSize] = useState<BetSuccessTicketFrameSize>({ height: 0, width: 0 })
   const path = getTicketFramePath(frameSize)
@@ -344,12 +372,27 @@ function BetSuccessTicketFrame() {
   return (
     <svg
       ref={frameRef}
-      className="bet-success__ticket-frame"
+      className={`bet-success__ticket-frame${isBoosted ? ' bet-success__ticket-frame--boosted' : ''}`}
       aria-hidden="true"
       focusable="false"
       preserveAspectRatio="none"
       viewBox={`0 0 ${Math.max(frameSize.width, 1)} ${Math.max(frameSize.height, 1)}`}
     >
+      {isBoosted ? (
+        <defs>
+          <linearGradient
+            id="bet-success-booster-stroke"
+            x1="0"
+            y1="0"
+            x2={Math.max(frameSize.width, 1)}
+            y2="0"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0%" stopColor="var(--ds-booster-grad-start, #ffa65b)" />
+            <stop offset="100%" stopColor="var(--ds-booster-grad-end, #f0abfc)" />
+          </linearGradient>
+        </defs>
+      ) : null}
       {path ? <path d={path} /> : null}
     </svg>
   )
@@ -816,8 +859,436 @@ function BetSuccessSelectionGroupRow({ group }: { group: BetslipSelectionGroup }
   return <BetSuccessSelectionRow selection={group.selections[0]} />
 }
 
+type CamisaPremiadaShirtIndex = 0 | 1 | 2
+type CamisaPremiadaBannerStage = 'intro' | 'intro-exit' | 'chase' | 'reveal' | 'reveal-hold' | 'focus' | 'result' | 'exit'
+
+const createCamisaPremiadaLightSequence = (
+  selectedShirtIndex: CamisaPremiadaShirtIndex
+): CamisaPremiadaShirtIndex[] => {
+  const sequence: CamisaPremiadaShirtIndex[] = [selectedShirtIndex]
+  let currentPosition = selectedShirtIndex
+  let direction = selectedShirtIndex === 2 ? -1 : 1
+
+  while (sequence.length < camisaPremiadaSequenceLength) {
+    if (currentPosition + direction < 0 || currentPosition + direction > 2) {
+      direction *= -1
+    }
+
+    currentPosition = (currentPosition + direction) as CamisaPremiadaShirtIndex
+    sequence.push(currentPosition)
+  }
+
+  return sequence
+}
+
+interface CamisaPremiadaBannerVisualProps {
+  activeShirtIndex: CamisaPremiadaShirtIndex | null
+  confettiCanvasRef?: { current: HTMLCanvasElement | null }
+  isRevealBackVisible: boolean
+  isStatic?: boolean
+  jackpotLabel: string
+  selectedShirtIndex: CamisaPremiadaShirtIndex
+  stage: CamisaPremiadaBannerStage
+  statusLabel: string
+  winningShirtIndex: CamisaPremiadaShirtIndex
+}
+
+function CamisaPremiadaBannerVisual({
+  activeShirtIndex,
+  confettiCanvasRef,
+  isRevealBackVisible,
+  isStatic = false,
+  jackpotLabel,
+  selectedShirtIndex,
+  stage,
+  statusLabel,
+  winningShirtIndex,
+}: CamisaPremiadaBannerVisualProps) {
+  const hasWon = selectedShirtIndex === winningShirtIndex
+  const isShowingIntro = stage === 'intro' || stage === 'intro-exit'
+  const isShowingOptions = stage !== 'intro'
+  const isRevealing = stage === 'reveal' || stage === 'reveal-hold' || stage === 'focus' || stage === 'result' || stage === 'exit'
+  const isFocusedResult = stage === 'focus' || stage === 'result' || stage === 'exit'
+  const focusedShirtOffsetPx = (1 - selectedShirtIndex) * 64
+
+  return (
+    <section
+      className={[
+        'bet-success__camisa-banner',
+        `bet-success__camisa-banner--${stage}`,
+        isStatic ? 'bet-success__camisa-banner--static' : '',
+      ].filter(Boolean).join(' ')}
+      role="status"
+      aria-live={isStatic ? undefined : 'polite'}
+      aria-label={statusLabel}
+    >
+      {confettiCanvasRef ? (
+        <canvas ref={confettiCanvasRef} className="bet-success__camisa-confetti" aria-hidden="true" />
+      ) : null}
+      <img className="bet-success__camisa-light" src={lightCamisaPremiada} alt="" aria-hidden="true" draggable="false" />
+
+      <div className="bet-success__camisa-stage" aria-hidden="true">
+        {isShowingIntro ? (
+          <div className="bet-success__camisa-intro">
+            <img src={camisaPremiadaIcon} alt="" draggable="false" />
+            <span>
+              <strong>Camisa Premiada:</strong>
+              <small>será que a sua é premiada?</small>
+            </span>
+          </div>
+        ) : null}
+
+        {isShowingOptions ? (
+          <div
+            className={[
+              'bet-success__camisa-options',
+              isRevealing ? 'bet-success__camisa-options--revealed' : '',
+              stage === 'focus' ? 'bet-success__camisa-options--focus' : '',
+              stage === 'result' || stage === 'exit' ? 'bet-success__camisa-options--result' : '',
+            ].filter(Boolean).join(' ')}
+          >
+            <div className="bet-success__camisa-indicators-row">
+              {isFocusedResult ? (
+                <div className={`bet-success__camisa-result${hasWon ? ' bet-success__camisa-result--won' : ''}`}>
+                  {hasWon ? (
+                    <strong>Você ganhou! {jackpotLabel}</strong>
+                  ) : (
+                    <span>Não foi dessa vez</span>
+                  )}
+                </div>
+              ) : (
+                ([0, 1, 2] as const).map((shirtIndex) => (
+                  <span className="bet-success__camisa-indicator-slot" key={shirtIndex}>
+                    <span
+                      className={`bet-success__camisa-indicator${activeShirtIndex === shirtIndex || (isRevealing && selectedShirtIndex === shirtIndex) ? ' bet-success__camisa-indicator--active' : ''}`}
+                    />
+                  </span>
+                ))
+              )}
+            </div>
+
+            <div className="bet-success__camisa-shirts-row">
+              {([0, 1, 2] as const).map((shirtIndex) => {
+                const isSelected = selectedShirtIndex === shirtIndex
+                const exitDirection = shirtIndex < selectedShirtIndex ? -1 : 1
+                const shirtStyle = isFocusedResult
+                  ? {
+                    '--camisa-focus-offset': `${focusedShirtOffsetPx}px`,
+                    '--camisa-exit-offset': `${exitDirection * 16}px`,
+                  } as CSSProperties
+                  : undefined
+
+                return (
+                  <div
+                    className={[
+                      'bet-success__camisa-shirt-slot',
+                      activeShirtIndex === shirtIndex ? 'bet-success__camisa-shirt-slot--active' : '',
+                      isRevealing && isSelected ? 'bet-success__camisa-shirt-slot--selected' : '',
+                      isRevealing && !isSelected ? 'bet-success__camisa-shirt-slot--non-selected' : '',
+                    ].filter(Boolean).join(' ')}
+                    key={shirtIndex}
+                    style={shirtStyle}
+                  >
+                    <div
+                      className={[
+                        'bet-success__camisa-shirt-flipper',
+                        stage === 'reveal' ? 'bet-success__camisa-shirt-flipper--flipping' : '',
+                        stage !== 'reveal' && isRevealing && isRevealBackVisible
+                          ? 'bet-success__camisa-shirt-flipper--flipped'
+                          : '',
+                      ].filter(Boolean).join(' ')}
+                    >
+                      <img
+                        className="bet-success__camisa-shirt-face bet-success__camisa-shirt-face--front"
+                        src={camisaFrente}
+                        alt=""
+                        draggable="false"
+                      />
+                      <img
+                        className="bet-success__camisa-shirt-face bet-success__camisa-shirt-face--back"
+                        src={winningShirtIndex === shirtIndex ? camisaVersoGanhou : camisaVersoPerdeu}
+                        alt=""
+                        draggable="false"
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </section>
+  )
+}
+
+function CamisaPremiadaResultBanner({
+  receipt,
+  onFinished,
+}: {
+  receipt: NonNullable<BetSuccessReceipt['camisaPremiada']>
+  onFinished: () => void
+}) {
+  const [stage, setStage] = useState<CamisaPremiadaBannerStage>('intro')
+  const [sequenceStep, setSequenceStep] = useState(0)
+  const [isRevealBackVisible, setIsRevealBackVisible] = useState(false)
+  const confettiCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const hasWon = receipt.selectedShirtIndex === receipt.winningShirtIndex
+  const jackpotLabel = formatMoney(receipt.jackpotCents).replace(/^R\$/, 'R$ ')
+  const lightSequence = useMemo(
+    () => createCamisaPremiadaLightSequence(receipt.selectedShirtIndex),
+    [receipt.selectedShirtIndex]
+  )
+  const activeShirtIndex = stage === 'chase'
+    ? lightSequence[Math.min(sequenceStep, lightSequence.length - 1)]
+    : null
+  const statusLabel = stage === 'intro' || stage === 'intro-exit'
+    ? 'Camisa Premiada: será que a sua é premiada?'
+    : stage === 'chase'
+      ? 'Sorteando a Camisa Premiada'
+      : stage === 'reveal' || stage === 'reveal-hold'
+        ? 'Revelando a camisa vencedora'
+        : hasWon
+          ? `Você ganhou ${jackpotLabel}`
+          : 'Não foi dessa vez'
+
+  useEffect(() => {
+    const introTimer = window.setTimeout(() => {
+      setStage('intro-exit')
+    }, betSuccessEnterDurationMs + camisaPremiadaIntroDurationMs)
+
+    return () => window.clearTimeout(introTimer)
+  }, [])
+
+  useEffect(() => {
+    if (stage !== 'intro-exit') return undefined
+
+    const optionsEntranceTimer = window.setTimeout(() => {
+      setStage('chase')
+    }, camisaPremiadaIntroExitDurationMs)
+
+    return () => window.clearTimeout(optionsEntranceTimer)
+  }, [stage])
+
+  useEffect(() => {
+    if (stage !== 'chase') return undefined
+
+    let chaseTimer: number | null = null
+    let isCancelled = false
+
+    setSequenceStep(0)
+
+    const scheduleNextStep = (currentStep: number) => {
+      if (isCancelled) return
+      if (currentStep === lightSequence.length - 1) {
+        chaseTimer = window.setTimeout(() => {
+          if (!isCancelled) setStage('reveal')
+        }, camisaPremiadaStopSettleDurationMs)
+        return
+      }
+
+      chaseTimer = window.setTimeout(() => {
+        const nextStep = currentStep + 1
+        setSequenceStep(nextStep)
+        scheduleNextStep(nextStep)
+      }, camisaPremiadaSequenceIntervalsMs[currentStep])
+    }
+
+    scheduleNextStep(0)
+
+    return () => {
+      isCancelled = true
+      if (chaseTimer !== null) window.clearTimeout(chaseTimer)
+    }
+  }, [lightSequence, stage])
+
+  useEffect(() => {
+    if (stage !== 'reveal') return undefined
+
+    setIsRevealBackVisible(false)
+    const revealBackSwapTimer = window.setTimeout(() => {
+      setIsRevealBackVisible(true)
+    }, camisaPremiadaRevealBackSwapDurationMs)
+    const revealTimer = window.setTimeout(() => {
+      setStage('reveal-hold')
+    }, camisaPremiadaRevealDurationMs)
+
+    return () => {
+      window.clearTimeout(revealBackSwapTimer)
+      window.clearTimeout(revealTimer)
+    }
+  }, [stage])
+
+  useEffect(() => {
+    if (stage !== 'reveal-hold') return undefined
+
+    const revealHoldTimer = window.setTimeout(() => {
+      setStage('focus')
+    }, camisaPremiadaRevealHoldDurationMs)
+
+    return () => window.clearTimeout(revealHoldTimer)
+  }, [stage])
+
+  useEffect(() => {
+    if (stage !== 'focus') return undefined
+
+    const focusTimer = window.setTimeout(() => {
+      setStage('result')
+    }, camisaPremiadaFocusDurationMs)
+
+    return () => window.clearTimeout(focusTimer)
+  }, [stage])
+
+  useEffect(() => {
+    if (stage !== 'result') return undefined
+
+    const resultTimer = window.setTimeout(() => {
+      setStage('exit')
+    }, camisaPremiadaResultDurationMs)
+
+    return () => window.clearTimeout(resultTimer)
+  }, [stage])
+
+  useEffect(() => {
+    if (stage !== 'exit') return undefined
+
+    const exitTimer = window.setTimeout(onFinished, camisaPremiadaExitDurationMs)
+
+    return () => window.clearTimeout(exitTimer)
+  }, [onFinished, stage])
+
+  useEffect(() => {
+    if (stage !== 'result' || !hasWon || !confettiCanvasRef.current) return undefined
+
+    const fireConfetti = confetti.create(confettiCanvasRef.current, {
+      resize: true,
+      useWorker: true,
+    })
+    const defaults = {
+      colors: ['#5228FF', '#7A35FF', '#AE18FF'],
+      origin: { y: 0.82 },
+      ticks: 70,
+    }
+
+    fireConfetti({ ...defaults, particleCount: 50, spread: 38, startVelocity: 34 })
+    fireConfetti({ ...defaults, particleCount: 70, spread: 82, startVelocity: 24, scalar: 0.8 })
+    fireConfetti({ ...defaults, particleCount: 35, spread: 110, startVelocity: 20, decay: 0.92, scalar: 1.1 })
+
+    return () => fireConfetti.reset()
+  }, [hasWon, stage])
+
+  return (
+    <CamisaPremiadaBannerVisual
+      activeShirtIndex={activeShirtIndex}
+      confettiCanvasRef={confettiCanvasRef}
+      isRevealBackVisible={isRevealBackVisible}
+      jackpotLabel={jackpotLabel}
+      selectedShirtIndex={receipt.selectedShirtIndex}
+      stage={stage}
+      statusLabel={statusLabel}
+      winningShirtIndex={receipt.winningShirtIndex}
+    />
+  )
+}
+
+const camisaPremiadaStaticJackpotLabel = formatMoney(349899).replace(/^R\$/, 'R$ ')
+
+const camisaPremiadaStaticScenarios: Array<{
+  activeShirtIndex: CamisaPremiadaShirtIndex | null
+  label: string
+  selectedShirtIndex: CamisaPremiadaShirtIndex
+  stage: CamisaPremiadaBannerStage
+  statusLabel: string
+  winningShirtIndex: CamisaPremiadaShirtIndex
+}> = [
+  {
+    activeShirtIndex: null,
+    label: '1. Introdução',
+    selectedShirtIndex: 0,
+    stage: 'intro',
+    statusLabel: 'Camisa Premiada: será que a sua é premiada?',
+    winningShirtIndex: 2,
+  },
+  {
+    activeShirtIndex: 0,
+    label: '2. Seleção',
+    selectedShirtIndex: 0,
+    stage: 'chase',
+    statusLabel: 'Sorteando a Camisa Premiada',
+    winningShirtIndex: 2,
+  },
+  {
+    activeShirtIndex: 0,
+    label: '3. Revelação — derrota',
+    selectedShirtIndex: 0,
+    stage: 'reveal-hold',
+    statusLabel: 'Revelando a camisa vencedora',
+    winningShirtIndex: 2,
+  },
+  {
+    activeShirtIndex: null,
+    label: '4. Resultado — derrota',
+    selectedShirtIndex: 0,
+    stage: 'result',
+    statusLabel: 'Não foi dessa vez',
+    winningShirtIndex: 2,
+  },
+  {
+    activeShirtIndex: 0,
+    label: '5. Revelação — vitória',
+    selectedShirtIndex: 0,
+    stage: 'reveal-hold',
+    statusLabel: 'Revelando a camisa vencedora',
+    winningShirtIndex: 0,
+  },
+  {
+    activeShirtIndex: null,
+    label: '6. Resultado — vitória',
+    selectedShirtIndex: 0,
+    stage: 'result',
+    statusLabel: `Você ganhou ${camisaPremiadaStaticJackpotLabel}`,
+    winningShirtIndex: 0,
+  },
+]
+
+export function CamisaPremiadaStaticPreviewPage() {
+  return (
+    <main className="camisa-premiada-static">
+      <header className="camisa-premiada-static__header">
+        <h1>Camisa Premiada — estados estáticos</h1>
+        <p>Luz/texto: 16px · Espaço: 4px · Camisa: 56px</p>
+      </header>
+
+      <div className="camisa-premiada-static__gallery">
+        {camisaPremiadaStaticScenarios.map((scenario) => (
+          <article className="camisa-premiada-static__item" key={scenario.label}>
+            <h2>{scenario.label}</h2>
+            <CamisaPremiadaBannerVisual
+              activeShirtIndex={scenario.activeShirtIndex}
+              isRevealBackVisible={scenario.stage === 'reveal-hold' || scenario.stage === 'result'}
+              isStatic={true}
+              jackpotLabel={camisaPremiadaStaticJackpotLabel}
+              selectedShirtIndex={scenario.selectedShirtIndex}
+              stage={scenario.stage}
+              statusLabel={scenario.statusLabel}
+              winningShirtIndex={scenario.winningShirtIndex}
+            />
+          </article>
+        ))}
+      </div>
+    </main>
+  )
+}
+
 export function BetSuccessPage({ receipt, onNewBet, onShare }: BetSuccessPageProps) {
   const stakeLabel = formatMoney(receipt.stakeCents)
+  const hasTurboBoost = receipt.turboBoost !== undefined
+  const hasWonCamisaPremiada = receipt.camisaPremiada !== undefined
+    && receipt.camisaPremiada.selectedShirtIndex === receipt.camisaPremiada.winningShirtIndex
+  const [isCamisaPremiadaBannerVisible, setIsCamisaPremiadaBannerVisible] = useState(
+    receipt.camisaPremiada !== undefined
+  )
+  const isCamisaPremiadaDepositMessageVisible = hasWonCamisaPremiada && !isCamisaPremiadaBannerVisible
   const selectionGroups = useMemo(() => groupSelectionsByEvent(receipt.selections), [receipt.selections])
   const [pullOffset, setPullOffset] = useState(0)
   const [isPulling, setIsPulling] = useState(false)
@@ -915,6 +1386,10 @@ export function BetSuccessPage({ receipt, onNewBet, onShare }: BetSuccessPagePro
     dismissWithPullAnimation()
   }, [dismissWithPullAnimation])
 
+  const handleCamisaPremiadaBannerFinished = useCallback(() => {
+    setIsCamisaPremiadaBannerVisible(false)
+  }, [])
+
   useEffect(() => () => {
     clearDismissTimer()
   }, [clearDismissTimer])
@@ -923,6 +1398,9 @@ export function BetSuccessPage({ receipt, onNewBet, onShare }: BetSuccessPagePro
     <main
       className={[
         'bet-success',
+        hasTurboBoost ? 'bet-success--boosted' : '',
+        isCamisaPremiadaBannerVisible ? 'bet-success--camisa-banner-visible' : '',
+        isCamisaPremiadaDepositMessageVisible ? 'bet-success--camisa-deposit-message-visible' : '',
         isPulling ? 'bet-success--pulling' : '',
         isDismissing ? 'bet-success--dismissing' : '',
       ].filter(Boolean).join(' ')}
@@ -949,7 +1427,7 @@ export function BetSuccessPage({ receipt, onNewBet, onShare }: BetSuccessPagePro
         <div className="bet-success__scroll">
           <section className="bet-success__surface" aria-label="Aposta criada">
             <div className="bet-success__ticket">
-              <BetSuccessTicketFrame />
+              <BetSuccessTicketFrame isBoosted={hasTurboBoost} />
               <header className="bet-success__overview">
                 <div className="bet-success__overview-copy">
                   <h1 id="bet-success-title">APOSTA CRIADA!</h1>
@@ -959,7 +1437,25 @@ export function BetSuccessPage({ receipt, onNewBet, onShare }: BetSuccessPagePro
                   </div>
                   <div className="bet-success__overview-meta">
                     <span>Entrada: <strong>{stakeLabel}</strong></span>
-                    <span>Odds: <strong>{receipt.totalOddsLabel}</strong></span>
+                    {receipt.turboBoost ? (
+                      <span
+                        className="bet-success__boost-meta"
+                        role="group"
+                        aria-label={`Booster ${receipt.turboBoost.bonusPercent}%, odd turbinada ${receipt.totalOddsLabel}, odd original ${receipt.turboBoost.originalTotalOddsLabel}`}
+                      >
+                        <span className="bet-success__boost-badge" aria-hidden="true">
+                          Booster {receipt.turboBoost.bonusPercent}%
+                        </span>
+                        <strong className="bet-success__boosted-odd" aria-hidden="true">
+                          {receipt.totalOddsLabel}
+                        </strong>
+                        <span className="bet-success__original-odd" aria-hidden="true">
+                          {receipt.turboBoost.originalTotalOddsLabel}
+                        </span>
+                      </span>
+                    ) : (
+                      <span>Odds: <strong>{receipt.totalOddsLabel}</strong></span>
+                    )}
                   </div>
                 </div>
                 <img className="bet-success__success-art" src={ilustraApostaCriada} alt="" draggable="false" />
@@ -981,6 +1477,17 @@ export function BetSuccessPage({ receipt, onNewBet, onShare }: BetSuccessPagePro
         </div>
 
         <footer className="bet-success__footer">
+          {isCamisaPremiadaBannerVisible && receipt.camisaPremiada ? (
+            <CamisaPremiadaResultBanner
+              receipt={receipt.camisaPremiada}
+              onFinished={handleCamisaPremiadaBannerFinished}
+            />
+          ) : null}
+          {isCamisaPremiadaDepositMessageVisible ? (
+            <p className="bet-success__camisa-deposit-message" role="status">
+              O valor será depositado dentro de 24horas
+            </p>
+          ) : null}
           <button
             type="button"
             className="bet-success__button bet-success__button--primary"

@@ -24,9 +24,16 @@ import iconBetslipSuperAumentada from '../../assets/iconsDraftaco/iconBetslipSup
 import ilustraExcluirSelecoes from '../../assets/iconsDraftaco/ilustraExcluirSelecoes.svg'
 import imgAdebayoPromo from '../../assets/iconsDraftaco/imgAdebayoPromo.png'
 import imgDembelePromo from '../../assets/iconsDraftaco/imgDembelePromo.png'
+import boosterIcon from '../../assets/iconsDraftaco/iconeBooster.png'
+import camisaPremiadaIcon from '../../assets/iconsDraftaco/iconeCamisaPremiada.png'
 import lewandowskiCard from '../../assets/iconsDraftaco/LewandowskiCard.png'
 import { useBetslip } from '../../hooks/useBetslip'
 import { useAnimatedBetslipNumber } from '../../hooks/useAnimatedBetslipNumber'
+import {
+  getBetslipTurboBonusCents,
+  getBetslipTurboBonusPercent,
+  getBetslipTurboEligibleSelectionCount,
+} from '../../hooks/betslipTurboBonus'
 import { useSportsDbTeamLogo } from '../../hooks/useSportsDbTeamLogo'
 import {
   formatBetslipOdd,
@@ -59,10 +66,15 @@ import {
 } from './betslipDisplayUtils'
 
 type BetslipAuthVariant = 'logged-in' | 'logged-out'
+export type CamisaPremiadaOutcomeOverride = 'ganhou' | 'perdeu'
+
+type CamisaPremiadaShirtIndex = 0 | 1 | 2
 
 interface BetslipPageV2Props {
   authVariant?: BetslipAuthVariant
   balanceCents: number
+  camisaPremiadaOutcomeOverride?: CamisaPremiadaOutcomeOverride
+  isCamisaPremiadaMode?: boolean
   isCoveredByEvent?: boolean
   onCreateAccountClick?: () => void
   onDepositClick?: () => void
@@ -87,6 +99,250 @@ const SWIPE_TRACK_PADDING_PX = 4
 const SELECTION_REMOVE_ANIMATION_MS = 280
 const SGP_LEG_REMOVE_ANIMATION_MS = 220
 const BETSLIP_INFO_BADGES = new Set(['PA', '90’'])
+const TURBO_BOOST_COUNTDOWN_SECONDS = (23 * 60 * 60) + (23 * 60) + 23
+const CAMISA_PREMIADA_ENTRY_FEE_CENTS = 100
+const CAMISA_PREMIADA_INITIAL_JACKPOT_CENTS = 349899
+const CAMISA_PREMIADA_JACKPOT_TICK_MS = 2000
+
+let turboBoostDeadlineMs: number | null = null
+
+const getTurboBoostDeadlineMs = () => {
+  if (turboBoostDeadlineMs === null) {
+    turboBoostDeadlineMs = Date.now() + (TURBO_BOOST_COUNTDOWN_SECONDS * 1000)
+  }
+
+  return turboBoostDeadlineMs
+}
+
+const formatCountdownSegment = (value: number) => String(value).padStart(2, '0')
+
+const splitMoneyLabel = (label: string) => {
+  const decimalMatch = label.match(/^(.*)(,\d{2})$/)
+
+  return {
+    major: decimalMatch?.[1] ?? label,
+    decimal: decimalMatch?.[2] ?? '',
+  }
+}
+
+interface TurboBoostControlProps {
+  bonusPercent: number
+  isDetailsOpen: boolean
+  isDisabled: boolean
+  isEnabled: boolean
+  onDetailsToggle: () => void
+  onEnabledChange: (isEnabled: boolean) => void
+}
+
+function TurboBoostControl({
+  bonusPercent,
+  isDetailsOpen,
+  isDisabled,
+  isEnabled,
+  onDetailsToggle,
+  onEnabledChange,
+}: TurboBoostControlProps) {
+  const [deadlineMs] = useState(getTurboBoostDeadlineMs)
+  const [currentTimeMs, setCurrentTimeMs] = useState(Date.now)
+  const remainingSeconds = Math.max(0, Math.ceil((deadlineMs - currentTimeMs) / 1000))
+  const countdownHours = Math.floor(remainingSeconds / 3600)
+  const countdownMinutes = Math.floor((remainingSeconds % 3600) / 60)
+  const countdownSeconds = remainingSeconds % 60
+
+  useEffect(() => {
+    const countdownTimer = window.setInterval(() => {
+      setCurrentTimeMs(Date.now())
+    }, 1000)
+
+    return () => window.clearInterval(countdownTimer)
+  }, [])
+
+  return (
+    <section
+      className={`betslip-v2__booster-control${isEnabled ? '' : ' betslip-v2__booster-control--disabled'}`}
+      aria-label={`Booster ${bonusPercent}%`}
+    >
+      <div className="betslip-v2__booster-header">
+        <button
+          type="button"
+          className="betslip-v2__booster-summary-button"
+          aria-expanded={isDetailsOpen}
+          aria-controls="betslip-v2-booster-details"
+          disabled={isDisabled}
+          onClick={onDetailsToggle}
+        >
+          <img className="betslip-v2__booster-icon" src={boosterIcon} alt="" aria-hidden="true" draggable="false" />
+          <span className="betslip-v2__booster-copy">
+            <span className="betslip-v2__booster-title-row">
+              <strong>Booster {bonusPercent}%</strong>
+              <span
+                className={`betslip-v2__booster-chevron${isDetailsOpen ? ' betslip-v2__booster-chevron--open' : ''}`}
+                aria-hidden="true"
+              />
+            </span>
+            <span
+              className="betslip-v2__booster-countdown"
+              aria-label={`Tempo restante: ${countdownHours} horas, ${countdownMinutes} minutos e ${countdownSeconds} segundos`}
+            >
+              <span className="betslip-v2__booster-clock" aria-hidden="true" />
+              <strong>{formatCountdownSegment(countdownHours)}h</strong>
+              <span aria-hidden="true">:</span>
+              <strong>{formatCountdownSegment(countdownMinutes)}m</strong>
+              <span aria-hidden="true">:</span>
+              <strong>{formatCountdownSegment(countdownSeconds)}s</strong>
+            </span>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          className={`betslip-v2__booster-switch${isEnabled ? ' betslip-v2__booster-switch--enabled' : ''}`}
+          role="switch"
+          aria-checked={isEnabled}
+          aria-label={`${isEnabled ? 'Desativar' : 'Ativar'} Booster ${bonusPercent}%`}
+          disabled={isDisabled}
+          onClick={() => onEnabledChange(!isEnabled)}
+        >
+          <span aria-hidden="true" />
+        </button>
+      </div>
+
+      <div
+        className={`betslip-v2__booster-details-reveal${isDetailsOpen ? ' betslip-v2__booster-details-reveal--open' : ''}`}
+        aria-hidden={!isDetailsOpen}
+      >
+        <div className="betslip-v2__booster-details-clip">
+          <div className="betslip-v2__booster-details" id="betslip-v2-booster-details">
+            <p>Válido para qualquer múltipla com 3+ seleções elegíveis, em eventos diferentes, e odds mínimas de 1.30. Bônus de até 200% sobre o lucro.</p>
+            <span className="betslip-v2__booster-learn-more">
+              Saiba mais
+              <CaretRightIcon aria-hidden="true" weight="bold" />
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+interface CamisaPremiadaControlProps {
+  isDetailsOpen: boolean
+  isDisabled: boolean
+  isEnabled: boolean
+  jackpotCents: number
+  onDetailsToggle: () => void
+  onEnabledChange: (isEnabled: boolean) => void
+}
+
+const formatCamisaPremiadaJackpot = (value: number) => formatMoney(value).replace(/^R\$/, 'R$ ')
+
+function CamisaPremiadaControl({
+  isDetailsOpen,
+  isDisabled,
+  isEnabled,
+  jackpotCents,
+  onDetailsToggle,
+  onEnabledChange,
+}: CamisaPremiadaControlProps) {
+  const animatedJackpotLabel = useAnimatedBetslipNumber(
+    jackpotCents,
+    formatCamisaPremiadaJackpot,
+    !isDisabled
+  )
+
+  return (
+    <section
+      className={`betslip-v2__camisa-control${isEnabled ? ' betslip-v2__camisa-control--enabled' : ''}`}
+      aria-label="Camisa Premiada"
+    >
+      <div className="betslip-v2__camisa-header">
+        <button
+          type="button"
+          className="betslip-v2__camisa-summary-button"
+          aria-expanded={isDetailsOpen}
+          aria-controls="betslip-v2-camisa-premiada-details"
+          disabled={isDisabled}
+          onClick={onDetailsToggle}
+        >
+          <img
+            className="betslip-v2__camisa-icon"
+            src={camisaPremiadaIcon}
+            alt=""
+            aria-hidden="true"
+            draggable="false"
+          />
+          <span className="betslip-v2__camisa-copy">
+            <span className="betslip-v2__camisa-title-row">
+              <strong>Camisa Premiada</strong>
+              <span
+                className={`betslip-v2__camisa-chevron${isDetailsOpen ? ' betslip-v2__camisa-chevron--open' : ''}`}
+                aria-hidden="true"
+              />
+            </span>
+            <span className="betslip-v2__camisa-jackpot">
+              Acumulado: <strong>{animatedJackpotLabel}</strong>
+            </span>
+          </span>
+        </button>
+
+        <span className="betslip-v2__camisa-fee" aria-label="Participação por mais um real">
+          +R$ 1,00
+        </span>
+
+        <button
+          type="button"
+          className={`betslip-v2__camisa-switch${isEnabled ? ' betslip-v2__camisa-switch--enabled' : ''}`}
+          role="switch"
+          aria-checked={isEnabled}
+          aria-label={`${isEnabled ? 'Desativar' : 'Ativar'} Camisa Premiada por R$ 1,00`}
+          disabled={isDisabled}
+          onClick={() => onEnabledChange(!isEnabled)}
+        >
+          <span aria-hidden="true" />
+        </button>
+      </div>
+
+      <div
+        className={`betslip-v2__camisa-details-reveal${isDetailsOpen ? ' betslip-v2__camisa-details-reveal--open' : ''}`}
+        aria-hidden={!isDetailsOpen}
+      >
+        <div className="betslip-v2__camisa-details-clip">
+          <div className="betslip-v2__camisa-details" id="betslip-v2-camisa-premiada-details">
+            <p>Faça uma aposta, participe por R$ 1 e concorra a jackpots sorteados centenas de vezes por dia.</p>
+            <span className="betslip-v2__camisa-learn-more">
+              Saiba mais
+              <CaretRightIcon aria-hidden="true" weight="bold" />
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+const getRandomCamisaPremiadaShirtIndex = (): CamisaPremiadaShirtIndex => (
+  Math.floor(Math.random() * 3) as CamisaPremiadaShirtIndex
+)
+
+const createCamisaPremiadaDraw = (outcomeOverride?: CamisaPremiadaOutcomeOverride) => {
+  const selectedShirtIndex = getRandomCamisaPremiadaShirtIndex()
+
+  if (outcomeOverride === 'ganhou') {
+    return { selectedShirtIndex, winningShirtIndex: selectedShirtIndex }
+  }
+
+  if (outcomeOverride === 'perdeu') {
+    const winningOffset = Math.random() < 0.5 ? 1 : 2
+    const winningShirtIndex = ((selectedShirtIndex + winningOffset) % 3) as CamisaPremiadaShirtIndex
+
+    return { selectedShirtIndex, winningShirtIndex }
+  }
+
+  return {
+    selectedShirtIndex,
+    winningShirtIndex: getRandomCamisaPremiadaShirtIndex(),
+  }
+}
 
 const betslipInfoItems = [
   {
@@ -142,7 +398,13 @@ const getSelectionPromoVariant = (selection: BetslipSelection): BetslipPromoVari
   return null
 }
 
-function SelectionEventMeta({ selection }: { selection: BetslipSelection }) {
+function SelectionEventMeta({
+  nowMs,
+  selection,
+}: {
+  nowMs: number
+  selection: BetslipSelection
+}) {
   if (selection.eventStatus !== 'live') {
     return <span className="betslip-v2__event-line">{getSelectionEventMeta(selection)}</span>
   }
@@ -157,7 +419,7 @@ function SelectionEventMeta({ selection }: { selection: BetslipSelection }) {
         <span className="betslip-v2__live-dot-wrap" aria-hidden="true">
           <span className="betslip-v2__live-dot" />
         </span>
-        {getSelectionTimeLabel(selection)}
+        {getSelectionTimeLabel(selection, nowMs)}
       </span>
       <span className="betslip-v2__event-separator" aria-hidden="true">•</span>
       <span className="betslip-v2__live-matchup">
@@ -352,6 +614,7 @@ function SelectionTitleLine({
 function SimpleSelectionRow({
   isRemoveDisabled = false,
   isRemoving = false,
+  nowMs,
   selection,
   onRemove,
   onTagInfoOpen,
@@ -359,6 +622,7 @@ function SimpleSelectionRow({
 }: {
   isRemoveDisabled?: boolean
   isRemoving?: boolean
+  nowMs: number
   selection: BetslipSelection
   onRemove: (selectionId: string) => void
   onTagInfoOpen: (labels: string[]) => void
@@ -391,7 +655,7 @@ function SimpleSelectionRow({
             <Badges labels={getSelectionBadges(selection)} onInfoClick={onTagInfoOpen} />
           </div>
           <SelectionTitleLine selection={selection} promoVariant={promoVariant} />
-          <SelectionEventMeta selection={selection} />
+          <SelectionEventMeta nowMs={nowMs} selection={selection} />
         </div>
       </div>
       {showOdd ? <strong className="betslip-v2__row-odd">{selection.oddLabel}</strong> : null}
@@ -403,6 +667,7 @@ function SgpGroup({
   group,
   isRemoveDisabled = false,
   isRemoving = false,
+  nowMs,
   onRemoveGroup,
   onRemoveSelection,
   onTagInfoOpen,
@@ -411,13 +676,14 @@ function SgpGroup({
   group: BetslipSelectionGroup
   isRemoveDisabled?: boolean
   isRemoving?: boolean
+  nowMs: number
   onRemoveGroup: (groupId: string, selectionIds: string[]) => void
   onRemoveSelection: (selectionId: string) => void
   onTagInfoOpen: (labels: string[]) => void
   removingSelectionId?: string | null
 }) {
   const headerSelection = getSgpHeaderSelection(group.selections)
-  const { homeLabel, awayLabel, timeLabel, eventLabel: headerEventLabel } = getSgpHeaderParts(headerSelection)
+  const { homeLabel, awayLabel, timeLabel, eventLabel: headerEventLabel } = getSgpHeaderParts(headerSelection, nowMs)
   const eventLabel = headerEventLabel || group.eventId
 
   return (
@@ -584,10 +850,12 @@ const getSwipeFillRatio = (trackWidth: number, progress: number) => (
 )
 
 function SwipeButton({
+  labelPrefix = 'Desliza para apostar',
   onLoadingChange,
   stakeLabel,
   onComplete,
 }: {
+  labelPrefix?: string
   onLoadingChange?: (isLoading: boolean) => void
   stakeLabel: string
   onComplete: () => void
@@ -763,7 +1031,7 @@ function SwipeButton({
       ].filter(Boolean).join(' ')}
       ref={trackRef}
       aria-busy={isLoadingVisible}
-      aria-label={`Desliza para apostar ${stakeLabel}`}
+      aria-label={`${labelPrefix} ${stakeLabel}`}
       disabled={isInteractionDisabled}
       style={swipeStyle}
       onKeyDown={handleKeyDown}
@@ -772,7 +1040,7 @@ function SwipeButton({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
     >
-      <span className="betslip-v2__swipe-label">Desliza para apostar {stakeLabel}</span>
+      <span className="betslip-v2__swipe-label">{labelPrefix} {stakeLabel}</span>
       <span className="betslip-v2__swipe-fill" aria-hidden="true">
         <CaretRightIcon className="betslip-v2__swipe-icon" weight="bold" />
       </span>
@@ -787,6 +1055,8 @@ function SwipeButton({
 export function BetslipPageV2({
   authVariant = 'logged-in',
   balanceCents,
+  camisaPremiadaOutcomeOverride,
+  isCamisaPremiadaMode = false,
   isCoveredByEvent = false,
   onCreateAccountClick,
   onDepositClick,
@@ -800,14 +1070,28 @@ export function BetslipPageV2({
   requiresDeposit = false,
   requiresLimits = false,
 }: BetslipPageV2Props) {
-  const { selections, summary, removeSelection, clearSelections } = useBetslip()
+  const {
+    clearSelections,
+    isTurboBoostEnabled,
+    removeSelection,
+    selections,
+    setTurboBoostEnabled,
+    summary,
+  } = useBetslip()
   const [isLeaving, setIsLeaving] = useState(false)
   const [stakeCents, setStakeCents] = useState(DEFAULT_STAKE_CENTS)
   const [stakeInputValue, setStakeInputValue] = useState(() => formatStakeInputValue(DEFAULT_STAKE_CENTS))
   const [acceptsOddsChanges, setAcceptsOddsChanges] = useState(false)
+  const [isTurboBoostDetailsOpen, setIsTurboBoostDetailsOpen] = useState(false)
+  const [isCamisaPremiadaEnabled, setIsCamisaPremiadaEnabled] = useState(false)
+  const [isCamisaPremiadaDetailsOpen, setIsCamisaPremiadaDetailsOpen] = useState(false)
+  const [camisaPremiadaJackpotCents, setCamisaPremiadaJackpotCents] = useState(
+    CAMISA_PREMIADA_INITIAL_JACKPOT_CENTS
+  )
   const [tagInfoBadgeLabels, setTagInfoBadgeLabels] = useState<string[]>([])
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false)
   const [isConfirmLoading, setIsConfirmLoading] = useState(false)
+  const [liveClockNowMs, setLiveClockNowMs] = useState(Date.now)
   const [removingRowId, setRemovingRowId] = useState<string | null>(null)
   const [removingLegId, setRemovingLegId] = useState<string | null>(null)
   const closeTimerRef = useRef<number | null>(null)
@@ -819,26 +1103,74 @@ export function BetslipPageV2({
   const selectionGroups = useMemo(() => groupSelectionsByEvent(selections), [selections])
   const totalOddsValue = summary.hasSelections ? summary.totalOdds : 0
   const totalOddsLabel = summary.hasSelections ? summary.totalOddsLabel : formatBetslipOdd(0)
-  const potentialWinCents = Math.round(stakeCents * totalOddsValue)
+  const turboEligibleSelectionCount = getBetslipTurboEligibleSelectionCount(selections)
+  const turboBonusPercent = getBetslipTurboBonusPercent(turboEligibleSelectionCount)
+  const isTurboBoostEligible = !isCamisaPremiadaMode && turboBonusPercent !== null
+  const appliedTurboBonusPercent = !isCamisaPremiadaMode && isTurboBoostEnabled ? turboBonusPercent : null
+  const hasTurboBoost = appliedTurboBonusPercent !== null
+  const basePotentialWinCents = Math.round(stakeCents * totalOddsValue)
+  const turboBonusCents = getBetslipTurboBonusCents({
+    bonusPercent: appliedTurboBonusPercent,
+    potentialWinCents: basePotentialWinCents,
+    stakeCents,
+  })
+  const boostedTotalOddsValue = hasTurboBoost
+    ? totalOddsValue * (1 + appliedTurboBonusPercent / 100)
+    : totalOddsValue
+  const potentialWinCents = basePotentialWinCents + turboBonusCents
+  const appliedTotalOddsLabel = hasTurboBoost ? formatBetslipOdd(boostedTotalOddsValue) : totalOddsLabel
   const stakeLabel = formatMoney(stakeCents)
+  const totalPayableCents = stakeCents + (
+    isCamisaPremiadaMode && isCamisaPremiadaEnabled ? CAMISA_PREMIADA_ENTRY_FEE_CENTS : 0
+  )
+  const totalPayableLabel = isCamisaPremiadaMode
+    ? formatMoney(totalPayableCents, { compactWhole: true })
+    : stakeLabel
   const potentialWinLabel = formatMoney(potentialWinCents)
   const animatedTotalOddsLabel = useAnimatedBetslipNumber(
     totalOddsValue,
     formatBetslipOdd,
     !isLeaving && summary.hasSelections
   )
+  const animatedBoostedTotalOddsLabel = useAnimatedBetslipNumber(
+    boostedTotalOddsValue,
+    formatBetslipOdd,
+    !isLeaving && summary.hasSelections && hasTurboBoost
+  )
   const animatedPotentialWinLabel = useAnimatedBetslipNumber(
     potentialWinCents,
     formatMoney,
     !isLeaving && summary.hasSelections
   )
+  const animatedPotentialWinParts = splitMoneyLabel(animatedPotentialWinLabel)
   const hasSgp = selectionGroups.some((group) => group.selections.length > 1)
+  const hasLiveSelections = selections.some((selection) => selection.eventStatus === 'live')
   const isLoggedOut = authVariant === 'logged-out'
   const balanceDisplayValue = formatMoney(Math.max(0, Number.isFinite(balanceCents) ? balanceCents : 0))
   const shouldShowIdentityPrompt = !isLoggedOut && requiresIdentity
   const shouldShowLimitsPrompt = !isLoggedOut && !requiresIdentity && requiresLimits
   const shouldShowDepositPrompt = !isLoggedOut && !requiresIdentity && !requiresLimits && requiresDeposit
   const isRemoveLocked = isConfirmLoading || isClearConfirmOpen || removingRowId !== null || removingLegId !== null
+
+  useEffect(() => {
+    if (!isCamisaPremiadaMode) return undefined
+
+    const jackpotTimer = window.setInterval(() => {
+      setCamisaPremiadaJackpotCents((current) => current + CAMISA_PREMIADA_ENTRY_FEE_CENTS)
+    }, CAMISA_PREMIADA_JACKPOT_TICK_MS)
+
+    return () => window.clearInterval(jackpotTimer)
+  }, [isCamisaPremiadaMode])
+
+  useEffect(() => {
+    if (!hasLiveSelections) return undefined
+
+    const intervalId = window.setInterval(() => {
+      setLiveClockNowMs(Date.now())
+    }, 1000)
+
+    return () => window.clearInterval(intervalId)
+  }, [hasLiveSelections])
 
   const handleStakeChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     if (isConfirmLoading) return
@@ -957,25 +1289,46 @@ export function BetslipPageV2({
       return
     }
 
+    const camisaPremiadaDraw = isCamisaPremiadaMode && isCamisaPremiadaEnabled
+      ? createCamisaPremiadaDraw(camisaPremiadaOutcomeOverride)
+      : null
     const receipt: BetSuccessReceipt = {
       selections: selections.map((selection) => ({ ...selection })),
       stakeCents,
-      totalOddsLabel,
+      totalOddsLabel: appliedTotalOddsLabel,
       potentialWinLabel,
+      turboBoost: appliedTurboBonusPercent !== null ? {
+        bonusPercent: appliedTurboBonusPercent,
+        originalTotalOddsLabel: totalOddsLabel,
+      } : undefined,
+      camisaPremiada: camisaPremiadaDraw ? {
+        entryFeeCents: CAMISA_PREMIADA_ENTRY_FEE_CENTS,
+        jackpotCents: camisaPremiadaJackpotCents,
+        ...camisaPremiadaDraw,
+      } : undefined,
       createdAtMs: Date.now(),
     }
 
     onBetSuccess?.(receipt)
+    setIsCamisaPremiadaEnabled(false)
+    setTurboBoostEnabled(true)
     requestClose(clearSelections)
   }, [
     clearSelections,
+    camisaPremiadaJackpotCents,
+    camisaPremiadaOutcomeOverride,
+    isCamisaPremiadaEnabled,
+    isCamisaPremiadaMode,
     onBetSuccess,
+    appliedTurboBonusPercent,
     potentialWinLabel,
     requestClose,
     selections,
+    setTurboBoostEnabled,
     stakeCents,
     summary.hasSelections,
     totalOddsLabel,
+    appliedTotalOddsLabel,
   ])
 
   const handleTagInfoOpen = useCallback((badgeLabels: string[]) => {
@@ -1362,6 +1715,7 @@ export function BetslipPageV2({
         className={[
           'betslip-v2',
           isLeaving ? 'betslip-v2--leaving' : 'betslip-v2--entering',
+          isCamisaPremiadaMode ? 'betslip-v2--camisa-premiada' : '',
           isCoveredByEvent ? 'betslip-v2--covered-by-event' : '',
           isConfirmLoading ? 'betslip-v2--confirm-loading' : '',
         ].filter(Boolean).join(' ')}
@@ -1407,6 +1761,7 @@ export function BetslipPageV2({
                 group={group}
                 isRemoveDisabled={isRemoveLocked}
                 isRemoving={removingRowId === group.eventId}
+                nowMs={liveClockNowMs}
                 onRemoveGroup={handleRemoveGroup}
                 onRemoveSelection={handleRemoveSgpLeg}
                 onTagInfoOpen={handleTagInfoOpen}
@@ -1417,6 +1772,7 @@ export function BetslipPageV2({
                 key={group.selections[0].id}
                 isRemoveDisabled={isRemoveLocked}
                 isRemoving={removingRowId === group.selections[0].id}
+                nowMs={liveClockNowMs}
                 selection={group.selections[0]}
                 onRemove={handleRemoveSelection}
                 onTagInfoOpen={handleTagInfoOpen}
@@ -1462,20 +1818,60 @@ export function BetslipPageV2({
               <span className="betslip-v2__stake-label">Entrada</span>
             </label>
 
-            <div className="betslip-v2__summary-item">
-              <span>Odds</span>
-              <strong>{animatedTotalOddsLabel}</strong>
+            <div className={`betslip-v2__summary-item${hasTurboBoost ? ' betslip-v2__summary-item--boost' : ''}`}>
+              {hasTurboBoost ? (
+                <>
+                  <span className="betslip-v2__boost-badge">BOOST +{turboBonusPercent}%</span>
+                  <span className="betslip-v2__boost-odds">
+                    <span className="betslip-v2__boost-odds-original">{animatedTotalOddsLabel}</span>
+                    <strong className="betslip-v2__boost-odds-current">{animatedBoostedTotalOddsLabel}</strong>
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span>Odds</span>
+                  <strong>{animatedTotalOddsLabel}</strong>
+                </>
+              )}
               {hasSgp ? <em>SGP</em> : null}
             </div>
 
-            <div className="betslip-v2__summary-item betslip-v2__summary-item--win" aria-label={`Para ganar ${potentialWinLabel}`}>
-              <span className="betslip-v2__win-label">Para ganar</span>
+            <div
+              className={`betslip-v2__summary-item betslip-v2__summary-item--win${hasTurboBoost ? ' betslip-v2__summary-item--win-boost' : ''}`}
+              aria-label={`Para ganhar ${potentialWinLabel}`}
+            >
+              <span className="betslip-v2__win-label">{isCamisaPremiadaMode ? 'Para ganhar' : 'Para ganar'}</span>
               <div className="betslip-v2__win-field">
-                <strong>{animatedPotentialWinLabel}</strong>
+                <strong aria-hidden="true">
+                  <span className="betslip-v2__win-value-major">{animatedPotentialWinParts.major}</span>
+                  <span className="betslip-v2__win-value-decimal">{animatedPotentialWinParts.decimal}</span>
+                </strong>
               </div>
             </div>
           </div>
+        </div>
 
+        {isCamisaPremiadaMode ? (
+          <CamisaPremiadaControl
+            isDetailsOpen={isCamisaPremiadaDetailsOpen}
+            isDisabled={isConfirmLoading}
+            isEnabled={isCamisaPremiadaEnabled}
+            jackpotCents={camisaPremiadaJackpotCents}
+            onDetailsToggle={() => setIsCamisaPremiadaDetailsOpen((current) => !current)}
+            onEnabledChange={setIsCamisaPremiadaEnabled}
+          />
+        ) : isTurboBoostEligible ? (
+          <TurboBoostControl
+            bonusPercent={turboBonusPercent}
+            isDetailsOpen={isTurboBoostDetailsOpen}
+            isDisabled={isConfirmLoading}
+            isEnabled={isTurboBoostEnabled}
+            onDetailsToggle={() => setIsTurboBoostDetailsOpen((current) => !current)}
+            onEnabledChange={setTurboBoostEnabled}
+          />
+        ) : null}
+
+        {!isCamisaPremiadaMode ? (
           <button
             type="button"
             className={[
@@ -1494,7 +1890,7 @@ export function BetslipPageV2({
               Aceitar sempre alterações nas odds para agilizar a criação do seu bilhete. <span>Saiba mais.</span>
             </span>
           </button>
-        </div>
+        ) : null}
 
         {isLoggedOut ? (
           <div className="betslip-v2__auth-prompt" aria-label="Acesse sua conta para apostar">
@@ -1551,7 +1947,8 @@ export function BetslipPageV2({
           </div>
         ) : (
           <SwipeButton
-            stakeLabel={stakeLabel}
+            labelPrefix={isCamisaPremiadaMode ? 'Deslize para apostar' : undefined}
+            stakeLabel={totalPayableLabel}
             onLoadingChange={handleConfirmLoadingChange}
             onComplete={handleConfirm}
           />

@@ -1,2 +1,2 @@
-export { BetSuccessPage } from './BetSuccessPage'
+export { BetSuccessPage, CamisaPremiadaStaticPreviewPage } from './BetSuccessPage'
 export type { BetSuccessReceipt } from './BetSuccessPage'
