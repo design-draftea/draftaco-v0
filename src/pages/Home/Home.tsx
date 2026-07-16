@@ -78,15 +78,42 @@ const roundCssNumber = (value: number) => Math.round(value * 1000) / 1000
 const getScrollProgress = (scrollTop: number, start: number, end: number) =>
   clamp((scrollTop - start) / (end - start), 0, 1)
 const interpolate = (from: number, to: number, progress: number) => from + (to - from) * progress
+const getStackedHeaderContentOffset = (
+  homeEl: HTMLElement,
+  headerEl: HTMLElement,
+  headerStackSelector: string
+) => {
+  const headerTopEl = headerEl.querySelector<HTMLElement>('.header__top')
+  const sportRailShellEl = headerEl.querySelector<HTMLElement>('.sport-rail-shell')
+  const headerStackEl = headerEl.querySelector<HTMLElement>(headerStackSelector)
+
+  if (!headerTopEl || !sportRailShellEl || !headerStackEl) return null
+
+  const homeTop = homeEl.getBoundingClientRect().top
+  const headerTopBottom = headerTopEl.getBoundingClientRect().bottom - homeTop
+  const sportRailNaturalHeight = Math.max(
+    sportRailShellEl.scrollHeight,
+    sportRailShellEl.getBoundingClientRect().height
+  )
+  const headerStackNaturalHeight = Math.max(
+    headerStackEl.scrollHeight,
+    headerStackEl.getBoundingClientRect().height
+  )
+
+  return headerTopBottom +
+    sportRailNaturalHeight +
+    headerStackNaturalHeight +
+    getHeaderContentGap(homeEl)
+}
 const getInlineEventHeaderContentOffset = (homeEl: HTMLElement, headerEl: HTMLElement) => {
   if (!homeEl.classList.contains('home--event-inline-active')) return null
 
-  const headerStackEl = headerEl.querySelector<HTMLElement>('.live-event-inline__header-stack')
-  if (headerStackEl) {
-    return headerStackEl.getBoundingClientRect().bottom -
-      homeEl.getBoundingClientRect().top +
-      getHeaderContentGap(homeEl)
-  }
+  const stackedHeaderContentOffset = getStackedHeaderContentOffset(
+    homeEl,
+    headerEl,
+    '.live-event-inline__header-stack'
+  )
+  if (stackedHeaderContentOffset !== null) return stackedHeaderContentOffset
 
   const headerTopEl = headerEl.querySelector<HTMLElement>('.header__top')
   const sportRailShellEl = headerEl.querySelector<HTMLElement>('.sport-rail-shell')
@@ -1481,6 +1508,24 @@ export function Home({
       if (!headerEl) return
 
       const homeTop = homeEl.getBoundingClientRect().top
+
+      if (usesCompetitionHeaderStack && !isInlineEventMode) {
+        const contentOffset = getStackedHeaderContentOffset(
+          homeEl,
+          headerEl,
+          '.home__competition-header-stack'
+        )
+
+        if (contentOffset !== null) {
+          // Keep the page flow anchored to the expanded header height. The fixed
+          // header may compact visually without pulling the scrolled content up.
+          homeEl.style.setProperty(
+            '--home-header-content-padding-top',
+            `${roundCssNumber(Math.max(contentOffset, 0))}px`
+          )
+          return
+        }
+      }
 
       if (hasEventRail) {
         const carouselEl = headerEl.querySelector<HTMLElement>('.sports-match-carousel')
