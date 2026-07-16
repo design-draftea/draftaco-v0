@@ -6,6 +6,9 @@
 - Crie uma branch por tarefa a partir de `main`, usando `feature/`, `fix/`, `chore/` ou `docs/` no nome.
 - Abra uma Pull Request para `main`; não faça merge automático.
 - O deploy é feito exclusivamente pelo GitHub Actions quando uma mudança é incorporada à `main`. Não use `gh-pages` nem crie uma branch de deploy.
+- Use um worktree separado apenas para tarefas paralelas que precisam de isolamento.
+- Nunca remova a pasta principal do projeto (checkout local selecionado pela pessoa usuária). A limpeza pode remover somente worktrees temporários criados para uma tarefa.
+- Depois do merge e com autorização explícita para limpeza, arquive a tarefa associada, remova o worktree temporário e a branch local. Não apague a branch remota sem autorização explícita.
 
 ## Segurança e escopo
 
