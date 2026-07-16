@@ -25,6 +25,11 @@ const competitionLinkTargetsByLeagueId: Record<string, CompetitionLinkTarget> = 
     name: 'Premier League',
     sport: 'futebol',
   },
+  bundesliga: {
+    id: 'fut-bundesliga',
+    name: 'Bundesliga',
+    sport: 'futebol',
+  },
   'la-liga': {
     id: 'fut-laliga',
     name: 'LaLiga',
@@ -79,4 +84,10 @@ const competitionLinkTargetsByLeagueId: Record<string, CompetitionLinkTarget> = 
 
 export function getCompetitionLinkTarget(leagueId: string): CompetitionLinkTarget | null {
   return competitionLinkTargetsByLeagueId[leagueId] ?? null
+}
+
+export function getRailCompetitionId(competitionId?: string | null): string | undefined {
+  if (!competitionId) return undefined
+
+  return getCompetitionLinkTarget(competitionId)?.id ?? competitionId
 }

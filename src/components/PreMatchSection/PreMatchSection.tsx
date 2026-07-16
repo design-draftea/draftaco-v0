@@ -379,6 +379,18 @@ const footballPlayersByTeam: Record<string, TeamPlayerProfile[]> = {
     { name: 'Jackson', position: 'ATA' },
     { name: 'Nkunku', position: 'ATA' },
   ],
+  Tottenham: [
+    { name: 'Son', position: 'ATA' },
+    { name: 'Solanke', position: 'ATA' },
+    { name: 'Maddison', position: 'MEI' },
+    { name: 'Kulusevski', position: 'MEI' },
+  ],
+  Wolves: [
+    { name: 'Cunha', position: 'ATA' },
+    { name: 'Hwang', position: 'ATA' },
+    { name: 'Neto', position: 'ATA' },
+    { name: 'Larsen', position: 'ATA' },
+  ],
   Brighton: [
     { name: 'Welbeck', position: 'ATA' },
     { name: 'João Pedro', position: 'ATA' },
@@ -2546,6 +2558,11 @@ export function PreMatchSection({
                           eventTimeLabel: match.dateTime,
                         }))
                         : []
+
+                      if (isPlayerPropsMarket(league.sport, activeMarket) && matchPlayerProps.length === 0) {
+                        return null
+                      }
+
                       const renderOddButton = (outcomeId: string, label: ReactNode, value: ReactNode) => {
                         const betslipKey = getMatchOddBetslipKey({
                           sport: league.sport,

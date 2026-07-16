@@ -318,11 +318,13 @@ const calendarFootballFinishingPlayersByTeam: Record<string, TeamPlayerProfile[]
     { name: 'Son', position: 'ATA' },
     { name: 'Solanke', position: 'ATA' },
     { name: 'Maddison', position: 'MEI' },
+    { name: 'Kulusevski', position: 'MEI' },
   ],
   Wolves: [
     { name: 'Cunha', position: 'ATA' },
     { name: 'Hwang', position: 'ATA' },
     { name: 'Neto', position: 'ATA' },
+    { name: 'Larsen', position: 'ATA' },
   ],
   Brighton: [
     { name: 'Welbeck', position: 'ATA' },
@@ -3539,6 +3541,9 @@ export function CalendarSection({
         eventTimeLabel: event.dateTime,
       }))
       : []
+
+    if (isPlayerPropsMarket && matchPlayerProps.length === 0) return null
+
     const totalPointsLikeLine = selectedMarket === 'q3-total'
       ? marketOdds.q3Total?.line
       : selectedMarket === 'q4-total'

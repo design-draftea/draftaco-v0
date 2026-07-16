@@ -20,7 +20,7 @@ import { useFavoriteCompetitions } from '../../hooks/useFavoriteCompetitions'
 import { useFeatureFlags } from '../../hooks/useFeatureFlags'
 import { isCompetitionEnabled, isCompetitionRailClickable } from '../SportFilterBar/competicaoData'
 import type { ProductRailBaseItem, ProductRailSection } from '../../types/home'
-import type { CompetitionLinkTarget } from '../../utils/competitionNavigation'
+import { getRailCompetitionId, type CompetitionLinkTarget } from '../../utils/competitionNavigation'
 import { MoreSportsBottomSheet, MoreSportsBottomSheetV2 } from '../BottomSheet'
 
 interface SportRailBaseItem extends ProductRailBaseItem {
@@ -758,26 +758,31 @@ export function SportRail({
     () => new Set(defaultFlatRailItems.map((item) => item.id)),
     [defaultFlatRailItems]
   )
-  const requestedActiveItemId = selectedCompetitionId
-    ? `competition:${selectedCompetitionId}`
+  const normalizedSelectedCompetitionId = getRailCompetitionId(selectedCompetitionId)
+  const requestedActiveItemId = normalizedSelectedCompetitionId
+    ? `competition:${normalizedSelectedCompetitionId}`
     : activeSportId
   const dynamicCompetitionItem = useMemo<SportRailCompetitionItem | null>(() => {
-    if (!selectedCompetitionId || !selectedCompetitionName || activeSportId === 'destaques') return null
+    if (!normalizedSelectedCompetitionId || !selectedCompetitionName || activeSportId === 'destaques') return null
     if (defaultRailItemIds.has(requestedActiveItemId)) return null
 
-    return createDynamicCompetitionItem(selectedCompetitionId, selectedCompetitionName, activeSportId)
+    return createDynamicCompetitionItem(normalizedSelectedCompetitionId, selectedCompetitionName, activeSportId)
   }, [
     activeSportId,
     defaultRailItemIds,
+    normalizedSelectedCompetitionId,
     requestedActiveItemId,
-    selectedCompetitionId,
     selectedCompetitionName,
   ])
   const extraCompetitionItems = useMemo(() => {
     const itemIds = new Set<string>()
 
     return extraCompetitions
-      .map((competition) => createDynamicCompetitionItem(competition.id, competition.name, competition.sport))
+      .map((competition) => createDynamicCompetitionItem(
+        getRailCompetitionId(competition.id) ?? competition.id,
+        competition.name,
+        competition.sport
+      ))
       .filter((item) => {
         if (defaultRailItemIds.has(item.id) || itemIds.has(item.id)) return false
 
@@ -809,6 +814,10 @@ export function SportRail({
     const seenIds = new Set<string>()
 
     return favoriteCompetitions
+      .map((competition) => ({
+        ...competition,
+        id: getRailCompetitionId(competition.id) ?? competition.id,
+      }))
       .filter((competition) => (
         isCompetitionEnabled(competition.id)
         && isCompetitionRailClickable(competition.sport)

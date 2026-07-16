@@ -24,15 +24,14 @@ import { CompetitionPage, useCompetitionMarketSelection } from '../../components
 import { SportRail } from '../../components/SportRail'
 import { CasinoRail } from '../../components/CasinoRail'
 import { CasinoContent, casinoCarouselSections } from '../../components/CasinoContent'
-import { casinoBanners, casinoPromotions, championsLeagueEventMatches, drafteaSportHomeOfferCarouselItemsBySport, homeCompetitionHighlights, sportHomeOfferCarouselItemsBySport } from '../../data/homeProducts'
-import { getTeamLogo } from '../../data/teamLogos'
+import { casinoBanners, casinoPromotions, drafteaSportHomeOfferCarouselItemsBySport, sportHomeOfferCarouselItemsBySport } from '../../data/homeProducts'
 import { useFeatureFlags } from '../../hooks/useFeatureFlags'
 import { LiveEventInline, LiveEventInlineHeader } from '../LiveEventPage'
-import type { LiveEventMatch, LiveEventOpenPayload } from '../LiveEventPage'
+import type { LiveEventOpenPayload } from '../LiveEventPage'
 import type { CasinoGameOpenPayload } from '../../components/CasinoContent'
 import type { Banner, CasinoCategoryId, HomeCompetitionHighlight, HomeCompetitionMatch, HomeCompetitionOdd, HomeCompetitionPlayerProp, ProductMode } from '../../types/home'
 import { getTeamAbbreviation } from '../../utils/teamAbbreviations'
-import type { CompetitionLinkTarget } from '../../utils/competitionNavigation'
+import { getRailCompetitionId, type CompetitionLinkTarget } from '../../utils/competitionNavigation'
 import './Home.css'
 
 const CasinoGamePage = lazy(() => import('../CasinoGamePage').then((m) => ({ default: m.CasinoGamePage })))
@@ -200,14 +199,6 @@ const supportedSportFeaturedMarketIds = new Set([
   'q3-total',
   'q4-total',
 ])
-const championshipToRailCompetitionId: Record<string, string> = {
-  'brasil-serie-a': 'fut-brasileiro',
-  'champions-league': 'fut-champions',
-  'premier-league': 'fut-premier-league',
-  'la-liga': 'fut-laliga',
-  bundesliga: 'fut-bundesliga',
-  nba: 'bsq-nba',
-}
 const basketballSportFeaturedMarketChips: CalendarMarketChip[] = [
   { id: 'principais', label: 'Principais' },
   { id: 'pontos-jogador', label: 'Pontos de jogador' },
@@ -215,10 +206,6 @@ const basketballSportFeaturedMarketChips: CalendarMarketChip[] = [
   { id: 'q2', label: '2º Quarto' },
   { id: 'assistencias', label: 'Assistências' },
 ]
-
-const getRailCompetitionId = (championshipId?: string) => (
-  championshipId ? championshipToRailCompetitionId[championshipId] ?? championshipId : undefined
-)
 
 const getTeamOddLabel = getTeamAbbreviation
 
@@ -548,39 +535,41 @@ const getHomeCompetitionMatchFromCalendarEvent = (
 
 const highlightedMatchIds = new Set(['ucl-psg-city-live'])
 
-const getFlamengoCruzeiroFeaturedMatch = (): HomeCompetitionMatch | null => {
-  const { groups } = getCalendarDisplayedEventGroups({ sportFilter: 'futebol' })
-  const brasilSerieAGroup = groups.find(({ league }) => league.id === 'brasil-serie-a')
-  const flamengoCruzeiroEvent = brasilSerieAGroup?.events.find((event) => (
-    event.homeName === 'Flamengo' && event.awayName === 'Cruzeiro' && event.isLive
-  ))
-  if (!brasilSerieAGroup || !flamengoCruzeiroEvent) return null
-
-  const match = getHomeCompetitionMatchFromCalendarEvent(brasilSerieAGroup, flamengoCruzeiroEvent, true)
-
-  return match
-    ? {
-      ...match,
-      leagueLabel: brasilSerieAGroup.league.name,
-    }
-    : null
+type HomeFeaturedCompetitionConfig = {
+  id: string
+  limit: number
+  filter?: (event: DisplayedCompetitionEventGroup['events'][number]) => boolean
 }
 
-const getHomeFeaturedCompetitionMatches = (): HomeCompetitionMatch[] => {
-  const existingMatches = homeCompetitionHighlights
-    .flatMap((competition) => (
-      competition.matches.slice(0, 3).map((match) => ({
-        ...match,
-        leagueLabel: competition.title,
-      }))
-    ))
-    .filter((match) => !highlightedMatchIds.has(match.id))
-  const flamengoCruzeiroMatch = getFlamengoCruzeiroFeaturedMatch()
+const homeFeaturedCompetitionConfig: HomeFeaturedCompetitionConfig[] = [
+  {
+    id: 'brasil-serie-a',
+    limit: 1,
+    filter: (event) => (
+      event.homeName === 'Flamengo' && event.awayName === 'Cruzeiro' && Boolean(event.isLive)
+    ),
+  },
+  { id: 'champions-league', limit: 2 },
+  { id: 'premier-league', limit: 2 },
+  { id: 'nba', limit: 3 },
+] as const
 
-  return [
-    ...(flamengoCruzeiroMatch ? [flamengoCruzeiroMatch] : []),
-    ...existingMatches,
-  ].slice(0, 9)
+const getHomeFeaturedCompetitionMatches = (): HomeCompetitionMatch[] => {
+  return homeFeaturedCompetitionConfig.flatMap(({ id, limit, filter }) => {
+    const { groups } = getCalendarDisplayedEventGroups({ competitionId: id })
+    const eventGroup = groups[0]
+    if (!eventGroup) return []
+
+    return eventGroup.events
+      .filter((event) => !highlightedMatchIds.has(event.id))
+      .filter((event) => !filter || filter(event))
+      .slice(0, limit)
+      .flatMap((event) => {
+        const match = getHomeCompetitionMatchFromCalendarEvent(eventGroup, event, !!event.isLive)
+
+        return match ? [{ ...match, leagueLabel: eventGroup.league.name }] : []
+      })
+  })
 }
 
 const homeFeaturedCompetitionHighlight: HomeCompetitionHighlight = {
@@ -673,45 +662,11 @@ const getSportFeaturedCompetitionHighlights = (sport: string): HomeCompetitionHi
   })
 }
 
-const getHomeCompetitionEventMatches = (competition: HomeCompetitionHighlight) => (
-  competition.title === 'Champions League'
-    ? championsLeagueEventMatches
-    : competition.matches
-)
-
-const getCompetitionDisplayName = (name: string) => name.replace(/^.+\s+-\s+/, '').trim()
-
-const getHomeCompetitionEventGroup = (
-  eventGroups: DisplayedCompetitionEventGroup[],
-  competitionTitle: string
-) => eventGroups.find(({ league }) => league.name === competitionTitle) ??
-  eventGroups.find(({ league }) => getCompetitionDisplayName(league.name) === competitionTitle)
-
-const normalizeHomeCompetitionTeamName = (name: string) => name.trim().toLowerCase()
-
-const getCalendarEventForHomeCompetitionMatch = (
-  eventGroup: DisplayedCompetitionEventGroup,
-  match: HomeCompetitionMatch
-) => eventGroup.league.events.find((event) => event.id === match.id) ??
-  eventGroup.league.events.find((event) => (
-    normalizeHomeCompetitionTeamName(event.homeName) === normalizeHomeCompetitionTeamName(match.homeTeam) &&
-    normalizeHomeCompetitionTeamName(event.awayName) === normalizeHomeCompetitionTeamName(match.awayTeam)
-  ))
-
 const getHomeCompetitionCalendarMatchTimes = (
   eventGroup: DisplayedCompetitionEventGroup,
-  matches: HomeCompetitionMatch[],
   liveTimes: Record<string, string>
 ) => eventGroup.league.events.reduce<Record<string, string>>((times, event) => {
-  const sourceMatch = matches.find((match) => match.id === event.id) ??
-    matches.find((match) => (
-      normalizeHomeCompetitionTeamName(match.homeTeam) === normalizeHomeCompetitionTeamName(event.homeName) &&
-      normalizeHomeCompetitionTeamName(match.awayTeam) === normalizeHomeCompetitionTeamName(event.awayName)
-    ))
-
-  times[event.id] = sourceMatch
-    ? liveTimes[sourceMatch.id] ?? sourceMatch.liveClock ?? sourceMatch.footerLabel
-    : event.dateTime
+  times[event.id] = liveTimes[event.id] ?? event.dateTime
 
   return times
 }, {})
@@ -731,61 +686,6 @@ const applyHomeCompetitionTitleToEventPayload = (
     leagueName: title,
   })),
 })
-
-const getHomeLiveEventMatch = ({
-  match,
-  competition,
-  leagueId,
-  leagueFlag,
-  currentTime,
-}: {
-  match: HomeCompetitionMatch
-  competition: HomeCompetitionHighlight
-  leagueId?: string
-  leagueFlag?: string
-  currentTime?: string
-}): LiveEventMatch => {
-  const isBasketball = match.sport === 'basquete'
-  const homeOdd = match.odds[0]?.value ?? '1.90x'
-  const drawOdd = isBasketball ? undefined : match.odds[1]?.value
-  const awayOdd = (isBasketball ? match.odds[1] : match.odds[2])?.value ?? '1.90x'
-  const displayTime = currentTime ?? match.liveClock ?? match.footerLabel
-
-  return {
-    id: match.id,
-    leagueId,
-    leagueName: competition.title,
-    leagueFlag,
-    sport: match.sport,
-    isLive: !!match.live,
-    time: match.footerLabel,
-    dateTime: match.footerLabel,
-    currentTime: displayTime,
-    homeTeam: {
-      name: match.homeTeam,
-      icon: getTeamLogo(match.homeTeam),
-      score: Number(match.homeScore ?? 0),
-    },
-    awayTeam: {
-      name: match.awayTeam,
-      icon: getTeamLogo(match.awayTeam),
-      score: Number(match.awayScore ?? 0),
-    },
-    odds: {
-      home: homeOdd,
-      ...(drawOdd ? { draw: drawOdd } : {}),
-      away: awayOdd,
-    },
-    doubleChanceOdds: match.doubleChanceOdds,
-    bothTeamsScoreOdds: match.bothTeamsScoreOdds,
-    totalGoalsOdds: match.totalGoalsOdds,
-    totalCornersOdds: match.totalCornersOdds,
-    totalPointsOdds: match.totalPointsOdds,
-    handicapOdds: match.handicapOdds,
-    q3TotalOdds: match.q3TotalOdds,
-    q4TotalOdds: match.q4TotalOdds,
-  }
-}
 
 interface HeaderComponentProps {
   activeProduct?: ProductMode
@@ -1076,52 +976,22 @@ export function Home({
 
   const handleHomeCompetitionMatchClick = useCallback((
     match: HomeCompetitionMatch,
-    competition: HomeCompetitionHighlight,
+    _competition: HomeCompetitionHighlight,
     liveTimes: Record<string, string>
   ) => {
     const { groups } = getCalendarDisplayedEventGroups({ sportFilter: match.sport })
-    const competitionTitle = match.leagueLabel ?? competition.title
-    const eventGroup = getHomeCompetitionEventGroup(groups, competitionTitle)
-    const eventMatches = getHomeCompetitionEventMatches(competition)
-    const selectedCalendarEvent = eventGroup
-      ? getCalendarEventForHomeCompetitionMatch(eventGroup, match)
-      : undefined
-    const calendarPayload = eventGroup && selectedCalendarEvent
-      ? getCompetitionLiveEventOpenPayload({
-          league: eventGroup.league,
-          selectedEventId: selectedCalendarEvent.id,
-          matchTimes: getHomeCompetitionCalendarMatchTimes(eventGroup, eventMatches, liveTimes),
-        })
-      : null
+    const eventGroup = groups.find(({ league }) => league.events.some((event) => event.id === match.id))
+    const selectedCalendarEvent = eventGroup?.league.events.find((event) => event.id === match.id)
+    if (!eventGroup || !selectedCalendarEvent) return
 
-    if (calendarPayload) {
-      handleLiveMatchClick(applyHomeCompetitionTitleToEventPayload(calendarPayload, competitionTitle))
-      return
-    }
+    const payload = getCompetitionLiveEventOpenPayload({
+      league: eventGroup.league,
+      selectedEventId: selectedCalendarEvent.id,
+      matchTimes: getHomeCompetitionCalendarMatchTimes(eventGroup, liveTimes),
+    })
+    if (!payload) return
 
-    const selectedIndex = Math.max(0, eventMatches.findIndex((competitionMatch) => competitionMatch.id === match.id))
-    const currentTimes = eventMatches.reduce<Record<string, string>>((times, competitionMatch) => {
-      times[competitionMatch.id] = liveTimes[competitionMatch.id] ??
-        competitionMatch.liveClock ??
-        competitionMatch.footerLabel
-      return times
-    }, {})
-    const payload: LiveEventOpenPayload = {
-      matches: eventMatches.map((competitionMatch) => getHomeLiveEventMatch({
-        match: competitionMatch,
-        competition,
-        leagueId: eventGroup?.league.id,
-        leagueFlag: eventGroup?.league.flag,
-        currentTime: currentTimes[competitionMatch.id],
-      })),
-      selectedIndex,
-      leagueName: competitionTitle,
-      leagueFlag: eventGroup?.league.flag,
-      sport: match.sport,
-      currentTimes,
-    }
-
-    handleLiveMatchClick(payload)
+    handleLiveMatchClick(applyHomeCompetitionTitleToEventPayload(payload, eventGroup.league.name))
   }, [handleLiveMatchClick])
 
   const handleCompetitionRailEventClick = useCallback((

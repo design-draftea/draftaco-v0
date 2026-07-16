@@ -2592,6 +2592,7 @@ function LiveEventContent({
         </div>
 
         {/* ── Market card (Finalizações ao Gol) ── */}
+        {playerPropCards.length > 0 && (
         <div className={`live-event-page__market-card live-event-page__market-card--player-props${isShotsMarketOpen ? '' : ' live-event-page__market-card--closed'}`}>
           <div className="live-event-page__market-header">
             <span className="live-event-page__market-title">{playerMarketTitle}</span>
@@ -2628,6 +2629,7 @@ function LiveEventContent({
             </div>
           </div>
         </div>
+        )}
 
         {assistPlayerPropCards.length > 0 && (
           <div className={`live-event-page__market-card live-event-page__market-card--player-props${isAssistsMarketOpen ? '' : ' live-event-page__market-card--closed'}`}>
@@ -3950,6 +3952,7 @@ function LiveEventInlineMarkets({
         </div>
       </LiveEventInlineMarketSection>
 
+      {playerPropCards.length > 0 && (
       <LiveEventInlineMarketSection title={playerMarketTitle} badges={[]} className="live-event-inline__market-section--player-props">
         <div
           ref={playerPropsGridRef}
@@ -3976,6 +3979,7 @@ function LiveEventInlineMarkets({
           </button>
         )}
       </LiveEventInlineMarketSection>
+      )}
 
       <LiveEventInlineMarketSection title={primaryTotalMarketTitle} badges={['90’']}>
         <div className="live-event-inline__line-list">
