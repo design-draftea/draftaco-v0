@@ -4507,6 +4507,76 @@
       ],
       "providerId": "264344",
       "file": "tenis/alexander-shevchenko.png"
+    },
+    {
+      "team": "Deportes Tolima",
+      "name": "Juan Pablo Nieto",
+      "aliases": [
+        "Juan Pablo Nieto",
+        "J. Nieto"
+      ],
+      "providerId": "338861",
+      "file": "deportes-tolima/juan-pablo-nieto.png"
+    },
+    {
+      "team": "Deportes Tolima",
+      "name": "Cristian Trujillo",
+      "aliases": [
+        "Cristian Trujillo",
+        "C. Trujillo"
+      ],
+      "providerId": "931707",
+      "file": "deportes-tolima/cristian-trujillo.png"
+    },
+    {
+      "team": "Independiente del Valle",
+      "name": "Patrik Mercado",
+      "aliases": [
+        "Patrik Mercado",
+        "P. Mercado"
+      ],
+      "providerId": "1215084",
+      "file": "independiente-del-valle/patrik-mercado.png"
+    },
+    {
+      "team": "Independiente del Valle",
+      "name": "Jordy Alcivar",
+      "aliases": [
+        "Jordy Alcivar",
+        "J. Alcivar"
+      ],
+      "providerId": "925740",
+      "file": "independiente-del-valle/jordy-alcivar.png"
+    },
+    {
+      "team": "Universidad Católica",
+      "name": "César Pinares",
+      "aliases": [
+        "Cesar Pinares",
+        "C. Pinares"
+      ],
+      "providerId": "818974",
+      "file": "universidad-catolica/cesar-pinares.png"
+    },
+    {
+      "team": "Universidad Católica",
+      "name": "Cristián Cuevas",
+      "aliases": [
+        "Cristian Cuevas",
+        "C. Cuevas"
+      ],
+      "providerId": "324937",
+      "file": "universidad-catolica/cristian-cuevas.png"
+    },
+    {
+      "team": "Universidad Católica",
+      "name": "Jader Gentil",
+      "aliases": [
+        "Jader Gentil",
+        "J. Gentil"
+      ],
+      "providerId": "1128847",
+      "file": "universidad-catolica/jader-gentil.png"
     }
   ]
 }
