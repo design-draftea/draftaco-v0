@@ -428,6 +428,13 @@ for (const player of targets) {
   }
 
   if (!imageResponse.ok) {
+    if (imageResponse.status === 429) {
+      const retryAfterSeconds = Number(imageResponse.headers.get('retry-after'))
+      const cooldownMilliseconds = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+        ? retryAfterSeconds * 1_000
+        : defaultCooldownMilliseconds
+      providerRetryAt = Math.max(providerRetryAt, Date.now() + cooldownMilliseconds)
+    }
     unresolved.push(`${player.team}: ${player.name} (imagem ${imageResponse.status})`)
     deferred.add(pendingKey)
     continue

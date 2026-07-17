@@ -3716,6 +3716,26 @@
       ],
       "providerId": "895324",
       "file": "liverpool/mac-allister.png"
+    },
+    {
+      "team": "Liverpool",
+      "name": "Curtis Jones",
+      "aliases": [
+        "Curtis Jones",
+        "C. Jones"
+      ],
+      "providerId": "927353",
+      "file": "liverpool/curtis-jones.png"
+    },
+    {
+      "team": "Man. City",
+      "name": "Bernardo Silva",
+      "aliases": [
+        "Bernardo Silva",
+        "B. Silva"
+      ],
+      "providerId": "331209",
+      "file": "man-city/bernardo-silva.png"
     }
   ]
 }
