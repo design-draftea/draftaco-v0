@@ -4291,6 +4291,78 @@
       ],
       "providerId": "850475",
       "file": "juventude/jean-carlos.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Andrey Rublev",
+      "aliases": [
+        "Andrey Rublev"
+      ],
+      "providerId": "106755",
+      "file": "tenis/andrey-rublev.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Nikoloz Basilashvili",
+      "aliases": [
+        "Nikoloz Basilashvili"
+      ],
+      "providerId": "26204",
+      "file": "tenis/nikoloz-basilashvili.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Hamad Medjedović",
+      "aliases": [
+        "Hamad Medjedovic"
+      ],
+      "providerId": "321404",
+      "file": "tenis/hamad-medjedovic.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Martin Landaluce",
+      "aliases": [
+        "Martin Landaluce"
+      ],
+      "providerId": "417196",
+      "file": "tenis/martin-landaluce.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Thiago Agustin Tirante",
+      "aliases": [
+        "Thiago Agustin Tirante"
+      ],
+      "providerId": "221515",
+      "file": "tenis/thiago-agustin-tirante.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Daniil Medvedev",
+      "aliases": [
+        "Daniil Medvedev"
+      ],
+      "providerId": "163504",
+      "file": "tenis/daniil-medvedev.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Coco Gauff",
+      "aliases": [
+        "Coco Gauff"
+      ],
+      "providerId": "264983",
+      "file": "tenis/coco-gauff.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Mirra Andreeva",
+      "aliases": [
+        "Mirra Andreeva"
+      ],
+      "providerId": "406776",
+      "file": "tenis/mirra-andreeva.png"
     }
   ]
 }
