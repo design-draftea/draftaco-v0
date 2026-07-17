@@ -4837,6 +4837,46 @@
       ],
       "providerId": "106461",
       "file": "barcelona-sc/fernando-gaibor.png"
+    },
+    {
+      "team": "Deportivo Táchira",
+      "name": "Carlos Robles",
+      "aliases": [
+        "Carlos Robles",
+        "C. Robles"
+      ],
+      "providerId": "869178",
+      "file": "deportivo-tachira/carlos-robles.png"
+    },
+    {
+      "team": "Deportivo Táchira",
+      "name": "Yerson Chacón",
+      "aliases": [
+        "Yerson Chacon",
+        "Y. Chacón"
+      ],
+      "providerId": "1117232",
+      "file": "deportivo-tachira/yerson-chacon.png"
+    },
+    {
+      "team": "Carabobo",
+      "name": "Carlos Sosa",
+      "aliases": [
+        "Carlos Sosa",
+        "C. Sosa"
+      ],
+      "providerId": "1143567",
+      "file": "carabobo/carlos-sosa.png"
+    },
+    {
+      "team": "Carabobo",
+      "name": "Francisco Flores",
+      "aliases": [
+        "Francisco Flores",
+        "F. Flores"
+      ],
+      "providerId": "1003008",
+      "file": "carabobo/francisco-flores.png"
     }
   ]
 }
