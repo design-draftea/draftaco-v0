@@ -3846,6 +3846,26 @@
       ],
       "providerId": "307284",
       "file": "wolves/lemina.png"
+    },
+    {
+      "team": "West Ham",
+      "name": "James Ward-Prowse",
+      "aliases": [
+        "Ward-Prowse",
+        "J. Ward-Prowse"
+      ],
+      "providerId": "161717",
+      "file": "west-ham/ward-prowse.png"
+    },
+    {
+      "team": "Leeds",
+      "name": "Wilfried Gnonto",
+      "aliases": [
+        "Gnonto",
+        "W. Gnonto"
+      ],
+      "providerId": "998951",
+      "file": "leeds/gnonto.png"
     }
   ]
 }
