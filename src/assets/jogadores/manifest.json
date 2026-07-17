@@ -4013,6 +4013,76 @@
       ],
       "providerId": "788141",
       "file": "alaves/guridi.png"
+    },
+    {
+      "team": "Alavés",
+      "name": "Antonio Blanco",
+      "aliases": [
+        "Blanco",
+        "A. Blanco"
+      ],
+      "providerId": "855832",
+      "file": "alaves/blanco.png"
+    },
+    {
+      "team": "Espanyol",
+      "name": "Sergi Darder",
+      "aliases": [
+        "Darder",
+        "S. Darder"
+      ],
+      "providerId": "110783",
+      "file": "espanyol/darder.png"
+    },
+    {
+      "team": "Espanyol",
+      "name": "Nicolás Melamed",
+      "aliases": [
+        "Melamed",
+        "N. Melamed"
+      ],
+      "providerId": "989878",
+      "file": "espanyol/melamed.png"
+    },
+    {
+      "team": "Mallorca",
+      "name": "Dani Rodríguez",
+      "aliases": [
+        "Dani Rodriguez",
+        "D. Rodríguez"
+      ],
+      "providerId": "1214990",
+      "file": "mallorca/dani-rodriguez.png"
+    },
+    {
+      "team": "Levante",
+      "name": "Pablo Martínez",
+      "aliases": [
+        "Pablo Martinez",
+        "P. Martínez"
+      ],
+      "providerId": "927066",
+      "file": "levante/pablo-martinez.png"
+    },
+    {
+      "team": "B. Leverkusen",
+      "name": "Granit Xhaka",
+      "aliases": [
+        "Xhaka",
+        "G. Xhaka"
+      ],
+      "providerId": "117777",
+      "file": "b-leverkusen/xhaka.png"
+    },
+    {
+      "team": "B. Leverkusen",
+      "name": "Exequiel Palacios",
+      "aliases": [
+        "Palacios",
+        "E. Palacios"
+      ],
+      "providerId": "822600",
+      "file": "b-leverkusen/palacios.png"
     }
   ]
 }
