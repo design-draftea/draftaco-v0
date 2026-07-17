@@ -4222,6 +4222,75 @@
       ],
       "providerId": "865356",
       "file": "vitoria/wellington-rato.png"
+    },
+    {
+      "team": "Vitória",
+      "name": "Luan Cândido",
+      "aliases": [
+        "Luan",
+        "L. Cândido"
+      ],
+      "providerId": "905459",
+      "file": "vitoria/luan.png"
+    },
+    {
+      "team": "Sport",
+      "name": "Fabinho",
+      "aliases": [
+        "Fabinho"
+      ],
+      "providerId": "243585",
+      "file": "sport/fabinho.png"
+    },
+    {
+      "team": "Sport",
+      "name": "Felipe Anderson",
+      "aliases": [
+        "Felipe",
+        "F. Anderson"
+      ],
+      "providerId": "152276",
+      "file": "sport/felipe.png"
+    },
+    {
+      "team": "Grêmio",
+      "name": "Mathias Villasanti",
+      "aliases": [
+        "Villasanti",
+        "M. Villasanti"
+      ],
+      "providerId": "1139775",
+      "file": "gremio/villasanti.png"
+    },
+    {
+      "team": "Grêmio",
+      "name": "Pepe",
+      "aliases": [
+        "Pepê",
+        "Pepe"
+      ],
+      "providerId": "5884",
+      "file": "gremio/pepe.png"
+    },
+    {
+      "team": "Juventude",
+      "name": "Jádson",
+      "aliases": [
+        "Jadson",
+        "Jádson"
+      ],
+      "providerId": "243651",
+      "file": "juventude/jadson.png"
+    },
+    {
+      "team": "Juventude",
+      "name": "Jean Carlos",
+      "aliases": [
+        "Jean Carlos",
+        "J. Carlos"
+      ],
+      "providerId": "850475",
+      "file": "juventude/jean-carlos.png"
     }
   ]
 }
