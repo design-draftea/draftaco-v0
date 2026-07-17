@@ -4435,6 +4435,69 @@
       ],
       "providerId": "50655",
       "file": "tenis/anna-lena-friedsam.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Solana Sierra",
+      "aliases": [
+        "Solana Sierra"
+      ],
+      "providerId": "298913",
+      "file": "tenis/solana-sierra.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Kaja Juvan",
+      "aliases": [
+        "Kaja Juvan"
+      ],
+      "providerId": "196856",
+      "file": "tenis/kaja-juvan.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Moise Kouame",
+      "aliases": [
+        "Moise Kouame"
+      ],
+      "providerId": "522369",
+      "file": "tenis/moise-kouame.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Benjamin Bonzi",
+      "aliases": [
+        "Benjamin Bonzi"
+      ],
+      "providerId": "94485",
+      "file": "tenis/benjamin-bonzi.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Hugo Gaston",
+      "aliases": [
+        "Hugo Gaston"
+      ],
+      "providerId": "205906",
+      "file": "tenis/hugo-gaston.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Otto Virtanen",
+      "aliases": [
+        "Otto Virtanen"
+      ],
+      "providerId": "229218",
+      "file": "tenis/otto-virtanen.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Giovanni Mpetshi Perricard",
+      "aliases": [
+        "Giovanni Mpetshi Perricard"
+      ],
+      "providerId": "289146",
+      "file": "tenis/giovanni-mpetshi-perricard.png"
     }
   ]
 }

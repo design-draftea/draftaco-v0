@@ -106,6 +106,7 @@ const searchAliases = new Map([
   ['Sesko', 'Benjamin Šeško'],
   ['Majer', 'Lovro Majer'],
   ['Wind', 'Jonas Wind'],
+  ['Alexander Shevchenko', 'Aleksandr Shevchenko'],
   ['DeAaron Fox', "De'Aaron Fox"],
   ['Miguel Almiron', 'Miguel Almirón'],
   ['Son', 'Son Heung-min'],
