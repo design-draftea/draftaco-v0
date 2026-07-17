@@ -3559,6 +3559,46 @@
       ],
       "providerId": "784655",
       "file": "psg/fabian-ruiz.png"
+    },
+    {
+      "team": "Lyon",
+      "name": "Rayan Cherki",
+      "aliases": [
+        "Cherki",
+        "R. Cherki"
+      ],
+      "providerId": "979128",
+      "file": "lyon/cherki.png"
+    },
+    {
+      "team": "Lyon",
+      "name": "Corentin Tolisso",
+      "aliases": [
+        "Tolisso",
+        "C. Tolisso"
+      ],
+      "providerId": "343067",
+      "file": "lyon/tolisso.png"
+    },
+    {
+      "team": "Lyon",
+      "name": "Maxence Caqueret",
+      "aliases": [
+        "Caqueret",
+        "M. Caqueret"
+      ],
+      "providerId": "859027",
+      "file": "lyon/caqueret.png"
+    },
+    {
+      "team": "Newcastle",
+      "name": "Bruno Guimarães",
+      "aliases": [
+        "Bruno Guimaraes",
+        "B. Guimarães"
+      ],
+      "providerId": "866469",
+      "file": "newcastle/bruno-guimaraes.png"
     }
   ]
 }
