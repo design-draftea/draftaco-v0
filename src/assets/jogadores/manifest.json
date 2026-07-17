@@ -3816,6 +3816,36 @@
       ],
       "providerId": "987650",
       "file": "chelsea/caicedo.png"
+    },
+    {
+      "team": "Tottenham",
+      "name": "Rodrigo Bentancur",
+      "aliases": [
+        "Bentancur",
+        "R. Bentancur"
+      ],
+      "providerId": "791190",
+      "file": "tottenham/bentancur.png"
+    },
+    {
+      "team": "Wolves",
+      "name": "João Gomes",
+      "aliases": [
+        "Joao Gomes",
+        "J. Gomes"
+      ],
+      "providerId": "1015267",
+      "file": "wolves/joao-gomes.png"
+    },
+    {
+      "team": "Wolves",
+      "name": "Mario Lemina",
+      "aliases": [
+        "Lemina",
+        "M. Lemina"
+      ],
+      "providerId": "307284",
+      "file": "wolves/lemina.png"
     }
   ]
 }
