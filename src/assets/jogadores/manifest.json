@@ -3638,6 +3638,45 @@
       ],
       "providerId": "150383",
       "file": "napoli/lobotka.png"
+    },
+    {
+      "team": "Napoli",
+      "name": "Piotr Zieliński",
+      "aliases": [
+        "Zielinski",
+        "P. Zieliński"
+      ],
+      "providerId": "138605",
+      "file": "napoli/zielinski.png"
+    },
+    {
+      "team": "Real Madrid",
+      "name": "Luka Modrić",
+      "aliases": [
+        "Modric",
+        "L. Modrić"
+      ],
+      "providerId": "15466",
+      "file": "real-madrid/modric.png"
+    },
+    {
+      "team": "Real Madrid",
+      "name": "Federico Valverde",
+      "aliases": [
+        "Valverde",
+        "F. Valverde"
+      ],
+      "providerId": "831808",
+      "file": "real-madrid/valverde.png"
+    },
+    {
+      "team": "Barcelona",
+      "name": "Pedri",
+      "aliases": [
+        "Pedri"
+      ],
+      "providerId": "992587",
+      "file": "barcelona/pedri.png"
     }
   ]
 }
