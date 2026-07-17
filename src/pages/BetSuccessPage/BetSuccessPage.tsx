@@ -7,6 +7,7 @@ import camisaFrente from '../../assets/iconsDraftaco/camisaFrente.png'
 import camisaVersoGanhou from '../../assets/iconsDraftaco/camisaVersoGanhou.png'
 import camisaVersoPerdeu from '../../assets/iconsDraftaco/camisaVersoPerdeu.png'
 import camisaPremiadaIcon from '../../assets/iconsDraftaco/iconeCamisaPremiada.png'
+import futebolPremiadoIcon from '../../assets/iconeFutebolPremiado.png'
 import lightCamisaPremiada from '../../assets/iconsDraftaco/lightCamisaPremiada.png'
 import iconBetslipAumentada from '../../assets/iconsDraftaco/iconBetslipAumentada.svg'
 import iconBetslipGarantida from '../../assets/iconsDraftaco/iconBetslipGarantida.svg'
@@ -17,6 +18,8 @@ import imgAdebayoPromo from '../../assets/iconsDraftaco/imgAdebayoPromo.png'
 import imgDembelePromo from '../../assets/iconsDraftaco/imgDembelePromo.png'
 import lewandowskiCard from '../../assets/iconsDraftaco/LewandowskiCard.png'
 import logoPitacoApostaCriada from '../../assets/iconsDraftaco/logoPitacoApostaCriada.svg'
+import penaltiPremiadoErrouVideo from '../../assets/videoErrou.mp4'
+import penaltiPremiadoGanhouVideo from '../../assets/videoGanhou.mp4'
 import { getTeamLogo } from '../../data/teamLogos'
 import { useSportsDbTeamLogo } from '../../hooks/useSportsDbTeamLogo'
 import { getTeamAbbreviation } from '../../utils/teamAbbreviations'
@@ -58,6 +61,7 @@ export interface BetSuccessReceipt {
   }
   camisaPremiada?: {
     entryFeeCents: number
+    featureName?: string
     jackpotCents: number
     selectedShirtIndex: 0 | 1 | 2
     winningShirtIndex: 0 | 1 | 2
@@ -884,6 +888,10 @@ const createCamisaPremiadaLightSequence = (
 interface CamisaPremiadaBannerVisualProps {
   activeShirtIndex: CamisaPremiadaShirtIndex | null
   confettiCanvasRef?: { current: HTMLCanvasElement | null }
+  featureName?: string
+  hideOptions?: boolean
+  introIconSrc?: string
+  introSubtitle?: string
   isRevealBackVisible: boolean
   isStatic?: boolean
   jackpotLabel: string
@@ -896,6 +904,10 @@ interface CamisaPremiadaBannerVisualProps {
 function CamisaPremiadaBannerVisual({
   activeShirtIndex,
   confettiCanvasRef,
+  featureName = 'Camisa Premiada',
+  hideOptions = false,
+  introIconSrc = camisaPremiadaIcon,
+  introSubtitle = 'será que a sua é premiada?',
   isRevealBackVisible,
   isStatic = false,
   jackpotLabel,
@@ -906,7 +918,7 @@ function CamisaPremiadaBannerVisual({
 }: CamisaPremiadaBannerVisualProps) {
   const hasWon = selectedShirtIndex === winningShirtIndex
   const isShowingIntro = stage === 'intro' || stage === 'intro-exit'
-  const isShowingOptions = stage !== 'intro'
+  const isShowingOptions = !hideOptions && stage !== 'intro'
   const isRevealing = stage === 'reveal' || stage === 'reveal-hold' || stage === 'focus' || stage === 'result' || stage === 'exit'
   const isFocusedResult = stage === 'focus' || stage === 'result' || stage === 'exit'
   const focusedShirtOffsetPx = (1 - selectedShirtIndex) * 64
@@ -930,10 +942,10 @@ function CamisaPremiadaBannerVisual({
       <div className="bet-success__camisa-stage" aria-hidden="true">
         {isShowingIntro ? (
           <div className="bet-success__camisa-intro">
-            <img src={camisaPremiadaIcon} alt="" draggable="false" />
+            <img src={introIconSrc} alt="" draggable="false" />
             <span>
-              <strong>Camisa Premiada:</strong>
-              <small>será que a sua é premiada?</small>
+              <strong>{featureName}:</strong>
+              <small>{introSubtitle}</small>
             </span>
           </div>
         ) : null}
@@ -1034,6 +1046,7 @@ function CamisaPremiadaResultBanner({
   const [isRevealBackVisible, setIsRevealBackVisible] = useState(false)
   const confettiCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const hasWon = receipt.selectedShirtIndex === receipt.winningShirtIndex
+  const featureName = receipt.featureName ?? 'Camisa Premiada'
   const jackpotLabel = formatMoney(receipt.jackpotCents).replace(/^R\$/, 'R$ ')
   const lightSequence = useMemo(
     () => createCamisaPremiadaLightSequence(receipt.selectedShirtIndex),
@@ -1043,9 +1056,9 @@ function CamisaPremiadaResultBanner({
     ? lightSequence[Math.min(sequenceStep, lightSequence.length - 1)]
     : null
   const statusLabel = stage === 'intro' || stage === 'intro-exit'
-    ? 'Camisa Premiada: será que a sua é premiada?'
+    ? `${featureName}: será que a sua é premiada?`
     : stage === 'chase'
-      ? 'Sorteando a Camisa Premiada'
+      ? `Sorteando ${featureName}`
       : stage === 'reveal' || stage === 'reveal-hold'
         ? 'Revelando a camisa vencedora'
         : hasWon
@@ -1181,6 +1194,7 @@ function CamisaPremiadaResultBanner({
     <CamisaPremiadaBannerVisual
       activeShirtIndex={activeShirtIndex}
       confettiCanvasRef={confettiCanvasRef}
+      featureName={featureName}
       isRevealBackVisible={isRevealBackVisible}
       jackpotLabel={jackpotLabel}
       selectedShirtIndex={receipt.selectedShirtIndex}
@@ -1188,6 +1202,178 @@ function CamisaPremiadaResultBanner({
       statusLabel={statusLabel}
       winningShirtIndex={receipt.winningShirtIndex}
     />
+  )
+}
+
+type PenaltiPremiadoResultStage = 'intro' | 'intro-exit' | 'video' | 'result' | 'exit' | 'complete'
+const penaltiPremiadoWinningTitle = 'GOOOLLL'
+
+function PenaltiPremiadoResultSequence({
+  onFinished,
+  receipt,
+}: {
+  onFinished: () => void
+  receipt: NonNullable<BetSuccessReceipt['camisaPremiada']>
+}) {
+  const [stage, setStage] = useState<PenaltiPremiadoResultStage>('intro')
+  const confettiCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const hasWon = receipt.selectedShirtIndex === receipt.winningShirtIndex
+  const featureName = receipt.featureName ?? 'Pênalti Premiado'
+  const jackpotLabel = formatMoney(receipt.jackpotCents).replace(/^R\$/, 'R$ ')
+  const resultVideo = hasWon ? penaltiPremiadoGanhouVideo : penaltiPremiadoErrouVideo
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setStage('intro-exit')
+    }, betSuccessEnterDurationMs + camisaPremiadaIntroDurationMs)
+
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    if (stage !== 'intro-exit') return undefined
+
+    const timer = window.setTimeout(() => {
+      setStage('video')
+    }, camisaPremiadaIntroExitDurationMs)
+
+    return () => window.clearTimeout(timer)
+  }, [stage])
+
+  useEffect(() => {
+    if (stage !== 'result') return undefined
+
+    const timer = window.setTimeout(() => {
+      setStage('exit')
+    }, camisaPremiadaResultDurationMs)
+
+    return () => window.clearTimeout(timer)
+  }, [stage])
+
+  useEffect(() => {
+    if (stage !== 'exit') return undefined
+
+    const timer = window.setTimeout(() => {
+      setStage('complete')
+      onFinished()
+    }, camisaPremiadaExitDurationMs)
+
+    return () => window.clearTimeout(timer)
+  }, [onFinished, stage])
+
+  useEffect(() => {
+    if (stage !== 'result' || !hasWon || !confettiCanvasRef.current) return undefined
+
+    const fireConfetti = confetti.create(confettiCanvasRef.current, {
+      resize: true,
+      useWorker: true,
+    })
+    const defaults = {
+      colors: ['#5228FF', '#7A35FF', '#AE18FF'],
+      origin: { y: 0.82 },
+      ticks: 70,
+    }
+
+    fireConfetti({ ...defaults, particleCount: 50, spread: 38, startVelocity: 34 })
+    fireConfetti({ ...defaults, particleCount: 70, spread: 82, startVelocity: 24, scalar: 0.8 })
+    fireConfetti({ ...defaults, particleCount: 35, spread: 110, startVelocity: 20, decay: 0.92, scalar: 1.1 })
+
+    return () => fireConfetti.reset()
+  }, [hasWon, stage])
+
+  if (stage === 'complete') return null
+
+  const isShowingIntro = stage === 'intro' || stage === 'intro-exit'
+  const isShowingVideo = stage === 'video' || stage === 'result' || stage === 'exit'
+  const isShowingResult = stage === 'result' || stage === 'exit'
+  const statusLabel = isShowingIntro
+    ? `${featureName}: Trave ou Gol`
+    : isShowingResult
+      ? hasWon
+        ? `${penaltiPremiadoWinningTitle}. Ganhou! ${jackpotLabel}`
+        : 'Na trave!!! Não foi dessa vez'
+      : 'Resultado do Pênalti Premiado'
+
+  return (
+    <section
+      className={[
+        'bet-success__camisa-banner',
+        'bet-success__penalti-banner',
+        isShowingIntro ? `bet-success__camisa-banner--${stage}` : '',
+        `bet-success__penalti-banner--${stage}`,
+      ].filter(Boolean).join(' ')}
+      role="status"
+      aria-live="polite"
+      aria-label={statusLabel}
+    >
+      {hasWon ? (
+        <canvas ref={confettiCanvasRef} className="bet-success__camisa-confetti" aria-hidden="true" />
+      ) : null}
+      <img
+        className="bet-success__camisa-light"
+        src={lightCamisaPremiada}
+        alt=""
+        aria-hidden="true"
+        draggable="false"
+      />
+
+      <div className="bet-success__camisa-stage" aria-hidden="true">
+        {isShowingIntro ? (
+          <div className="bet-success__camisa-intro">
+            <img src={futebolPremiadoIcon} alt="" draggable="false" />
+            <span>
+              <strong>{featureName}:</strong>
+              <small>Trave ou Gol</small>
+            </span>
+          </div>
+        ) : null}
+
+        {isShowingVideo ? (
+          <video
+            className="bet-success__penalti-banner-video"
+            autoPlay
+            muted
+            playsInline
+            preload="auto"
+            onEnded={() => setStage('result')}
+          >
+            <source src={resultVideo} type="video/mp4" />
+          </video>
+        ) : null}
+
+        {isShowingResult ? (
+          <div
+            className={`bet-success__penalti-result-message${hasWon ? ' bet-success__penalti-result-message--won' : ''}`}
+          >
+            {hasWon ? (
+              <strong
+                className="bet-success__penalti-goal-title"
+                aria-label={penaltiPremiadoWinningTitle}
+              >
+                {Array.from(penaltiPremiadoWinningTitle).map((letter, index) => (
+                  <span
+                    key={`${letter}-${index}`}
+                    className="bet-success__penalti-goal-letter"
+                    style={{
+                      '--penalti-goal-enter-delay': `${180 + index * 80}ms`,
+                      '--penalti-goal-bounce-delay': `${800 + index * 80}ms`,
+                    } as CSSProperties}
+                    aria-hidden="true"
+                  >
+                    {letter}
+                  </span>
+                ))}
+              </strong>
+            ) : (
+              <strong>Na trave!!!</strong>
+            )}
+            <span className="bet-success__penalti-result-subtitle">
+              {hasWon ? `Ganhou! ${jackpotLabel}` : 'Não foi dessa vez'}
+            </span>
+          </div>
+        ) : null}
+      </div>
+    </section>
   )
 }
 
@@ -1283,12 +1469,20 @@ export function CamisaPremiadaStaticPreviewPage() {
 export function BetSuccessPage({ receipt, onNewBet, onShare }: BetSuccessPageProps) {
   const stakeLabel = formatMoney(receipt.stakeCents)
   const hasTurboBoost = receipt.turboBoost !== undefined
+  const isPenaltiPremiado = receipt.camisaPremiada?.featureName === 'Pênalti Premiado'
   const hasWonCamisaPremiada = receipt.camisaPremiada !== undefined
     && receipt.camisaPremiada.selectedShirtIndex === receipt.camisaPremiada.winningShirtIndex
-  const [isCamisaPremiadaBannerVisible, setIsCamisaPremiadaBannerVisible] = useState(
-    receipt.camisaPremiada !== undefined
+  const [isPenaltiPremiadoResultVisible, setIsPenaltiPremiadoResultVisible] = useState(
+    isPenaltiPremiado && receipt.camisaPremiada !== undefined
   )
-  const isCamisaPremiadaDepositMessageVisible = hasWonCamisaPremiada && !isCamisaPremiadaBannerVisible
+  const [isCamisaPremiadaBannerVisible, setIsCamisaPremiadaBannerVisible] = useState(
+    receipt.camisaPremiada !== undefined && !isPenaltiPremiado
+  )
+  const isPrizeDepositMessageVisible = hasWonCamisaPremiada && (
+    isPenaltiPremiado
+      ? !isPenaltiPremiadoResultVisible
+      : !isCamisaPremiadaBannerVisible
+  )
   const selectionGroups = useMemo(() => groupSelectionsByEvent(receipt.selections), [receipt.selections])
   const [pullOffset, setPullOffset] = useState(0)
   const [isPulling, setIsPulling] = useState(false)
@@ -1390,6 +1584,10 @@ export function BetSuccessPage({ receipt, onNewBet, onShare }: BetSuccessPagePro
     setIsCamisaPremiadaBannerVisible(false)
   }, [])
 
+  const handlePenaltiPremiadoResultFinished = useCallback(() => {
+    setIsPenaltiPremiadoResultVisible(false)
+  }, [])
+
   useEffect(() => () => {
     clearDismissTimer()
   }, [clearDismissTimer])
@@ -1400,7 +1598,8 @@ export function BetSuccessPage({ receipt, onNewBet, onShare }: BetSuccessPagePro
         'bet-success',
         hasTurboBoost ? 'bet-success--boosted' : '',
         isCamisaPremiadaBannerVisible ? 'bet-success--camisa-banner-visible' : '',
-        isCamisaPremiadaDepositMessageVisible ? 'bet-success--camisa-deposit-message-visible' : '',
+        isPenaltiPremiadoResultVisible ? 'bet-success--penalti-result-visible' : '',
+        isPrizeDepositMessageVisible ? 'bet-success--camisa-deposit-message-visible' : '',
         isPulling ? 'bet-success--pulling' : '',
         isDismissing ? 'bet-success--dismissing' : '',
       ].filter(Boolean).join(' ')}
@@ -1483,7 +1682,13 @@ export function BetSuccessPage({ receipt, onNewBet, onShare }: BetSuccessPagePro
               onFinished={handleCamisaPremiadaBannerFinished}
             />
           ) : null}
-          {isCamisaPremiadaDepositMessageVisible ? (
+          {isPenaltiPremiadoResultVisible && receipt.camisaPremiada ? (
+            <PenaltiPremiadoResultSequence
+              receipt={receipt.camisaPremiada}
+              onFinished={handlePenaltiPremiadoResultFinished}
+            />
+          ) : null}
+          {isPrizeDepositMessageVisible ? (
             <p className="bet-success__camisa-deposit-message" role="status">
               O valor será depositado dentro de 24horas
             </p>

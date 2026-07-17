@@ -26,6 +26,7 @@ import imgAdebayoPromo from '../../assets/iconsDraftaco/imgAdebayoPromo.png'
 import imgDembelePromo from '../../assets/iconsDraftaco/imgDembelePromo.png'
 import boosterIcon from '../../assets/iconsDraftaco/iconeBooster.png'
 import camisaPremiadaIcon from '../../assets/iconsDraftaco/iconeCamisaPremiada.png'
+import futebolPremiadoIcon from '../../assets/iconeFutebolPremiado.png'
 import lewandowskiCard from '../../assets/iconsDraftaco/LewandowskiCard.png'
 import { useBetslip } from '../../hooks/useBetslip'
 import { useAnimatedBetslipNumber } from '../../hooks/useAnimatedBetslipNumber'
@@ -75,6 +76,7 @@ interface BetslipPageV2Props {
   balanceCents: number
   camisaPremiadaOutcomeOverride?: CamisaPremiadaOutcomeOverride
   isCamisaPremiadaMode?: boolean
+  premiadaFeatureName?: string
   isCoveredByEvent?: boolean
   onCreateAccountClick?: () => void
   onDepositClick?: () => void
@@ -226,6 +228,7 @@ function TurboBoostControl({
 }
 
 interface CamisaPremiadaControlProps {
+  featureName: string
   isDetailsOpen: boolean
   isDisabled: boolean
   isEnabled: boolean
@@ -237,6 +240,7 @@ interface CamisaPremiadaControlProps {
 const formatCamisaPremiadaJackpot = (value: number) => formatMoney(value).replace(/^R\$/, 'R$ ')
 
 function CamisaPremiadaControl({
+  featureName,
   isDetailsOpen,
   isDisabled,
   isEnabled,
@@ -244,6 +248,7 @@ function CamisaPremiadaControl({
   onDetailsToggle,
   onEnabledChange,
 }: CamisaPremiadaControlProps) {
+  const featureIcon = featureName === 'Pênalti Premiado' ? futebolPremiadoIcon : camisaPremiadaIcon
   const animatedJackpotLabel = useAnimatedBetslipNumber(
     jackpotCents,
     formatCamisaPremiadaJackpot,
@@ -253,7 +258,7 @@ function CamisaPremiadaControl({
   return (
     <section
       className={`betslip-v2__camisa-control${isEnabled ? ' betslip-v2__camisa-control--enabled' : ''}`}
-      aria-label="Camisa Premiada"
+      aria-label={featureName}
     >
       <div className="betslip-v2__camisa-header">
         <button
@@ -266,14 +271,14 @@ function CamisaPremiadaControl({
         >
           <img
             className="betslip-v2__camisa-icon"
-            src={camisaPremiadaIcon}
+            src={featureIcon}
             alt=""
             aria-hidden="true"
             draggable="false"
           />
           <span className="betslip-v2__camisa-copy">
             <span className="betslip-v2__camisa-title-row">
-              <strong>Camisa Premiada</strong>
+              <strong>{featureName}</strong>
               <span
                 className={`betslip-v2__camisa-chevron${isDetailsOpen ? ' betslip-v2__camisa-chevron--open' : ''}`}
                 aria-hidden="true"
@@ -294,7 +299,7 @@ function CamisaPremiadaControl({
           className={`betslip-v2__camisa-switch${isEnabled ? ' betslip-v2__camisa-switch--enabled' : ''}`}
           role="switch"
           aria-checked={isEnabled}
-          aria-label={`${isEnabled ? 'Desativar' : 'Ativar'} Camisa Premiada por R$ 1,00`}
+          aria-label={`${isEnabled ? 'Desativar' : 'Ativar'} ${featureName} por R$ 1,00`}
           disabled={isDisabled}
           onClick={() => onEnabledChange(!isEnabled)}
         >
@@ -1057,6 +1062,7 @@ export function BetslipPageV2({
   balanceCents,
   camisaPremiadaOutcomeOverride,
   isCamisaPremiadaMode = false,
+  premiadaFeatureName = 'Camisa Premiada',
   isCoveredByEvent = false,
   onCreateAccountClick,
   onDepositClick,
@@ -1303,6 +1309,7 @@ export function BetslipPageV2({
       } : undefined,
       camisaPremiada: camisaPremiadaDraw ? {
         entryFeeCents: CAMISA_PREMIADA_ENTRY_FEE_CENTS,
+        featureName: premiadaFeatureName,
         jackpotCents: camisaPremiadaJackpotCents,
         ...camisaPremiadaDraw,
       } : undefined,
@@ -1319,6 +1326,7 @@ export function BetslipPageV2({
     camisaPremiadaOutcomeOverride,
     isCamisaPremiadaEnabled,
     isCamisaPremiadaMode,
+    premiadaFeatureName,
     onBetSuccess,
     appliedTurboBonusPercent,
     potentialWinLabel,
@@ -1853,6 +1861,7 @@ export function BetslipPageV2({
 
         {isCamisaPremiadaMode ? (
           <CamisaPremiadaControl
+            featureName={premiadaFeatureName}
             isDetailsOpen={isCamisaPremiadaDetailsOpen}
             isDisabled={isConfirmLoading}
             isEnabled={isCamisaPremiadaEnabled}
