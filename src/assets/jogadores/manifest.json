@@ -3776,6 +3776,46 @@
       ],
       "providerId": "959806",
       "file": "ajax/taylor.png"
+    },
+    {
+      "team": "Arsenal",
+      "name": "Martin Ødegaard",
+      "aliases": [
+        "Odegaard",
+        "M. Ødegaard"
+      ],
+      "providerId": "547410",
+      "file": "arsenal/odegaard.png"
+    },
+    {
+      "team": "Arsenal",
+      "name": "Declan Rice",
+      "aliases": [
+        "Rice",
+        "D. Rice"
+      ],
+      "providerId": "856714",
+      "file": "arsenal/rice.png"
+    },
+    {
+      "team": "Chelsea",
+      "name": "Enzo Fernández",
+      "aliases": [
+        "Enzo Fernandez",
+        "E. Fernández"
+      ],
+      "providerId": "974505",
+      "file": "chelsea/enzo-fernandez.png"
+    },
+    {
+      "team": "Chelsea",
+      "name": "Moisés Caicedo",
+      "aliases": [
+        "Caicedo",
+        "M. Caicedo"
+      ],
+      "providerId": "987650",
+      "file": "chelsea/caicedo.png"
     }
   ]
 }
