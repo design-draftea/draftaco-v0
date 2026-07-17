@@ -845,6 +845,7 @@
 }
 
 .banner-market--football-live .banner-market__league,
+.banner-market--basketball-live .banner-market__league,
 .banner-market--tennis-live .banner-market__league {
   padding-left: 142px;
 }
@@ -882,15 +883,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  flex: 0 0 48px;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
 }
 
 .banner-market__emblem img {
   display: block;
-  width: 48px;
-  height: 48px;
+  width: 42px;
+  height: 42px;
   object-fit: contain;
 }
 
@@ -900,8 +901,8 @@
 }
 
 .banner-market--tennis-live .banner-market__emblem img {
-  width: 48px;
-  height: 48px;
+  width: 42px;
+  height: 42px;
   object-fit: cover;
   object-position: center top;
   -webkit-mask-image: linear-gradient(
@@ -919,7 +920,7 @@
 }
 
 .banner-market__matchup--pre .banner-market__emblem {
-  flex: 0 0 48px;
+  flex: 0 0 42px;
 }
 
 .banner-market__matchup--pre .banner-market__emblem--home {

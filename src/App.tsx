@@ -19,6 +19,7 @@ import { LoginPage } from './pages/LoginPage'
 import type { BetSuccessReceipt } from './pages/BetSuccessPage'
 
 const Home = lazy(() => import('./pages/Home').then((m) => ({ default: m.Home })))
+const SportsPageV2 = lazy(() => import('./pages/SportsPageV2').then((m) => ({ default: m.SportsPageV2 })))
 const PromotionsPage = lazy(() => import('./pages/PromotionsPage').then((m) => ({ default: m.PromotionsPage })))
 const BetslipPageV2 = lazy(() => import('./pages/BetslipPageV2').then((m) => ({ default: m.BetslipPageV2 })))
 const BetSuccessPage = lazy(() => import('./pages/BetSuccessPage').then((m) => ({ default: m.BetSuccessPage })))
@@ -40,6 +41,7 @@ const RouteFallback = () => (
 
 const defaultProduct: ProductMode = 'apostas'
 const productRoutes: ProductMode[] = ['apostas', 'cassino']
+const sportsV2RouteSegment = 'apostas2'
 const promotionsRouteSegment = 'promocoes'
 const handoffRouteSegment = 'handoff'
 const embaixadinhaRouteSegment = 'embaixadinha'
@@ -83,6 +85,12 @@ const isPromotionsPath = (pathname: string) => {
     routeSegments[0] === promotionsRouteSegment &&
     routeSegments.length <= 2
   )
+}
+
+const isSportsV2Path = (pathname: string) => {
+  const routeSegments = getRouteSegments(pathname)
+
+  return routeSegments.length === 1 && routeSegments[0] === sportsV2RouteSegment
 }
 
 const isHandoffPath = (pathname: string) => {
@@ -149,6 +157,11 @@ const resolveProductFromPath = (pathname: string) => {
 const buildProductPath = (product: ProductMode) => {
   const basePath = getBasePath()
   return `${basePath}/${product}`
+}
+
+const buildSportsV2Path = () => {
+  const basePath = getBasePath()
+  return `${basePath}/${sportsV2RouteSegment}`
 }
 
 const buildPromotionsPath = () => {
@@ -230,6 +243,7 @@ function AppContent() {
     ))
   ), [betslipSelections])
   const actualProductRoute = useMemo(() => resolveProductFromPath(pathname), [pathname])
+  const isCurrentSportsV2Page = useMemo(() => isSportsV2Path(pathname), [pathname])
   const isCurrentPromotionsPage = useMemo(() => isPromotionsPath(pathname), [pathname])
   const isHandoffPage = useMemo(() => isHandoffPath(pathname), [pathname])
   const isEmbaixadinhaPage = useMemo(() => isEmbaixadinhaPath(pathname), [pathname])
@@ -249,6 +263,7 @@ function AppContent() {
     ? getPathnameFromPathWithSearch(loginReturnPathRef.current ?? buildProductPath(defaultProduct))
     : pathname
   const productRoute = useMemo(() => resolveProductFromPath(renderedPathname), [renderedPathname])
+  const isSportsV2Page = useMemo(() => isSportsV2Path(renderedPathname), [renderedPathname])
   const isPromotionsPage = useMemo(() => isPromotionsPath(renderedPathname), [renderedPathname])
   const isCamisaPremiadaMode = useMemo(() => isCamisaPremiadaPath(renderedPathname), [renderedPathname])
   const camisaPremiadaOutcomeOverride = useMemo(
@@ -305,6 +320,7 @@ function AppContent() {
   }, [])
 
   useEffect(() => {
+    if (isCurrentSportsV2Page) return
     if (isCurrentPromotionsPage) return
     if (isStandalonePage) return
     if (isAuthPage) return
@@ -318,7 +334,7 @@ function AppContent() {
     }, 0)
 
     return () => window.clearTimeout(timer)
-  }, [actualProductRoute, isCurrentCamisaPremiadaPage, isCurrentPromotionsPage, isAuthPage, isStandalonePage, search, syncBrowserLocation])
+  }, [actualProductRoute, isCurrentCamisaPremiadaPage, isCurrentPromotionsPage, isCurrentSportsV2Page, isAuthPage, isStandalonePage, search, syncBrowserLocation])
 
   useEffect(() => {
     if (!isCurrentPromotionsPage) return
@@ -363,6 +379,16 @@ function AppContent() {
 
     syncBrowserLocation()
   }, [isPromotionsPage, search, syncBrowserLocation])
+
+  const handleSportsV2Home = useCallback(() => {
+    const nextPath = withSearch(buildSportsV2Path(), getGarantidaBannerSearch(search))
+
+    if (getCurrentPathWithSearch() !== nextPath) {
+      window.history.pushState({}, '', nextPath)
+    }
+
+    syncBrowserLocation()
+  }, [search, syncBrowserLocation])
 
   const handleAuthOpen = useCallback((nextPath: string) => {
     const isCurrentlyAuthPath = isAuthPath(window.location.pathname)
@@ -837,6 +863,19 @@ function AppContent() {
             onIdentityOpen={handleSignupIdentityOpen}
             onLimitsOpen={handleSignupLimitsOpen}
             onProductChange={handleProductChange}
+          />
+        ) : isSportsV2Page ? (
+          <SportsPageV2
+            authVariant={authVariant}
+            balanceCents={balanceCents}
+            depositStatus={headerDepositStatus}
+            onLoginClick={handleLoginOpen}
+            onCreateAccountClick={handleCreateAccountClick}
+            onDepositOpen={handleDepositPanelOpen}
+            onIdentityOpen={handleSignupIdentityOpen}
+            onLimitsOpen={handleSignupLimitsOpen}
+            onLiveEventOpenChange={handleLiveEventOpenChange}
+            onSportsHomeClick={handleSportsV2Home}
           />
         ) : (
           <Home
