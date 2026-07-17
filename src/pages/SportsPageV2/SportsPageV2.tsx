@@ -209,12 +209,15 @@ export function SportsPageV2({
             onBannerClick={handleBannerClick}
           />
 
+          <div className="home__content-filter-anchor" aria-hidden="true" />
+
           <ContentFilterChips
             filters={competitionOptions}
             activeFilter={selectedCompetition.id}
             ariaLabel={`Competições de ${activeSport}`}
             className="content-filter-chips--sport-markets sports-page-v2__competition-chips"
             onFilterChange={handleCompetitionChipChange}
+            scrollMode="sticky-reset"
           />
 
           <HomeCompetitionSection

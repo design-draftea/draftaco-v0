@@ -12,7 +12,7 @@ const contentFilters = [
 const CONTENT_FILTER_STICKY_LOCK_OVERSCROLL = 8
 
 export type ContentFilterId = typeof contentFilters[number]['id']
-type ContentFilterScrollMode = 'sticky-lock' | 'top'
+type ContentFilterScrollMode = 'sticky-lock' | 'sticky-reset' | 'top'
 
 export interface ContentFilterChipOption<TId extends string = ContentFilterId> {
   id: TId
@@ -138,7 +138,7 @@ export function ContentFilterChips<TId extends string = ContentFilterId>({
     onFilterChange?.(filterId, { shouldLockScroll })
     if (scrollMode === 'top') {
       scrollToPageTop()
-    } else if (shouldLockScroll) {
+    } else if (scrollMode === 'sticky-reset' || shouldLockScroll) {
       scrollToStickyLock()
     }
   }
