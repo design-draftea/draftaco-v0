@@ -4083,6 +4083,76 @@
       ],
       "providerId": "822600",
       "file": "b-leverkusen/palacios.png"
+    },
+    {
+      "team": "Bayern",
+      "name": "Joshua Kimmich",
+      "aliases": [
+        "Kimmich",
+        "J. Kimmich"
+      ],
+      "providerId": "259117",
+      "file": "bayern/kimmich.png"
+    },
+    {
+      "team": "Bayern",
+      "name": "Thomas Müller",
+      "aliases": [
+        "Muller",
+        "T. Müller"
+      ],
+      "providerId": "35166",
+      "file": "bayern/muller.png"
+    },
+    {
+      "team": "B. Dortmund",
+      "name": "Giovanni Reyna",
+      "aliases": [
+        "Reyna",
+        "G. Reyna"
+      ],
+      "providerId": "989056",
+      "file": "b-dortmund/reyna.png"
+    },
+    {
+      "team": "B. Dortmund",
+      "name": "Felix Nmecha",
+      "aliases": [
+        "Nmecha",
+        "F. Nmecha"
+      ],
+      "providerId": "907463",
+      "file": "b-dortmund/nmecha.png"
+    },
+    {
+      "team": "RB Leipzig",
+      "name": "Filip Forsberg",
+      "aliases": [
+        "Forsberg",
+        "F. Forsberg"
+      ],
+      "providerId": "148293",
+      "file": "rb-leipzig/forsberg.png"
+    },
+    {
+      "team": "RB Leipzig",
+      "name": "Amadou Haidara",
+      "aliases": [
+        "Haidara",
+        "A. Haidara"
+      ],
+      "providerId": "822708",
+      "file": "rb-leipzig/haidara.png"
+    },
+    {
+      "team": "Wolfsburg",
+      "name": "Maximilian Arnold",
+      "aliases": [
+        "Arnold",
+        "M. Arnold"
+      ],
+      "providerId": "147289",
+      "file": "wolfsburg/arnold.png"
     }
   ]
 }
