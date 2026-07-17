@@ -4697,6 +4697,56 @@
       ],
       "providerId": "1175757",
       "file": "cerro-porteno/jorge-morel.png"
+    },
+    {
+      "team": "LDU Quito",
+      "name": "Ezequiel Piovi",
+      "aliases": [
+        "Ezequiel Piovi",
+        "E. Piovi"
+      ],
+      "providerId": "359098",
+      "file": "ldu-quito/ezequiel-piovi.png"
+    },
+    {
+      "team": "LDU Quito",
+      "name": "Jhojan Julio",
+      "aliases": [
+        "Jhojan Julio",
+        "J. Julio"
+      ],
+      "providerId": "925741",
+      "file": "ldu-quito/jhojan-julio.png"
+    },
+    {
+      "team": "Atlético Nacional",
+      "name": "Sebastián Guzmán",
+      "aliases": [
+        "Sebastian Guzman",
+        "S. Guzmán"
+      ],
+      "providerId": "924567",
+      "file": "atletico-nacional/sebastian-guzman.png"
+    },
+    {
+      "team": "Peñarol",
+      "name": "Eduardo Darias",
+      "aliases": [
+        "Eduardo Darias",
+        "E. Darias"
+      ],
+      "providerId": "1066256",
+      "file": "penarol/eduardo-darias.png"
+    },
+    {
+      "team": "Peñarol",
+      "name": "Damián García",
+      "aliases": [
+        "Damián Garcia",
+        "D. García"
+      ],
+      "providerId": "1199476",
+      "file": "penarol/damian-garcia.png"
     }
   ]
 }
