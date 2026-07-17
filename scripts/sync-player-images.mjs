@@ -12,7 +12,7 @@ Opções:
   --retry-deferred   tenta novamente jogadores pendentes
   --reconcile-deferred remove da fila nomes que já possuem asset local
   --dry-run          lista jogadores sem asset local, sem consultar o SofaScore
-  --sport=<nome>     restringe o lote a football ou basketball
+  --sport=<nome>     restringe o lote a football, basketball ou tennis
   --cooldown=<min>   registra uma espera local antes do próximo lote
   --help             exibe esta ajuda sem iniciar requisições`)
   process.exit(0)
@@ -200,6 +200,31 @@ const extractPlayers = () => {
   }
 
   visit(source)
+
+  const tennisChampionships = source.statements
+    .filter((statement) => ts.isVariableStatement(statement))
+    .flatMap((statement) => statement.declarationList.declarations)
+    .find((declaration) => ts.isIdentifier(declaration.name) && declaration.name.text === 'championships')
+    ?.initializer
+
+  if (tennisChampionships && ts.isArrayLiteralExpression(tennisChampionships)) {
+    for (const championship of tennisChampionships.elements) {
+      if (!ts.isObjectLiteralExpression(championship)) continue
+      if (getString(getProperty(championship, 'sport')) !== 'tenis') continue
+
+      const events = getProperty(championship, 'events')
+      if (!events || !ts.isArrayLiteralExpression(events)) continue
+
+      for (const event of events.elements) {
+        if (!ts.isObjectLiteralExpression(event)) continue
+        for (const field of ['homeName', 'awayName']) {
+          const name = getString(getProperty(event, field))
+          if (name) players.push({ sport: 'tennis', team: 'Tenis', name })
+        }
+      }
+    }
+  }
+
   return [...new Map(players.map((player) => [`${player.sport}:${player.team}:${player.name}`, player])).values()]
 }
 
@@ -260,15 +285,23 @@ const fetchJson = async (url) => {
 }
 
 const findSofascoreIdWithDuckDuckGo = async (player) => {
-  const sport = player.sport === 'basketball' ? 'basketball' : 'football'
-  const query = `site:sofascore.com/${sport}/player "${player.name}" "${player.team}"`
+  const sport = player.sport === 'basketball'
+    ? 'basketball'
+    : player.sport === 'tennis'
+      ? 'tennis'
+      : 'football'
+  const query = player.sport === 'tennis'
+    ? `site:sofascore.com/${sport}/player "${player.name}"`
+    : `site:sofascore.com/${sport}/player "${player.name}" "${player.team}"`
   const response = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, {
     headers: { 'user-agent': 'Mozilla/5.0' },
     signal: AbortSignal.timeout(requestTimeoutMilliseconds),
   })
   const html = await response.text()
   const match = html.match(/sofascore\.com%2F(?:football|basketball)%2Fplayer%2F.+?%2F(\d+)/i)
+    ?? html.match(/sofascore\.com%2Ftennis%2Fteam%2F.+?%2F(\d+)/i)
     ?? html.match(/sofascore\.com\/(?:football|basketball)\/player\/[^/"? ]+\/(\d+)/i)
+    ?? html.match(/sofascore\.com\/tennis\/team\/[^/"? ]+\/(\d+)/i)
 
   return match?.[1]
 }
@@ -285,8 +318,8 @@ const reconcileDeferred = process.argv.includes('--reconcile-deferred')
 const dryRun = process.argv.includes('--dry-run')
 const sportArgument = process.argv.find((argument) => argument.startsWith('--sport='))
 const selectedSport = sportArgument?.slice('--sport='.length)
-if (selectedSport && selectedSport !== 'football' && selectedSport !== 'basketball') {
-  throw new Error('O esporte do lote deve ser football ou basketball.')
+if (selectedSport && selectedSport !== 'football' && selectedSport !== 'basketball' && selectedSport !== 'tennis') {
+  throw new Error('O esporte do lote deve ser football, basketball ou tennis.')
 }
 const cooldownArgument = process.argv.find((argument) => argument.startsWith('--cooldown='))
 const existing = new Set(
@@ -385,12 +418,16 @@ for (const player of targets) {
       continue
     }
   }
-  const expectedTeam = normalize(teamAliases.get(player.team) ?? player.team)
   const expectedName = normalize(searchName)
-  const results = payload?.results?.filter(({ entity }) => entity?.team) ?? []
-  let result = overrideId ? { entity: { id: overrideId, name: player.name, shortName: player.name } } : results.find(({ entity }) => (
-    entity?.team && normalize(entity.team.name) === expectedTeam
-  )) ?? results.find(({ entity }) => (
+  const expectedTeam = normalize(teamAliases.get(player.team) ?? player.team)
+  const results = payload?.results?.filter(({ type, entity }) => (
+    player.sport === 'tennis' ? type === 'team' && entity?.id && entity?.name : entity?.team
+  )) ?? []
+  let result = overrideId ? { entity: { id: overrideId, name: player.name, shortName: player.name } } : (
+    player.sport === 'tennis' ? undefined : results.find(({ entity }) => (
+      entity?.team && normalize(entity.team.name) === expectedTeam
+    ))
+  ) ?? results.find(({ entity }) => (
     normalize(entity.name) === expectedName || normalize(entity.shortName ?? '') === expectedName
   )) ?? (expectedName.includes('-') ? results.find(({ entity }) => (
     normalize(entity.name).includes(expectedName) || expectedName.includes(normalize(entity.name))
@@ -417,7 +454,10 @@ for (const player of targets) {
   const relativeFile = `${directory}/${filename}`
   const rawPath = path.join(tempDirectory, `${entity.id}.png`)
   const destination = path.join(assetRoot, relativeFile)
-  const imageUrl = translatedUrl(imageHost, `/api/v1/player/${entity.id}/image`)
+  const imagePath = player.sport === 'tennis'
+    ? `/api/v1/team/${entity.id}/image`
+    : `/api/v1/player/${entity.id}/image`
+  const imageUrl = translatedUrl(imageHost, imagePath)
   let imageResponse
   try {
     imageResponse = await fetch(imageUrl, { signal: AbortSignal.timeout(requestTimeoutMilliseconds) })
