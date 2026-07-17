@@ -4747,6 +4747,56 @@
       ],
       "providerId": "1199476",
       "file": "penarol/damian-garcia.png"
+    },
+    {
+      "team": "Alianza Lima",
+      "name": "Sergio Peña",
+      "aliases": [
+        "Sergio Peña",
+        "S. Peña"
+      ],
+      "providerId": "849339",
+      "file": "alianza-lima/sergio-pena.png"
+    },
+    {
+      "team": "Alianza Lima",
+      "name": "Pablo Lavandeira",
+      "aliases": [
+        "Pablo Lavandeira",
+        "P. Lavandeira"
+      ],
+      "providerId": "340077",
+      "file": "alianza-lima/pablo-lavandeira.png"
+    },
+    {
+      "team": "Alianza Lima",
+      "name": "Jesús Castillo",
+      "aliases": [
+        "Jesus Castillo",
+        "J. Castillo"
+      ],
+      "providerId": "913398",
+      "file": "alianza-lima/jesus-castillo.png"
+    },
+    {
+      "team": "Universitario",
+      "name": "Rodrigo Ureña",
+      "aliases": [
+        "Rodrigo Ureña",
+        "R. Ureña"
+      ],
+      "providerId": "220465",
+      "file": "universitario/rodrigo-urena.png"
+    },
+    {
+      "team": "Universitario",
+      "name": "Jairo Concha",
+      "aliases": [
+        "Jairo Concha",
+        "J. Concha"
+      ],
+      "providerId": "924783",
+      "file": "universitario/jairo-concha.png"
     }
   ]
 }
