@@ -4363,6 +4363,78 @@
       ],
       "providerId": "406776",
       "file": "tenis/mirra-andreeva.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Jessica Pegula",
+      "aliases": [
+        "Jessica Pegula"
+      ],
+      "providerId": "44834",
+      "file": "tenis/jessica-pegula.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Iga Swiatek",
+      "aliases": [
+        "Iga Swiatek"
+      ],
+      "providerId": "228272",
+      "file": "tenis/iga-swiatek.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Elina Svitolina",
+      "aliases": [
+        "Elina Svitolina"
+      ],
+      "providerId": "51293",
+      "file": "tenis/elina-svitolina.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Elena Rybakina",
+      "aliases": [
+        "Elena Rybakina"
+      ],
+      "providerId": "186312",
+      "file": "tenis/elena-rybakina.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Yue Yuan",
+      "aliases": [
+        "Yue Yuan"
+      ],
+      "providerId": "190996",
+      "file": "tenis/yue-yuan.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Mayar Sherif",
+      "aliases": [
+        "Mayar Sherif"
+      ],
+      "providerId": "88310",
+      "file": "tenis/mayar-sherif.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Barbora Krejčiková",
+      "aliases": [
+        "Barbora Krejcikova"
+      ],
+      "providerId": "60398",
+      "file": "tenis/barbora-krejcikova.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Anna-Lena Friedsam",
+      "aliases": [
+        "Anna-Lena Friedsam"
+      ],
+      "providerId": "50655",
+      "file": "tenis/anna-lena-friedsam.png"
     }
   ]
 }
