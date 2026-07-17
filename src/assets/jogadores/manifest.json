@@ -3896,6 +3896,36 @@
       ],
       "providerId": "1216282",
       "file": "burnley/koleosho.png"
+    },
+    {
+      "team": "Getafe",
+      "name": "Đorđe Maksimović",
+      "aliases": [
+        "Maksimovic",
+        "Đ. Maksimović"
+      ],
+      "providerId": "905970",
+      "file": "getafe/maksimovic.png"
+    },
+    {
+      "team": "Getafe",
+      "name": "Carles Aleñá",
+      "aliases": [
+        "Alena",
+        "C. Aleñá"
+      ],
+      "providerId": "794937",
+      "file": "getafe/alena.png"
+    },
+    {
+      "team": "Getafe",
+      "name": "Luis Milla",
+      "aliases": [
+        "Milla",
+        "L. Milla"
+      ],
+      "providerId": "811629",
+      "file": "getafe/milla.png"
     }
   ]
 }
