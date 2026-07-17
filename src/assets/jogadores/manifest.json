@@ -3677,6 +3677,45 @@
       ],
       "providerId": "992587",
       "file": "barcelona/pedri.png"
+    },
+    {
+      "team": "Barcelona",
+      "name": "Pablo Gavi",
+      "aliases": [
+        "Gavi"
+      ],
+      "providerId": "1103693",
+      "file": "barcelona/gavi.png"
+    },
+    {
+      "team": "Barcelona",
+      "name": "Frenkie de Jong",
+      "aliases": [
+        "De Jong",
+        "F. de Jong"
+      ],
+      "providerId": "795222",
+      "file": "barcelona/de-jong.png"
+    },
+    {
+      "team": "Liverpool",
+      "name": "Dominik Szoboszlai",
+      "aliases": [
+        "Szoboszlai",
+        "D. Szoboszlai"
+      ],
+      "providerId": "869856",
+      "file": "liverpool/szoboszlai.png"
+    },
+    {
+      "team": "Liverpool",
+      "name": "Alexis Mac Allister",
+      "aliases": [
+        "Mac Allister",
+        "A. Mac Allister"
+      ],
+      "providerId": "895324",
+      "file": "liverpool/mac-allister.png"
     }
   ]
 }
