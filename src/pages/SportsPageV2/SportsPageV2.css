@@ -1,0 +1,75 @@
+.sports-page-v2.home {
+  --home-header-content-padding-top: 134px;
+
+  padding-top: var(--home-header-content-padding-top);
+  background: var(--ds-background-app, var(--tokens-background-background));
+}
+
+.sports-page-v2 > :not(.header) {
+  position: relative;
+  z-index: 1;
+}
+
+.sports-page-v2__overview {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.sports-page-v2__overview > .banner-carousel {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.sports-page-v2__overview > .banner-carousel .banner-carousel__list {
+  padding-top: 16px;
+}
+
+.sports-page-v2__competition-chips.content-filter-chips {
+  --content-filter-chips-padding-y: 0px;
+  --content-filter-chips-sticky-top: -4px;
+
+  position: sticky;
+  top: var(--content-filter-chips-sticky-top);
+  z-index: 30;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.sports-page-v2__competition-content.home-competition {
+  gap: 8px;
+  padding-bottom: 0;
+}
+
+.sports-page-v2__competition-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  align-self: flex-start;
+  gap: 8px;
+  min-width: 180px;
+  height: 40px;
+  margin: 0 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sports-page-v2__competition-cta:focus-visible {
+  outline: 2px solid var(--ds-action-primary-default-start, #4b20ff);
+  outline-offset: 2px;
+}
+
+@media (max-width: 499px) {
+  .sports-page-v2.home {
+    padding-top: var(--home-header-content-padding-top);
+  }
+}

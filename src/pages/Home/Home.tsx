@@ -713,6 +713,9 @@ interface HomeProps {
   balanceCents?: number
   depositStatus?: 'deposit-pending' | 'identity-pending' | 'limits-pending'
   HeaderComponent?: ComponentType<HeaderComponentProps>
+  initialActiveSport?: string | null
+  initialCompetition?: { id: string; name: string } | null
+  initialEventId?: string
   isLiveEventSuppressed?: boolean
   onProductChange?: (product: ProductMode) => void
   onLogoDoubleClick?: () => void
@@ -724,6 +727,7 @@ interface HomeProps {
   onLiveEventOpenChange?: (isOpen: boolean) => void
   onLiveEventOpenSettled?: () => void
   onLiveEventCloseStart?: () => void
+  onSportsOverviewChange?: (sportId: string) => void
 }
 
 interface LoadedEventReturnState {
@@ -742,12 +746,56 @@ interface LoadedEventContext {
   returnState?: LoadedEventReturnState
 }
 
+const getInitialLoadedEventContext = ({
+  activeSport,
+  competition,
+  eventId,
+}: {
+  activeSport: string | null
+  competition: { id: string; name: string } | null
+  eventId?: string
+}): LoadedEventContext | null => {
+  if (!activeSport || !competition || !eventId) return null
+
+  const events = getCompetitionPageEvents(activeSport, competition.id)
+  const selectedEvent = events.find(({ event }) => event.id === eventId)
+  if (!selectedEvent) return null
+
+  const matchTimes = selectedEvent.league.events.reduce<Record<string, string>>((times, event) => {
+    times[event.id] = event.dateTime
+    return times
+  }, {})
+  const payload = getCompetitionLiveEventOpenPayload({
+    league: selectedEvent.league,
+    selectedEventId: eventId,
+    matchTimes,
+  })
+  if (!payload) return null
+
+  return {
+    payload,
+    selectedIndex: payload.selectedIndex,
+    competitionId: selectedEvent.league.id,
+    competitionName: competition.name,
+    returnState: {
+      activeSport,
+      selectedCompetition: competition,
+      activeContentFilter: 'populares',
+      activeSportMarket: undefined,
+      scrollTop: 0,
+    },
+  }
+}
+
 export function Home({
   activeProduct = 'apostas',
   authVariant = 'logged-out',
   balanceCents,
   depositStatus,
   HeaderComponent = HeaderV2,
+  initialActiveSport = null,
+  initialCompetition = null,
+  initialEventId,
   onProductChange,
   onLogoDoubleClick,
   onLoginClick,
@@ -756,6 +804,7 @@ export function Home({
   onIdentityOpen,
   onLimitsOpen,
   onLiveEventOpenChange,
+  onSportsOverviewChange,
 }: HomeProps = {}) {
   const { brandMode } = useFeatureFlags()
   const homeRef = useRef<HTMLDivElement>(null)
@@ -764,15 +813,21 @@ export function Home({
   const previousProductRef = useRef(activeProduct)
   const sportHeaderExpandedBgHeight = SPORT_HEADER_EXPANDED_BG_HEIGHT_SHORTCUT
   const sportHeaderCompactBgHeight = SPORT_HEADER_COMPACT_BG_HEIGHT_SHORTCUT
-  const [activeSport, setActiveSport] = useState<string | null>(null)
+  const [activeSport, setActiveSport] = useState<string | null>(initialActiveSport)
   const [activeCasinoCategory, setActiveCasinoCategory] = useState<CasinoCategoryId>('destaques')
   const [isSportHeaderCompact, setIsSportHeaderCompact] = useState(false)
   const [isSportsMatchCarouselCollapsed, setIsSportsMatchCarouselCollapsed] = useState(false)
   const [contentResetKey, setContentResetKey] = useState(0)
-  const [selectedCompetition, setSelectedCompetition] = useState<{ id: string; name: string } | null>(null)
+  const [selectedCompetition, setSelectedCompetition] = useState<{ id: string; name: string } | null>(initialCompetition)
   const [competitionRailSelectedIndex, setCompetitionRailSelectedIndex] = useState<number | null>(null)
   const [extraRailCompetitions, setExtraRailCompetitions] = useState<CompetitionLinkTarget[]>([])
-  const [loadedEventContext, setLoadedEventContext] = useState<LoadedEventContext | null>(null)
+  const [loadedEventContext, setLoadedEventContext] = useState<LoadedEventContext | null>(() => (
+    getInitialLoadedEventContext({
+      activeSport: initialActiveSport,
+      competition: initialCompetition,
+      eventId: initialEventId,
+    })
+  ))
   const [isInlineEventCompact, setIsInlineEventCompact] = useState(false)
   const [selectedCasinoGame, setSelectedCasinoGame] = useState<CasinoGameOpenPayload | null>(null)
   const [activeContentFilter, setActiveContentFilter] = useState<ContentFilterId>('populares')
@@ -1627,6 +1682,11 @@ export function Home({
   ])
 
   const handleSportChange = (sportId: string) => {
+    if (onSportsOverviewChange) {
+      onSportsOverviewChange(sportId)
+      return
+    }
+
     setContentResetKey((current) => current + 1)
     setSelectedCompetition(null)
     setCompetitionRailSelectedIndex(null)
@@ -1698,7 +1758,7 @@ export function Home({
       selectedCompetitionName={headerSelectedCompetition?.name ?? null}
       extraCompetitions={extraRailCompetitions}
       disableInteractions={!ENABLE_HOME_RAIL_LINKS}
-      allowHighlightsInteraction={isInlineEventMode}
+      allowHighlightsInteraction={isInlineEventMode || !!onSportsOverviewChange}
       allowCompetitionInteraction={ENABLE_HOME_RAIL_COMPETITION_LINKS}
       onSportChange={ENABLE_HOME_RAIL_LINKS || isInlineEventMode ? handleSportChange : undefined}
       onOpenCompetition={ENABLE_HOME_RAIL_LINKS || ENABLE_HOME_RAIL_COMPETITION_LINKS ? handleOpenCompetition : undefined}

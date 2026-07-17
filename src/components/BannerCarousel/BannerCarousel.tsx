@@ -54,6 +54,7 @@ interface MissionProgress {
 interface BannerCarouselProps {
   banners?: Banner[]
   disableInteractions?: boolean
+  marketLayout?: 'expanded' | 'compact'
   onBannerClick?: (banner: Banner) => void
 }
 
@@ -1180,13 +1181,15 @@ const getBannerBetslipEventId = (banner: Banner) => {
 export function BannerCarousel({
   banners = sportsBanners,
   disableInteractions = false,
+  marketLayout = 'expanded',
   onBannerClick,
 }: BannerCarouselProps = {}) {
   const isMarketBannerSet = banners.length > 0 && banners.every(hasMarketBanner)
-  const isFootballLiveHighlightSet = banners.length > 0 && banners.every((banner) => (
+  const isFootballLiveHighlightSet = marketLayout === 'expanded' && banners.length > 0 && banners.every((banner) => (
     hasMarketBanner(banner) && (
       banner.marketBanner.variant === 'football-live'
       || banner.marketBanner.variant === 'football-pre'
+      || banner.marketBanner.variant === 'basketball-live'
       || banner.marketBanner.variant === 'basketball-pre'
     )
   ))
@@ -1388,9 +1391,9 @@ export function BannerCarousel({
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging || !scrollRef.current) return
-    e.preventDefault()
     const x = e.pageX - scrollRef.current.offsetLeft
     const walk = (x - startX.current) * 1.5
+    if (Math.abs(walk) > 4) e.preventDefault()
     dragDistance.current = -walk // Negativo porque walk é invertido
     scrollRef.current.scrollLeft = scrollLeft.current - walk
   }
@@ -1421,14 +1424,15 @@ export function BannerCarousel({
 
   const handleBannerClick = (banner: Banner) => {
     if (disableInteractions) return
-    if (!banner.casinoGameId || Math.abs(dragDistance.current) > 8) return
+    if ((!banner.casinoGameId && !banner.eventLink) || Math.abs(dragDistance.current) > 8) return
 
     onBannerClick?.(banner)
   }
 
   const handleBannerKeyDown = (event: KeyboardEvent<HTMLDivElement>, banner: Banner) => {
     if (disableInteractions) return
-    if (!banner.casinoGameId || !onBannerClick) return
+    if (event.target !== event.currentTarget) return
+    if ((!banner.casinoGameId && !banner.eventLink) || !onBannerClick) return
     if (event.key !== 'Enter' && event.key !== ' ') return
 
     event.preventDefault()
@@ -1869,7 +1873,15 @@ export function BannerCarousel({
   const renderMarketBanner = (banner: Banner & { marketBanner: NonNullable<Banner['marketBanner']> }) => {
     const { marketBanner } = banner
 
-    if (marketBanner.variant === 'football-live' || marketBanner.variant === 'football-pre' || marketBanner.variant === 'basketball-pre') {
+    if (
+      marketLayout === 'expanded'
+      && (
+        marketBanner.variant === 'football-live'
+        || marketBanner.variant === 'football-pre'
+        || marketBanner.variant === 'basketball-live'
+        || marketBanner.variant === 'basketball-pre'
+      )
+    ) {
       return renderFootballLiveBanner(banner)
     }
 
@@ -1929,6 +1941,7 @@ export function BannerCarousel({
       className={[
         'banner-carousel',
         isMarketBannerSet ? 'banner-carousel--market' : '',
+        marketLayout === 'compact' ? 'banner-carousel--compact-market' : '',
         isFootballLiveHighlightSet ? 'banner-carousel--football-live-highlight' : '',
       ].filter(Boolean).join(' ')}
     >
@@ -1944,13 +1957,19 @@ export function BannerCarousel({
         onTouchEnd={handleTouchEnd}
       >
         {banners.map((banner) => {
-          const isClickableBanner = !disableInteractions && !!banner.casinoGameId && !!onBannerClick
+          const isClickableBanner = !disableInteractions
+            && (!!banner.casinoGameId || !!banner.eventLink)
+            && !!onBannerClick
 
           if (hasMarketBanner(banner)) {
             return (
               <div
                 key={banner.id}
-                className={`banner-card banner-card--market${banner.marketBanner.variant === 'football-live' || banner.marketBanner.variant === 'football-pre' || banner.marketBanner.variant === 'basketball-pre' ? ' banner-card--football-live-highlight' : ''}`}
+                className={`banner-card banner-card--market${isClickableBanner ? ' banner-card--clickable' : ''}${marketLayout === 'expanded' && (banner.marketBanner.variant === 'football-live' || banner.marketBanner.variant === 'football-pre' || banner.marketBanner.variant === 'basketball-live' || banner.marketBanner.variant === 'basketball-pre') ? ' banner-card--football-live-highlight' : ''}`}
+                role={isClickableBanner ? 'button' : undefined}
+                tabIndex={isClickableBanner ? 0 : undefined}
+                onClick={isClickableBanner ? () => handleBannerClick(banner) : undefined}
+                onKeyDown={isClickableBanner ? (event) => handleBannerKeyDown(event, banner) : undefined}
               >
                 {renderMarketBanner(banner)}
               </div>

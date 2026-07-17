@@ -103,7 +103,7 @@ export interface MarketBannerPlayerProp {
 }
 
 export interface MarketBanner {
-  variant: 'football-live' | 'tennis-live' | 'football-pre' | 'basketball-pre'
+  variant: 'football-live' | 'tennis-live' | 'football-pre' | 'basketball-live' | 'basketball-pre'
   sport: 'futebol' | 'tenis' | 'basquete'
   league: string
   teams: [MarketBannerTeam, MarketBannerTeam]
@@ -135,6 +135,12 @@ export interface Banner {
   tennisMatch?: TennisMatch
   comboStats?: ComboStat[]
   marketBanner?: MarketBanner
+  eventLink?: {
+    eventId: string
+    competitionId: string
+    competitionName: string
+    sport: 'futebol' | 'basquete'
+  }
 }
 
 export interface Promotion {
