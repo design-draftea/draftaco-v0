@@ -3736,6 +3736,46 @@
       ],
       "providerId": "331209",
       "file": "man-city/bernardo-silva.png"
+    },
+    {
+      "team": "Benfica",
+      "name": "Orkun Kökçü",
+      "aliases": [
+        "Kokcu",
+        "O. Kökçü"
+      ],
+      "providerId": "907461",
+      "file": "benfica/kokcu.png"
+    },
+    {
+      "team": "Benfica",
+      "name": "Fredrik Aursnes",
+      "aliases": [
+        "Aursnes",
+        "F. Aursnes"
+      ],
+      "providerId": "228364",
+      "file": "benfica/aursnes.png"
+    },
+    {
+      "team": "Benfica",
+      "name": "Mélanie Florentino",
+      "aliases": [
+        "Florentino",
+        "M. Florentino"
+      ],
+      "providerId": "1858736",
+      "file": "benfica/florentino.png"
+    },
+    {
+      "team": "Ajax",
+      "name": "Kenneth Taylor",
+      "aliases": [
+        "Taylor",
+        "K. Taylor"
+      ],
+      "providerId": "959806",
+      "file": "ajax/taylor.png"
     }
   ]
 }
