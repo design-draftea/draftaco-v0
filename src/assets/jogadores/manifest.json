@@ -3983,6 +3983,36 @@
       ],
       "providerId": "231776",
       "file": "sevilla/oliver-torres.png"
+    },
+    {
+      "team": "Villarreal",
+      "name": "Dani Parejo",
+      "aliases": [
+        "Parejo",
+        "D. Parejo"
+      ],
+      "providerId": "39182",
+      "file": "villarreal/parejo.png"
+    },
+    {
+      "team": "Villarreal",
+      "name": "Manu Trigueros",
+      "aliases": [
+        "Trigueros",
+        "M. Trigueros"
+      ],
+      "providerId": "153966",
+      "file": "villarreal/trigueros.png"
+    },
+    {
+      "team": "Alavés",
+      "name": "Jon Guridi",
+      "aliases": [
+        "Guridi",
+        "J. Guridi"
+      ],
+      "providerId": "788141",
+      "file": "alaves/guridi.png"
     }
   ]
 }
