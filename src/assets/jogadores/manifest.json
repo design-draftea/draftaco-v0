@@ -3520,6 +3520,45 @@
       ],
       "providerId": "37151",
       "file": "inter/mkhitaryan.png"
+    },
+    {
+      "team": "Tottenham",
+      "name": "Dejan Kulusevski",
+      "aliases": [
+        "Kulusevski",
+        "D. Kulusevski"
+      ],
+      "providerId": "928124",
+      "file": "tottenham/kulusevski.png"
+    },
+    {
+      "team": "Wolves",
+      "name": "Jørgen Strand Larsen",
+      "aliases": [
+        "Larsen",
+        "J. Larsen"
+      ],
+      "providerId": "876599",
+      "file": "wolves/larsen.png"
+    },
+    {
+      "team": "PSG",
+      "name": "Vitinha",
+      "aliases": [
+        "Vitinha"
+      ],
+      "providerId": "902029",
+      "file": "psg/vitinha.png"
+    },
+    {
+      "team": "PSG",
+      "name": "Fabián Ruiz",
+      "aliases": [
+        "Fabian Ruiz",
+        "F. Ruiz"
+      ],
+      "providerId": "784655",
+      "file": "psg/fabian-ruiz.png"
     }
   ]
 }
