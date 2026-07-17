@@ -4498,6 +4498,15 @@
       ],
       "providerId": "289146",
       "file": "tenis/giovanni-mpetshi-perricard.png"
+    },
+    {
+      "team": "Tenis",
+      "name": "Aleksandr Shevchenko",
+      "aliases": [
+        "Alexander Shevchenko"
+      ],
+      "providerId": "264344",
+      "file": "tenis/alexander-shevchenko.png"
     }
   ]
 }
