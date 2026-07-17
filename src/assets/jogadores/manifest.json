@@ -4577,6 +4577,66 @@
       ],
       "providerId": "1128847",
       "file": "universidad-catolica/jader-gentil.png"
+    },
+    {
+      "team": "Estudiantes de La Plata",
+      "name": "José Sosa",
+      "aliases": [
+        "Jose Sosa",
+        "J. Sosa"
+      ],
+      "providerId": "22981",
+      "file": "estudiantes-de-la-plata/jose-sosa.png"
+    },
+    {
+      "team": "Estudiantes de La Plata",
+      "name": "Santiago Ascacíbar",
+      "aliases": [
+        "Santiago Ascacibar",
+        "S. Ascacíbar"
+      ],
+      "providerId": "830667",
+      "file": "estudiantes-de-la-plata/santiago-ascacibar.png"
+    },
+    {
+      "team": "Estudiantes de La Plata",
+      "name": "Fernando Zuqui",
+      "aliases": [
+        "Fernando Zuqui",
+        "F. Zuqui"
+      ],
+      "providerId": "284729",
+      "file": "estudiantes-de-la-plata/fernando-zuqui.png"
+    },
+    {
+      "team": "Platense",
+      "name": "Guido Mainero",
+      "aliases": [
+        "Guido Mainero",
+        "G. Mainero"
+      ],
+      "providerId": "895232",
+      "file": "platense/guido-mainero.png"
+    },
+    {
+      "team": "Platense",
+      "name": "Franco Baldassarra",
+      "aliases": [
+        "Franco Baldassarra",
+        "F. Baldassarra"
+      ],
+      "providerId": "981340",
+      "file": "platense/franco-baldassarra.png"
+    },
+    {
+      "team": "Coquimbo Unido",
+      "name": "Sebastián Galani",
+      "aliases": [
+        "Sebastian Galani",
+        "S. Galani"
+      ],
+      "providerId": "974009",
+      "file": "coquimbo-unido/sebastian-galani.png"
     }
   ]
 }
