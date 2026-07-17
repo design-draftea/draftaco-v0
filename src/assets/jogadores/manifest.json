@@ -4797,6 +4797,46 @@
       ],
       "providerId": "924783",
       "file": "universitario/jairo-concha.png"
+    },
+    {
+      "team": "Sporting Cristal",
+      "name": "Yoshimar Yotún",
+      "aliases": [
+        "Yoshimar Yotun",
+        "Y. Yotún"
+      ],
+      "providerId": "46988",
+      "file": "sporting-cristal/yoshimar-yotun.png"
+    },
+    {
+      "team": "Sporting Cristal",
+      "name": "Leandro Sosa",
+      "aliases": [
+        "Leandro Sosa",
+        "L. Sosa"
+      ],
+      "providerId": "828836",
+      "file": "sporting-cristal/leandro-sosa.png"
+    },
+    {
+      "team": "Sporting Cristal",
+      "name": "Gustavo Cazonatti",
+      "aliases": [
+        "Gustavo Cazonatti",
+        "G. Cazonatti"
+      ],
+      "providerId": "892073",
+      "file": "sporting-cristal/gustavo-cazonatti.png"
+    },
+    {
+      "team": "Barcelona SC",
+      "name": "Fernando Gaibor",
+      "aliases": [
+        "Fernando Gaibor",
+        "F. Gaibor"
+      ],
+      "providerId": "106461",
+      "file": "barcelona-sc/fernando-gaibor.png"
     }
   ]
 }
