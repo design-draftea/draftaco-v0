@@ -3954,6 +3954,35 @@
       ],
       "providerId": "808955",
       "file": "elche/josan.png"
+    },
+    {
+      "team": "Sevilla",
+      "name": "Ivan Rakitić",
+      "aliases": [
+        "Rakitic",
+        "I. Rakitić"
+      ],
+      "providerId": "7635",
+      "file": "sevilla/rakitic.png"
+    },
+    {
+      "team": "Sevilla",
+      "name": "Suso",
+      "aliases": [
+        "Suso"
+      ],
+      "providerId": "96370",
+      "file": "sevilla/suso.png"
+    },
+    {
+      "team": "Sevilla",
+      "name": "Óliver Torres",
+      "aliases": [
+        "Oliver Torres",
+        "Ó. Torres"
+      ],
+      "providerId": "231776",
+      "file": "sevilla/oliver-torres.png"
     }
   ]
 }
