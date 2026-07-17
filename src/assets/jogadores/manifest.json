@@ -4153,6 +4153,75 @@
       ],
       "providerId": "147289",
       "file": "wolfsburg/arnold.png"
+    },
+    {
+      "team": "Eintracht",
+      "name": "Mario Götze",
+      "aliases": [
+        "Gotze",
+        "M. Götze"
+      ],
+      "providerId": "66518",
+      "file": "eintracht/gotze.png"
+    },
+    {
+      "team": "Eintracht",
+      "name": "Ellyes Skhiri",
+      "aliases": [
+        "Skhiri",
+        "E. Skhiri"
+      ],
+      "providerId": "591706",
+      "file": "eintracht/skhiri.png"
+    },
+    {
+      "team": "Augsburg",
+      "name": "Elvis Rexhbeçaj",
+      "aliases": [
+        "Rexhbecaj",
+        "E. Rexhbeçaj"
+      ],
+      "providerId": "842188",
+      "file": "augsburg/rexhbecaj.png"
+    },
+    {
+      "team": "Augsburg",
+      "name": "Arne Maier",
+      "aliases": [
+        "Maier",
+        "A. Maier"
+      ],
+      "providerId": "836706",
+      "file": "augsburg/maier.png"
+    },
+    {
+      "team": "Hamburger",
+      "name": "Sonny Kittel",
+      "aliases": [
+        "Kittel",
+        "S. Kittel"
+      ],
+      "providerId": "97933",
+      "file": "hamburger/kittel.png"
+    },
+    {
+      "team": "Hamburger",
+      "name": "Reis",
+      "aliases": [
+        "Reis"
+      ],
+      "providerId": "288313",
+      "file": "hamburger/reis.png"
+    },
+    {
+      "team": "Vitória",
+      "name": "Wellington Rato",
+      "aliases": [
+        "Wellington Rato",
+        "W. Rato"
+      ],
+      "providerId": "865356",
+      "file": "vitoria/wellington-rato.png"
     }
   ]
 }
