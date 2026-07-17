@@ -4637,6 +4637,66 @@
       ],
       "providerId": "974009",
       "file": "coquimbo-unido/sebastian-galani.png"
+    },
+    {
+      "team": "Coquimbo Unido",
+      "name": "Alejandro Camargo",
+      "aliases": [
+        "Alejandro Camargo",
+        "A. Camargo"
+      ],
+      "providerId": "805408",
+      "file": "coquimbo-unido/alejandro-camargo.png"
+    },
+    {
+      "team": "Bolívar",
+      "name": "Leonel Justiniano",
+      "aliases": [
+        "Leonel Justiniano",
+        "L. Justiniano"
+      ],
+      "providerId": "220991",
+      "file": "bolivar/leonel-justiniano.png"
+    },
+    {
+      "team": "Bolívar",
+      "name": "Fernando Saucedo",
+      "aliases": [
+        "Fernando Saucedo",
+        "F. Saucedo"
+      ],
+      "providerId": "127947",
+      "file": "bolivar/fernando-saucedo.png"
+    },
+    {
+      "team": "Cerro Porteño",
+      "name": "Cecilio Domínguez",
+      "aliases": [
+        "Cecilio Dominguez",
+        "C. Domínguez"
+      ],
+      "providerId": "333367",
+      "file": "cerro-porteno/cecilio-dominguez.png"
+    },
+    {
+      "team": "Cerro Porteño",
+      "name": "Federico Carrizo",
+      "aliases": [
+        "Federico Carrizo",
+        "F. Carrizo"
+      ],
+      "providerId": "341065",
+      "file": "cerro-porteno/federico-carrizo.png"
+    },
+    {
+      "team": "Cerro Porteño",
+      "name": "Jorge Morel",
+      "aliases": [
+        "Jorge Morel",
+        "J. Morel"
+      ],
+      "providerId": "1175757",
+      "file": "cerro-porteno/jorge-morel.png"
     }
   ]
 }
