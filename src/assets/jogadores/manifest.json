@@ -3866,6 +3866,36 @@
       ],
       "providerId": "998951",
       "file": "leeds/gnonto.png"
+    },
+    {
+      "team": "Leeds",
+      "name": "Ethan Ampadu",
+      "aliases": [
+        "Ampadu",
+        "E. Ampadu"
+      ],
+      "providerId": "847097",
+      "file": "leeds/ampadu.png"
+    },
+    {
+      "team": "Burnley",
+      "name": "Gabriel Gudmundsson",
+      "aliases": [
+        "Gudmundsson",
+        "G. Gudmundsson"
+      ],
+      "providerId": "834308",
+      "file": "burnley/gudmundsson.png"
+    },
+    {
+      "team": "Burnley",
+      "name": "Luca Koleosho",
+      "aliases": [
+        "Koleosho",
+        "L. Koleosho"
+      ],
+      "providerId": "1216282",
+      "file": "burnley/koleosho.png"
     }
   ]
 }
