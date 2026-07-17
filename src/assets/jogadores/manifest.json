@@ -3599,6 +3599,45 @@
       ],
       "providerId": "866469",
       "file": "newcastle/bruno-guimaraes.png"
+    },
+    {
+      "team": "Newcastle",
+      "name": "Sandro Tonali",
+      "aliases": [
+        "Tonali",
+        "S. Tonali"
+      ],
+      "providerId": "892673",
+      "file": "newcastle/tonali.png"
+    },
+    {
+      "team": "Newcastle",
+      "name": "Joelinton",
+      "aliases": [
+        "Joelinton"
+      ],
+      "providerId": "560128",
+      "file": "newcastle/joelinton.png"
+    },
+    {
+      "team": "Napoli",
+      "name": "Frank Anguissa",
+      "aliases": [
+        "Anguissa",
+        "F. Anguissa"
+      ],
+      "providerId": "787941",
+      "file": "napoli/anguissa.png"
+    },
+    {
+      "team": "Napoli",
+      "name": "Stanislav Lobotka",
+      "aliases": [
+        "Lobotka",
+        "S. Lobotka"
+      ],
+      "providerId": "150383",
+      "file": "napoli/lobotka.png"
     }
   ]
 }
