@@ -3926,6 +3926,34 @@
       ],
       "providerId": "811629",
       "file": "getafe/milla.png"
+    },
+    {
+      "team": "Elche",
+      "name": "Fidel",
+      "aliases": [
+        "Fidel"
+      ],
+      "providerId": "116607",
+      "file": "elche/fidel.png"
+    },
+    {
+      "team": "Elche",
+      "name": "Aleix Febas",
+      "aliases": [
+        "Febas",
+        "A. Febas"
+      ],
+      "providerId": "286167",
+      "file": "elche/febas.png"
+    },
+    {
+      "team": "Elche",
+      "name": "Josan",
+      "aliases": [
+        "Josan"
+      ],
+      "providerId": "808955",
+      "file": "elche/josan.png"
     }
   ]
 }
