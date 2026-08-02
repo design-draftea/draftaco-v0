@@ -5036,6 +5036,16 @@
       ],
       "providerId": "841128",
       "file": "houston-dynamo/artur.png"
+    },
+    {
+      "team": "Charlotte FC",
+      "name": "Ashley Westwood",
+      "aliases": [
+        "Ashley Westwood",
+        "A. Westwood"
+      ],
+      "providerId": "49647",
+      "file": "charlotte-fc/ashley-westwood.png"
     }
   ]
 }
