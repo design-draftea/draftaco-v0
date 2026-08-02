@@ -4917,6 +4917,46 @@
       ],
       "providerId": "1014845",
       "file": "whitecaps/sebastian-berhalter.png"
+    },
+    {
+      "team": "Cincinnati",
+      "name": "Pavel Bucha",
+      "aliases": [
+        "Pavel Bucha",
+        "P. Bucha"
+      ],
+      "providerId": "911583",
+      "file": "cincinnati/pavel-bucha.png"
+    },
+    {
+      "team": "Cincinnati",
+      "name": "Luca Orellano",
+      "aliases": [
+        "Luca Orellano",
+        "L. Orellano"
+      ],
+      "providerId": "965764",
+      "file": "cincinnati/luca-orellano.png"
+    },
+    {
+      "team": "Chicago Fire",
+      "name": "Maren Haile-Selassie",
+      "aliases": [
+        "Maren Haile-Selassie",
+        "M. Haile-Selassie"
+      ],
+      "providerId": "888735",
+      "file": "chicago-fire/maren-haile-selassie.png"
+    },
+    {
+      "team": "Nashville",
+      "name": "Shaq Moore",
+      "aliases": [
+        "Shaq Moore",
+        "S. Moore"
+      ],
+      "providerId": "813511",
+      "file": "nashville/shaq-moore.png"
     }
   ]
 }
