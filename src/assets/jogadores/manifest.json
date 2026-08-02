@@ -4997,6 +4997,45 @@
       ],
       "providerId": "989830",
       "file": "portland-timbers/david-ayala.png"
+    },
+    {
+      "team": "Portland Timbers",
+      "name": "Antony Alves",
+      "aliases": [
+        "Antony",
+        "A. Alves"
+      ],
+      "providerId": "1105971",
+      "file": "portland-timbers/antony.png"
+    },
+    {
+      "team": "Orlando City",
+      "name": "Iván Angulo",
+      "aliases": [
+        "Ivan Angulo",
+        "I. Angulo"
+      ],
+      "providerId": "861493",
+      "file": "orlando-city/ivan-angulo.png"
+    },
+    {
+      "team": "FC Dallas",
+      "name": "Sebastian Lletget",
+      "aliases": [
+        "Sebastian Lletget",
+        "S. Lletget"
+      ],
+      "providerId": "294359",
+      "file": "fc-dallas/sebastian-lletget.png"
+    },
+    {
+      "team": "Houston Dynamo",
+      "name": "Artur",
+      "aliases": [
+        "Artur"
+      ],
+      "providerId": "841128",
+      "file": "houston-dynamo/artur.png"
     }
   ]
 }
