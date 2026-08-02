@@ -4957,6 +4957,46 @@
       ],
       "providerId": "813511",
       "file": "nashville/shaq-moore.png"
+    },
+    {
+      "team": "New York City",
+      "name": "Maxi Moralez",
+      "aliases": [
+        "Maxi Moralez",
+        "M. Moralez"
+      ],
+      "providerId": "48472",
+      "file": "new-york-city/maxi-moralez.png"
+    },
+    {
+      "team": "Seattle Sounders",
+      "name": "Cristian Roldán",
+      "aliases": [
+        "Cristian Roldan",
+        "C. Roldán"
+      ],
+      "providerId": "790171",
+      "file": "seattle-sounders/cristian-roldan.png"
+    },
+    {
+      "team": "Atlanta United",
+      "name": "Bartosz Slisz",
+      "aliases": [
+        "Bartosz Slisz",
+        "B. Slisz"
+      ],
+      "providerId": "844500",
+      "file": "atlanta-united/bartosz-slisz.png"
+    },
+    {
+      "team": "Portland Timbers",
+      "name": "David Ayala",
+      "aliases": [
+        "David Ayala",
+        "D. Ayala"
+      ],
+      "providerId": "989830",
+      "file": "portland-timbers/david-ayala.png"
     }
   ]
 }
