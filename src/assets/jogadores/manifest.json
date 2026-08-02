@@ -4877,6 +4877,46 @@
       ],
       "providerId": "1003008",
       "file": "carabobo/francisco-flores.png"
+    },
+    {
+      "team": "Melgar",
+      "name": "Horacio Orzan",
+      "aliases": [
+        "Horacio Orzan",
+        "H. Orzan"
+      ],
+      "providerId": "250017",
+      "file": "melgar/horacio-orzan.png"
+    },
+    {
+      "team": "Inter Miami",
+      "name": "Jordi Alba",
+      "aliases": [
+        "Jordi Alba",
+        "J. Alba"
+      ],
+      "providerId": "35199",
+      "file": "inter-miami/jordi-alba.png"
+    },
+    {
+      "team": "Inter Miami",
+      "name": "Sergio Busquets",
+      "aliases": [
+        "Sergio Busquets",
+        "S. Busquets"
+      ],
+      "providerId": "39433",
+      "file": "inter-miami/sergio-busquets.png"
+    },
+    {
+      "team": "Whitecaps",
+      "name": "Sebastian Berhalter",
+      "aliases": [
+        "Sebastian Berhalter",
+        "S. Berhalter"
+      ],
+      "providerId": "1014845",
+      "file": "whitecaps/sebastian-berhalter.png"
     }
   ]
 }
