@@ -1,9 +1,8 @@
-import { useLayoutEffect, useRef, useState, type MouseEvent, type PointerEvent, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, type MouseEvent, type PointerEvent, type ReactNode } from 'react'
 import './HeaderV2.css'
 import logoDraftea from '../../assets/logoDraftea.svg'
 import logoReidoPitaco from '../../assets/logoReidoPitaco.svg'
 import logoReidoPitacoLight from '../../assets/logoReidoPitacoLight.svg'
-import { NavigationMenuBottomSheet } from '../NavigationMenuBottomSheet'
 import type { ProductMode } from '../../types/home'
 import { useFeatureFlags } from '../../hooks/useFeatureFlags'
 
@@ -18,6 +17,7 @@ interface HeaderV2Props {
   changeProductOnPointerDown?: boolean
   disableProductToggle?: boolean
   disableMenuButton?: boolean
+  isProfileOpen?: boolean
   onProductChange?: (product: ProductMode) => void
   onLogoClick?: () => void
   onLogoDoubleClick?: () => void
@@ -26,6 +26,7 @@ interface HeaderV2Props {
   onDepositOpen?: () => void
   onIdentityOpen?: () => void
   onLimitsOpen?: () => void
+  onProfileOpen?: () => void
   children?: ReactNode
 }
 
@@ -50,6 +51,7 @@ export function HeaderV2({
   depositStatus,
   showMenuButton = true,
   disableMenuButton = false,
+  isProfileOpen = false,
   onLogoClick,
   onLogoDoubleClick,
   onLoginClick,
@@ -57,6 +59,7 @@ export function HeaderV2({
   onDepositOpen,
   onIdentityOpen,
   onLimitsOpen,
+  onProfileOpen,
   children,
 }: HeaderV2Props = {}) {
   const { brandMode } = useFeatureFlags()
@@ -85,7 +88,6 @@ export function HeaderV2({
   const logoAlt = isDrafteaBrand ? 'Draftea' : 'Rei do Pitaco'
   const logoDark = isDrafteaBrand ? logoDraftea : logoReidoPitaco
   const logoLight = isDrafteaBrand ? logoDraftea : logoReidoPitacoLight
-  const [isNavigationMenuOpen, setIsNavigationMenuOpen] = useState(false)
   const lastLogoTapTimeRef = useRef(0)
   const lastLogoActivationTimeRef = useRef(0)
   const logoLongPressTimerRef = useRef<number | null>(null)
@@ -270,11 +272,12 @@ export function HeaderV2({
                 <button
                   type="button"
                   className="header__menu-btn"
-                  aria-label="Abrir menu"
-                  aria-expanded={isNavigationMenuOpen}
+                  aria-label="Abrir meu perfil"
+                  aria-haspopup="dialog"
+                  aria-expanded={isProfileOpen}
                   aria-disabled={disableMenuButton}
                   disabled={disableMenuButton}
-                  onClick={disableMenuButton ? undefined : () => setIsNavigationMenuOpen(true)}
+                  onClick={disableMenuButton ? undefined : onProfileOpen}
                 >
                   <span aria-hidden="true" className="header__menu-icon" />
                 </button>
@@ -286,14 +289,6 @@ export function HeaderV2({
 
       {rail}
       {children}
-      {!isLoggedOut && showMenuButton && (
-        <NavigationMenuBottomSheet
-          isOpen={isNavigationMenuOpen}
-          balanceCents={balanceCents}
-          onDepositOpen={onDepositOpen}
-          onClose={() => setIsNavigationMenuOpen(false)}
-        />
-      )}
     </header>
   )
 }

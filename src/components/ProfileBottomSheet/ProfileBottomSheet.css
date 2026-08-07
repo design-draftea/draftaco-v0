@@ -1,0 +1,437 @@
+.profile-bottom-sheet__stage {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+.profile-bottom-sheet__route {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 300ms ease-out,
+    opacity 300ms ease-out;
+  will-change: transform, opacity;
+}
+
+.profile-bottom-sheet__route--profile {
+  transform: translate3d(-100%, 0, 0);
+}
+
+.profile-bottom-sheet__route--deposit {
+  transform: translate3d(100%, 0, 0);
+}
+
+.profile-bottom-sheet__stage--profile .profile-bottom-sheet__route--profile,
+.profile-bottom-sheet__stage--deposit .profile-bottom-sheet__route--deposit {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate3d(0, 0, 0);
+}
+
+.profile-bottom-sheet__stage--deposit .profile-bottom-sheet__route--profile {
+  transform: translate3d(-100%, 0, 0);
+}
+
+.profile-bottom-sheet__titles {
+  display: contents;
+}
+
+.profile-bottom-sheet__title {
+  opacity: 0;
+  transition: opacity 150ms ease-out;
+}
+
+.profile-bottom-sheet__title--visible {
+  opacity: 1;
+  transition-delay: 150ms;
+}
+
+.profile-bottom-sheet__back {
+  position: relative;
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease-out;
+}
+
+.profile-bottom-sheet__back--visible {
+  opacity: 1;
+  pointer-events: auto;
+  transition-delay: 150ms;
+}
+
+.profile-bottom-sheet__back:disabled {
+  cursor: default;
+}
+
+.profile-bottom-sheet__content {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  padding: 16px 16px 0;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.deposit-panel--bottom-sheet .profile-bottom-sheet__route .profile-bottom-sheet__content {
+  height: 100%;
+}
+
+.profile-balance {
+  display: flex;
+  width: 100%;
+  height: 218px;
+  flex: 0 0 218px;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 1px solid rgb(251 251 251 / 0.12);
+  border-radius: 20px;
+  background:
+    radial-gradient(
+      circle at 50% -35%,
+      rgb(var(--ds-fill-primary-rgb, 251 251 251) / 0.18) 0,
+      rgb(var(--ds-fill-primary-rgb, 251 251 251) / 0.1) 30%,
+      rgb(var(--ds-fill-primary-rgb, 251 251 251) / 0.035) 56%,
+      rgb(var(--ds-fill-primary-rgb, 251 251 251) / 0) 72%
+    );
+  color: #fbfbfb;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+}
+
+.profile-balance p {
+  margin: 0;
+}
+
+.profile-balance__header {
+  display: flex;
+  width: 100%;
+  height: 61px;
+  flex: 0 0 61px;
+  align-items: center;
+  gap: 2px;
+}
+
+.profile-balance__heading {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.profile-balance__amount {
+  color: #fbfbfb;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 38px;
+  white-space: nowrap;
+}
+
+.profile-balance__subtitle,
+.profile-balance__reward-label {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 21px;
+  white-space: nowrap;
+}
+
+.profile-balance__subtitle {
+  color: rgb(251 251 251 / 0.7);
+}
+
+.profile-balance__expand {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 56px;
+}
+
+.profile-balance__expand img {
+  display: block;
+  width: 12px;
+  height: 6.667px;
+}
+
+.profile-balance__actions {
+  display: flex;
+  width: 100%;
+  height: 48px;
+  flex: 0 0 48px;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-balance__action {
+  display: flex;
+  min-width: 0;
+  height: 48px;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 56px;
+  color: #fbfbfb;
+  font: 500 16px / 24px 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  white-space: nowrap;
+}
+
+.profile-balance__action img {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+
+.profile-balance__action--secondary {
+  background: var(--ds-action-secondary-default, rgb(251 251 251 / 0.12));
+}
+
+.profile-balance__action--primary {
+  background: linear-gradient(50.0057deg, #4b20ff 0%, #9730ff 100%);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.profile-balance__action--primary:disabled {
+  cursor: default;
+}
+
+.profile-balance__rewards {
+  display: flex;
+  width: 100%;
+  height: 45px;
+  flex: 0 0 45px;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.profile-balance__reward {
+  display: flex;
+  min-width: 0;
+  height: 45px;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.profile-balance__reward-label {
+  color: rgb(251 251 251 / 0.5);
+}
+
+.profile-balance__reward-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #fbfbfb;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  white-space: nowrap;
+}
+
+.profile-balance__reward-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+
+.profile-balance__reward-chevron {
+  display: block;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+}
+
+.profile-shortcuts {
+  display: flex;
+  width: 100%;
+  height: 105px;
+  flex: 0 0 105px;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.profile-shortcut-card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  height: 105px;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 12px;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 1px solid rgb(251 251 251 / 0.12);
+  border-radius: 16px;
+  background: transparent;
+  color: rgb(251 251 251 / 0.7);
+  font: 400 14px / 21px 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.profile-shortcut-card__light {
+  position: absolute;
+  top: -92px;
+  left: calc(50% - 1.25px);
+  display: block;
+  width: 283px;
+  height: 156px;
+  max-width: none;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.profile-shortcut-card__icon,
+.profile-shortcut-card span {
+  position: relative;
+  z-index: 1;
+}
+
+.profile-shortcut-card__icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+}
+
+.profile-menu-groups {
+  display: flex;
+  width: 100%;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+  margin-top: 24px;
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+}
+
+.profile-menu-section {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.profile-menu-section__title {
+  margin: 0;
+  color: rgb(251 251 251 / 0.5);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.profile-menu-section__options {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.profile-menu-option {
+  display: flex;
+  width: 100%;
+  height: 48px;
+  flex: 0 0 48px;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fbfbfb;
+  font: 400 16px / 24px 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.profile-menu-option__icon-shell {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  background: rgb(251 251 251 / 0.12);
+}
+
+.profile-menu-option__icon-shell img {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+
+.profile-menu-option__body {
+  display: flex;
+  min-width: 0;
+  height: 48px;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgb(251 251 251 / 0.12);
+}
+
+.profile-menu-option__body > span {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.profile-menu-option__chevron {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+
+.profile-menu-footer {
+  display: flex;
+  width: 100%;
+  height: 99px;
+  flex: 0 0 99px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 24px;
+  box-sizing: border-box;
+}
+
+.profile-menu-option--logout {
+  font-size: 14px;
+  line-height: 21px;
+}
+
+.profile-menu-footer p {
+  width: 100%;
+  margin: 0;
+  color: rgb(251 251 251 / 0.32);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 15px;
+}

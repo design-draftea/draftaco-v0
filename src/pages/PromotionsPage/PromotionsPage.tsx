@@ -16,6 +16,7 @@ interface HeaderComponentProps {
   changeProductOnPointerDown?: boolean
   disableProductToggle?: boolean
   disableMenuButton?: boolean
+  isProfileOpen?: boolean
   onProductChange?: (product: ProductMode) => void
   onLogoDoubleClick?: () => void
   onLoginClick?: () => void
@@ -23,6 +24,7 @@ interface HeaderComponentProps {
   onDepositOpen?: () => void
   onIdentityOpen?: () => void
   onLimitsOpen?: () => void
+  onProfileOpen?: () => void
   children?: ReactNode
 }
 
@@ -39,6 +41,8 @@ interface PromotionsPageProps {
   onDepositOpen?: () => void
   onIdentityOpen?: () => void
   onLimitsOpen?: () => void
+  isProfileOpen?: boolean
+  onProfileOpen?: () => void
 }
 
 const HEADER_COMPACT_SCROLL_TOP = 28
@@ -82,6 +86,8 @@ export function PromotionsPage({
   onDepositOpen,
   onIdentityOpen,
   onLimitsOpen,
+  isProfileOpen,
+  onProfileOpen,
 }: PromotionsPageProps = {}) {
   const pageRef = useRef<HTMLDivElement>(null)
   const tabsTrackRef = useRef<HTMLDivElement>(null)
@@ -261,10 +267,11 @@ export function PromotionsPage({
         depositStatus={depositStatus}
         changeProductOnPointerDown={false}
         disableProductToggle={true}
-        disableMenuButton={true}
+        isProfileOpen={isProfileOpen}
         onDepositOpen={onDepositOpen}
         onIdentityOpen={onIdentityOpen}
         onLimitsOpen={onLimitsOpen}
+        onProfileOpen={onProfileOpen}
         onLogoDoubleClick={onLogoDoubleClick}
         onLoginClick={onLoginClick}
         onCreateAccountClick={onCreateAccountClick}

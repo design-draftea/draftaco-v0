@@ -10,6 +10,7 @@ import {
   type DepositAccountId,
 } from './components/DepositPanel'
 import { FeatureFlagsPanel } from './components/FeatureFlagsPanel'
+import { ProfileBottomSheet } from './components/ProfileBottomSheet'
 import { LocationPermissionGate } from './components/LocationPermissionGate'
 import { BetslipProvider } from './hooks/BetslipProvider'
 import { FeatureFlagsProvider } from './hooks/FeatureFlagsProvider'
@@ -317,6 +318,7 @@ function AppContent() {
   const [betSuccessReceipt, setBetSuccessReceipt] = useState<BetSuccessReceipt | null>(null)
   const [isCompactBetslipSuppressed, setIsCompactBetslipSuppressed] = useState(false)
   const [isDepositPanelOpen, setIsDepositPanelOpen] = useState(false)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [depositPanelOrigin, setDepositPanelOrigin] = useState<DepositPanelOrigin>('standard')
   const [signupPendingDepositAmountCents, setSignupPendingDepositAmountCents] = useState<number | null>(null)
   const [signupPendingRequirement, setSignupPendingRequirement] = useState<SignupPendingRequirement | null>(null)
@@ -726,6 +728,14 @@ function AppContent() {
     setIsDepositPanelOpen(false)
   }, [])
 
+  const handleProfileOpen = useCallback(() => {
+    setIsProfileOpen(true)
+  }, [])
+
+  const handleProfileClose = useCallback(() => {
+    setIsProfileOpen(false)
+  }, [])
+
   const handleDepositConfirmed = useCallback((
     depositAmountCents: number,
     accountId: DepositAccountId,
@@ -936,11 +946,13 @@ function AppContent() {
             balanceCents={balanceCents}
             depositStatus={headerDepositStatus}
             HeaderComponent={HeaderV2}
+            isProfileOpen={isProfileOpen}
             onLoginClick={handleLoginOpen}
             onCreateAccountClick={handleCreateAccountClick}
             onDepositOpen={handleDepositPanelOpen}
             onIdentityOpen={handleSignupIdentityOpen}
             onLimitsOpen={handleSignupLimitsOpen}
+            onProfileOpen={handleProfileOpen}
             onProductChange={handleProductChange}
           />
         ) : isSportsV2Page ? (
@@ -948,11 +960,13 @@ function AppContent() {
             authVariant={authVariant}
             balanceCents={balanceCents}
             depositStatus={headerDepositStatus}
+            isProfileOpen={isProfileOpen}
             onLoginClick={handleLoginOpen}
             onCreateAccountClick={handleCreateAccountClick}
             onDepositOpen={handleDepositPanelOpen}
             onIdentityOpen={handleSignupIdentityOpen}
             onLimitsOpen={handleSignupLimitsOpen}
+            onProfileOpen={handleProfileOpen}
             onLiveEventOpenChange={handleLiveEventOpenChange}
             onSportsHomeClick={handleSportsV2Home}
           />
@@ -964,11 +978,13 @@ function AppContent() {
             depositStatus={headerDepositStatus}
             HeaderComponent={HeaderV2}
             isLiveEventSuppressed={isFullBetslipOpen}
+            isProfileOpen={isProfileOpen}
             onLoginClick={handleLoginOpen}
             onCreateAccountClick={handleCreateAccountClick}
             onDepositOpen={handleDepositPanelOpen}
             onIdentityOpen={handleSignupIdentityOpen}
             onLimitsOpen={handleSignupLimitsOpen}
+            onProfileOpen={handleProfileOpen}
             onProductChange={handleProductChange}
             onLiveEventOpenChange={handleLiveEventOpenChange}
             onLiveEventOpenSettled={handleLiveEventOpenSettled}
@@ -1060,6 +1076,21 @@ function AppContent() {
           onSelectAccount={handleDepositAccountSelect}
           onDepositConfirmed={handleDepositConfirmed}
           onDepositPending={depositPanelOrigin === 'signup' ? handleSignupDepositPending : undefined}
+        />
+      ) : null}
+      {!isStandalonePage && !isAuthPage && authVariant === 'logged-in' ? (
+        <ProfileBottomSheet
+          isOpen={isProfileOpen}
+          onClose={handleProfileClose}
+          balanceCents={balanceCents}
+          depositFlow={{
+            savedAccounts: savedDepositAccounts,
+            activeAccountId: activeDepositAccountId,
+            newBankAccountId: nextDepositAccountId,
+            onRemoveAccount: handleDepositAccountRemove,
+            onSelectAccount: handleDepositAccountSelect,
+            onDepositConfirmed: handleDepositConfirmed,
+          }}
         />
       ) : null}
       {!isStandalonePage && !isAuthPage ? (

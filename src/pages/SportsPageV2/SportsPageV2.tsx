@@ -22,11 +22,13 @@ interface SportsPageV2Props {
   authVariant?: 'logged-in' | 'logged-out'
   balanceCents?: number
   depositStatus?: 'deposit-pending' | 'identity-pending' | 'limits-pending'
+  isProfileOpen?: boolean
   onCreateAccountClick?: () => void
   onDepositOpen?: () => void
   onIdentityOpen?: () => void
   onLimitsOpen?: () => void
   onLoginClick?: () => void
+  onProfileOpen?: () => void
   onLiveEventOpenChange?: (isOpen: boolean) => void
   onLogoDoubleClick?: () => void
   onSportsHomeClick?: () => void
@@ -42,11 +44,13 @@ export function SportsPageV2({
   authVariant = 'logged-out',
   balanceCents,
   depositStatus,
+  isProfileOpen,
   onCreateAccountClick,
   onDepositOpen,
   onIdentityOpen,
   onLimitsOpen,
   onLoginClick,
+  onProfileOpen,
   onLiveEventOpenChange,
   onLogoDoubleClick,
   onSportsHomeClick,
@@ -132,11 +136,13 @@ export function SportsPageV2({
         authVariant={authVariant}
         balanceCents={balanceCents}
         depositStatus={depositStatus}
+        isProfileOpen={isProfileOpen}
         onCreateAccountClick={onCreateAccountClick}
         onDepositOpen={onDepositOpen}
         onIdentityOpen={onIdentityOpen}
         onLimitsOpen={onLimitsOpen}
         onLoginClick={onLoginClick}
+        onProfileOpen={onProfileOpen}
         onLiveEventOpenChange={onLiveEventOpenChange}
         onLogoDoubleClick={onLogoDoubleClick}
         onSportsOverviewChange={handleSportChange}
@@ -152,6 +158,7 @@ export function SportsPageV2({
         authVariant={authVariant}
         balanceCents={balanceCents}
         depositStatus={depositStatus}
+        isProfileOpen={isProfileOpen}
         initialActiveSport={activeSport}
         initialCompetition={{ id: selectedCompetition.id, name: selectedCompetition.name }}
         initialEventId={selectedEventId}
@@ -160,6 +167,7 @@ export function SportsPageV2({
         onIdentityOpen={onIdentityOpen}
         onLimitsOpen={onLimitsOpen}
         onLoginClick={onLoginClick}
+        onProfileOpen={onProfileOpen}
         onLiveEventOpenChange={onLiveEventOpenChange}
         onLogoDoubleClick={onLogoDoubleClick}
         onSportsOverviewChange={handleSportChange}
@@ -192,11 +200,13 @@ export function SportsPageV2({
         authVariant={authVariant}
         balanceCents={balanceCents}
         depositStatus={depositStatus}
+        isProfileOpen={isProfileOpen}
         onCreateAccountClick={onCreateAccountClick}
         onDepositOpen={onDepositOpen}
         onIdentityOpen={onIdentityOpen}
         onLimitsOpen={onLimitsOpen}
         onLoginClick={onLoginClick}
+        onProfileOpen={onProfileOpen}
         onLogoClick={handleSportsHome}
         onLogoDoubleClick={onLogoDoubleClick}
         rail={rail}

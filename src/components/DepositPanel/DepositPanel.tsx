@@ -34,6 +34,8 @@ interface DepositPanelProps {
   onSelectAccount?: (accountId: DepositAccountId) => void
   onDepositConfirmed?: (amountCents: number, accountId: DepositAccountId) => void
   onDepositPending?: (amountCents: number) => void
+  portalTarget?: Element | DocumentFragment | null
+  onViewChange?: (view: DepositView) => void
 }
 
 export type DepositAccountId = 'nubank' | 'santander' | 'caixa'
@@ -46,7 +48,7 @@ export interface DepositAccount {
 
 type PanelMotionState = 'entering' | 'open' | 'closing'
 type DepositView = 'form' | 'pix'
-type DepositPanelPresentation = 'fullscreen' | 'bottom-sheet'
+type DepositPanelPresentation = 'fullscreen' | 'bottom-sheet' | 'embedded'
 type DepositOptionId = '50' | '100' | '250' | '1000' | 'custom'
 type PixCopyFeedback = 'idle' | 'copied' | 'error'
 type DepositConfirmationMode = 'on-pix-generated' | 'on-pix-copy'
@@ -232,10 +234,14 @@ export function DepositPanel({
   onSelectAccount,
   onDepositConfirmed,
   onDepositPending,
+  portalTarget,
+  onViewChange,
 }: DepositPanelProps) {
-  const panelMotionDurationMs = presentation === 'bottom-sheet'
-    ? bottomSheetMotionDurationMs
-    : fullscreenPanelMotionDurationMs
+  const panelMotionDurationMs = presentation === 'embedded'
+    ? 0
+    : presentation === 'bottom-sheet'
+      ? bottomSheetMotionDurationMs
+      : fullscreenPanelMotionDurationMs
   const [shouldRender, setShouldRender] = useState(false)
   const [motionState, setMotionState] = useState<PanelMotionState>('entering')
   const [view, setView] = useState<DepositView>('form')
@@ -532,6 +538,12 @@ export function DepositPanel({
   }, [onDepositPending])
 
   useEffect(() => {
+    if (!shouldRender) return
+
+    onViewChange?.(view)
+  }, [onViewChange, shouldRender, view])
+
+  useEffect(() => {
     clearCloseTimer()
     clearGenerateTimer()
     clearPixCopyFeedbackTimer()
@@ -642,7 +654,7 @@ export function DepositPanel({
   }, [hasMultipleSavedAccounts, isBankChangeSheetOpen])
 
   useEffect(() => {
-    if (!shouldRender) return undefined
+    if (!shouldRender || presentation === 'embedded') return undefined
 
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
@@ -650,10 +662,10 @@ export function DepositPanel({
     return () => {
       document.body.style.overflow = previousOverflow
     }
-  }, [shouldRender])
+  }, [presentation, shouldRender])
 
   useEffect(() => {
-    if (!shouldRender) return undefined
+    if (!shouldRender || presentation === 'embedded') return undefined
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -664,7 +676,7 @@ export function DepositPanel({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isBankChangeSheetOpen, requestClose, shouldRender])
+  }, [isBankChangeSheetOpen, presentation, requestClose, shouldRender])
 
   useLayoutEffect(() => {
     if (!shouldRender) return undefined
@@ -745,9 +757,9 @@ export function DepositPanel({
         ]
           .filter(Boolean)
           .join(' ')}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Depositar"
+        role={presentation === 'embedded' ? undefined : 'dialog'}
+        aria-modal={presentation === 'embedded' ? undefined : 'true'}
+        aria-label={presentation === 'embedded' ? undefined : 'Depositar'}
         onClick={(event) => event.stopPropagation()}
       >
         <header
@@ -765,7 +777,7 @@ export function DepositPanel({
             >
               <img src={closePixIcon} alt="" aria-hidden="true" />
             </button>
-          ) : presentation === 'bottom-sheet' ? (
+          ) : presentation === 'bottom-sheet' || presentation === 'embedded' ? (
             <>
               <span className="deposit-panel__header-spacer" aria-hidden="true" />
               <h2 className="deposit-panel__title">Deposite para jogar</h2>
@@ -1128,6 +1140,6 @@ export function DepositPanel({
         </div>
       </BottomSheet>
     </>,
-    document.body
+    portalTarget ?? document.body
   )
 }
