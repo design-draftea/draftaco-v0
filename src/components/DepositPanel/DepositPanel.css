@@ -134,6 +134,38 @@
   flex: 1 1 0;
 }
 
+.deposit-panel__container--embedded {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: auto;
+}
+
+.deposit-panel__container--embedded .deposit-panel__overlay,
+.deposit-panel--embedded .deposit-panel__header {
+  display: none;
+}
+
+.deposit-panel--embedded {
+  width: 100%;
+  height: 100%;
+  flex: 1 1 auto;
+  background: transparent;
+  transform: none;
+  animation: none;
+  will-change: auto;
+}
+
+.deposit-panel--embedded::before {
+  display: none;
+}
+
+.deposit-panel--embedded .deposit-panel__content,
+.deposit-panel--embedded .deposit-panel__view {
+  height: 0;
+  flex: 1 1 0;
+}
+
 .deposit-panel--bottom-sheet.deposit-panel--entering {
   animation: deposit-panel-sheet-slide-in 300ms ease-out both;
 }

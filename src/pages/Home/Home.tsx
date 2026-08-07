@@ -178,7 +178,6 @@ const SPORT_HEADER_EXPANDED_BG_HEIGHT_SHORTCUT = 210
 const SPORT_HEADER_COMPACT_BG_HEIGHT_SHORTCUT = 182
 const SHOW_TOP_GAMES_RAIL = false
 const ENABLE_HOME_PRODUCT_TOGGLE = false
-const ENABLE_HOME_MENU_BUTTON = false
 const ENABLE_HOME_RAIL_LINKS = true
 const ENABLE_HOME_RAIL_COMPETITION_LINKS = true
 const ENABLE_HOME_TIP_CLICKS = false
@@ -696,6 +695,7 @@ interface HeaderComponentProps {
   depositStatus?: 'deposit-pending' | 'identity-pending' | 'limits-pending'
   disableProductToggle?: boolean
   disableMenuButton?: boolean
+  isProfileOpen?: boolean
   onProductChange?: (product: ProductMode) => void
   onLogoClick?: () => void
   onLogoDoubleClick?: () => void
@@ -704,6 +704,7 @@ interface HeaderComponentProps {
   onDepositOpen?: () => void
   onIdentityOpen?: () => void
   onLimitsOpen?: () => void
+  onProfileOpen?: () => void
   children?: ReactNode
 }
 
@@ -724,6 +725,8 @@ interface HomeProps {
   onDepositOpen?: () => void
   onIdentityOpen?: () => void
   onLimitsOpen?: () => void
+  isProfileOpen?: boolean
+  onProfileOpen?: () => void
   onLiveEventOpenChange?: (isOpen: boolean) => void
   onLiveEventOpenSettled?: () => void
   onLiveEventCloseStart?: () => void
@@ -803,6 +806,8 @@ export function Home({
   onDepositOpen,
   onIdentityOpen,
   onLimitsOpen,
+  isProfileOpen,
+  onProfileOpen,
   onLiveEventOpenChange,
   onSportsOverviewChange,
 }: HomeProps = {}) {
@@ -1800,10 +1805,11 @@ export function Home({
         balanceCents={balanceCents}
         depositStatus={depositStatus}
         disableProductToggle={!ENABLE_HOME_PRODUCT_TOGGLE}
-        disableMenuButton={!ENABLE_HOME_MENU_BUTTON}
+        isProfileOpen={isProfileOpen}
         onDepositOpen={onDepositOpen}
         onIdentityOpen={onIdentityOpen}
         onLimitsOpen={onLimitsOpen}
+        onProfileOpen={onProfileOpen}
         onLogoClick={isInlineEventMode ? handleReturnToHighlights : undefined}
         onLogoDoubleClick={onLogoDoubleClick}
         onLoginClick={onLoginClick}
