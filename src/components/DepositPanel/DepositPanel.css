@@ -90,6 +90,110 @@
   }
 }
 
+.deposit-panel__container--bottom-sheet {
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.deposit-panel__container--bottom-sheet .deposit-panel__overlay {
+  background-color: rgb(var(--ds-fill-dark-rgb) / 0.8);
+  opacity: 0;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.deposit-panel__container--bottom-sheet .deposit-panel__overlay--open {
+  opacity: 1;
+}
+
+.deposit-panel--bottom-sheet {
+  width: 100%;
+  height: calc(100dvh - 56px);
+  height: calc(var(--app-viewport-height, 100dvh) - 56px);
+  max-height: calc(100dvh - 56px);
+  max-height: calc(var(--app-viewport-height, 100dvh) - 56px);
+  overflow: hidden;
+  border-radius: 24px 24px 0 0;
+  background: var(
+    --ds-background-prim,
+    linear-gradient(90deg, #191919 0%, #0f0f0f 100%)
+  );
+  -webkit-clip-path: inset(0 round 24px 24px 0 0);
+  clip-path: inset(0 round 24px 24px 0 0);
+  isolation: isolate;
+  transform: translate3d(0, 100%, 0);
+}
+
+.deposit-panel--bottom-sheet .deposit-panel__content {
+  height: 0;
+  flex: 1 1 0;
+}
+
+.deposit-panel--bottom-sheet .deposit-panel__view {
+  height: 0;
+  flex: 1 1 0;
+}
+
+.deposit-panel--bottom-sheet.deposit-panel--entering {
+  animation: deposit-panel-sheet-slide-in 300ms ease-out both;
+}
+
+.deposit-panel--bottom-sheet.deposit-panel--open {
+  transform: translate3d(0, 0, 0);
+}
+
+.deposit-panel--bottom-sheet.deposit-panel--closing {
+  animation: deposit-panel-sheet-slide-out 300ms ease-out both;
+}
+
+.deposit-panel__container--bottom-sheet .deposit-panel__overlay--entering {
+  animation: deposit-panel-sheet-overlay-enter 200ms ease-out both;
+}
+
+.deposit-panel__container--bottom-sheet .deposit-panel__overlay--closing {
+  animation: deposit-panel-sheet-overlay-exit 300ms ease-out both;
+}
+
+@keyframes deposit-panel-sheet-slide-in {
+  from {
+    transform: translate3d(0, 100%, 0);
+  }
+
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes deposit-panel-sheet-slide-out {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(0, 100%, 0);
+  }
+}
+
+@keyframes deposit-panel-sheet-overlay-enter {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes deposit-panel-sheet-overlay-exit {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes deposit-panel-scrim-enter {
   from {
     opacity: 0;
@@ -130,6 +234,10 @@
   border-bottom: 0;
   background: transparent;
   backdrop-filter: none;
+}
+
+.deposit-panel--bottom-sheet .deposit-panel__header {
+  border-bottom: 0;
 }
 
 .deposit-panel__back,
@@ -275,9 +383,8 @@
 .deposit-panel__back:focus-visible,
 .deposit-panel__info:focus-visible,
 .deposit-panel__close:focus-visible,
-.deposit-panel__payment-card:focus-visible,
+.deposit-panel__change-bank:focus-visible,
 .deposit-panel__confirm:focus-visible,
-.deposit-panel__pix-action-button:focus-visible,
 .deposit-panel__amount-input:focus-visible {
   outline: 2px solid rgba(210, 255, 114, 0.72);
   outline-offset: 2px;
@@ -374,7 +481,6 @@
 }
 
 .deposit-panel__quick-option {
-  --deposit-background-app: var(--ds-background-app, var(--tokens-background-background, #000000));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -382,11 +488,9 @@
   height: 40px;
   min-width: 0;
   padding: 0 7px;
-  border: 1px solid rgba(251, 251, 251, 0.06);
+  border: 1px solid var(--ds-fill-opacity-senary, rgb(251 251 251 / 0.06));
   border-radius: 14px;
-  background:
-    linear-gradient(0deg, rgba(251, 251, 251, 0.06), rgba(251, 251, 251, 0.06)),
-    var(--deposit-background-app);
+  background: var(--ds-background-opacity-quaternary, rgb(251 251 251 / 0.06));
   color: rgba(251, 251, 251, 0.7);
   font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
   font-size: 14px;
@@ -407,9 +511,10 @@
 
 .deposit-panel__quick-option--selected {
   border: 2px solid #4b20ff;
-  background:
-    linear-gradient(67deg, rgba(75, 32, 255, 0.24) 0%, rgba(151, 48, 255, 0.24) 100%),
-    var(--deposit-background-app);
+  background: var(
+    --ds-action-primary-opacity-24,
+    linear-gradient(90deg, rgb(75 32 255 / 0.24) 0%, rgb(151 48 255 / 0.24) 100%)
+  );
   color: var(--tokens-text-text-01);
 }
 
@@ -442,40 +547,43 @@
 }
 
 .deposit-panel__payment-card {
-  position: relative;
   display: flex;
   width: 100%;
   min-height: 72px;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 48px 12px 14px;
-  border: 2px solid #8b2dff;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 2px solid var(--ds-action-primary-default-start, #4b20ff);
   border-radius: 16px;
-  background: linear-gradient(67deg, rgba(75, 32, 255, 0.16) 0%, rgba(151, 48, 255, 0.16) 100%);
+  background: linear-gradient(39deg, rgba(75, 32, 255, 0.16) 0%, rgba(151, 48, 255, 0.16) 100%);
   color: var(--tokens-text-text-01);
   text-align: left;
   -webkit-tap-highlight-color: transparent;
 }
 
-.deposit-panel__pix-badge {
-  display: inline-flex;
-  height: 22px;
+.deposit-panel__payment-summary {
+  display: flex;
+  width: 100%;
   align-items: center;
-  gap: 3px;
-  padding: 2px 5px;
-  border-radius: 4px;
-  background: #6bd6c2;
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 18px;
+  gap: 12px;
 }
 
-.deposit-panel__pix-badge svg {
-  width: 13px;
-  height: 13px;
+.deposit-panel__payment-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.deposit-panel__pix-badge {
+  display: block;
+  width: 51px;
+  height: 20px;
+  object-fit: contain;
 }
 
 .deposit-panel__payment-description {
@@ -486,15 +594,344 @@
 }
 
 .deposit-panel__payment-radio {
-  position: absolute;
-  top: 50%;
-  right: 16px;
   width: 20px;
   height: 20px;
-  border: 6px solid #8b2dff;
+  flex: 0 0 20px;
+  border: 6px solid var(--ds-action-primary-default-start, #4b20ff);
   border-radius: 999px;
   background: #1b0c31;
-  transform: translateY(-50%);
+}
+
+.deposit-panel__saved-bank {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
+}
+
+.deposit-panel__saved-bank-name {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deposit-panel__change-bank {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ds-fill-interactive, #fbfbfb);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.deposit-panel__change-bank img {
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+
+.bottom-sheet__container.deposit-bank-sheet-container {
+  z-index: 6500;
+}
+
+.bottom-sheet.deposit-bank-sheet {
+  box-sizing: border-box;
+  width: calc(100% - 32px);
+  height: auto;
+  margin: 0 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  padding: 0 16px 16px;
+  overflow: hidden;
+  border: 1px solid var(--ds-fill-opacity-quinary, rgb(251 251 251 / 0.08));
+  border-radius: 28px;
+  background: linear-gradient(180deg, #191919 0%, #0f0f0f 100%);
+}
+
+.bottom-sheet.deposit-bank-sheet .bottom-sheet__header {
+  position: relative;
+  width: calc(100% + 32px);
+  height: 56px;
+  flex: 0 0 56px;
+  margin: 0 -16px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--ds-fill-opacity-quaternary, rgb(251 251 251 / 0.12));
+}
+
+.bottom-sheet.deposit-bank-sheet .bottom-sheet__title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.bottom-sheet.deposit-bank-sheet .bottom-sheet__close {
+  margin-left: auto;
+}
+
+.bottom-sheet.deposit-bank-sheet .bottom-sheet__title span {
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+}
+
+.bottom-sheet.deposit-bank-sheet .bottom-sheet__body-wrapper {
+  flex: 0 0 auto;
+}
+
+.bottom-sheet__body.deposit-bank-sheet__body {
+  flex: 0 0 auto;
+  padding: 16px 0 0;
+  overflow: visible;
+}
+
+.deposit-bank-sheet__content {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+}
+
+.deposit-bank-sheet__management-header {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+}
+
+.deposit-bank-sheet__management-header > span {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.deposit-bank-sheet__management-action {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 32px;
+  background: var(--ds-background-opacity-secondary, rgb(251 251 251 / 0.1));
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.deposit-bank-sheet__management-action img {
+  display: block;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+}
+
+.deposit-bank-sheet__management-action:active {
+  opacity: 0.84;
+}
+
+.deposit-bank-sheet__management-action:disabled {
+  pointer-events: none;
+}
+
+.deposit-bank-sheet__management-action:focus-visible {
+  outline: 2px solid rgba(210, 255, 114, 0.72);
+  outline-offset: 2px;
+}
+
+.deposit-bank-sheet__accounts {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.deposit-bank-sheet__saved-account,
+.deposit-bank-sheet__other-bank {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
+  border-radius: 16px;
+  background: transparent;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.deposit-bank-sheet__saved-account {
+  min-height: 72px;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+}
+
+.deposit-bank-sheet__saved-account--removing {
+  pointer-events: none;
+  animation: deposit-bank-sheet-account-exit 220ms ease-in-out forwards;
+  will-change: opacity, transform;
+}
+
+@keyframes deposit-bank-sheet-account-exit {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(40px, 0, 0);
+  }
+}
+
+.deposit-bank-sheet__account-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.deposit-bank-sheet__account-copy strong {
+  overflow: hidden;
+  color: var(--ds-fill-primary, #fbfbfb);
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 21px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deposit-bank-sheet__account-copy > span {
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 21px;
+}
+
+.deposit-bank-sheet__radio {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  border: 2px solid var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
+  border-radius: 999px;
+  background: transparent;
+}
+
+.deposit-bank-sheet__radio--selected {
+  border: 6px solid var(--ds-action-primary-default-start, #4b20ff);
+  background: #1b0c31;
+}
+
+.deposit-bank-sheet__remove-account-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+
+.deposit-bank-sheet__other-bank {
+  position: relative;
+  min-height: 48px;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 21px;
+}
+
+.deposit-bank-sheet__other-bank--loading {
+  justify-content: center;
+}
+
+.deposit-bank-sheet__other-bank--loading:disabled {
+  opacity: 1;
+}
+
+.deposit-bank-sheet__other-bank--disabled:disabled {
+  border-color: var(--ds-fill-opacity-tertiary, rgb(251 251 251 / 0.16));
+  background: transparent;
+  color: var(--ds-fill-disabled, rgb(251 251 251 / 0.32));
+  cursor: default;
+  opacity: 1;
+}
+
+.deposit-bank-sheet__other-bank--disabled img {
+  opacity: 0.32;
+}
+
+.deposit-bank-sheet__other-bank img {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+
+.deposit-bank-sheet__saved-account:active:not(:disabled),
+.deposit-bank-sheet__other-bank:active:not(:disabled) {
+  opacity: 0.84;
+}
+
+.deposit-bank-sheet__hint {
+  margin: 0 8px;
+  color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.deposit-panel__saved-account-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: -8px;
+  padding: 8px 0;
+  color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.deposit-panel__saved-account-note img {
+  display: block;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  margin-top: 3px;
 }
 
 .deposit-panel__footer {
@@ -607,7 +1044,8 @@
 
 .deposit-panel__pix-main {
   display: flex;
-  height: 100%;
+  flex: 1 1 auto;
+  height: auto;
   min-height: 0;
   justify-content: center;
   overflow-x: hidden;
@@ -631,8 +1069,8 @@
 
 .deposit-panel__pix-logo {
   display: block;
-  width: 40px;
-  height: 18px;
+  width: 51px;
+  height: 20px;
   flex: 0 0 auto;
   object-fit: contain;
 }
@@ -640,7 +1078,8 @@
 .deposit-panel__pix-instruction {
   width: 100%;
   margin: 12px 0 0;
-  color: var(--tokens-text-text-01);
+  padding: 0 32px;
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
   font-size: 14px;
   font-weight: 400;
   line-height: 21px;
@@ -652,11 +1091,11 @@
   align-items: center;
   justify-content: center;
   margin-top: 12px;
-  padding: 10px;
-  border: 5px solid transparent;
+  padding: 8px;
+  border: 4px solid transparent;
   border-radius: 27px;
   background:
-    linear-gradient(#000000, #000000) padding-box,
+    linear-gradient(transparent, transparent) padding-box,
     linear-gradient(98deg, #4b20ff 0%, #9730ff 100%) border-box;
 }
 
@@ -664,17 +1103,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 164px;
-  height: 164px;
   padding: 12px;
-  border-radius: 20px;
+  border-radius: 16px;
   background: #ffffff;
 }
 
 .deposit-panel__pix-qr {
   display: block;
-  width: 140px;
-  height: 140px;
+  width: 104px;
+  height: 104px;
   object-fit: cover;
 }
 
@@ -683,7 +1120,7 @@
   width: 100%;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 16px;
   margin-top: 12px;
 }
 
@@ -708,263 +1145,165 @@
   line-height: 48px;
 }
 
-.deposit-panel__pix-countdown {
-  display: inline-flex;
-  height: 33px;
+.deposit-panel__pix-expiry-details {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.deposit-panel__pix-expiry-card {
+  display: flex;
+  width: 100%;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: rgba(251, 251, 251, 0.12);
-  color: var(--tokens-text-text-01);
+  gap: 12px;
+  padding: 14px 18px;
+  border: 1px solid var(--ds-fill-opacity-quaternary, rgb(251 251 251 / 0.12));
+  border-radius: 20px;
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+}
+
+.deposit-panel__pix-expiry-card img {
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  opacity: 0.7;
+}
+
+.deposit-panel__pix-account-card {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--ds-fill-opacity-quaternary, rgb(251 251 251 / 0.12));
+  border-radius: 16px;
+}
+
+.deposit-panel__pix-account-row {
+  display: flex;
+  width: 100%;
+  min-height: 40px;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  color: var(--ds-fill-secondary, rgb(251 251 251 / 0.7));
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.deposit-panel__pix-account-row + .deposit-panel__pix-account-row {
+  border-top: 1px solid var(--ds-fill-opacity-quaternary, rgb(251 251 251 / 0.12));
+}
+
+.deposit-panel__pix-account-row img {
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+
+.deposit-panel__pix-account-label {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.deposit-panel__pix-account-value {
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.deposit-panel__pix-countdown img {
-  display: block;
-  width: 18px;
-  height: 18px;
+.deposit-panel__pix-expiry-label {
+  width: 64px;
+  flex: 0 0 64px;
 }
 
-.deposit-panel__pix-countdown-time {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  color: var(--tokens-text-text-01);
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 27px;
+.deposit-panel__pix-expiry-value {
+  min-width: 0;
+  flex: 1 1 auto;
+  text-align: right;
+  white-space: nowrap;
 }
 
-.deposit-panel__pix-countdown-separator {
-  color: rgba(251, 251, 251, 0.7);
-  font-size: 22px;
-  line-height: 33px;
-}
-
-.deposit-panel__pix-countdown > span:last-child {
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 24px;
-}
-
-.deposit-panel__pix-payment p {
+.deposit-panel__pix-expiry-reminder {
   width: 100%;
   margin: 0;
-  color: rgba(251, 251, 251, 0.7);
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 24px;
+  padding: 0 16px;
+  color: var(--ds-fill-tertiary, rgb(251 251 251 / 0.5));
+  font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
   text-align: center;
 }
 
-.deposit-panel__pix-action-button {
-  display: flex;
-  width: 100%;
-  min-height: 60px;
-  align-items: center;
-  justify-content: center;
-  padding: 0 24px;
-  border: 0;
-  border-radius: 18px;
-  color: var(--tokens-text-text-on-color-white);
-  font-family: inherit;
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 25px;
-  text-align: center;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.deposit-panel__pix-action-button--primary {
-  margin-top: 24px;
-  background: linear-gradient(98deg, #4b20ff 0%, #9730ff 100%);
-}
-
-.deposit-panel__pix-action-button--secondary {
-  margin-top: 10px;
-  background: var(--ds-action-secondary-default, rgb(251 251 251 / 0.12));
-}
-
-.deposit-panel__pix-action-button--primary:active {
+.deposit-panel__pix-copy-button:active {
   opacity: 0.84;
   transform: scale(0.98);
 }
 
-.deposit-panel__pix-action-button--copied {
-  background: linear-gradient(98deg, #2e9d62 0%, #48bd79 100%);
+.deposit-panel__footer--pix {
+  position: relative;
 }
 
-.deposit-panel__pix-action-button--error {
-  background: linear-gradient(98deg, #b80e2a 0%, #dc2e4d 100%);
-}
-
-.deposit-panel__pix-action-label {
-  display: inline-flex;
+.deposit-panel__pix-copy-toast {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  height: 48px;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  animation: deposit-panel-pix-copy-feedback-in 180ms ease-out both;
-}
-
-.deposit-panel__pix-action-label svg {
-  width: 20px;
-  height: 20px;
-}
-
-@keyframes deposit-panel-pix-copy-feedback-in {
-  from {
-    opacity: 0;
-    transform: translateY(3px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.deposit-panel__pix-action-button--secondary:active {
-  background: var(--ds-action-secondary-pressed, rgb(251 251 251 / 0.14));
-}
-
-.bottom-sheet__container.deposit-bank-apps-sheet-container {
-  z-index: 6500;
-}
-
-.bottom-sheet.deposit-bank-apps-sheet {
-  max-height: none;
-  overflow: hidden;
-  border-radius: 24px 24px 0 0;
-  background: linear-gradient(180deg, #191919 0%, #0f0f0f 100%);
-}
-
-.bottom-sheet.deposit-bank-apps-sheet .bottom-sheet__header {
-  height: 56px;
-  min-height: 56px;
-  justify-content: initial;
-  padding: 8px;
-  border-bottom-color: var(--ds-fill-opacity-quaternary, rgb(251 251 251 / 0.12));
-}
-
-.bottom-sheet.deposit-bank-apps-sheet .bottom-sheet__leading,
-.deposit-bank-apps-sheet__header-spacer,
-.bottom-sheet.deposit-bank-apps-sheet .bottom-sheet__close {
-  width: 40px;
-  height: 40px;
-  flex: 0 0 40px;
-}
-
-.bottom-sheet.deposit-bank-apps-sheet .bottom-sheet__title {
-  flex: 1 1 auto;
-  justify-content: center;
-  min-width: 0;
-}
-
-.bottom-sheet.deposit-bank-apps-sheet .bottom-sheet__title span {
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--ds-fill-success, #34d399);
+  border-radius: 56px;
+  background: var(--ds-background-success-solid, #04110c);
   color: var(--ds-fill-primary, #fbfbfb);
   font-family: 'Red Hat Display', 'Red Hat Text', system-ui, sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 24px;
-}
-
-.bottom-sheet.deposit-bank-apps-sheet .bottom-sheet__body-wrapper,
-.bottom-sheet__body.deposit-bank-apps-sheet__body {
-  flex: 0 0 auto;
-}
-
-.bottom-sheet__body.deposit-bank-apps-sheet__body {
-  padding: 40px 20px;
-  overflow: visible;
-}
-
-.deposit-bank-apps-sheet__options {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-}
-
-.deposit-bank-apps-sheet__option {
-  display: inline-flex;
-  width: 56px;
-  height: 56px;
-  flex: 0 0 56px;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 0;
-  border-radius: 16px;
-  background: transparent;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.deposit-bank-apps-sheet__option img {
-  display: block;
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  object-fit: cover;
-}
-
-.deposit-panel__pix-divider {
-  width: 100%;
-  height: 1px;
-  margin-top: 24px;
-  background: rgba(251, 251, 251, 0.12);
-}
-
-.deposit-panel__pix-info-list {
-  display: flex;
-  width: 100%;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 24px;
-}
-
-.deposit-panel__pix-info-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.deposit-panel__pix-info-icon {
-  display: flex;
-  width: 24px;
-  height: 24px;
-  flex: 0 0 24px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background: rgba(251, 251, 251, 0.12);
-}
-
-.deposit-panel__pix-info-icon img {
-  display: block;
-  width: 16px;
-  height: 16px;
-}
-
-.deposit-panel__pix-info-icon--idea {
-  background: transparent;
-}
-
-.deposit-panel__pix-info-icon--idea img {
-  width: 24px;
-  height: 24px;
-}
-
-.deposit-panel__pix-info-item p {
-  flex: 1 1 auto;
-  min-width: 0;
-  margin: 0;
-  color: rgba(251, 251, 251, 0.5);
   font-size: 14px;
   font-weight: 500;
   line-height: 21px;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: deposit-panel-pix-copy-toast-lifecycle 2000ms ease both;
+}
+
+.deposit-panel__pix-copy-toast img {
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+
+@keyframes deposit-panel-pix-copy-toast-lifecycle {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 3px);
+  }
+
+  9%,
+  82% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 3px);
+  }
 }
 
 @media (max-width: 359px) {
