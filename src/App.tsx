@@ -4,7 +4,11 @@ import { MobileOnly } from './components/MobileOnly'
 import { Navbar } from './components/Navbar'
 import { Betslip } from './components/Betslip'
 import { HeaderV2 } from './components/HeaderV2'
-import { DepositPanel } from './components/DepositPanel'
+import {
+  DepositPanel,
+  type DepositAccount,
+  type DepositAccountId,
+} from './components/DepositPanel'
 import { FeatureFlagsPanel } from './components/FeatureFlagsPanel'
 import { LocationPermissionGate } from './components/LocationPermissionGate'
 import { BetslipProvider } from './hooks/BetslipProvider'
@@ -216,8 +220,28 @@ type AuthScrollLockState = {
 }
 
 const loginMotionDurationMs = 320
-const loggedInInitialBalanceCents = 25000
+const loggedInInitialBalanceCents = 0
 const signupInitialBalanceCents = 0
+const nubankDepositAccount: DepositAccount = {
+  id: 'nubank',
+  bankName: 'Nu Pagamentos S.A.',
+  lastDigits: '548',
+}
+const santanderDepositAccount: DepositAccount = {
+  id: 'santander',
+  bankName: 'Banco Santander (Brasil) S.A.',
+  lastDigits: '217',
+}
+const caixaDepositAccount: DepositAccount = {
+  id: 'caixa',
+  bankName: 'Caixa Econômica Federal',
+  lastDigits: '234',
+}
+const depositAccountCatalog: DepositAccount[] = [
+  nubankDepositAccount,
+  santanderDepositAccount,
+  caixaDepositAccount,
+]
 
 function AppContent() {
   const [pathname, setPathname] = useState(() => window.location.pathname)
@@ -233,6 +257,13 @@ function AppContent() {
   const authScrollLockRef = useRef<AuthScrollLockState | null>(null)
   const [authVariant, setAuthVariant] = useState<AuthVariant>('logged-out')
   const [balanceCents, setBalanceCents] = useState(0)
+  const [savedDepositAccounts, setSavedDepositAccounts] = useState<DepositAccount[]>([])
+  const [activeDepositAccountId, setActiveDepositAccountId] = useState<DepositAccountId | null>(null)
+  const nextDepositAccountId = useMemo(() => (
+    depositAccountCatalog.find((account) => (
+      !savedDepositAccounts.some((savedAccount) => savedAccount.id === account.id)
+    ))?.id ?? null
+  ), [savedDepositAccounts])
   const [loginMotionState, setLoginMotionState] = useState<LoginMotionState | null>(
     isAuthPath(window.location.pathname) ? 'open' : null
   )
@@ -512,6 +543,8 @@ function AppContent() {
 
     setAuthVariant('logged-in')
     setBalanceCents(loggedInInitialBalanceCents)
+    setSavedDepositAccounts([])
+    setActiveDepositAccountId(null)
     setSignupPendingDepositAmountCents(null)
     setSignupPendingRequirement(null)
     completeLoginExit(nextPath)
@@ -525,6 +558,8 @@ function AppContent() {
 
     setAuthVariant('logged-in')
     setBalanceCents(signupInitialBalanceCents)
+    setSavedDepositAccounts([])
+    setActiveDepositAccountId(null)
     setSignupPendingDepositAmountCents(null)
     setSignupPendingRequirement('identity')
     completeLoginExit(nextPath)
@@ -544,6 +579,8 @@ function AppContent() {
 
     setAuthVariant('logged-in')
     setBalanceCents(signupInitialBalanceCents)
+    setSavedDepositAccounts([])
+    setActiveDepositAccountId(null)
     setSignupPendingDepositAmountCents(null)
     setSignupPendingRequirement('limits')
     completeLoginExit(nextPath)
@@ -557,6 +594,8 @@ function AppContent() {
 
     setAuthVariant('logged-in')
     setBalanceCents(signupInitialBalanceCents)
+    setSavedDepositAccounts([])
+    setActiveDepositAccountId(null)
     setSignupPendingDepositAmountCents(null)
     setSignupPendingRequirement(null)
     setDepositPanelOrigin('signup')
@@ -687,10 +726,38 @@ function AppContent() {
     setIsDepositPanelOpen(false)
   }, [])
 
-  const handleDepositConfirmed = useCallback((depositAmountCents: number) => {
+  const handleDepositConfirmed = useCallback((
+    depositAmountCents: number,
+    accountId: DepositAccountId,
+  ) => {
     setBalanceCents((currentBalanceCents) => currentBalanceCents + depositAmountCents)
+    setSavedDepositAccounts((currentAccounts) => {
+      const savedAccountIds = new Set(currentAccounts.map((account) => account.id))
+      savedAccountIds.add(accountId)
+
+      return depositAccountCatalog.filter((account) => savedAccountIds.has(account.id))
+    })
+    setActiveDepositAccountId(accountId)
     setSignupPendingDepositAmountCents(null)
   }, [])
+
+  const handleDepositAccountSelect = useCallback((accountId: DepositAccountId) => {
+    setActiveDepositAccountId(accountId)
+  }, [])
+
+  const handleDepositAccountRemove = useCallback((accountId: DepositAccountId) => {
+    const remainingAccounts = savedDepositAccounts.filter((account) => account.id !== accountId)
+
+    if (remainingAccounts.length === 0 || remainingAccounts.length === savedDepositAccounts.length) return
+
+    setSavedDepositAccounts(remainingAccounts)
+    setActiveDepositAccountId((currentAccountId) => (
+      currentAccountId === accountId
+        || !remainingAccounts.some((account) => account.id === currentAccountId)
+        ? remainingAccounts[0].id
+        : currentAccountId
+    ))
+  }, [savedDepositAccounts])
 
   const handleSignupDepositPending = useCallback((pendingAmountCents: number) => {
     setSignupPendingDepositAmountCents(pendingAmountCents)
@@ -981,10 +1048,16 @@ function AppContent() {
         <DepositPanel
           isOpen={isDepositPanelOpen}
           onClose={handleDepositPanelClose}
+          presentation={depositPanelOrigin === 'signup' ? 'fullscreen' : 'bottom-sheet'}
           confirmationMode={depositConfirmationMode}
           initialAmountCents={depositPanelInitialAmountCents}
           initialView={depositPanelInitialView}
+          savedAccounts={savedDepositAccounts}
+          activeAccountId={activeDepositAccountId}
+          newBankAccountId={nextDepositAccountId}
           onEnterComplete={handleDepositPanelEnterComplete}
+          onRemoveAccount={handleDepositAccountRemove}
+          onSelectAccount={handleDepositAccountSelect}
           onDepositConfirmed={handleDepositConfirmed}
           onDepositPending={depositPanelOrigin === 'signup' ? handleSignupDepositPending : undefined}
         />

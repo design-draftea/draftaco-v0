@@ -1,33 +1,52 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal, flushSync } from 'react-dom'
-import { CheckIcon, PixLogoIcon } from '@phosphor-icons/react'
-import { BottomSheet } from '../BottomSheet'
 import backHeaderIcon from '../../assets/iconsDraftaco/backHeader.svg'
-import bradescoBankIcon from '../../assets/iconsDraftaco/bradesco.png'
 import closePixIcon from '../../assets/iconsDraftaco/closeBS.svg'
+import iconBanco from '../../assets/iconsDraftaco/iconBanco.svg'
 import iconClock from '../../assets/iconsDraftaco/iconClock.svg'
-import iconIdeia from '../../assets/iconsDraftaco/iconIdeia.svg'
+import iconCadeado from '../../assets/iconsDraftaco/iconCadeado.svg'
+import iconConta from '../../assets/iconsDraftaco/iconConta.svg'
+import iconExpira from '../../assets/iconsDraftaco/iconExpira.svg'
 import iconInfo from '../../assets/iconsDraftaco/iconInfo.svg'
 import iconPix from '../../assets/iconsDraftaco/iconPix.svg'
-import itauBankIcon from '../../assets/iconsDraftaco/itau.png'
-import nubankBankIcon from '../../assets/iconsDraftaco/nubank.png'
+import iconPixCopiado from '../../assets/iconsDraftaco/iconPixCopiado.svg'
+import iconRemoverPix from '../../assets/iconsDraftaco/iconRemoverPix.svg'
+import iconRemoverPixGde from '../../assets/iconsDraftaco/iconRemoverPixGde.svg'
+import iconSetaTrocarBanco from '../../assets/iconsDraftaco/iconSetaTrocarBanco.svg'
+import iconVoltarExcluirConta from '../../assets/iconsDraftaco/iconVoltarExcluirConta.svg'
 import qrCodeImage from '../../assets/iconsDraftaco/qrCode.png'
 import { useTouchScrollFence } from '../../hooks/useTouchScrollFence'
+import { BottomSheet } from '../BottomSheet/BottomSheet'
 import './DepositPanel.css'
 
 interface DepositPanelProps {
   isOpen: boolean
   onClose: () => void
+  presentation?: DepositPanelPresentation
   confirmationMode?: DepositConfirmationMode
   initialAmountCents?: number | null
   initialView?: DepositView
+  savedAccounts?: DepositAccount[]
+  activeAccountId?: DepositAccountId | null
+  newBankAccountId?: DepositAccountId | null
   onEnterComplete?: () => void
-  onDepositConfirmed?: (amountCents: number) => void
+  onRemoveAccount?: (accountId: DepositAccountId) => void
+  onSelectAccount?: (accountId: DepositAccountId) => void
+  onDepositConfirmed?: (amountCents: number, accountId: DepositAccountId) => void
   onDepositPending?: (amountCents: number) => void
+}
+
+export type DepositAccountId = 'nubank' | 'santander' | 'caixa'
+
+export interface DepositAccount {
+  id: DepositAccountId
+  bankName: string
+  lastDigits: string
 }
 
 type PanelMotionState = 'entering' | 'open' | 'closing'
 type DepositView = 'form' | 'pix'
+type DepositPanelPresentation = 'fullscreen' | 'bottom-sheet'
 type DepositOptionId = '50' | '100' | '250' | '1000' | 'custom'
 type PixCopyFeedback = 'idle' | 'copied' | 'error'
 type DepositConfirmationMode = 'on-pix-generated' | 'on-pix-copy'
@@ -40,7 +59,8 @@ interface QuickDepositOption {
 }
 
 const contentTransitionDurationMs = 180
-const panelMotionDurationMs = 320
+const fullscreenPanelMotionDurationMs = 320
+const bottomSheetMotionDurationMs = 300
 const pixGenerationDelayMs = 3000
 const pixCountdownInitialSeconds = 30 * 60 - 1
 const maxDepositCents = 99999999
@@ -48,18 +68,13 @@ const animatedDepositAmountDurationMs = 520
 const defaultDepositAmountCents = 10000
 const pixCode = '00020101021226850014br.gov.bcb.pix0123deposito-teste-sem-link'
 const pixCopyFeedbackDurationMs = 2000
+const defaultDepositAccountId: DepositAccountId = 'nubank'
 const quickDepositOptions: QuickDepositOption[] = [
   { id: '50', label: 'R$ 50', amountCents: 5000 },
   { id: '100', label: 'R$ 100', amountCents: 10000, recommended: true },
   { id: '250', label: 'R$ 250', amountCents: 25000 },
   { id: '1000', label: 'R$ 1.000', amountCents: 100000 },
   { id: 'custom', label: 'Outro', amountCents: null },
-]
-
-const bankApps = [
-  { name: 'Itaú', icon: itauBankIcon },
-  { name: 'Nubank', icon: nubankBankIcon },
-  { name: 'Bradesco', icon: bradescoBankIcon },
 ]
 
 const formatDepositAmount = (amountCents: number) => (
@@ -97,16 +112,7 @@ const normalizeInitialDepositAmountCents = (amountCents: number | null | undefin
   return Math.min(Math.max(0, Math.round(amountCents)), maxDepositCents)
 }
 
-const copyPixCodeToClipboard = async (code: string) => {
-  try {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(code)
-      return true
-    }
-  } catch {
-    // Usa o fallback para navegadores que não disponibilizam a Clipboard API.
-  }
-
+const copyPixCodeWithLegacyFallback = (code: string) => {
   let textarea: HTMLTextAreaElement | null = null
 
   try {
@@ -125,6 +131,21 @@ const copyPixCodeToClipboard = async (code: string) => {
   } finally {
     textarea?.remove()
   }
+}
+
+const copyPixCodeToClipboard = async (code: string) => {
+  if (copyPixCodeWithLegacyFallback(code)) return true
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(code)
+      return true
+    }
+  } catch {
+    return false
+  }
+
+  return false
 }
 
 const getPresetOptionIdForAmount = (amountCents: number): DepositOptionId | null => (
@@ -196,59 +217,36 @@ function AnimatedDepositAmount({
   )
 }
 
-function BankAppsBottomSheet({
-  isOpen,
-  onClose,
-}: {
-  isOpen: boolean
-  onClose: () => void
-}) {
-  return (
-    <BottomSheet
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Selecione o seu banco"
-      leadingContent={<span className="deposit-bank-apps-sheet__header-spacer" aria-hidden="true" />}
-      containerClassName="deposit-bank-apps-sheet-container"
-      sheetClassName="deposit-bank-apps-sheet"
-      bodyClassName="deposit-bank-apps-sheet__body"
-      hideScrollIndicator
-      blurBackdrop
-    >
-      <div className="deposit-bank-apps-sheet__options">
-        {bankApps.map((bank) => (
-          <button
-            key={bank.name}
-            type="button"
-            className="deposit-bank-apps-sheet__option"
-            aria-label={`Abrir ${bank.name}`}
-          >
-            <img src={bank.icon} alt="" aria-hidden="true" />
-          </button>
-        ))}
-      </div>
-    </BottomSheet>
-  )
-}
-
 export function DepositPanel({
   isOpen,
   onClose,
+  presentation = 'fullscreen',
   confirmationMode = 'on-pix-generated',
   initialAmountCents,
   initialView = 'form',
+  savedAccounts = [],
+  activeAccountId = null,
+  newBankAccountId = null,
   onEnterComplete,
+  onRemoveAccount,
+  onSelectAccount,
   onDepositConfirmed,
   onDepositPending,
 }: DepositPanelProps) {
+  const panelMotionDurationMs = presentation === 'bottom-sheet'
+    ? bottomSheetMotionDurationMs
+    : fullscreenPanelMotionDurationMs
   const [shouldRender, setShouldRender] = useState(false)
   const [motionState, setMotionState] = useState<PanelMotionState>('entering')
   const [view, setView] = useState<DepositView>('form')
   const [amountCents, setAmountCents] = useState(defaultDepositAmountCents)
   const [amountAnimationKey, setAmountAnimationKey] = useState(0)
   const [selectedDepositOptionId, setSelectedDepositOptionId] = useState<DepositOptionId>('100')
+  const [hasSavedAccountForSession, setHasSavedAccountForSession] = useState(false)
+  const [isBankChangeSheetOpen, setIsBankChangeSheetOpen] = useState(false)
+  const [isAccountRemovalMode, setIsAccountRemovalMode] = useState(false)
+  const [removingAccountId, setRemovingAccountId] = useState<DepositAccountId | null>(null)
   const [isGeneratingPix, setIsGeneratingPix] = useState(false)
-  const [isBankAppsSheetOpen, setIsBankAppsSheetOpen] = useState(false)
   const [pixCopyFeedback, setPixCopyFeedback] = useState<PixCopyFeedback>('idle')
   const [pixCopyFeedbackKey, setPixCopyFeedbackKey] = useState(0)
   const [isContentTransitioning, setIsContentTransitioning] = useState(false)
@@ -269,11 +267,16 @@ export function DepositPanel({
   const panelRef = useRef<HTMLElement | null>(null)
   const panelContainerRef = useRef<HTMLDivElement | null>(null)
   const pixAmountCentsRef = useRef<number | null>(null)
+  const pixAccountIdRef = useRef<DepositAccountId | null>(null)
   const isPixDepositConfirmedRef = useRef(false)
   const isDepositPendingNotifiedRef = useRef(false)
   const manualAmountInputRef = useRef<HTMLInputElement | null>(null)
   const [isAmountEditingInline, setIsAmountEditingInline] = useState(false)
   const [manualAmountInput, setManualAmountInput] = useState(formatDepositAmount(defaultDepositAmountCents))
+  const activeAccount = savedAccounts.find((account) => account.id === activeAccountId)
+    ?? savedAccounts[0]
+    ?? null
+  const hasMultipleSavedAccounts = savedAccounts.length > 1
 
   const clearCloseTimer = useCallback(() => {
     if (closeTimerRef.current === null) return
@@ -326,10 +329,6 @@ export function DepositPanel({
       setPixCopyFeedback('idle')
     }, pixCopyFeedbackDurationMs)
   }, [clearPixCopyFeedbackTimer])
-
-  useEffect(() => {
-    if (!isOpen) setIsBankAppsSheetOpen(false)
-  }, [isOpen])
 
   const requestClose = useCallback(() => {
     if (motionState === 'closing') return
@@ -396,6 +395,39 @@ export function DepositPanel({
     startInlineAmountEditing()
   }
 
+  const handleChangeBank = () => {
+    setIsAccountRemovalMode(false)
+    setRemovingAccountId(null)
+    setIsBankChangeSheetOpen(true)
+  }
+
+  const handleBankChangeSheetClose = () => {
+    setIsAccountRemovalMode(false)
+    setRemovingAccountId(null)
+    setIsBankChangeSheetOpen(false)
+  }
+
+  const handleSelectSavedAccount = (accountId: DepositAccountId) => {
+    onSelectAccount?.(accountId)
+    handleBankChangeSheetClose()
+  }
+
+  const handleRemoveSavedAccount = (accountId: DepositAccountId) => {
+    if (!hasMultipleSavedAccounts || removingAccountId !== null) return
+
+    setRemovingAccountId(accountId)
+  }
+
+  const handleRemoveAccountAnimationEnd = (accountId: DepositAccountId) => {
+    if (removingAccountId !== accountId) return
+
+    onRemoveAccount?.(accountId)
+    setRemovingAccountId(null)
+    if (savedAccounts.length <= 2) {
+      setIsAccountRemovalMode(false)
+    }
+  }
+
   const handleCopyPixCode = async () => {
     const didCopy = await copyPixCodeToClipboard(pixCode)
 
@@ -414,10 +446,17 @@ export function DepositPanel({
     if (confirmedDepositAmountCents <= 0) return
 
     isPixDepositConfirmedRef.current = true
-    onDepositConfirmedRef.current?.(confirmedDepositAmountCents)
+    const confirmedDepositAccountId = pixAccountIdRef.current
+      ?? activeAccount?.id
+      ?? defaultDepositAccountId
+
+    onDepositConfirmedRef.current?.(confirmedDepositAmountCents, confirmedDepositAccountId)
   }
 
-  const handleGeneratePix = () => {
+  const startPixGeneration = (
+    depositAccountId: DepositAccountId = activeAccount?.id ?? defaultDepositAccountId,
+    onGenerated?: () => void,
+  ) => {
     if (!amountCents || isGeneratingPix) return
 
     const confirmedDepositAmountCents = amountCents
@@ -432,16 +471,18 @@ export function DepositPanel({
 
       swapTimerRef.current = window.setTimeout(() => {
         swapTimerRef.current = null
+        onGenerated?.()
         setView('pix')
         setIsGeneratingPix(false)
         setPixCountdownSeconds(pixCountdownInitialSeconds)
         pixAmountCentsRef.current = confirmedDepositAmountCents
+        pixAccountIdRef.current = depositAccountId
         isPixDepositConfirmedRef.current = false
         isDepositPendingNotifiedRef.current = false
 
         if (confirmationModeRef.current === 'on-pix-generated') {
           isPixDepositConfirmedRef.current = true
-          onDepositConfirmedRef.current?.(confirmedDepositAmountCents)
+          onDepositConfirmedRef.current?.(confirmedDepositAmountCents, depositAccountId)
         }
 
         window.requestAnimationFrame(() => {
@@ -449,6 +490,17 @@ export function DepositPanel({
         })
       }, contentTransitionDurationMs)
     }, pixGenerationDelayMs)
+  }
+
+  const handleGeneratePix = () => {
+    startPixGeneration()
+  }
+
+  const handleDepositFromAnotherBank = () => {
+    if (!amountCents || isGeneratingPix || newBankAccountId === null) return
+
+    setHasSavedAccountForSession(false)
+    startPixGeneration(newBankAccountId, handleBankChangeSheetClose)
   }
 
   useEffect(() => {
@@ -494,6 +546,9 @@ export function DepositPanel({
       const matchingPreset = getPresetOptionIdForAmount(openAmountCents)
 
       pixAmountCentsRef.current = shouldOpenPixView ? openAmountCents : null
+      pixAccountIdRef.current = shouldOpenPixView
+        ? activeAccount?.id ?? defaultDepositAccountId
+        : null
       isPixDepositConfirmedRef.current = false
       isDepositPendingNotifiedRef.current = false
 
@@ -505,6 +560,10 @@ export function DepositPanel({
         setIsAmountEditingInline(false)
         setManualAmountInput(formatDepositAmount(openAmountCents))
         setSelectedDepositOptionId(matchingPreset ?? 'custom')
+        setHasSavedAccountForSession(savedAccounts.length > 0)
+        setIsBankChangeSheetOpen(false)
+        setIsAccountRemovalMode(false)
+        setRemovingAccountId(null)
         setIsGeneratingPix(false)
         setPixCopyFeedback('idle')
         setIsContentTransitioning(false)
@@ -542,11 +601,15 @@ export function DepositPanel({
         setIsAmountEditingInline(false)
         setManualAmountInput(formatDepositAmount(defaultDepositAmountCents))
         setSelectedDepositOptionId('100')
+        setIsBankChangeSheetOpen(false)
+        setIsAccountRemovalMode(false)
+        setRemovingAccountId(null)
         setIsGeneratingPix(false)
         setPixCopyFeedback('idle')
         setIsContentTransitioning(false)
         setPixCountdownSeconds(pixCountdownInitialSeconds)
         pixAmountCentsRef.current = null
+        pixAccountIdRef.current = null
         isPixDepositConfirmedRef.current = false
         isDepositPendingNotifiedRef.current = false
         closeTimerRef.current = null
@@ -561,7 +624,7 @@ export function DepositPanel({
       clearOpenTimer()
       clearSwapTimer()
     }
-  }, [clearCloseTimer, clearGenerateTimer, clearOpenFrame, clearOpenTimer, clearPixCopyFeedbackTimer, clearSwapTimer, isOpen])
+  }, [clearCloseTimer, clearGenerateTimer, clearOpenFrame, clearOpenTimer, clearPixCopyFeedbackTimer, clearSwapTimer, isOpen, panelMotionDurationMs])
 
   useEffect(() => () => {
     clearCloseTimer()
@@ -571,6 +634,12 @@ export function DepositPanel({
     clearOpenTimer()
     clearSwapTimer()
   }, [clearCloseTimer, clearGenerateTimer, clearOpenFrame, clearOpenTimer, clearPixCopyFeedbackTimer, clearSwapTimer])
+
+  useEffect(() => {
+    if (isBankChangeSheetOpen && hasMultipleSavedAccounts) return
+
+    setIsAccountRemovalMode(false)
+  }, [hasMultipleSavedAccounts, isBankChangeSheetOpen])
 
   useEffect(() => {
     if (!shouldRender) return undefined
@@ -588,13 +657,14 @@ export function DepositPanel({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        if (isBankChangeSheetOpen) return
         requestClose()
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [requestClose, shouldRender])
+  }, [isBankChangeSheetOpen, requestClose, shouldRender])
 
   useLayoutEffect(() => {
     if (!shouldRender) return undefined
@@ -606,7 +676,9 @@ export function DepositPanel({
 
     const updateKeyboardOffset = () => {
       const visualViewport = window.visualViewport
-      const panelBottom = panel.getBoundingClientRect().bottom
+      // Usa a posição de layout para não contabilizar o translate da entrada do
+      // bottom sheet como se fosse a altura do teclado virtual.
+      const panelBottom = panel.offsetTop + panel.offsetHeight
       const viewportBottom = visualViewport
         ? visualViewport.offsetTop + visualViewport.height
         : window.innerHeight
@@ -652,12 +724,14 @@ export function DepositPanel({
   const amount = formatDepositAmount(amountCents)
   const hasAmount = amountCents > 0
   const isSignupDepositFlow = confirmationMode === 'on-pix-copy'
-  const pixCountdownMinutes = Math.floor(pixCountdownSeconds / 60)
-  const pixCountdownSecondsRemainder = pixCountdownSeconds % 60
-  const pixCountdownSecondsLabel = pixCountdownSecondsRemainder.toString().padStart(2, '0')
+  const pixCountdownMinutes = Math.ceil(pixCountdownSeconds / 60)
 
   return createPortal(
-    <div className="deposit-panel__container" ref={panelContainerRef}>
+    <>
+      <div
+        className={`deposit-panel__container deposit-panel__container--${presentation}`}
+        ref={panelContainerRef}
+      >
       <div
         className={`deposit-panel__overlay deposit-panel__overlay--${motionState}`}
         onClick={requestClose}
@@ -666,6 +740,7 @@ export function DepositPanel({
         ref={panelRef}
         className={[
           'deposit-panel',
+          `deposit-panel--${presentation}`,
           `deposit-panel--${motionState}`,
         ]
           .filter(Boolean)
@@ -690,6 +765,19 @@ export function DepositPanel({
             >
               <img src={closePixIcon} alt="" aria-hidden="true" />
             </button>
+          ) : presentation === 'bottom-sheet' ? (
+            <>
+              <span className="deposit-panel__header-spacer" aria-hidden="true" />
+              <h2 className="deposit-panel__title">Deposite para jogar</h2>
+              <button
+                type="button"
+                className="deposit-panel__close"
+                aria-label="Fechar depósito"
+                onClick={requestClose}
+              >
+                <img src={closePixIcon} alt="" aria-hidden="true" />
+              </button>
+            </>
           ) : (
             <>
               {isSignupDepositFlow ? (
@@ -790,14 +878,34 @@ export function DepositPanel({
 
                   <section className="deposit-panel__method-section" aria-labelledby="deposit-payment-method-title">
                     <h3 id="deposit-payment-method-title">Método de depósito</h3>
-                    <button type="button" className="deposit-panel__payment-card deposit-panel__payment-card--selected">
-                      <span className="deposit-panel__pix-badge">
-                        <PixLogoIcon aria-hidden="true" weight="fill" />
-                        pix
-                      </span>
-                      <span className="deposit-panel__payment-description">Saldo na hora</span>
-                      <span className="deposit-panel__payment-radio" aria-hidden="true" />
-                    </button>
+                    <div className="deposit-panel__payment-card deposit-panel__payment-card--selected">
+                      <div className="deposit-panel__payment-summary">
+                        <div className="deposit-panel__payment-copy">
+                          <img className="deposit-panel__pix-badge" src={iconPix} alt="Pix" />
+                          <span className="deposit-panel__payment-description">Aprovação imediata</span>
+                        </div>
+                        <span className="deposit-panel__payment-radio" aria-hidden="true" />
+                      </div>
+                      {hasSavedAccountForSession && activeAccount ? (
+                        <div className="deposit-panel__saved-bank">
+                          <span className="deposit-panel__saved-bank-name">{activeAccount.bankName}</span>
+                          <button
+                            type="button"
+                            className="deposit-panel__change-bank"
+                            onClick={handleChangeBank}
+                          >
+                            <span>Trocar</span>
+                            <img src={iconSetaTrocarBanco} alt="" aria-hidden="true" />
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                    {!hasSavedAccountForSession ? (
+                      <div className="deposit-panel__saved-account-note">
+                        <img src={iconCadeado} alt="" aria-hidden="true" />
+                        <span>A conta usada neste depósito ficará salva para os próximos.</span>
+                      </div>
+                    ) : null}
                   </section>
                 </main>
 
@@ -820,107 +928,206 @@ export function DepositPanel({
                 </footer>
               </>
             ) : (
-              <main className="deposit-panel__pix-main" aria-label="Pagamento Pix gerado">
-                <div className="deposit-panel__pix-layout">
-                  <img className="deposit-panel__pix-logo" src={iconPix} alt="Pix" />
-                  <p className="deposit-panel__pix-instruction">
-                    Escaneie o QR code ou copie o código para pagar com Pix
-                  </p>
-
-                  <div className="deposit-panel__pix-qr-frame">
-                    <div className="deposit-panel__pix-qr-card">
-                      <img className="deposit-panel__pix-qr" src={qrCodeImage} alt="QR code Pix" />
-                    </div>
-                  </div>
-
-                  <section className="deposit-panel__pix-payment" aria-label={`Valor do Pix: R$ ${amount}`}>
-                    <div className="deposit-panel__pix-amount">
-                      <span>R$</span>
-                      <strong>{amount}</strong>
-                    </div>
-                    <div
-                      className="deposit-panel__pix-countdown"
-                      aria-label={`Código expira em ${pixCountdownMinutes} minutos e ${pixCountdownSecondsLabel} segundos`}
-                    >
-                      <img src={iconClock} alt="" aria-hidden="true" />
-                      <span className="deposit-panel__pix-countdown-time">
-                        <span>{pixCountdownMinutes} m</span>
-                        <span className="deposit-panel__pix-countdown-separator">:</span>
-                        <span>{pixCountdownSecondsLabel} s</span>
-                      </span>
-                      <span>restantes</span>
-                    </div>
-                    <p>
-                      Lembre-se de que você deve depositar de uma conta vinculada ao seu CPF.
+              <>
+                <main className="deposit-panel__pix-main" aria-label="Pagamento Pix gerado">
+                  <div className="deposit-panel__pix-layout">
+                    <img className="deposit-panel__pix-logo" src={iconPix} alt="Pix" />
+                    <p className="deposit-panel__pix-instruction">
+                      Escaneie o QR code ou copie o código para pagar com Pix
                     </p>
-                  </section>
 
-                  <button
-                    type="button"
-                    className={[
-                      'deposit-panel__pix-action-button',
-                      'deposit-panel__pix-action-button--primary',
-                      pixCopyFeedback === 'copied' ? 'deposit-panel__pix-action-button--copied' : '',
-                      pixCopyFeedback === 'error' ? 'deposit-panel__pix-action-button--error' : '',
-                    ].filter(Boolean).join(' ')}
-                    onClick={handleCopyPixCode}
-                  >
-                    <span
-                      className="deposit-panel__pix-action-label"
-                      key={`${pixCopyFeedback}:${pixCopyFeedbackKey}`}
+                    <div className="deposit-panel__pix-qr-frame">
+                      <div className="deposit-panel__pix-qr-card">
+                        <img className="deposit-panel__pix-qr" src={qrCodeImage} alt="QR code Pix" />
+                      </div>
+                    </div>
+
+                    <section className="deposit-panel__pix-payment" aria-label={`Valor do Pix: R$ ${amount}`}>
+                      <div className="deposit-panel__pix-amount">
+                        <span>R$</span>
+                        <strong>{amount}</strong>
+                      </div>
+                      <div className="deposit-panel__pix-expiry-details">
+                        {hasSavedAccountForSession && activeAccount ? (
+                          <div className="deposit-panel__pix-account-card" aria-label="Conta usada no depósito">
+                            <div className="deposit-panel__pix-account-row">
+                              <img src={iconBanco} alt="" aria-hidden="true" />
+                              <span className="deposit-panel__pix-account-label">Banco</span>
+                              <span className="deposit-panel__pix-account-value">{activeAccount.bankName}</span>
+                            </div>
+                            <div className="deposit-panel__pix-account-row">
+                              <img src={iconConta} alt="" aria-hidden="true" />
+                              <span className="deposit-panel__pix-account-label">Conta</span>
+                              <span className="deposit-panel__pix-account-value">•••{activeAccount.lastDigits}</span>
+                            </div>
+                            <div
+                              className="deposit-panel__pix-account-row"
+                              aria-label={`Código Pix expira em ${pixCountdownMinutes} minutos`}
+                            >
+                              <img src={iconExpira} alt="" aria-hidden="true" />
+                              <span className="deposit-panel__pix-account-label">Expira</span>
+                              <span className="deposit-panel__pix-account-value">
+                                Em {pixCountdownMinutes} minutos
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            className="deposit-panel__pix-expiry-card"
+                            aria-label={`Código Pix expira em ${pixCountdownMinutes} minutos`}
+                          >
+                            <img src={iconClock} alt="" aria-hidden="true" />
+                            <span className="deposit-panel__pix-expiry-label">Expira</span>
+                            <span className="deposit-panel__pix-expiry-value">
+                              Em {pixCountdownMinutes} minutos
+                            </span>
+                          </div>
+                        )}
+                        <p className="deposit-panel__pix-expiry-reminder">
+                          Lembre-se de que você deve depositar de uma conta vinculada ao seu CPF.
+                        </p>
+                      </div>
+                    </section>
+                  </div>
+                </main>
+
+                <footer className="deposit-panel__footer deposit-panel__footer--pix">
+                  {pixCopyFeedback === 'copied' ? (
+                    <div
+                      className="deposit-panel__pix-copy-toast"
+                      key={`copied:${pixCopyFeedbackKey}`}
+                      role="status"
                       aria-live="polite"
                     >
-                      {pixCopyFeedback === 'copied' ? (
-                        <>
-                          <CheckIcon aria-hidden="true" weight="bold" />
-                          Código copiado
-                        </>
-                      ) : pixCopyFeedback === 'error' ? 'Não foi possível copiar' : 'Copiar código Pix'}
-                    </span>
-                  </button>
-
+                      <img src={iconPixCopiado} alt="" aria-hidden="true" />
+                      <span>Código copiado</span>
+                    </div>
+                  ) : null}
                   <button
                     type="button"
-                    className="deposit-panel__pix-action-button deposit-panel__pix-action-button--secondary"
-                    onClick={() => setIsBankAppsSheetOpen(true)}
+                    className="deposit-panel__confirm deposit-panel__pix-copy-button"
+                    onClick={handleCopyPixCode}
                   >
-                    Abrir aplicativo do banco
+                    Copiar código Pix
                   </button>
-
-                  <div className="deposit-panel__pix-divider" />
-
-                  <section className="deposit-panel__pix-info-list" aria-label="Informações sobre o Pix">
-                    <div className="deposit-panel__pix-info-item">
-                      <span className="deposit-panel__pix-info-icon" aria-hidden="true">
-                        <img src={iconClock} alt="" />
-                      </span>
-                      <p>
-                        O código expira em 30 minutos. Se ele expirar, gere um novo na tela de depósito.
-                      </p>
-                    </div>
-                    <div className="deposit-panel__pix-info-item">
-                      <span
-                        className="deposit-panel__pix-info-icon deposit-panel__pix-info-icon--idea"
-                        aria-hidden="true"
-                      >
-                        <img src={iconIdeia} alt="" />
-                      </span>
-                      <p>
-                        Você pode ver todos as suas transações em "Minha conta" &gt; "Minhas transações."
-                      </p>
-                    </div>
-                  </section>
-                </div>
-              </main>
+                </footer>
+              </>
             )}
           </div>
         </div>
-      </aside>
-      <BankAppsBottomSheet
-        isOpen={isBankAppsSheetOpen}
-        onClose={() => setIsBankAppsSheetOpen(false)}
-      />
-    </div>,
+        </aside>
+      </div>
+      <BottomSheet
+        isOpen={isBankChangeSheetOpen}
+        onClose={handleBankChangeSheetClose}
+        title="Pix"
+        containerClassName="deposit-bank-sheet-container"
+        sheetClassName="deposit-bank-sheet"
+        bodyClassName="deposit-bank-sheet__body"
+        hideScrollIndicator
+        blurBackdrop
+      >
+        <div className="deposit-bank-sheet__content">
+          {hasMultipleSavedAccounts ? (
+            <div className="deposit-bank-sheet__management-header">
+              <span>{isAccountRemovalMode ? 'Excluir conta' : 'Conta'}</span>
+              <button
+                type="button"
+                className="deposit-bank-sheet__management-action"
+                disabled={removingAccountId !== null}
+                onClick={() => setIsAccountRemovalMode((current) => !current)}
+              >
+                <img
+                  src={isAccountRemovalMode ? iconVoltarExcluirConta : iconRemoverPix}
+                  alt=""
+                  aria-hidden="true"
+                />
+                <span>{isAccountRemovalMode ? 'Voltar' : 'Remover'}</span>
+              </button>
+            </div>
+          ) : null}
+          <div className="deposit-bank-sheet__accounts" aria-label="Contas Pix salvas">
+            {savedAccounts.map((account) => {
+              const isSelected = account.id === activeAccount?.id
+
+              return (
+                <button
+                  type="button"
+                  className={[
+                    'deposit-bank-sheet__saved-account',
+                    removingAccountId === account.id
+                      ? 'deposit-bank-sheet__saved-account--removing'
+                      : '',
+                  ].filter(Boolean).join(' ')}
+                  aria-label={isAccountRemovalMode
+                    ? `Excluir ${account.bankName}, conta final ${account.lastDigits}`
+                    : `${account.bankName}, conta final ${account.lastDigits}${isSelected ? ', selecionada' : ''}`}
+                  aria-pressed={isAccountRemovalMode ? undefined : isSelected}
+                  disabled={isGeneratingPix || removingAccountId !== null}
+                  onClick={() => (
+                    isAccountRemovalMode
+                      ? handleRemoveSavedAccount(account.id)
+                      : handleSelectSavedAccount(account.id)
+                  )}
+                  onAnimationEnd={(event) => {
+                    if (event.currentTarget !== event.target) return
+
+                    handleRemoveAccountAnimationEnd(account.id)
+                  }}
+                  key={account.id}
+                >
+                  <span className="deposit-bank-sheet__account-copy">
+                    <strong>{account.bankName}</strong>
+                    <span>Conta: ***{account.lastDigits}</span>
+                  </span>
+                  {isAccountRemovalMode ? (
+                    <img
+                      className="deposit-bank-sheet__remove-account-icon"
+                      src={iconRemoverPixGde}
+                      alt=""
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <span
+                      className={[
+                        'deposit-bank-sheet__radio',
+                        isSelected ? 'deposit-bank-sheet__radio--selected' : '',
+                      ].filter(Boolean).join(' ')}
+                      aria-hidden="true"
+                    />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+          <button
+            type="button"
+            className={[
+              'deposit-bank-sheet__other-bank',
+              isGeneratingPix ? 'deposit-bank-sheet__other-bank--loading' : '',
+              newBankAccountId === null ? 'deposit-bank-sheet__other-bank--disabled' : '',
+            ].filter(Boolean).join(' ')}
+            disabled={isGeneratingPix || newBankAccountId === null}
+            aria-busy={isGeneratingPix}
+            onClick={handleDepositFromAnotherBank}
+          >
+            {isGeneratingPix ? (
+              <span className="deposit-panel__confirm-spinner" aria-hidden="true" />
+            ) : (
+              <>
+                <span>Depositar de outro banco</span>
+                <img src={iconSetaTrocarBanco} alt="" aria-hidden="true" />
+              </>
+            )}
+          </button>
+          <p className="deposit-bank-sheet__hint">
+            {newBankAccountId === null
+              ? 'Para depositar de um banco novo, remova uma conta para liberar espaço.'
+              : 'O banco de onde você pagar ficará salvo aqui.'}
+          </p>
+        </div>
+      </BottomSheet>
+    </>,
     document.body
   )
 }
