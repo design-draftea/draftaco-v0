@@ -1119,16 +1119,32 @@
 }
 
 .deposit-panel__pix-qr-frame {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-top: 12px;
-  padding: 8px;
-  border: 4px solid transparent;
-  border-radius: 27px;
-  background:
-    linear-gradient(transparent, transparent) padding-box,
-    linear-gradient(98deg, #4b20ff 0%, #9730ff 100%) border-box;
+  padding: 12px;
+  border-radius: 28px;
+  background: transparent;
+}
+
+.deposit-panel__pix-qr-frame::before {
+  position: absolute;
+  inset: 0;
+  padding: 4px;
+  border-radius: inherit;
+  background: linear-gradient(98deg, #4b20ff 0%, #9730ff 100%);
+  content: "";
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
 }
 
 .deposit-panel__pix-qr-card {
