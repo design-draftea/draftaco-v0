@@ -31,6 +31,9 @@ dist-ssr
 # Claude Code
 .claude/
 
+# Worktrees isolados criados para tarefas
+.worktrees/
+
 # Playwright CLI cache
 .playwright-cli/
 
